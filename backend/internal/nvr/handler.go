@@ -65,12 +65,15 @@ func NvrStatusHandler(c *gin.Context) {
 	}
 
 	storeStats := StorageStats{
-		UsedBytes:          totalUsedBytes,
-		QuotaBytes:         quotaBytes,
-		UsedPercentage:     usedPercent,
-		TotalSegmentsCount: totalRecordingsCount,
-		OldestSegmentAt:    oldestSegmentAt,
-		NewestSegmentAt:    newestSegmentAt,
+		UsedBytes:           totalUsedBytes,
+		QuotaBytes:          quotaBytes,
+		UsedPercentage:      usedPercent,
+		TotalSegmentsCount:  totalRecordingsCount,
+		OldestSegmentAt:     oldestSegmentAt,
+		NewestSegmentAt:     newestSegmentAt,
+		RetentionDays:       6,
+		CleanupIntervalDays: 7,
+		RetentionStats:      &storage.CurrentRetentionStats,
 	}
 
 	// 3. Per-Camera Recorder Status

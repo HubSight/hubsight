@@ -33,6 +33,9 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
+	// Launch 7-day retention worker (purging archives older than 6 days)
+	storage.StartRetentionWorker(ctx)
+
 	manager := recorder.NewManager(outDir)
 	manager.Start(ctx)
 }

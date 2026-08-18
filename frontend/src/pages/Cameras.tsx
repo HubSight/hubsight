@@ -188,26 +188,26 @@ const Cameras = () => {
           className="btn btn-primary flex items-center gap-2 w-full sm:w-auto justify-center shadow-sm"
           onClick={() => handleOpenModal()}
         >
-          <Plus size={20} /> Add Camera
+          <Plus size={20} /> Add device
         </button>
       </div>
 
       {/* Camera Grid */}
       <div className="flex-1 overflow-auto">
         {isLoading ? (
-          <div className="flex justify-center items-center h-40 text-slate-400">Loading cameras...</div>
+          <div className="flex justify-center items-center h-40 text-slate-400">Loading registered devices...</div>
         ) : cameras.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-xl p-12 text-center shadow-sm">
             <Video size={48} className="mx-auto text-slate-400 mb-4" />
-            <h3 className="text-xl font-semibold mb-2 text-slate-800">No cameras configured</h3>
+            <h3 className="text-xl font-semibold mb-2 text-slate-800">No devices configured</h3>
             <p className="text-slate-500 mb-6 max-w-md mx-auto">
-              Add an RTSP camera stream to start automated recording and archiving.
+              Add an RTSP device stream to start automated recording and archiving.
             </p>
             <button
               className="btn btn-primary inline-flex items-center gap-2 shadow-sm"
               onClick={() => handleOpenModal()}
             >
-              <Plus size={20} /> Add Your First Camera
+              <Plus size={20} /> Let's start with your first device
             </button>
           </div>
         ) : (

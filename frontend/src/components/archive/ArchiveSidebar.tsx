@@ -27,7 +27,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
     <>
       <div className="mb-6">
         <label className="flex items-center gap-2 text-sm text-slate-600 font-medium mb-3">
-          <Camera size={16} /> Select Camera
+          <Camera size={16} /> Select device
         </label>
         <select
           className="input-field w-full bg-slate-50 border-slate-200"
@@ -36,7 +36,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           disabled={cameras.length === 0}
         >
           {cameras.length === 0 ? (
-            <option value="">No cameras available</option>
+            <option value="">No devices available</option>
           ) : (
             cameras.map((c) => (
               <option key={c.id} value={c.id}>
@@ -52,9 +52,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           <CalendarIcon size={16} /> Select Date
         </label>
         <div
-          className={`glass-panel p-2 bg-slate-50 ${
-            !selectedCam ? 'opacity-50 pointer-events-none' : ''
-          }`}
+          className={`glass-panel p-2 bg-slate-50 ${!selectedCam ? 'opacity-50 pointer-events-none' : ''
+            }`}
         >
           <Calendar
             onChange={(val) => onSelectDate(val as Date)}

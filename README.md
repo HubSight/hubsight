@@ -23,7 +23,7 @@ A modern, responsive, and robust CCTV storage and viewing platform built with Go
 ### Prerequisites
 
 *   Go 1.23+
-*   Node.js & npm (for Frontend)
+*   Node.js (v20+) & pnpm (>= 9) (for Frontend)
 *   PostgreSQL Database
 *   FFmpeg installed on your machine or container.
 
@@ -79,8 +79,8 @@ VITE_API_URL=http://localhost:8080/api
 
 Install dependencies and run:
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## 📱 User Interface Highlights

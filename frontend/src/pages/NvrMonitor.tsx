@@ -8,7 +8,8 @@ import {
   Clock,
   Video,
   Database,
-  Radio
+  Radio,
+  Trash2
 } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import type { NvrStatusResponse } from '../types/nvr';
@@ -148,7 +149,7 @@ const NvrMonitor = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Recording Cameras
+              Recording Devices
             </span>
             <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
               <Video size={20} />
@@ -166,11 +167,11 @@ const NvrMonitor = () => {
           </p>
         </div>
 
-        {/* Card 3: Storage Quota */}
+        {/* Card 3: Storage Quota & Retention Policy */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              S3 Storage Quota
+              S3 Storage & Retention
             </span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
               <HardDrive size={20} />
@@ -196,10 +197,12 @@ const NvrMonitor = () => {
               style={{ width: `${Math.min(data?.storage.used_percentage || 0, 100)}%` }}
             />
           </div>
-          <span className="text-[11px] text-slate-500 font-medium">
-            {(data?.storage.used_percentage || 0).toFixed(1)}% Used (
-            {data?.storage.total_segments_count || 0} segments)
-          </span>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1.5">
+            <span>{(data?.storage.used_percentage || 0).toFixed(1)}% Used</span>
+            <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+              <Trash2 size={11} /> 6-Day TTL (Every 7d)
+            </span>
+          </div>
         </div>
 
         {/* Card 4: System Resources */}
@@ -231,7 +234,7 @@ const NvrMonitor = () => {
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <Database size={18} className="text-orange-600" />
-              Camera Recording Pipelines
+              Device Recording Pipelines
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Live ingest health, latest video segment saved to S3, and stream parameters.
@@ -244,14 +247,14 @@ const NvrMonitor = () => {
 
         {data?.cameras.length === 0 ? (
           <div className="p-12 text-center text-slate-400">
-            No cameras configured. Go to Cameras tab to add a camera.
+            No devices configured. Go to Devices tab to add a device.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/30 text-xs font-semibold text-slate-500">
-                  <th className="py-3.5 px-5">Camera</th>
+                  <th className="py-3.5 px-5">Device</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Stream Pipeline</th>
                   <th className="py-3.5 px-4">Segment Length</th>
@@ -263,7 +266,7 @@ const NvrMonitor = () => {
                 {data?.cameras.map((cam) => (
                   <tr key={cam.camera_id} className="hover:bg-slate-50/60 transition-colors">
                     
-                    {/* Camera Info */}
+                    {/* Device Info */}
                     <td className="py-4 px-5">
                       <div className="font-semibold text-slate-800">{cam.name}</div>
                       <div className="text-xs text-slate-400 font-mono break-all max-w-xs truncate">
