@@ -4,9 +4,10 @@ import { Loader2, AlertCircle } from 'lucide-react';
 
 interface LivePlayerProps {
   cameraId: number;
+  onLiveStatusChange?: (isLive: boolean) => void;
 }
 
-export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId }) => {
+export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusChange }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [streamError, setStreamError] = useState<string | null>(null);
@@ -14,16 +15,20 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId }) => {
   useEffect(() => {
     let hls: Hls | null = null;
     const video = videoRef.current;
-    if (!video || !cameraId) return;
+    if (!video || !cameraId) {
+      onLiveStatusChange?.(false);
+      return;
+    }
 
     setIsInitializing(true);
     setStreamError(null);
+    onLiveStatusChange?.(false);
 
     const streamUrl = `/api/live/${cameraId}/index.m3u8`;
 
     if (Hls.isSupported()) {
       hls = new Hls({
-        liveSyncDurationCount: 2, // ultra low latency
+        liveSyncDurationCount: 2,
         maxLiveSyncPlaybackRate: 1.2,
         lowLatencyMode: true,
         xhrSetup: (xhr) => {
@@ -36,9 +41,8 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId }) => {
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsInitializing(false);
-        video.play().catch(() => {
-          // Autoplay policy fallback
-        });
+        onLiveStatusChange?.(true);
+        video.play().catch(() => {});
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -52,31 +56,35 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId }) => {
               break;
             default:
               setStreamError('Unable to connect to live camera stream.');
+              onLiveStatusChange?.(false);
               hls?.destroy();
               break;
           }
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native Safari iOS / macOS HLS support
       video.src = streamUrl;
       video.addEventListener('loadedmetadata', () => {
         setIsInitializing(false);
+        onLiveStatusChange?.(true);
         video.play().catch(() => {});
       });
       video.addEventListener('error', () => {
         setStreamError('Unable to play live camera stream.');
+        onLiveStatusChange?.(false);
       });
     } else {
       setStreamError('Your browser does not support HLS live playback.');
+      onLiveStatusChange?.(false);
     }
 
     return () => {
+      onLiveStatusChange?.(false);
       if (hls) {
         hls.destroy();
       }
     };
-  }, [cameraId]);
+  }, [cameraId, onLiveStatusChange]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-black">

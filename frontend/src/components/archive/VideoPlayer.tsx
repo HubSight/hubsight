@@ -8,6 +8,8 @@ interface VideoPlayerProps {
   cameraId: number | null;
   activeRecording: Recording | null;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  isLive: boolean;
+  onLiveStatusChange?: (isLive: boolean) => void;
   onLoadedMetadata: () => void;
   onGoLive?: () => void;
 }
@@ -17,29 +19,33 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   cameraId,
   activeRecording,
   videoRef,
+  isLive,
+  onLiveStatusChange,
   onLoadedMetadata,
   onGoLive
 }) => {
   return (
     <div className="sticky top-0 z-30 w-full bg-black aspect-video lg:aspect-auto lg:flex-1 lg:min-h-0 flex flex-col items-center justify-center shrink-0 lg:mt-4 lg:mx-4 lg:w-[calc(100%-2rem)] lg:rounded-xl shadow-sm overflow-hidden lg:border border-slate-200 relative group">
       
-      {/* Live Badge Overlay */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-        {mode === 'live' ? (
+      {/* Live / Archive Badge Overlay */}
+      {mode === 'live' && isLive && cameraId ? (
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
           <div className="flex items-center gap-1.5 bg-red-600/90 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase shadow-md backdrop-blur-xs animate-pulse">
             <span className="w-2 h-2 rounded-full bg-white animate-ping" />
             LIVE
           </div>
-        ) : (
+        </div>
+      ) : mode === 'archive' && activeRecording ? (
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
           <div className="flex items-center gap-1.5 bg-slate-900/80 text-amber-400 px-3 py-1 rounded-full text-xs font-semibold tracking-wide border border-amber-500/30 shadow-md backdrop-blur-xs">
             <span className="w-2 h-2 rounded-full bg-amber-400" />
             ARCHIVE PLAYBACK
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       {/* Return to Live Quick Button Overlay (Visible during Archive mode) */}
-      {mode === 'archive' && onGoLive && (
+      {mode === 'archive' && onGoLive && cameraId && (
         <div className="absolute top-4 right-4 z-20">
           <button
             onClick={onGoLive}
@@ -53,7 +59,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* Mode 1: Real-time Live Stream */}
       {mode === 'live' && cameraId ? (
-        <LivePlayer cameraId={cameraId} />
+        <LivePlayer cameraId={cameraId} onLiveStatusChange={onLiveStatusChange} />
       ) : mode === 'archive' && activeRecording ? (
         /* Mode 2: Archive Recorded Playback */
         <video

@@ -15,6 +15,7 @@ const Archive = () => {
 
   // Playback Mode: 'live' | 'archive'
   const [mode, setMode] = useState<'live' | 'archive'>('live');
+  const [isLiveStreaming, setIsLiveStreaming] = useState(false);
 
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [activeRecording, setActiveRecording] = useState<Recording | null>(null);
@@ -66,11 +67,13 @@ const Archive = () => {
   const handleSelectCam = (camId: string) => {
     setSelectedCam(camId);
     setMode('live');
+    setIsLiveStreaming(false);
   };
 
   // When user seeks on timeline, automatically switch to Archive mode
   const handleSeek = (rec: Recording, offsetSeconds: number) => {
     setMode('archive');
+    setIsLiveStreaming(false);
     if (activeRecording?.id !== rec.id) {
       seekTargetRef.current = offsetSeconds;
       setActiveRecording(rec);
@@ -108,6 +111,7 @@ const Archive = () => {
     onSelectDate: (date: Date) => {
       setDateObj(date);
       setMode('archive');
+      setIsLiveStreaming(false);
     },
     recordings,
     loading
@@ -124,6 +128,8 @@ const Archive = () => {
             cameraId={currentCamId}
             activeRecording={activeRecording}
             videoRef={videoRef}
+            isLive={isLiveStreaming}
+            onLiveStatusChange={setIsLiveStreaming}
             onLoadedMetadata={handleLoadedMetadata}
             onGoLive={handleGoLive}
           />
@@ -133,6 +139,8 @@ const Archive = () => {
             {/* 2. Controls */}
             <MediaControlBar
               mode={mode}
+              cameraId={currentCamId}
+              isLive={isLiveStreaming}
               activeRecording={activeRecording}
               onPlay={() => videoRef.current?.play()}
               onPause={() => videoRef.current?.pause()}

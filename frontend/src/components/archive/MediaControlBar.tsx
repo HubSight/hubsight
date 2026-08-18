@@ -5,6 +5,8 @@ import type { Recording } from '../../types/recording';
 
 interface MediaControlBarProps {
   mode: 'live' | 'archive';
+  cameraId: number | null;
+  isLive: boolean;
   activeRecording: Recording | null;
   onPlay: () => void;
   onPause: () => void;
@@ -15,6 +17,8 @@ interface MediaControlBarProps {
 
 export const MediaControlBar: React.FC<MediaControlBarProps> = ({
   mode,
+  cameraId,
+  isLive,
   activeRecording,
   onPlay,
   onPause,
@@ -26,20 +30,22 @@ export const MediaControlBar: React.FC<MediaControlBarProps> = ({
     return dayjs(isoString).format('HH:mm:ss');
   };
 
+  const isLiveActive = mode === 'live' && isLive && cameraId !== null;
+
   return (
     <div className="p-4 lg:px-6 lg:pt-4 lg:pb-2 shrink-0">
       <div className="bg-white p-4 lg:p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm rounded-xl border border-slate-200 relative overflow-hidden">
-        
+
         {/* Left: Time display or Live indicator */}
         <div className="flex items-center gap-3 w-full md:w-auto z-10">
-          {mode === 'live' ? (
+          {isLiveActive ? (
             <div className="w-full md:w-auto text-red-600 font-mono bg-red-50 px-4 py-2.5 rounded-lg border border-red-200 text-center text-sm md:text-base tracking-wider font-bold flex items-center justify-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
-              LIVE STREAMING
+              LIVE
             </div>
           ) : (
             <div className="w-full md:w-auto text-slate-700 font-mono bg-slate-50 px-4 py-2.5 rounded-lg border border-slate-200 text-center text-sm md:text-base tracking-wider font-medium">
-              {activeRecording
+              {mode === 'archive' && activeRecording
                 ? `${formatTime(activeRecording.start_at)} - ${formatTime(activeRecording.end_at)}`
                 : '00:00:00 - 00:00:00'}
             </div>
@@ -50,19 +56,17 @@ export const MediaControlBar: React.FC<MediaControlBarProps> = ({
         <div className="flex items-center gap-2 md:gap-4 z-10">
           <button
             onClick={() => onSkip(-10)}
-            disabled={mode === 'live' || !activeRecording}
-            className={`p-3 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all cursor-pointer ${
-              mode === 'live' || !activeRecording ? 'opacity-40 pointer-events-none' : ''
-            }`}
+            disabled={isLiveActive || !activeRecording}
+            className={`p-3 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all cursor-pointer ${isLiveActive || !activeRecording ? 'opacity-40 pointer-events-none' : ''
+              }`}
             title="Rewind 10s"
           >
             <Rewind size={22} />
           </button>
 
           <div
-            className={`flex items-center gap-1 bg-slate-50 p-1.5 rounded-full border border-slate-200 ${
-              mode === 'live' || !activeRecording ? 'opacity-50 pointer-events-none' : ''
-            }`}
+            className={`flex items-center gap-1 bg-slate-50 p-1.5 rounded-full border border-slate-200 ${isLiveActive || !activeRecording ? 'opacity-50 pointer-events-none' : ''
+              }`}
           >
             <button
               onClick={onPlay}
@@ -89,10 +93,9 @@ export const MediaControlBar: React.FC<MediaControlBarProps> = ({
 
           <button
             onClick={() => onSkip(10)}
-            disabled={mode === 'live' || !activeRecording}
-            className={`p-3 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all cursor-pointer ${
-              mode === 'live' || !activeRecording ? 'opacity-40 pointer-events-none' : ''
-            }`}
+            disabled={isLiveActive || !activeRecording}
+            className={`p-3 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all cursor-pointer ${isLiveActive || !activeRecording ? 'opacity-40 pointer-events-none' : ''
+              }`}
             title="Forward 10s"
           >
             <FastForward size={22} />
@@ -101,7 +104,7 @@ export const MediaControlBar: React.FC<MediaControlBarProps> = ({
 
         {/* Right: Return to Live Action */}
         <div className="flex justify-end w-full md:w-auto z-10">
-          {mode === 'archive' ? (
+          {mode === 'archive' && cameraId ? (
             <button
               onClick={onGoLive}
               className="btn btn-primary flex items-center gap-2 text-sm shadow-sm w-full md:w-auto justify-center"
@@ -111,7 +114,7 @@ export const MediaControlBar: React.FC<MediaControlBarProps> = ({
             </button>
           ) : (
             <div className="text-xs text-slate-400 font-medium hidden md:block">
-              Click timeline below to view archive
+              {isLiveActive ? 'Click timeline below to view archive' : ''}
             </div>
           )}
         </div>
