@@ -23,7 +23,7 @@ const Login = () => {
     try {
       await axiosClient.post('/auth/login', { username, password });
       await checkAuth();
-      navigate('/archive');
+      navigate('/devices');
     } catch (error) {
       if (error instanceof AxiosError && error.response) {
         setError(error.response.data.error || 'Authentication failed. Please check your credentials.');
