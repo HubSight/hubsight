@@ -19,6 +19,16 @@ const MainLayout = () => {
 
   return (
     <div className="flex h-[100dvh] w-screen overflow-hidden bg-slate-50">
+      
+      {/* Background Grid */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-60 z-0"
+        style={{
+          backgroundImage: `linear-gradient(to right, rgba(148, 163, 184, 0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.25) 1px, transparent 1px)`,
+          backgroundSize: '32px 32px'
+        }}
+      />
+
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4">
@@ -45,7 +55,7 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-[260px] min-w-[260px] shrink-0 bg-white border-r border-slate-200 flex flex-col py-6 
+        fixed inset-y-0 left-0 z-50 w-[260px] min-w-[260px] shrink-0 bg-white shadow-[4px_0_24px_rgba(148,163,184,0.25)] border-r border-slate-200/80 flex flex-col py-6 
         transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>

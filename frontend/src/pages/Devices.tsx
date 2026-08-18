@@ -172,7 +172,7 @@ const Devices = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 h-full flex flex-col bg-slate-50 overflow-y-auto">
+    <div className="p-4 sm:p-6 md:p-8 h-full flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-5 sm:mb-6 md:mb-8 gap-3 max-w-7xl w-full mx-auto">
         <div className="flex items-center gap-3">

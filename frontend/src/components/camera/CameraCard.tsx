@@ -13,7 +13,7 @@ export const CameraCard: React.FC<CameraCardProps> = ({ camera, onEdit, onDelete
   const camPreset = BRAND_PRESETS.find((b) => b.id === camera.brand);
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 hover:border-slate-300 transition-all shadow-sm flex flex-col justify-between">
+    <div className="bg-white border border-slate-200/90 p-4 sm:p-5 hover:border-slate-300 transition-all shadow-sm flex flex-col justify-between">
       <div>
         <div className="flex justify-between items-start mb-3 gap-2">
           <div className="flex items-center gap-2.5 min-w-0">

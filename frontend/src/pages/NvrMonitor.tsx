@@ -85,7 +85,7 @@ const NvrMonitor = () => {
   const totalCamsCount = data?.cameras.length || 0;
 
   return (
-    <div className="p-4 md:p-8 h-full flex flex-col bg-slate-50 overflow-y-auto">
+    <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
         <div>

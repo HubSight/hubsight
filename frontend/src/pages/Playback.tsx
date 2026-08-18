@@ -143,7 +143,7 @@ const Playback = () => {
   };
 
   return (
-    <div className="h-full bg-slate-50 flex flex-col lg:flex-row overflow-hidden">
+    <div className="h-full flex flex-col lg:flex-row overflow-hidden">
       {/* Left Area (Main Content) */}
       <div className="flex-1 flex flex-col min-w-0 h-full lg:overflow-hidden relative">
         <div className="flex-1 flex flex-col h-full overflow-y-auto lg:overflow-hidden relative">
@@ -202,7 +202,7 @@ const Playback = () => {
       </div>
 
       {/* Right Sidebar - Desktop Only */}
-      <div className="hidden lg:flex w-[340px] border-l border-slate-200 bg-white p-6 overflow-y-auto shrink-0 shadow-sm z-10 flex-col">
+      <div className="hidden lg:flex w-[340px] border-l border-slate-200/80 bg-white p-6 overflow-y-auto shrink-0 shadow-[-4px_0_24px_rgba(148,163,184,0.25)] z-10 flex-col">
         <h2 className="text-xl font-bold mb-6 text-slate-800">Playback Settings</h2>
         <ArchiveSidebar {...sidebarProps} />
       </div>
