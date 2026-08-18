@@ -65,7 +65,7 @@ const MainLayout = () => {
         <nav className="flex-1 flex flex-col">
           <NavLink to="/cameras" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Camera size={20} />
-            Cameras
+            Devices
           </NavLink>
           <NavLink to="/archive" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Video size={20} />

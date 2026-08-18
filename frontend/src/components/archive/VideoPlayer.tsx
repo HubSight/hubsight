@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Camera, Radio } from 'lucide-react';
 import type { Recording } from '../../types/recording';
 import { LivePlayer } from './LivePlayer';
+import { FullscreenEnterIcon, FullscreenExitIcon } from '../common/FullscreenIcons';
 
 interface VideoPlayerProps {
   mode: 'live' | 'archive';
   cameraId: number | null;
   activeRecording: Recording | null;
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
   isLive: boolean;
   onLiveStatusChange?: (isLive: boolean) => void;
   onLoadedMetadata: () => void;
@@ -19,15 +21,46 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   cameraId,
   activeRecording,
   videoRef,
+  containerRef: externalContainerRef,
   isLive,
   onLiveStatusChange,
   onLoadedMetadata,
   onGoLive
 }) => {
+  const internalContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = externalContainerRef || internalContainerRef;
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (!containerRef.current) return;
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen toggle error:', err);
+    }
+  };
+
   return (
-    <div className="sticky top-0 z-30 w-full bg-black aspect-video lg:aspect-auto lg:flex-1 lg:min-h-0 flex flex-col items-center justify-center shrink-0 lg:mt-4 lg:mx-4 lg:w-[calc(100%-2rem)] lg:rounded-xl shadow-sm overflow-hidden lg:border border-slate-200 relative group">
-      
-      {/* Live / Archive Badge Overlay */}
+    <div
+      ref={containerRef}
+      className="sticky top-0 z-30 w-full bg-black aspect-video lg:aspect-auto lg:flex-1 lg:min-h-0 flex flex-col items-center justify-center shrink-0 overflow-hidden relative group border-b border-slate-800"
+    >
+      {/* Live / Archive Badge Overlay (Top-Left) */}
       {mode === 'live' && isLive && cameraId ? (
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
           <div className="flex items-center gap-1.5 bg-red-600/90 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase shadow-md backdrop-blur-xs animate-pulse">
@@ -44,7 +77,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       ) : null}
 
-      {/* Return to Live Quick Button Overlay (Visible during Archive mode) */}
+      {/* Switch to Live Overlay (Top-Right) */}
       {mode === 'archive' && onGoLive && cameraId && (
         <div className="absolute top-4 right-4 z-20">
           <button
@@ -53,6 +86,23 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           >
             <Radio size={14} className="text-red-400" />
             Switch to Live
+          </button>
+        </div>
+      )}
+
+      {/* YouTube-style Fullscreen Button Overlay (Bottom-Right) */}
+      {(cameraId || activeRecording) && (
+        <div className="absolute bottom-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 bg-black/60 hover:bg-black/85 text-white/90 hover:text-white rounded-lg backdrop-blur-xs transition-all shadow-md cursor-pointer border border-white/10 hover:border-white/30 flex items-center justify-center"
+            title={isFullscreen ? 'Exit Fullscreen (Esc)' : 'Full screen (f)'}
+          >
+            {isFullscreen ? (
+              <FullscreenExitIcon size={20} />
+            ) : (
+              <FullscreenEnterIcon size={20} />
+            )}
           </button>
         </div>
       )}

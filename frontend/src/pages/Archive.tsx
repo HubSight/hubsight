@@ -22,6 +22,7 @@ const Archive = () => {
   const [loading, setLoading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const seekTargetRef = useRef<number | null>(null);
 
   // Fetch cameras on mount
@@ -128,6 +129,7 @@ const Archive = () => {
             cameraId={currentCamId}
             activeRecording={activeRecording}
             videoRef={videoRef}
+            containerRef={playerContainerRef}
             isLive={isLiveStreaming}
             onLiveStatusChange={setIsLiveStreaming}
             onLoadedMetadata={handleLoadedMetadata}

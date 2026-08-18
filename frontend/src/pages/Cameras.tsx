@@ -178,7 +178,7 @@ const Cameras = () => {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3 text-slate-800">
             <Camera className="text-orange-600" size={32} />
-            Camera Management
+            Device Management
           </h1>
           <p className="text-slate-500 text-sm md:text-base">
             Configure RTSP streams by brand, customize transport protocols, and FFmpeg recording options.
