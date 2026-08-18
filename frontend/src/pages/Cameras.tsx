@@ -174,7 +174,7 @@ const Cameras = () => {
   // FFmpeg Options
   const [segmentDuration, setSegmentDuration] = useState(300);
   const [videoCodec, setVideoCodec] = useState('copy');
-  const [audioMode, setAudioMode] = useState('copy');
+  const [audioMode, setAudioMode] = useState('auto');
   const [extraArgs, setExtraArgs] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -235,7 +235,7 @@ const Cameras = () => {
       setRtspTransport(cam.rtsp_transport || 'tcp');
       setSegmentDuration(cam.segment_duration || 300);
       setVideoCodec(cam.video_codec || 'copy');
-      setAudioMode(cam.audio_mode || 'copy');
+      setAudioMode(cam.audio_mode || 'auto');
       setExtraArgs(cam.extra_args || '');
     } else {
       setEditingCameraId(null);
@@ -253,7 +253,7 @@ const Cameras = () => {
       setRtspTransport('tcp');
       setSegmentDuration(300);
       setVideoCodec('copy');
-      setAudioMode('copy');
+      setAudioMode('auto');
       setExtraArgs('');
     }
     setShowModal(true);
@@ -717,6 +717,7 @@ const Cameras = () => {
                         onChange={(e) => setAudioMode(e.target.value)}
                         className="input-field w-full"
                       >
+                        <option value="auto">Tự động phát hiện âm thanh (Khuyên dùng)</option>
                         <option value="copy">Copy Audio (Giữ nguyên âm thanh gốc)</option>
                         <option value="aac">Encode AAC</option>
                         <option value="disabled">Mute / Tắt ghi âm (-an)</option>

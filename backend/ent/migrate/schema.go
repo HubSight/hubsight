@@ -18,7 +18,7 @@ var (
 		{Name: "rtsp_transport", Type: field.TypeString, Default: "tcp"},
 		{Name: "segment_duration", Type: field.TypeInt, Default: 300},
 		{Name: "video_codec", Type: field.TypeString, Default: "copy"},
-		{Name: "audio_mode", Type: field.TypeString, Default: "copy"},
+		{Name: "audio_mode", Type: field.TypeString, Default: "auto"},
 		{Name: "extra_args", Type: field.TypeString, Default: ""},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},

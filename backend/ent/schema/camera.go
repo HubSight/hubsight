@@ -22,7 +22,7 @@ func (Camera) Fields() []ent.Field {
 		field.String("rtsp_transport").Default("tcp"),
 		field.Int("segment_duration").Default(300),
 		field.String("video_codec").Default("copy"),
-		field.String("audio_mode").Default("copy"),
+		field.String("audio_mode").Default("auto"),
 		field.String("extra_args").Default(""),
 		field.Bool("is_active").Default(true),
 		field.Time("created_at").Default(time.Now),

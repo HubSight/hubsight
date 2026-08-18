@@ -27,6 +27,35 @@ type CameraConfig struct {
 	OutDir          string
 }
 
+// ProbeAudioStream checks if the RTSP stream contains an active audio track and its codec
+func ProbeAudioStream(ctx context.Context, rtspURL, transport string) (bool, string) {
+	probeCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+
+	args := []string{
+		"-v", "error",
+		"-select_streams", "a:0",
+		"-show_entries", "stream=codec_name",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+	}
+	if transport != "" && transport != "auto" {
+		args = append(args, "-rtsp_transport", transport)
+	}
+	args = append(args, "-stimeout", "3000000", rtspURL)
+
+	cmd := exec.CommandContext(probeCtx, "ffprobe", args...)
+	out, err := cmd.Output()
+	if err != nil {
+		return false, ""
+	}
+
+	codec := strings.TrimSpace(string(out))
+	if codec != "" {
+		return true, strings.ToLower(codec)
+	}
+	return false, ""
+}
+
 func StartRecording(ctx context.Context, cfg CameraConfig) error {
 	err := os.MkdirAll(cfg.OutDir, 0755)
 	if err != nil {
@@ -67,14 +96,30 @@ func StartRecording(ctx context.Context, cfg CameraConfig) error {
 		args = append(args, "-c:v", "copy")
 	}
 
-	// Audio Codec / Mode
-	switch cfg.AudioMode {
-	case "disabled", "none":
+	// Audio Stream Handling
+	if cfg.AudioMode == "disabled" || cfg.AudioMode == "none" {
+		log.Printf("Cam %d: Audio disabled by configuration.", cfg.CameraID)
 		args = append(args, "-an")
-	case "aac":
-		args = append(args, "-c:a", "aac")
-	default:
+	} else if cfg.AudioMode == "copy" {
 		args = append(args, "-c:a", "copy")
+	} else if cfg.AudioMode == "aac" {
+		args = append(args, "-c:a", "aac", "-b:a", "128k")
+	} else {
+		// Auto detect audio stream
+		hasAudio, audioCodec := ProbeAudioStream(ctx, cfg.Host, transport)
+		if hasAudio {
+			log.Printf("Cam %d: Detected audio stream (codec: %s). Saving audio...", cfg.CameraID, audioCodec)
+			if audioCodec == "aac" {
+				args = append(args, "-c:a", "copy")
+			} else {
+				// Convert PCM / G.711 (alaw, mulaw) / others to AAC for web MP4 compatibility
+				args = append(args, "-c:a", "aac", "-b:a", "128k")
+			}
+			args = append(args, "-map", "0:v:0", "-map", "0:a:0")
+		} else {
+			log.Printf("Cam %d: No audio stream detected on RTSP. Recording video only.", cfg.CameraID)
+			args = append(args, "-an")
+		}
 	}
 
 	// Segment output
