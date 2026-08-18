@@ -53,12 +53,12 @@ func New() *gin.Engine {
 			protected.DELETE("/cameras/:id", camera.DeleteCameraHandler)
 			
 			protected.GET("/archive/timeline", recording.TimelineHandler)
+			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)
 			protected.GET("/archive/:id/stream", recording.StreamHandler)
 
-			// Live streaming endpoints (Pure Go RTSP-to-HLS Muxer)
-			protected.GET("/live/:id/*file", live.LiveStreamHandler)
-			protected.HEAD("/live/:id/*file", live.LiveStreamHandler)
-			protected.GET("/live/:id/status", live.LiveStatusHandler)
+			// Live streaming endpoints (WebRTC signaling)
+			protected.POST("/live/:id/webrtc", live.WebRTCHandler)
+			protected.GET("/live-status/:id", live.LiveStatusHandler)
 
 			// NVR recorder monitor endpoint
 			protected.GET("/recorder/status", nvr.NvrStatusHandler)

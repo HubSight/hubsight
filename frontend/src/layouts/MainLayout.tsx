@@ -68,7 +68,7 @@ const MainLayout = () => {
             <Camera size={20} />
             Devices
           </NavLink>
-          <NavLink to="/archive" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink to="/playback" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Video size={20} />
             Playback
           </NavLink>

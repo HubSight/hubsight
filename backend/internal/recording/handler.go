@@ -70,3 +70,30 @@ func StreamHandler(c *gin.Context) {
 
 	c.Redirect(http.StatusFound, presignedURL.String())
 }
+
+func AvailableDaysHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	yearStr := c.Query("year")
+	monthStr := c.Query("month")
+	year, _ := strconv.Atoi(yearStr)
+	month, _ := strconv.Atoi(monthStr)
+
+	if year == 0 || month == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Year and month are required"})
+		return
+	}
+
+	days, err := GetAvailableDays(c.Request.Context(), id, year, month)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, days)
+}

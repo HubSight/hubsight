@@ -9,7 +9,6 @@ import (
 	"cctv/ent/camera"
 	"cctv/ent/recording"
 	"cctv/internal/database"
-	"cctv/internal/live"
 	"cctv/internal/storage"
 	"github.com/gin-gonic/gin"
 )
@@ -144,13 +143,11 @@ func NvrStatusHandler(c *gin.Context) {
 
 	// 4. Active Live Streams
 	activeLiveCount := 0
-	if live.GlobalHub != nil {
-		live.GlobalHub.TouchSession(0) // touch dummy to trigger lock read or query
-		// Count ready live sessions
-		for _, s := range cameraStatuses {
-			if s.IsActive {
-				activeLiveCount++ // approximate or query session
-			}
+	// go2rtc manages live streams on the fly, so we don't track active sessions here natively anymore.
+	// For NVR status, we can just report the number of active cameras as a proxy.
+	for _, s := range cameraStatuses {
+		if s.IsActive {
+			activeLiveCount++
 		}
 	}
 

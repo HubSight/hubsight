@@ -17,5 +17,15 @@ services:
     environment:
       RTSP_URL: rtsp://host.docker.internal:8554/
 
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    restart: unless-stopped
+    ports:
+      - "8555:8555/tcp" # WebRTC TCP
+      - "8555:8555/udp" # WebRTC UDP
+      - "1984:1984" # go2rtc API
+    volumes:
+      - ./go2rtc:/config
+
 volumes:
   cctv_data:

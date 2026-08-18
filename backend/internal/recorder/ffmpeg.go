@@ -28,26 +28,20 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 
 	// RTSP Transport
 	transport := cfg.RTSPTransport
-	if transport == "" {
+	if transport == "" || transport == "auto" {
 		transport = "tcp"
 	}
-	if transport != "auto" {
-		args = append(args, "-rtsp_transport", transport)
-	}
+	args = append(args, "-rtsp_transport", transport)
 
-	// Connection timeout
-	args = append(args, "-stimeout", "5000000")
+	// Connection and analysis timeouts
+	args = append(args, "-timeout", "5000000", "-analyzeduration", "10000000", "-probesize", "10000000")
 
 	// RTSP Input URL
 	args = append(args, "-i", cfg.Host)
 
 	// Video Codec
-	switch cfg.VideoCodec {
-	case "h264":
-		args = append(args, "-c:v", "libx264", "-preset", "ultrafast")
-	default:
-		args = append(args, "-c:v", "copy")
-	}
+	// Always read frames at 1280x720 30fps to ensure server processing performance
+	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "30")
 
 	// Audio Handling
 	if cfg.AudioMode == "disabled" || cfg.AudioMode == "none" {

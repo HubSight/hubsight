@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Hls from 'hls.js';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface LivePlayerProps {
@@ -13,75 +12,99 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
   const [streamError, setStreamError] = useState<string | null>(null);
 
   useEffect(() => {
-    let hls: Hls | null = null;
-    const video = videoRef.current;
-    if (!video || !cameraId) {
-      onLiveStatusChange?.(false);
-      return;
-    }
+    let pc: RTCPeerConnection | null = null;
+    let isActive = true;
 
-    setIsInitializing(true);
-    setStreamError(null);
-    onLiveStatusChange?.(false);
-
-    const streamUrl = `/api/live/${cameraId}/index.m3u8`;
-
-    if (Hls.isSupported()) {
-      hls = new Hls({
-        liveSyncDurationCount: 2,
-        maxLiveSyncPlaybackRate: 1.2,
-        lowLatencyMode: true,
-        xhrSetup: (xhr) => {
-          xhr.withCredentials = true;
-        }
-      });
-
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setIsInitializing(false);
-        onLiveStatusChange?.(true);
-        video.play().catch(() => {});
-      });
-
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              hls?.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              hls?.recoverMediaError();
-              break;
-            default:
-              setStreamError('Unable to connect to live camera stream.');
-              onLiveStatusChange?.(false);
-              hls?.destroy();
-              break;
-          }
-        }
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-      video.addEventListener('loadedmetadata', () => {
-        setIsInitializing(false);
-        onLiveStatusChange?.(true);
-        video.play().catch(() => {});
-      });
-      video.addEventListener('error', () => {
-        setStreamError('Unable to play live camera stream.');
+    const initWebRTC = async () => {
+      const video = videoRef.current;
+      if (!video || !cameraId) {
         onLiveStatusChange?.(false);
-      });
-    } else {
-      setStreamError('Your browser does not support HLS live playback.');
+        return;
+      }
+
+      setIsInitializing(true);
+      setStreamError(null);
       onLiveStatusChange?.(false);
-    }
+
+      try {
+        pc = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver('audio', { direction: 'recvonly' });
+
+        pc.ontrack = (event) => {
+          if (!isActive) return;
+          if (video.srcObject !== event.streams[0]) {
+            video.srcObject = event.streams[0];
+            setIsInitializing(false);
+            onLiveStatusChange?.(true);
+            video.play().catch(() => {});
+          }
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        // Wait a brief moment for ICE candidates to gather
+        await new Promise<void>((resolve) => {
+          if (pc!.iceGatheringState === 'complete') {
+            resolve();
+          } else {
+            const checkState = () => {
+              if (pc!.iceGatheringState === 'complete') {
+                pc!.removeEventListener('icegatheringstatechange', checkState);
+                resolve();
+              }
+            };
+            pc!.addEventListener('icegatheringstatechange', checkState);
+            // Timeout after 1 second to avoid waiting forever
+            setTimeout(() => {
+              pc!.removeEventListener('icegatheringstatechange', checkState);
+              resolve();
+            }, 1000);
+          }
+        });
+
+        if (!isActive) return;
+
+        const baseUrl = import.meta.env.VITE_API_URL || '/api';
+        const response = await fetch(`${baseUrl}/live/${cameraId}/webrtc`, {
+          method: 'POST',
+          body: pc.localDescription?.sdp,
+          headers: {
+            'Content-Type': 'application/sdp',
+          },
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to negotiate WebRTC with server');
+        }
+
+        const answerSdp = await response.text();
+        if (!isActive) return;
+
+        await pc.setRemoteDescription(
+          new RTCSessionDescription({ type: 'answer', sdp: answerSdp })
+        );
+      } catch (err) {
+        if (!isActive) return;
+        console.error('WebRTC error:', err);
+        setStreamError('Unable to connect to live camera stream via WebRTC.');
+        onLiveStatusChange?.(false);
+        setIsInitializing(false);
+      }
+    };
+
+    initWebRTC();
 
     return () => {
+      isActive = false;
       onLiveStatusChange?.(false);
-      if (hls) {
-        hls.destroy();
+      if (pc) {
+        pc.close();
       }
     };
   }, [cameraId, onLiveStatusChange]);
@@ -90,7 +113,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
     <div className="relative w-full h-full flex items-center justify-center bg-black">
       <video
         ref={videoRef}
-        controls
+        controls={false}
         autoPlay
         playsInline
         muted
@@ -100,7 +123,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       {isInitializing && !streamError && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-3 text-white z-10">
           <Loader2 className="animate-spin text-orange-500" size={36} />
-          <p className="text-sm font-medium">Connecting to live RTSP feed...</p>
+          <p className="text-sm font-medium">Connecting to WebRTC live feed...</p>
         </div>
       )}
 

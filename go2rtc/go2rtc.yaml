@@ -1,0 +1,4 @@
+webrtc:
+  candidates:
+    - 127.0.0.1:8555
+    - stun:8555

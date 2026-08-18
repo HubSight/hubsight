@@ -1,18 +1,20 @@
 package live
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"strconv"
-	"strings"
-	"time"
 
 	"cctv/internal/database"
+
 	"github.com/gin-gonic/gin"
 )
 
-// LiveStreamHandler handles all HLS playlist, segment, and part requests directly using in-memory gohlslib muxer
-func LiveStreamHandler(c *gin.Context) {
+// WebRTCHandler acts as a signaling proxy for go2rtc.
+func WebRTCHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	camID, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -31,30 +33,61 @@ func LiveStreamHandler(c *gin.Context) {
 		return
 	}
 
-	session, err := GlobalHub.EnsureSession(c.Request.Context(), cam)
+	// Read SDP Offer from request body
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start live stream: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read SDP offer"})
 		return
 	}
 
-	// Touch session to keep it alive
-	GlobalHub.TouchSession(camID)
+	camName := fmt.Sprintf("cam_%d", camID)
 
-	// Wait briefly for initial keyframe if needed
-	_ = session.WaitForReady(3 * time.Second)
-
-	// Rewrite request URL to match gohlslib root expectations (e.g. /api/live/1/index.m3u8 -> /index.m3u8)
-	prefix := fmt.Sprintf("/api/live/%s", idStr)
-	req := c.Request.Clone(c.Request.Context())
-	req.URL.Path = strings.TrimPrefix(req.URL.Path, prefix)
-	if !strings.HasPrefix(req.URL.Path, "/") {
-		req.URL.Path = "/" + req.URL.Path
+	// 1. Ensure the stream is registered in go2rtc dynamically
+	putURL := fmt.Sprintf("http://go2rtc:1984/api/streams?name=%s&src=%s", url.QueryEscape(camName), url.QueryEscape(cam.Host))
+	putReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPut, putURL, nil)
+	if err == nil {
+		client := &http.Client{}
+		if putResp, err := client.Do(putReq); err == nil {
+			putResp.Body.Close()
+		}
 	}
 
-	c.Header("Access-Control-Allow-Origin", "*")
-	c.Header("Access-Control-Allow-Credentials", "true")
+	// 2. Forward SDP Offer to go2rtc
+	go2rtcURL := fmt.Sprintf("http://go2rtc:1984/api/webrtc?src=%s", url.QueryEscape(camName))
+	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, go2rtcURL, bytes.NewReader(body))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create proxy request"})
+		return
+	}
+	
+	// go2rtc expects raw SDP in body, or JSON if formatted. We just pass what we got.
+	req.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
 
-	session.Muxer.Handle(c.Writer, req)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("go2rtc error reaching server: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reach go2rtc server: " + err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read go2rtc Answer
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read go2rtc answer"})
+		return
+	}
+
+	fmt.Printf("go2rtc responded with %d: %s\n", resp.StatusCode, string(respBody))
+
+	if resp.StatusCode >= 300 {
+		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("go2rtc error: %s", string(respBody))})
+		return
+	}
+
+	// Return SDP Answer to Frontend
+	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), respBody)
 }
 
 // LiveStatusHandler returns real-time streaming health of a camera
@@ -66,12 +99,15 @@ func LiveStatusHandler(c *gin.Context) {
 		return
 	}
 
-	GlobalHub.mu.RLock()
-	session, exists := GlobalHub.sessions[camID]
-	GlobalHub.mu.RUnlock()
+	cam, err := database.Client.Camera.Get(c.Request.Context(), camID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Camera not found"})
+		return
+	}
 
+	// Since we delegate to go2rtc on the fly, we just return whether it's active in DB
 	c.JSON(http.StatusOK, gin.H{
 		"camera_id": camID,
-		"is_live":   exists && session != nil,
+		"is_live":   cam.IsActive,
 	})
 }

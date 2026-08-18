@@ -7,11 +7,14 @@ import { VideoPlayer } from '../components/archive/VideoPlayer';
 import { MediaControlBar } from '../components/archive/MediaControlBar';
 import { ArchiveSidebar } from '../components/archive/ArchiveSidebar';
 
-const Archive = () => {
+const Playback = () => {
   const [cameras, setCameras] = useState<CameraItem[]>([]);
   const [selectedCam, setSelectedCam] = useState<string>('');
   const [dateObj, setDateObj] = useState<Date>(new Date());
   const dateStr = dayjs(dateObj).format('YYYY-MM-DD');
+
+  const [activeMonth, setActiveMonth] = useState<Date>(dateObj);
+  const [availableDays, setAvailableDays] = useState<number[]>([]);
 
   // Playback Mode: 'live' | 'archive'
   const [mode, setMode] = useState<'live' | 'archive'>('live');
@@ -37,6 +40,21 @@ const Archive = () => {
       })
       .catch(console.error);
   }, []);
+
+  // Fetch available days when cam or activeMonth changes
+  useEffect(() => {
+    if (!selectedCam) return;
+
+    const year = activeMonth.getFullYear();
+    const month = activeMonth.getMonth() + 1;
+
+    axiosClient
+      .get(`/archive/${selectedCam}/available-days?year=${year}&month=${month}`)
+      .then((res) => {
+        setAvailableDays(res.data || []);
+      })
+      .catch(console.error);
+  }, [selectedCam, activeMonth]);
 
   // Fetch timeline when cam or date changes
   useEffect(() => {
@@ -115,7 +133,13 @@ const Archive = () => {
       setIsLiveStreaming(false);
     },
     recordings,
-    loading
+    loading,
+    availableDays,
+    onMonthChange: (date: Date | null) => {
+      if (date) {
+        setActiveMonth(date);
+      }
+    }
   };
 
   return (
@@ -164,9 +188,8 @@ const Archive = () => {
 
             {/* 4. Timeline */}
             <div
-              className={`p-4 lg:px-6 lg:pt-0 lg:pb-4 shrink-0 ${
-                !selectedCam ? 'opacity-50 pointer-events-none' : ''
-              }`}
+              className={`p-4 lg:px-6 lg:pt-0 lg:pb-4 shrink-0 ${!selectedCam ? 'opacity-50 pointer-events-none' : ''
+                }`}
             >
               <TimelineControl
                 recordings={recordings}
@@ -187,4 +210,4 @@ const Archive = () => {
   );
 };
 
-export default Archive;
+export default Playback;

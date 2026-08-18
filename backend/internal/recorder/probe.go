@@ -17,11 +17,14 @@ func ProbeAudioStream(ctx context.Context, rtspURL, transport string) (bool, str
 		"-select_streams", "a:0",
 		"-show_entries", "stream=codec_name",
 		"-of", "default=noprint_wrappers=1:nokey=1",
+		"-analyzeduration", "10000000",
+		"-probesize", "10000000",
 	}
-	if transport != "" && transport != "auto" {
-		args = append(args, "-rtsp_transport", transport)
+	if transport == "" || transport == "auto" {
+		transport = "tcp"
 	}
-	args = append(args, "-stimeout", "3000000", rtspURL)
+	args = append(args, "-rtsp_transport", transport)
+	args = append(args, "-timeout", "3000000", rtspURL)
 
 	cmd := exec.CommandContext(probeCtx, "ffprobe", args...)
 	out, err := cmd.Output()

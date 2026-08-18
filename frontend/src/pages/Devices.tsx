@@ -25,7 +25,7 @@ const initialFormData: CameraFormData = {
   extraArgs: ''
 };
 
-const Cameras = () => {
+const Devices = () => {
   const [cameras, setCameras] = useState<CameraType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -307,4 +307,4 @@ const Cameras = () => {
   );
 };
 
-export default Cameras;
+export default Devices;

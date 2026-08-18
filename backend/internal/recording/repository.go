@@ -39,3 +39,34 @@ func Insert(ctx context.Context, cameraID int, startAt, endAt time.Time, duratio
 		SetSizeBytes(sizeBytes).
 		Save(ctx)
 }
+
+func GetAvailableDays(ctx context.Context, cameraID, year, month int) ([]int, error) {
+	// Construct the start and end of the month
+	startOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Nanosecond)
+
+	recordings, err := database.Client.Recording.Query().
+		Where(
+			recording.HasCameraWith(camera.ID(cameraID)),
+			recording.StartAtGTE(startOfMonth),
+			recording.StartAtLTE(endOfMonth),
+		).
+		Select(recording.FieldStartAt).
+		All(ctx)
+	
+	if err != nil {
+		return nil, err
+	}
+
+	daysMap := make(map[int]bool)
+	for _, r := range recordings {
+		daysMap[r.StartAt.Day()] = true
+	}
+
+	var days []int
+	for day := range daysMap {
+		days = append(days, day)
+	}
+
+	return days, nil
+}

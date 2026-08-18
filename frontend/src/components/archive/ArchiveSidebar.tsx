@@ -12,6 +12,8 @@ interface ArchiveSidebarProps {
   onSelectDate: (date: Date) => void;
   recordings: Recording[];
   loading: boolean;
+  availableDays: number[];
+  onMonthChange: (date: Date | null) => void;
 }
 
 export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
@@ -21,7 +23,9 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
   dateObj,
   onSelectDate,
   recordings,
-  loading
+  loading,
+  availableDays,
+  onMonthChange
 }) => {
   return (
     <>
@@ -58,6 +62,15 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           <Calendar
             onChange={(val) => onSelectDate(val as Date)}
             value={dateObj}
+            onActiveStartDateChange={({ activeStartDate }) => {
+              onMonthChange(activeStartDate);
+            }}
+            tileDisabled={({ date, view }) => {
+              if (view === 'month') {
+                return !availableDays.includes(date.getDate());
+              }
+              return false;
+            }}
             className="react-calendar"
           />
         </div>

@@ -4,6 +4,9 @@ go 1.26.5
 
 require (
 	entgo.io/ent v0.14.6
+	github.com/bluenviron/gohlslib/v2 v2.4.2
+	github.com/bluenviron/gortsplib/v5 v5.6.3
+	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
@@ -18,10 +21,6 @@ require (
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/asticode/go-astikit v0.30.0 // indirect
 	github.com/asticode/go-astits v1.15.0 // indirect
-	github.com/bluenviron/gohlslib/v2 v2.4.2 // indirect
-	github.com/bluenviron/gortsplib/v4 v4.16.3 // indirect
-	github.com/bluenviron/gortsplib/v5 v5.6.3 // indirect
-	github.com/bluenviron/mediacommon v1.14.1 // indirect
 	github.com/bluenviron/mediacommon/v2 v2.9.2 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
@@ -31,7 +30,6 @@ require (
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
-	github.com/gin-contrib/cors v1.7.7 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

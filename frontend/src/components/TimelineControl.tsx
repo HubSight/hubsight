@@ -1,13 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import dayjs from 'dayjs';
 
-interface Recording {
-  id: number;
-  camera_id: number;
-  start_at: string;
-  end_at: string;
-  duration_seconds: number;
-}
+import type { Recording } from '../types/recording';
 
 interface TimelineControlProps {
   recordings: Recording[];

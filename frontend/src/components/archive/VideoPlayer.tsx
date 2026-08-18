@@ -114,7 +114,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         /* Mode 2: Archive Recorded Playback */
         <video
           ref={videoRef}
-          src={`/api/archive/${activeRecording.id}/stream`}
+          src={`${import.meta.env.VITE_API_URL || '/api'}/archive/${activeRecording.id}/stream`}
           controls
           autoPlay
           playsInline

@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
-import Archive from './pages/Archive';
-import Cameras from './pages/Cameras';
+import Playback from './pages/Playback';
+import Devices from './pages/Devices';
 import NvrMonitor from './pages/NvrMonitor';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -25,8 +25,8 @@ const App = () => {
 
           <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="/devices" replace />} />
-            <Route path="devices" element={<Cameras />} />
-            <Route path="archive" element={<Archive />} />
+            <Route path="devices" element={<Devices />} />
+            <Route path="playback" element={<Playback />} />
             <Route path="recorder" element={<NvrMonitor />} />
           </Route>
         </Routes>
