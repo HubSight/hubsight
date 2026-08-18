@@ -7,6 +7,7 @@ import (
 
 	"cctv/internal/auth"
 	"cctv/internal/camera"
+	"cctv/internal/live"
 	"cctv/internal/recording"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -52,6 +53,11 @@ func New() *gin.Engine {
 			
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/stream", recording.StreamHandler)
+
+			// Live streaming endpoints
+			protected.GET("/live/:id/index.m3u8", live.LivePlaylistHandler)
+			protected.GET("/live/:id/:segment", live.LiveSegmentHandler)
+			protected.GET("/live/:id/status", live.LiveStatusHandler)
 		}
 	}
 
