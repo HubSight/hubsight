@@ -1,6 +1,22 @@
 # React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Requirements & Package Manager
+
+This project requires **Node.js >= 20** and **pnpm >= 9**.
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Run Oxlint
+pnpm lint
+```
 
 Currently, two official plugins are available:
 

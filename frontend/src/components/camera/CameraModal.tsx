@@ -29,12 +29,12 @@ export const CameraModal: React.FC<CameraModalProps> = ({
   const [activeTab, setActiveTab] = useState<'general' | 'rtsp' | 'ffmpeg'>('general');
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-3xl lg:max-w-4xl overflow-hidden shadow-xl max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 md:p-6">
+      <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl w-full max-w-3xl lg:max-w-4xl overflow-hidden shadow-2xl max-h-[92dvh] flex flex-col">
         {/* Modal Header */}
-        <div className="p-5 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+        <div className="p-4 sm:p-5 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-slate-50/70">
           <div>
-            <h2 className="text-xl font-bold text-slate-800">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800">
               {isEditing ? 'Edit Camera' : 'Add New Camera'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -43,11 +43,11 @@ export const CameraModal: React.FC<CameraModalProps> = ({
           </div>
 
           {/* Tabs */}
-          <div className="flex bg-slate-200/80 p-1 rounded-xl gap-1 w-full sm:w-auto overflow-x-auto shrink-0">
+          <div className="flex bg-slate-200/80 p-1 rounded-xl gap-1 w-full sm:w-auto overflow-x-auto custom-scrollbar shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('general')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'general'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -59,7 +59,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('rtsp')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'rtsp'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -71,7 +71,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('ffmpeg')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'ffmpeg'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -84,9 +84,9 @@ export const CameraModal: React.FC<CameraModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={onSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 flex flex-col">
+        <form onSubmit={onSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 flex flex-col">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2.5 rounded-xl mb-5 text-sm font-medium">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2.5 rounded-xl mb-4 text-xs sm:text-sm font-medium">
               {error}
             </div>
           )}
@@ -108,10 +108,10 @@ export const CameraModal: React.FC<CameraModalProps> = ({
           )}
 
           {/* Modal Footer */}
-          <div className="mt-auto pt-6 border-t border-slate-100 flex justify-end gap-3">
+          <div className="mt-auto pt-5 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3">
             <button
               type="button"
-              className="btn btn-secondary px-6 cursor-pointer"
+              className="btn btn-secondary w-full sm:w-auto px-6 py-2.5 text-sm font-semibold cursor-pointer"
               onClick={onClose}
               disabled={isSubmitting}
             >
@@ -119,7 +119,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({
             </button>
             <button
               type="submit"
-              className="btn btn-primary px-6 shadow-sm cursor-pointer"
+              className="btn btn-primary w-full sm:w-auto px-6 py-2.5 text-sm font-semibold shadow-sm cursor-pointer"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving...' : isEditing ? 'Update Camera' : 'Save Camera'}

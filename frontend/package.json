@@ -9,7 +9,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
+    "preinstall": "npx --yes only-allow pnpm",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",

@@ -1,2 +1,4 @@
+packages:
+  - '.'
 minimumReleaseAgeExclude:
   - dayjs@1.11.23

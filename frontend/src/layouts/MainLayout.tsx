@@ -18,19 +18,20 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50">
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-slate-50">
 
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <Shield className="text-orange-600" size={24} />
-          <h2 className="text-lg font-bold m-0 text-slate-800">CCTV Viewer</h2>
+          <Shield className="text-orange-600" size={22} />
+          <h2 className="text-base font-bold m-0 text-slate-800 tracking-tight">CCTV Viewer</h2>
         </div>
         <button
-          className="p-2 text-slate-600 hover:text-slate-900"
+          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation"
           onClick={() => setIsMobileMenuOpen(true)}
+          aria-label="Open navigation menu"
         >
-          <Menu size={24} />
+          <Menu size={22} />
         </button>
       </div>
 
@@ -43,8 +44,8 @@ const MainLayout = () => {
       )}
 
       {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-slate-200 flex flex-col py-6 
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-[260px] min-w-[260px] shrink-0 bg-white border-r border-slate-200 flex flex-col py-6 
         transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
@@ -63,7 +64,7 @@ const MainLayout = () => {
         </div>
 
         <nav className="flex-1 flex flex-col">
-          <NavLink to="/cameras" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink to="/devices" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Camera size={20} />
             Devices
           </NavLink>
@@ -102,10 +103,10 @@ const MainLayout = () => {
             Logout
           </button>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-y-auto relative pt-16 md:pt-0">
+      <div className="flex-1 flex flex-col overflow-y-auto relative pt-14 md:pt-0">
         <Outlet />
       </div>
 

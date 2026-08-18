@@ -25,7 +25,7 @@ export const CameraGeneralTab: React.FC<CameraGeneralTabProps> = ({ formData, on
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">Camera Name</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Display Name</label>
         <input
           type="text"
           value={formData.name}
@@ -121,22 +121,20 @@ export const CameraGeneralTab: React.FC<CameraGeneralTabProps> = ({ formData, on
                 <button
                   type="button"
                   onClick={() => onChange({ builderIsSub: false })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    !formData.builderIsSub
+                  className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${!formData.builderIsSub
                       ? 'bg-orange-600 text-white shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   Main Stream
                 </button>
                 <button
                   type="button"
                   onClick={() => onChange({ builderIsSub: true })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    formData.builderIsSub
+                  className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${formData.builderIsSub
                       ? 'bg-orange-600 text-white shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   Sub Stream
                 </button>
@@ -152,9 +150,8 @@ export const CameraGeneralTab: React.FC<CameraGeneralTabProps> = ({ formData, on
             value={formData.host}
             onChange={(e) => onChange({ host: e.target.value })}
             readOnly={!formData.isManualUrl}
-            className={`input-field w-full font-mono text-xs ${
-              !formData.isManualUrl ? 'bg-slate-100 text-slate-600 cursor-not-allowed' : ''
-            }`}
+            className={`input-field w-full font-mono text-xs ${!formData.isManualUrl ? 'bg-slate-100 text-slate-600 cursor-not-allowed' : ''
+              }`}
             placeholder="rtsp://admin:pass@192.168.1.100:554/stream"
             required
           />

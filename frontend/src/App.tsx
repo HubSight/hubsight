@@ -24,8 +24,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
 
           <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            <Route index element={<Navigate to="/cameras" replace />} />
-            <Route path="cameras" element={<Cameras />} />
+            <Route index element={<Navigate to="/devices" replace />} />
+            <Route path="devices" element={<Cameras />} />
             <Route path="archive" element={<Archive />} />
             <Route path="recorder" element={<NvrMonitor />} />
           </Route>
