@@ -1,0 +1,21 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: api.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8088:8080"
+
+  recorder:
+    build:
+      context: ./backend
+      dockerfile: recorder.Dockerfile
+    restart: unless-stopped
+    volumes:
+      - cctv_data:/data/camera
+    environment:
+      RTSP_URL: rtsp://host.docker.internal:8554/
+
+volumes:
+  cctv_data:
