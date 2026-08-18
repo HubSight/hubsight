@@ -2,3 +2,6 @@ webrtc:
   candidates:
     - 127.0.0.1:8555
     - stun:8555
+streams:
+  cam_5:
+    - rtsp://host.docker.internal:8554/webcam
