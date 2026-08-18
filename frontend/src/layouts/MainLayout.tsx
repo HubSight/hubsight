@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X } from 'lucide-react';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import axiosClient from '../api/axiosClient';
 
@@ -70,6 +70,10 @@ const MainLayout = () => {
           <NavLink to="/archive" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Video size={20} />
             Playback
+          </NavLink>
+          <NavLink to="/recorder" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <Activity size={20} />
+            NVR Monitor
           </NavLink>
         </nav>
 

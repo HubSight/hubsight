@@ -1,18 +1,18 @@
 package live
 
 import (
+	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"cctv/internal/database"
 	"github.com/gin-gonic/gin"
 )
 
-// LivePlaylistHandler serves the index.m3u8 playlist file, starting the stream worker if not already active
-func LivePlaylistHandler(c *gin.Context) {
+// LiveStreamHandler handles all HLS playlist, segment, and part requests directly using in-memory gohlslib muxer
+func LiveStreamHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	camID, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -37,52 +37,24 @@ func LivePlaylistHandler(c *gin.Context) {
 		return
 	}
 
-	// Wait up to 6 seconds for the initial HLS playlist creation
-	if err := session.WaitForReady(6 * time.Second); err != nil {
-		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Live stream initialization timeout"})
-		return
-	}
-
-	c.Header("Content-Type", "application/vnd.apple.mpegurl")
-	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
-	c.Header("Pragma", "no-cache")
-	c.Header("Expires", "0")
-	c.Header("Access-Control-Allow-Origin", "*")
-
-	c.File(session.PlaylistPath)
-}
-
-// LiveSegmentHandler serves the transient .ts video segments
-func LiveSegmentHandler(c *gin.Context) {
-	idStr := c.Param("id")
-	segment := c.Param("segment")
-
-	camID, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
-		return
-	}
-
-	// Sanitize segment name to prevent directory traversal
-	cleanSegment := filepath.Base(segment)
-	if cleanSegment != segment || cleanSegment == "." || cleanSegment == ".." {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid segment parameter"})
-		return
-	}
-
+	// Touch session to keep it alive
 	GlobalHub.TouchSession(camID)
 
-	segmentPath := filepath.Join(GlobalHub.baseDir, "cam_"+idStr, cleanSegment)
-	if _, err := os.Stat(segmentPath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Segment not found or expired"})
-		return
+	// Wait briefly for initial keyframe if needed
+	_ = session.WaitForReady(3 * time.Second)
+
+	// Rewrite request URL to match gohlslib root expectations (e.g. /api/live/1/index.m3u8 -> /index.m3u8)
+	prefix := fmt.Sprintf("/api/live/%s", idStr)
+	req := c.Request.Clone(c.Request.Context())
+	req.URL.Path = strings.TrimPrefix(req.URL.Path, prefix)
+	if !strings.HasPrefix(req.URL.Path, "/") {
+		req.URL.Path = "/" + req.URL.Path
 	}
 
-	c.Header("Content-Type", "video/MP2T")
-	c.Header("Cache-Control", "no-cache")
 	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Credentials", "true")
 
-	c.File(segmentPath)
+	session.Muxer.Handle(c.Writer, req)
 }
 
 // LiveStatusHandler returns real-time streaming health of a camera
@@ -100,6 +72,6 @@ func LiveStatusHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"camera_id": camID,
-		"is_live":   exists && session != nil && session.IsReady,
+		"is_live":   exists && session != nil,
 	})
 }

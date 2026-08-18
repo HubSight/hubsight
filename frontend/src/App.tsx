@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Archive from './pages/Archive';
 import Cameras from './pages/Cameras';
+import NvrMonitor from './pages/NvrMonitor';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
@@ -26,6 +27,7 @@ const App = () => {
             <Route index element={<Navigate to="/cameras" replace />} />
             <Route path="cameras" element={<Cameras />} />
             <Route path="archive" element={<Archive />} />
+            <Route path="recorder" element={<NvrMonitor />} />
           </Route>
         </Routes>
       </BrowserRouter>

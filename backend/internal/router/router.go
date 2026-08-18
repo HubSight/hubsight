@@ -8,6 +8,7 @@ import (
 	"cctv/internal/auth"
 	"cctv/internal/camera"
 	"cctv/internal/live"
+	"cctv/internal/nvr"
 	"cctv/internal/recording"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -54,10 +55,13 @@ func New() *gin.Engine {
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/stream", recording.StreamHandler)
 
-			// Live streaming endpoints
-			protected.GET("/live/:id/index.m3u8", live.LivePlaylistHandler)
-			protected.GET("/live/:id/:segment", live.LiveSegmentHandler)
+			// Live streaming endpoints (Pure Go RTSP-to-HLS Muxer)
+			protected.GET("/live/:id/*file", live.LiveStreamHandler)
+			protected.HEAD("/live/:id/*file", live.LiveStreamHandler)
 			protected.GET("/live/:id/status", live.LiveStatusHandler)
+
+			// NVR recorder monitor endpoint
+			protected.GET("/recorder/status", nvr.NvrStatusHandler)
 		}
 	}
 
