@@ -65,9 +65,39 @@ func Host(v string) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldHost, v))
 }
 
+// Brand applies equality check predicate on the "brand" field. It's identical to BrandEQ.
+func Brand(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldBrand, v))
+}
+
 // RtspPort applies equality check predicate on the "rtsp_port" field. It's identical to RtspPortEQ.
 func RtspPort(v int) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldRtspPort, v))
+}
+
+// RtspTransport applies equality check predicate on the "rtsp_transport" field. It's identical to RtspTransportEQ.
+func RtspTransport(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldRtspTransport, v))
+}
+
+// SegmentDuration applies equality check predicate on the "segment_duration" field. It's identical to SegmentDurationEQ.
+func SegmentDuration(v int) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldSegmentDuration, v))
+}
+
+// VideoCodec applies equality check predicate on the "video_codec" field. It's identical to VideoCodecEQ.
+func VideoCodec(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldVideoCodec, v))
+}
+
+// AudioMode applies equality check predicate on the "audio_mode" field. It's identical to AudioModeEQ.
+func AudioMode(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldAudioMode, v))
+}
+
+// ExtraArgs applies equality check predicate on the "extra_args" field. It's identical to ExtraArgsEQ.
+func ExtraArgs(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldExtraArgs, v))
 }
 
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
@@ -215,6 +245,71 @@ func HostContainsFold(v string) predicate.Camera {
 	return predicate.Camera(sql.FieldContainsFold(FieldHost, v))
 }
 
+// BrandEQ applies the EQ predicate on the "brand" field.
+func BrandEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldBrand, v))
+}
+
+// BrandNEQ applies the NEQ predicate on the "brand" field.
+func BrandNEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldBrand, v))
+}
+
+// BrandIn applies the In predicate on the "brand" field.
+func BrandIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldIn(FieldBrand, vs...))
+}
+
+// BrandNotIn applies the NotIn predicate on the "brand" field.
+func BrandNotIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldNotIn(FieldBrand, vs...))
+}
+
+// BrandGT applies the GT predicate on the "brand" field.
+func BrandGT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGT(FieldBrand, v))
+}
+
+// BrandGTE applies the GTE predicate on the "brand" field.
+func BrandGTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGTE(FieldBrand, v))
+}
+
+// BrandLT applies the LT predicate on the "brand" field.
+func BrandLT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLT(FieldBrand, v))
+}
+
+// BrandLTE applies the LTE predicate on the "brand" field.
+func BrandLTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLTE(FieldBrand, v))
+}
+
+// BrandContains applies the Contains predicate on the "brand" field.
+func BrandContains(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContains(FieldBrand, v))
+}
+
+// BrandHasPrefix applies the HasPrefix predicate on the "brand" field.
+func BrandHasPrefix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasPrefix(FieldBrand, v))
+}
+
+// BrandHasSuffix applies the HasSuffix predicate on the "brand" field.
+func BrandHasSuffix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasSuffix(FieldBrand, v))
+}
+
+// BrandEqualFold applies the EqualFold predicate on the "brand" field.
+func BrandEqualFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEqualFold(FieldBrand, v))
+}
+
+// BrandContainsFold applies the ContainsFold predicate on the "brand" field.
+func BrandContainsFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContainsFold(FieldBrand, v))
+}
+
 // RtspPortEQ applies the EQ predicate on the "rtsp_port" field.
 func RtspPortEQ(v int) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldRtspPort, v))
@@ -253,6 +348,306 @@ func RtspPortLT(v int) predicate.Camera {
 // RtspPortLTE applies the LTE predicate on the "rtsp_port" field.
 func RtspPortLTE(v int) predicate.Camera {
 	return predicate.Camera(sql.FieldLTE(FieldRtspPort, v))
+}
+
+// RtspTransportEQ applies the EQ predicate on the "rtsp_transport" field.
+func RtspTransportEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldRtspTransport, v))
+}
+
+// RtspTransportNEQ applies the NEQ predicate on the "rtsp_transport" field.
+func RtspTransportNEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldRtspTransport, v))
+}
+
+// RtspTransportIn applies the In predicate on the "rtsp_transport" field.
+func RtspTransportIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldIn(FieldRtspTransport, vs...))
+}
+
+// RtspTransportNotIn applies the NotIn predicate on the "rtsp_transport" field.
+func RtspTransportNotIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldNotIn(FieldRtspTransport, vs...))
+}
+
+// RtspTransportGT applies the GT predicate on the "rtsp_transport" field.
+func RtspTransportGT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGT(FieldRtspTransport, v))
+}
+
+// RtspTransportGTE applies the GTE predicate on the "rtsp_transport" field.
+func RtspTransportGTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGTE(FieldRtspTransport, v))
+}
+
+// RtspTransportLT applies the LT predicate on the "rtsp_transport" field.
+func RtspTransportLT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLT(FieldRtspTransport, v))
+}
+
+// RtspTransportLTE applies the LTE predicate on the "rtsp_transport" field.
+func RtspTransportLTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLTE(FieldRtspTransport, v))
+}
+
+// RtspTransportContains applies the Contains predicate on the "rtsp_transport" field.
+func RtspTransportContains(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContains(FieldRtspTransport, v))
+}
+
+// RtspTransportHasPrefix applies the HasPrefix predicate on the "rtsp_transport" field.
+func RtspTransportHasPrefix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasPrefix(FieldRtspTransport, v))
+}
+
+// RtspTransportHasSuffix applies the HasSuffix predicate on the "rtsp_transport" field.
+func RtspTransportHasSuffix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasSuffix(FieldRtspTransport, v))
+}
+
+// RtspTransportEqualFold applies the EqualFold predicate on the "rtsp_transport" field.
+func RtspTransportEqualFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEqualFold(FieldRtspTransport, v))
+}
+
+// RtspTransportContainsFold applies the ContainsFold predicate on the "rtsp_transport" field.
+func RtspTransportContainsFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContainsFold(FieldRtspTransport, v))
+}
+
+// SegmentDurationEQ applies the EQ predicate on the "segment_duration" field.
+func SegmentDurationEQ(v int) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldSegmentDuration, v))
+}
+
+// SegmentDurationNEQ applies the NEQ predicate on the "segment_duration" field.
+func SegmentDurationNEQ(v int) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldSegmentDuration, v))
+}
+
+// SegmentDurationIn applies the In predicate on the "segment_duration" field.
+func SegmentDurationIn(vs ...int) predicate.Camera {
+	return predicate.Camera(sql.FieldIn(FieldSegmentDuration, vs...))
+}
+
+// SegmentDurationNotIn applies the NotIn predicate on the "segment_duration" field.
+func SegmentDurationNotIn(vs ...int) predicate.Camera {
+	return predicate.Camera(sql.FieldNotIn(FieldSegmentDuration, vs...))
+}
+
+// SegmentDurationGT applies the GT predicate on the "segment_duration" field.
+func SegmentDurationGT(v int) predicate.Camera {
+	return predicate.Camera(sql.FieldGT(FieldSegmentDuration, v))
+}
+
+// SegmentDurationGTE applies the GTE predicate on the "segment_duration" field.
+func SegmentDurationGTE(v int) predicate.Camera {
+	return predicate.Camera(sql.FieldGTE(FieldSegmentDuration, v))
+}
+
+// SegmentDurationLT applies the LT predicate on the "segment_duration" field.
+func SegmentDurationLT(v int) predicate.Camera {
+	return predicate.Camera(sql.FieldLT(FieldSegmentDuration, v))
+}
+
+// SegmentDurationLTE applies the LTE predicate on the "segment_duration" field.
+func SegmentDurationLTE(v int) predicate.Camera {
+	return predicate.Camera(sql.FieldLTE(FieldSegmentDuration, v))
+}
+
+// VideoCodecEQ applies the EQ predicate on the "video_codec" field.
+func VideoCodecEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldVideoCodec, v))
+}
+
+// VideoCodecNEQ applies the NEQ predicate on the "video_codec" field.
+func VideoCodecNEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldVideoCodec, v))
+}
+
+// VideoCodecIn applies the In predicate on the "video_codec" field.
+func VideoCodecIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldIn(FieldVideoCodec, vs...))
+}
+
+// VideoCodecNotIn applies the NotIn predicate on the "video_codec" field.
+func VideoCodecNotIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldNotIn(FieldVideoCodec, vs...))
+}
+
+// VideoCodecGT applies the GT predicate on the "video_codec" field.
+func VideoCodecGT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGT(FieldVideoCodec, v))
+}
+
+// VideoCodecGTE applies the GTE predicate on the "video_codec" field.
+func VideoCodecGTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGTE(FieldVideoCodec, v))
+}
+
+// VideoCodecLT applies the LT predicate on the "video_codec" field.
+func VideoCodecLT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLT(FieldVideoCodec, v))
+}
+
+// VideoCodecLTE applies the LTE predicate on the "video_codec" field.
+func VideoCodecLTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLTE(FieldVideoCodec, v))
+}
+
+// VideoCodecContains applies the Contains predicate on the "video_codec" field.
+func VideoCodecContains(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContains(FieldVideoCodec, v))
+}
+
+// VideoCodecHasPrefix applies the HasPrefix predicate on the "video_codec" field.
+func VideoCodecHasPrefix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasPrefix(FieldVideoCodec, v))
+}
+
+// VideoCodecHasSuffix applies the HasSuffix predicate on the "video_codec" field.
+func VideoCodecHasSuffix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasSuffix(FieldVideoCodec, v))
+}
+
+// VideoCodecEqualFold applies the EqualFold predicate on the "video_codec" field.
+func VideoCodecEqualFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEqualFold(FieldVideoCodec, v))
+}
+
+// VideoCodecContainsFold applies the ContainsFold predicate on the "video_codec" field.
+func VideoCodecContainsFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContainsFold(FieldVideoCodec, v))
+}
+
+// AudioModeEQ applies the EQ predicate on the "audio_mode" field.
+func AudioModeEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldAudioMode, v))
+}
+
+// AudioModeNEQ applies the NEQ predicate on the "audio_mode" field.
+func AudioModeNEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldAudioMode, v))
+}
+
+// AudioModeIn applies the In predicate on the "audio_mode" field.
+func AudioModeIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldIn(FieldAudioMode, vs...))
+}
+
+// AudioModeNotIn applies the NotIn predicate on the "audio_mode" field.
+func AudioModeNotIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldNotIn(FieldAudioMode, vs...))
+}
+
+// AudioModeGT applies the GT predicate on the "audio_mode" field.
+func AudioModeGT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGT(FieldAudioMode, v))
+}
+
+// AudioModeGTE applies the GTE predicate on the "audio_mode" field.
+func AudioModeGTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGTE(FieldAudioMode, v))
+}
+
+// AudioModeLT applies the LT predicate on the "audio_mode" field.
+func AudioModeLT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLT(FieldAudioMode, v))
+}
+
+// AudioModeLTE applies the LTE predicate on the "audio_mode" field.
+func AudioModeLTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLTE(FieldAudioMode, v))
+}
+
+// AudioModeContains applies the Contains predicate on the "audio_mode" field.
+func AudioModeContains(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContains(FieldAudioMode, v))
+}
+
+// AudioModeHasPrefix applies the HasPrefix predicate on the "audio_mode" field.
+func AudioModeHasPrefix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasPrefix(FieldAudioMode, v))
+}
+
+// AudioModeHasSuffix applies the HasSuffix predicate on the "audio_mode" field.
+func AudioModeHasSuffix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasSuffix(FieldAudioMode, v))
+}
+
+// AudioModeEqualFold applies the EqualFold predicate on the "audio_mode" field.
+func AudioModeEqualFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEqualFold(FieldAudioMode, v))
+}
+
+// AudioModeContainsFold applies the ContainsFold predicate on the "audio_mode" field.
+func AudioModeContainsFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContainsFold(FieldAudioMode, v))
+}
+
+// ExtraArgsEQ applies the EQ predicate on the "extra_args" field.
+func ExtraArgsEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldExtraArgs, v))
+}
+
+// ExtraArgsNEQ applies the NEQ predicate on the "extra_args" field.
+func ExtraArgsNEQ(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldExtraArgs, v))
+}
+
+// ExtraArgsIn applies the In predicate on the "extra_args" field.
+func ExtraArgsIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldIn(FieldExtraArgs, vs...))
+}
+
+// ExtraArgsNotIn applies the NotIn predicate on the "extra_args" field.
+func ExtraArgsNotIn(vs ...string) predicate.Camera {
+	return predicate.Camera(sql.FieldNotIn(FieldExtraArgs, vs...))
+}
+
+// ExtraArgsGT applies the GT predicate on the "extra_args" field.
+func ExtraArgsGT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGT(FieldExtraArgs, v))
+}
+
+// ExtraArgsGTE applies the GTE predicate on the "extra_args" field.
+func ExtraArgsGTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldGTE(FieldExtraArgs, v))
+}
+
+// ExtraArgsLT applies the LT predicate on the "extra_args" field.
+func ExtraArgsLT(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLT(FieldExtraArgs, v))
+}
+
+// ExtraArgsLTE applies the LTE predicate on the "extra_args" field.
+func ExtraArgsLTE(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldLTE(FieldExtraArgs, v))
+}
+
+// ExtraArgsContains applies the Contains predicate on the "extra_args" field.
+func ExtraArgsContains(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContains(FieldExtraArgs, v))
+}
+
+// ExtraArgsHasPrefix applies the HasPrefix predicate on the "extra_args" field.
+func ExtraArgsHasPrefix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasPrefix(FieldExtraArgs, v))
+}
+
+// ExtraArgsHasSuffix applies the HasSuffix predicate on the "extra_args" field.
+func ExtraArgsHasSuffix(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldHasSuffix(FieldExtraArgs, v))
+}
+
+// ExtraArgsEqualFold applies the EqualFold predicate on the "extra_args" field.
+func ExtraArgsEqualFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldEqualFold(FieldExtraArgs, v))
+}
+
+// ExtraArgsContainsFold applies the ContainsFold predicate on the "extra_args" field.
+func ExtraArgsContainsFold(v string) predicate.Camera {
+	return predicate.Camera(sql.FieldContainsFold(FieldExtraArgs, v))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.

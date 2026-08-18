@@ -23,17 +23,14 @@ func ListCamerasHandler(c *gin.Context) {
 }
 
 func AddCameraHandler(c *gin.Context) {
-	var req struct {
-		Name string `json:"name" binding:"required"`
-		Host string `json:"host" binding:"required"`
-	}
+	var req CameraInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
 		return
 	}
 
-	cam, err := Create(c.Request.Context(), req.Name, req.Host)
+	cam, err := Create(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create camera"})
 		return
@@ -66,17 +63,14 @@ func UpdateCameraHandler(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Name string `json:"name" binding:"required"`
-		Host string `json:"host" binding:"required"`
-	}
+	var req CameraInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
 		return
 	}
 
-	cam, err := Update(c.Request.Context(), id, req.Name, req.Host)
+	cam, err := Update(c.Request.Context(), id, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update camera"})
 		return

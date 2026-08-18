@@ -16,45 +16,104 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func StartRecording(ctx context.Context, cameraID int, rtspURL, outDir string) error {
-	err := os.MkdirAll(outDir, 0755)
+type CameraConfig struct {
+	CameraID        int
+	Host            string
+	RTSPTransport   string
+	SegmentDuration int
+	VideoCodec      string
+	AudioMode       string
+	ExtraArgs       string
+	OutDir          string
+}
+
+func StartRecording(ctx context.Context, cfg CameraConfig) error {
+	err := os.MkdirAll(cfg.OutDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	segmentTime := "300" // 5 minutes
+	segDuration := cfg.SegmentDuration
+	if segDuration <= 0 {
+		segDuration = 300
+	}
+	segmentTime := fmt.Sprintf("%d", segDuration)
 	
 	// Use %Y%m%d%H%M%S from ffmpeg instead of hardcoding the start date
-	outPattern := filepath.Join(outDir, fmt.Sprintf("cam%d_%%Y%%m%%d_%%H%%M%%S.mp4", cameraID))
+	outPattern := filepath.Join(cfg.OutDir, fmt.Sprintf("cam%d_%%Y%%m%%d_%%H%%M%%S.mp4", cfg.CameraID))
 
-	cmd := exec.CommandContext(ctx, "ffmpeg",
-		"-i", rtspURL,
-		"-c", "copy",
+	args := []string{}
+
+	// RTSP Transport (default TCP)
+	transport := cfg.RTSPTransport
+	if transport == "" {
+		transport = "tcp"
+	}
+	if transport != "auto" {
+		args = append(args, "-rtsp_transport", transport)
+	}
+
+	// Timeout to prevent hanging connections
+	args = append(args, "-stimeout", "5000000")
+
+	// Input URL
+	args = append(args, "-i", cfg.Host)
+
+	// Video Codec
+	switch cfg.VideoCodec {
+	case "h264":
+		args = append(args, "-c:v", "libx264", "-preset", "ultrafast")
+	default:
+		args = append(args, "-c:v", "copy")
+	}
+
+	// Audio Codec / Mode
+	switch cfg.AudioMode {
+	case "disabled", "none":
+		args = append(args, "-an")
+	case "aac":
+		args = append(args, "-c:a", "aac")
+	default:
+		args = append(args, "-c:a", "copy")
+	}
+
+	// Segment output
+	args = append(args,
 		"-f", "segment",
 		"-segment_time", segmentTime,
 		"-segment_format", "mp4",
 		"-reset_timestamps", "1",
 		"-strftime", "1",
-		outPattern,
 	)
 
-	log.Printf("Running FFmpeg: %s", strings.Join(cmd.Args, " "))
+	// Extra custom FFmpeg arguments
+	if trimmed := strings.TrimSpace(cfg.ExtraArgs); trimmed != "" {
+		customFields := strings.Fields(trimmed)
+		args = append(args, customFields...)
+	}
+
+	// Output pattern
+	args = append(args, outPattern)
+
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
+
+	log.Printf("Running FFmpeg for Cam %d: %s", cfg.CameraID, strings.Join(cmd.Args, " "))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	
-	go monitorSegments(ctx, cameraID, outDir)
+	go monitorSegments(ctx, cfg.CameraID, cfg.OutDir, segDuration)
 
 	if err := cmd.Run(); err != nil {
-		log.Printf("FFmpeg exited with error: %v", err)
+		log.Printf("FFmpeg exited for camera %d with error: %v", cfg.CameraID, err)
 		return err
 	}
 
 	return nil
 }
 
-func monitorSegments(ctx context.Context, cameraID int, outDir string) {
+func monitorSegments(ctx context.Context, cameraID int, outDir string, segDuration int) {
 	seen := make(map[string]bool)
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -85,8 +144,9 @@ func monitorSegments(ctx context.Context, cameraID int, outDir string) {
 					return nil
 				}
 
-				// If file is older than 5 minutes, it's finished writing
-				if time.Since(info.ModTime()) > 5*time.Minute {
+				// If file is older than segment duration, it's finished writing
+				minAge := time.Duration(segDuration) * time.Second
+				if time.Since(info.ModTime()) > minAge {
 					seen[path] = true
 					
 					// Object key based on date
@@ -105,7 +165,7 @@ func monitorSegments(ctx context.Context, cameraID int, outDir string) {
 					}
 
 					// Insert to DB
-					if _, err := recording.Insert(context.Background(), int(cameraID), info.ModTime().Add(-5 * time.Minute), info.ModTime(), 300, objectKey, info.Size()); err != nil {
+					if _, err := recording.Insert(context.Background(), int(cameraID), info.ModTime().Add(-minAge), info.ModTime(), segDuration, objectKey, info.Size()); err != nil {
 						log.Printf("Failed to insert recording metadata: %v", err)
 					} else {
 						log.Printf("Saved recording metadata for %s", objectKey)

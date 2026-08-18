@@ -37,23 +37,30 @@ const (
 // CameraMutation represents an operation that mutates the Camera nodes in the graph.
 type CameraMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	name              *string
-	host              *string
-	rtsp_port         *int
-	addrtsp_port      *int
-	is_active         *bool
-	created_at        *time.Time
-	updated_at        *time.Time
-	clearedFields     map[string]struct{}
-	recordings        map[int]struct{}
-	removedrecordings map[int]struct{}
-	clearedrecordings bool
-	done              bool
-	oldValue          func(context.Context) (*Camera, error)
-	predicates        []predicate.Camera
+	op                  Op
+	typ                 string
+	id                  *int
+	name                *string
+	host                *string
+	brand               *string
+	rtsp_port           *int
+	addrtsp_port        *int
+	rtsp_transport      *string
+	segment_duration    *int
+	addsegment_duration *int
+	video_codec         *string
+	audio_mode          *string
+	extra_args          *string
+	is_active           *bool
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	recordings          map[int]struct{}
+	removedrecordings   map[int]struct{}
+	clearedrecordings   bool
+	done                bool
+	oldValue            func(context.Context) (*Camera, error)
+	predicates          []predicate.Camera
 }
 
 var _ ent.Mutation = (*CameraMutation)(nil)
@@ -226,6 +233,42 @@ func (m *CameraMutation) ResetHost() {
 	m.host = nil
 }
 
+// SetBrand sets the "brand" field.
+func (m *CameraMutation) SetBrand(s string) {
+	m.brand = &s
+}
+
+// Brand returns the value of the "brand" field in the mutation.
+func (m *CameraMutation) Brand() (r string, exists bool) {
+	v := m.brand
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBrand returns the old "brand" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldBrand(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBrand is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBrand requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBrand: %w", err)
+	}
+	return oldValue.Brand, nil
+}
+
+// ResetBrand resets all changes to the "brand" field.
+func (m *CameraMutation) ResetBrand() {
+	m.brand = nil
+}
+
 // SetRtspPort sets the "rtsp_port" field.
 func (m *CameraMutation) SetRtspPort(i int) {
 	m.rtsp_port = &i
@@ -280,6 +323,206 @@ func (m *CameraMutation) AddedRtspPort() (r int, exists bool) {
 func (m *CameraMutation) ResetRtspPort() {
 	m.rtsp_port = nil
 	m.addrtsp_port = nil
+}
+
+// SetRtspTransport sets the "rtsp_transport" field.
+func (m *CameraMutation) SetRtspTransport(s string) {
+	m.rtsp_transport = &s
+}
+
+// RtspTransport returns the value of the "rtsp_transport" field in the mutation.
+func (m *CameraMutation) RtspTransport() (r string, exists bool) {
+	v := m.rtsp_transport
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRtspTransport returns the old "rtsp_transport" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldRtspTransport(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRtspTransport is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRtspTransport requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRtspTransport: %w", err)
+	}
+	return oldValue.RtspTransport, nil
+}
+
+// ResetRtspTransport resets all changes to the "rtsp_transport" field.
+func (m *CameraMutation) ResetRtspTransport() {
+	m.rtsp_transport = nil
+}
+
+// SetSegmentDuration sets the "segment_duration" field.
+func (m *CameraMutation) SetSegmentDuration(i int) {
+	m.segment_duration = &i
+	m.addsegment_duration = nil
+}
+
+// SegmentDuration returns the value of the "segment_duration" field in the mutation.
+func (m *CameraMutation) SegmentDuration() (r int, exists bool) {
+	v := m.segment_duration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSegmentDuration returns the old "segment_duration" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldSegmentDuration(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSegmentDuration is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSegmentDuration requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSegmentDuration: %w", err)
+	}
+	return oldValue.SegmentDuration, nil
+}
+
+// AddSegmentDuration adds i to the "segment_duration" field.
+func (m *CameraMutation) AddSegmentDuration(i int) {
+	if m.addsegment_duration != nil {
+		*m.addsegment_duration += i
+	} else {
+		m.addsegment_duration = &i
+	}
+}
+
+// AddedSegmentDuration returns the value that was added to the "segment_duration" field in this mutation.
+func (m *CameraMutation) AddedSegmentDuration() (r int, exists bool) {
+	v := m.addsegment_duration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSegmentDuration resets all changes to the "segment_duration" field.
+func (m *CameraMutation) ResetSegmentDuration() {
+	m.segment_duration = nil
+	m.addsegment_duration = nil
+}
+
+// SetVideoCodec sets the "video_codec" field.
+func (m *CameraMutation) SetVideoCodec(s string) {
+	m.video_codec = &s
+}
+
+// VideoCodec returns the value of the "video_codec" field in the mutation.
+func (m *CameraMutation) VideoCodec() (r string, exists bool) {
+	v := m.video_codec
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVideoCodec returns the old "video_codec" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldVideoCodec(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVideoCodec is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVideoCodec requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVideoCodec: %w", err)
+	}
+	return oldValue.VideoCodec, nil
+}
+
+// ResetVideoCodec resets all changes to the "video_codec" field.
+func (m *CameraMutation) ResetVideoCodec() {
+	m.video_codec = nil
+}
+
+// SetAudioMode sets the "audio_mode" field.
+func (m *CameraMutation) SetAudioMode(s string) {
+	m.audio_mode = &s
+}
+
+// AudioMode returns the value of the "audio_mode" field in the mutation.
+func (m *CameraMutation) AudioMode() (r string, exists bool) {
+	v := m.audio_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAudioMode returns the old "audio_mode" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldAudioMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAudioMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAudioMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAudioMode: %w", err)
+	}
+	return oldValue.AudioMode, nil
+}
+
+// ResetAudioMode resets all changes to the "audio_mode" field.
+func (m *CameraMutation) ResetAudioMode() {
+	m.audio_mode = nil
+}
+
+// SetExtraArgs sets the "extra_args" field.
+func (m *CameraMutation) SetExtraArgs(s string) {
+	m.extra_args = &s
+}
+
+// ExtraArgs returns the value of the "extra_args" field in the mutation.
+func (m *CameraMutation) ExtraArgs() (r string, exists bool) {
+	v := m.extra_args
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExtraArgs returns the old "extra_args" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldExtraArgs(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExtraArgs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExtraArgs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExtraArgs: %w", err)
+	}
+	return oldValue.ExtraArgs, nil
+}
+
+// ResetExtraArgs resets all changes to the "extra_args" field.
+func (m *CameraMutation) ResetExtraArgs() {
+	m.extra_args = nil
 }
 
 // SetIsActive sets the "is_active" field.
@@ -478,15 +721,33 @@ func (m *CameraMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CameraMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 12)
 	if m.name != nil {
 		fields = append(fields, camera.FieldName)
 	}
 	if m.host != nil {
 		fields = append(fields, camera.FieldHost)
 	}
+	if m.brand != nil {
+		fields = append(fields, camera.FieldBrand)
+	}
 	if m.rtsp_port != nil {
 		fields = append(fields, camera.FieldRtspPort)
+	}
+	if m.rtsp_transport != nil {
+		fields = append(fields, camera.FieldRtspTransport)
+	}
+	if m.segment_duration != nil {
+		fields = append(fields, camera.FieldSegmentDuration)
+	}
+	if m.video_codec != nil {
+		fields = append(fields, camera.FieldVideoCodec)
+	}
+	if m.audio_mode != nil {
+		fields = append(fields, camera.FieldAudioMode)
+	}
+	if m.extra_args != nil {
+		fields = append(fields, camera.FieldExtraArgs)
 	}
 	if m.is_active != nil {
 		fields = append(fields, camera.FieldIsActive)
@@ -509,8 +770,20 @@ func (m *CameraMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case camera.FieldHost:
 		return m.Host()
+	case camera.FieldBrand:
+		return m.Brand()
 	case camera.FieldRtspPort:
 		return m.RtspPort()
+	case camera.FieldRtspTransport:
+		return m.RtspTransport()
+	case camera.FieldSegmentDuration:
+		return m.SegmentDuration()
+	case camera.FieldVideoCodec:
+		return m.VideoCodec()
+	case camera.FieldAudioMode:
+		return m.AudioMode()
+	case camera.FieldExtraArgs:
+		return m.ExtraArgs()
 	case camera.FieldIsActive:
 		return m.IsActive()
 	case camera.FieldCreatedAt:
@@ -530,8 +803,20 @@ func (m *CameraMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldName(ctx)
 	case camera.FieldHost:
 		return m.OldHost(ctx)
+	case camera.FieldBrand:
+		return m.OldBrand(ctx)
 	case camera.FieldRtspPort:
 		return m.OldRtspPort(ctx)
+	case camera.FieldRtspTransport:
+		return m.OldRtspTransport(ctx)
+	case camera.FieldSegmentDuration:
+		return m.OldSegmentDuration(ctx)
+	case camera.FieldVideoCodec:
+		return m.OldVideoCodec(ctx)
+	case camera.FieldAudioMode:
+		return m.OldAudioMode(ctx)
+	case camera.FieldExtraArgs:
+		return m.OldExtraArgs(ctx)
 	case camera.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case camera.FieldCreatedAt:
@@ -561,12 +846,54 @@ func (m *CameraMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetHost(v)
 		return nil
+	case camera.FieldBrand:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBrand(v)
+		return nil
 	case camera.FieldRtspPort:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRtspPort(v)
+		return nil
+	case camera.FieldRtspTransport:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRtspTransport(v)
+		return nil
+	case camera.FieldSegmentDuration:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSegmentDuration(v)
+		return nil
+	case camera.FieldVideoCodec:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVideoCodec(v)
+		return nil
+	case camera.FieldAudioMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAudioMode(v)
+		return nil
+	case camera.FieldExtraArgs:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExtraArgs(v)
 		return nil
 	case camera.FieldIsActive:
 		v, ok := value.(bool)
@@ -600,6 +927,9 @@ func (m *CameraMutation) AddedFields() []string {
 	if m.addrtsp_port != nil {
 		fields = append(fields, camera.FieldRtspPort)
 	}
+	if m.addsegment_duration != nil {
+		fields = append(fields, camera.FieldSegmentDuration)
+	}
 	return fields
 }
 
@@ -610,6 +940,8 @@ func (m *CameraMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case camera.FieldRtspPort:
 		return m.AddedRtspPort()
+	case camera.FieldSegmentDuration:
+		return m.AddedSegmentDuration()
 	}
 	return nil, false
 }
@@ -625,6 +957,13 @@ func (m *CameraMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRtspPort(v)
+		return nil
+	case camera.FieldSegmentDuration:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSegmentDuration(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Camera numeric field %s", name)
@@ -659,8 +998,26 @@ func (m *CameraMutation) ResetField(name string) error {
 	case camera.FieldHost:
 		m.ResetHost()
 		return nil
+	case camera.FieldBrand:
+		m.ResetBrand()
+		return nil
 	case camera.FieldRtspPort:
 		m.ResetRtspPort()
+		return nil
+	case camera.FieldRtspTransport:
+		m.ResetRtspTransport()
+		return nil
+	case camera.FieldSegmentDuration:
+		m.ResetSegmentDuration()
+		return nil
+	case camera.FieldVideoCodec:
+		m.ResetVideoCodec()
+		return nil
+	case camera.FieldAudioMode:
+		m.ResetAudioMode()
+		return nil
+	case camera.FieldExtraArgs:
+		m.ResetExtraArgs()
 		return nil
 	case camera.FieldIsActive:
 		m.ResetIsActive()

@@ -27,20 +27,44 @@ func init() {
 	cameraDescHost := cameraFields[1].Descriptor()
 	// camera.HostValidator is a validator for the "host" field. It is called by the builders before save.
 	camera.HostValidator = cameraDescHost.Validators[0].(func(string) error)
+	// cameraDescBrand is the schema descriptor for brand field.
+	cameraDescBrand := cameraFields[2].Descriptor()
+	// camera.DefaultBrand holds the default value on creation for the brand field.
+	camera.DefaultBrand = cameraDescBrand.Default.(string)
 	// cameraDescRtspPort is the schema descriptor for rtsp_port field.
-	cameraDescRtspPort := cameraFields[2].Descriptor()
+	cameraDescRtspPort := cameraFields[3].Descriptor()
 	// camera.DefaultRtspPort holds the default value on creation for the rtsp_port field.
 	camera.DefaultRtspPort = cameraDescRtspPort.Default.(int)
+	// cameraDescRtspTransport is the schema descriptor for rtsp_transport field.
+	cameraDescRtspTransport := cameraFields[4].Descriptor()
+	// camera.DefaultRtspTransport holds the default value on creation for the rtsp_transport field.
+	camera.DefaultRtspTransport = cameraDescRtspTransport.Default.(string)
+	// cameraDescSegmentDuration is the schema descriptor for segment_duration field.
+	cameraDescSegmentDuration := cameraFields[5].Descriptor()
+	// camera.DefaultSegmentDuration holds the default value on creation for the segment_duration field.
+	camera.DefaultSegmentDuration = cameraDescSegmentDuration.Default.(int)
+	// cameraDescVideoCodec is the schema descriptor for video_codec field.
+	cameraDescVideoCodec := cameraFields[6].Descriptor()
+	// camera.DefaultVideoCodec holds the default value on creation for the video_codec field.
+	camera.DefaultVideoCodec = cameraDescVideoCodec.Default.(string)
+	// cameraDescAudioMode is the schema descriptor for audio_mode field.
+	cameraDescAudioMode := cameraFields[7].Descriptor()
+	// camera.DefaultAudioMode holds the default value on creation for the audio_mode field.
+	camera.DefaultAudioMode = cameraDescAudioMode.Default.(string)
+	// cameraDescExtraArgs is the schema descriptor for extra_args field.
+	cameraDescExtraArgs := cameraFields[8].Descriptor()
+	// camera.DefaultExtraArgs holds the default value on creation for the extra_args field.
+	camera.DefaultExtraArgs = cameraDescExtraArgs.Default.(string)
 	// cameraDescIsActive is the schema descriptor for is_active field.
-	cameraDescIsActive := cameraFields[3].Descriptor()
+	cameraDescIsActive := cameraFields[9].Descriptor()
 	// camera.DefaultIsActive holds the default value on creation for the is_active field.
 	camera.DefaultIsActive = cameraDescIsActive.Default.(bool)
 	// cameraDescCreatedAt is the schema descriptor for created_at field.
-	cameraDescCreatedAt := cameraFields[4].Descriptor()
+	cameraDescCreatedAt := cameraFields[10].Descriptor()
 	// camera.DefaultCreatedAt holds the default value on creation for the created_at field.
 	camera.DefaultCreatedAt = cameraDescCreatedAt.Default.(func() time.Time)
 	// cameraDescUpdatedAt is the schema descriptor for updated_at field.
-	cameraDescUpdatedAt := cameraFields[5].Descriptor()
+	cameraDescUpdatedAt := cameraFields[11].Descriptor()
 	// camera.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	camera.DefaultUpdatedAt = cameraDescUpdatedAt.Default.(func() time.Time)
 	// camera.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -21,8 +21,20 @@ type Camera struct {
 	Name string `json:"name,omitempty"`
 	// Host holds the value of the "host" field.
 	Host string `json:"host,omitempty"`
+	// Brand holds the value of the "brand" field.
+	Brand string `json:"brand,omitempty"`
 	// RtspPort holds the value of the "rtsp_port" field.
 	RtspPort int `json:"rtsp_port,omitempty"`
+	// RtspTransport holds the value of the "rtsp_transport" field.
+	RtspTransport string `json:"rtsp_transport,omitempty"`
+	// SegmentDuration holds the value of the "segment_duration" field.
+	SegmentDuration int `json:"segment_duration,omitempty"`
+	// VideoCodec holds the value of the "video_codec" field.
+	VideoCodec string `json:"video_codec,omitempty"`
+	// AudioMode holds the value of the "audio_mode" field.
+	AudioMode string `json:"audio_mode,omitempty"`
+	// ExtraArgs holds the value of the "extra_args" field.
+	ExtraArgs string `json:"extra_args,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -60,9 +72,9 @@ func (*Camera) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case camera.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case camera.FieldID, camera.FieldRtspPort:
+		case camera.FieldID, camera.FieldRtspPort, camera.FieldSegmentDuration:
 			values[i] = new(sql.NullInt64)
-		case camera.FieldName, camera.FieldHost:
+		case camera.FieldName, camera.FieldHost, camera.FieldBrand, camera.FieldRtspTransport, camera.FieldVideoCodec, camera.FieldAudioMode, camera.FieldExtraArgs:
 			values[i] = new(sql.NullString)
 		case camera.FieldCreatedAt, camera.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -99,11 +111,47 @@ func (_m *Camera) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Host = value.String
 			}
+		case camera.FieldBrand:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field brand", values[i])
+			} else if value.Valid {
+				_m.Brand = value.String
+			}
 		case camera.FieldRtspPort:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field rtsp_port", values[i])
 			} else if value.Valid {
 				_m.RtspPort = int(value.Int64)
+			}
+		case camera.FieldRtspTransport:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field rtsp_transport", values[i])
+			} else if value.Valid {
+				_m.RtspTransport = value.String
+			}
+		case camera.FieldSegmentDuration:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field segment_duration", values[i])
+			} else if value.Valid {
+				_m.SegmentDuration = int(value.Int64)
+			}
+		case camera.FieldVideoCodec:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field video_codec", values[i])
+			} else if value.Valid {
+				_m.VideoCodec = value.String
+			}
+		case camera.FieldAudioMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field audio_mode", values[i])
+			} else if value.Valid {
+				_m.AudioMode = value.String
+			}
+		case camera.FieldExtraArgs:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field extra_args", values[i])
+			} else if value.Valid {
+				_m.ExtraArgs = value.String
 			}
 		case camera.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -170,8 +218,26 @@ func (_m *Camera) String() string {
 	builder.WriteString("host=")
 	builder.WriteString(_m.Host)
 	builder.WriteString(", ")
+	builder.WriteString("brand=")
+	builder.WriteString(_m.Brand)
+	builder.WriteString(", ")
 	builder.WriteString("rtsp_port=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RtspPort))
+	builder.WriteString(", ")
+	builder.WriteString("rtsp_transport=")
+	builder.WriteString(_m.RtspTransport)
+	builder.WriteString(", ")
+	builder.WriteString("segment_duration=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SegmentDuration))
+	builder.WriteString(", ")
+	builder.WriteString("video_codec=")
+	builder.WriteString(_m.VideoCodec)
+	builder.WriteString(", ")
+	builder.WriteString("audio_mode=")
+	builder.WriteString(_m.AudioMode)
+	builder.WriteString(", ")
+	builder.WriteString("extra_args=")
+	builder.WriteString(_m.ExtraArgs)
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

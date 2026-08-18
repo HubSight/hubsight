@@ -33,6 +33,20 @@ func (_c *CameraCreate) SetHost(v string) *CameraCreate {
 	return _c
 }
 
+// SetBrand sets the "brand" field.
+func (_c *CameraCreate) SetBrand(v string) *CameraCreate {
+	_c.mutation.SetBrand(v)
+	return _c
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableBrand(v *string) *CameraCreate {
+	if v != nil {
+		_c.SetBrand(*v)
+	}
+	return _c
+}
+
 // SetRtspPort sets the "rtsp_port" field.
 func (_c *CameraCreate) SetRtspPort(v int) *CameraCreate {
 	_c.mutation.SetRtspPort(v)
@@ -43,6 +57,76 @@ func (_c *CameraCreate) SetRtspPort(v int) *CameraCreate {
 func (_c *CameraCreate) SetNillableRtspPort(v *int) *CameraCreate {
 	if v != nil {
 		_c.SetRtspPort(*v)
+	}
+	return _c
+}
+
+// SetRtspTransport sets the "rtsp_transport" field.
+func (_c *CameraCreate) SetRtspTransport(v string) *CameraCreate {
+	_c.mutation.SetRtspTransport(v)
+	return _c
+}
+
+// SetNillableRtspTransport sets the "rtsp_transport" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableRtspTransport(v *string) *CameraCreate {
+	if v != nil {
+		_c.SetRtspTransport(*v)
+	}
+	return _c
+}
+
+// SetSegmentDuration sets the "segment_duration" field.
+func (_c *CameraCreate) SetSegmentDuration(v int) *CameraCreate {
+	_c.mutation.SetSegmentDuration(v)
+	return _c
+}
+
+// SetNillableSegmentDuration sets the "segment_duration" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableSegmentDuration(v *int) *CameraCreate {
+	if v != nil {
+		_c.SetSegmentDuration(*v)
+	}
+	return _c
+}
+
+// SetVideoCodec sets the "video_codec" field.
+func (_c *CameraCreate) SetVideoCodec(v string) *CameraCreate {
+	_c.mutation.SetVideoCodec(v)
+	return _c
+}
+
+// SetNillableVideoCodec sets the "video_codec" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableVideoCodec(v *string) *CameraCreate {
+	if v != nil {
+		_c.SetVideoCodec(*v)
+	}
+	return _c
+}
+
+// SetAudioMode sets the "audio_mode" field.
+func (_c *CameraCreate) SetAudioMode(v string) *CameraCreate {
+	_c.mutation.SetAudioMode(v)
+	return _c
+}
+
+// SetNillableAudioMode sets the "audio_mode" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableAudioMode(v *string) *CameraCreate {
+	if v != nil {
+		_c.SetAudioMode(*v)
+	}
+	return _c
+}
+
+// SetExtraArgs sets the "extra_args" field.
+func (_c *CameraCreate) SetExtraArgs(v string) *CameraCreate {
+	_c.mutation.SetExtraArgs(v)
+	return _c
+}
+
+// SetNillableExtraArgs sets the "extra_args" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableExtraArgs(v *string) *CameraCreate {
+	if v != nil {
+		_c.SetExtraArgs(*v)
 	}
 	return _c
 }
@@ -139,9 +223,33 @@ func (_c *CameraCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *CameraCreate) defaults() {
+	if _, ok := _c.mutation.Brand(); !ok {
+		v := camera.DefaultBrand
+		_c.mutation.SetBrand(v)
+	}
 	if _, ok := _c.mutation.RtspPort(); !ok {
 		v := camera.DefaultRtspPort
 		_c.mutation.SetRtspPort(v)
+	}
+	if _, ok := _c.mutation.RtspTransport(); !ok {
+		v := camera.DefaultRtspTransport
+		_c.mutation.SetRtspTransport(v)
+	}
+	if _, ok := _c.mutation.SegmentDuration(); !ok {
+		v := camera.DefaultSegmentDuration
+		_c.mutation.SetSegmentDuration(v)
+	}
+	if _, ok := _c.mutation.VideoCodec(); !ok {
+		v := camera.DefaultVideoCodec
+		_c.mutation.SetVideoCodec(v)
+	}
+	if _, ok := _c.mutation.AudioMode(); !ok {
+		v := camera.DefaultAudioMode
+		_c.mutation.SetAudioMode(v)
+	}
+	if _, ok := _c.mutation.ExtraArgs(); !ok {
+		v := camera.DefaultExtraArgs
+		_c.mutation.SetExtraArgs(v)
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		v := camera.DefaultIsActive
@@ -175,8 +283,26 @@ func (_c *CameraCreate) check() error {
 			return &ValidationError{Name: "host", err: fmt.Errorf(`ent: validator failed for field "Camera.host": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.Brand(); !ok {
+		return &ValidationError{Name: "brand", err: errors.New(`ent: missing required field "Camera.brand"`)}
+	}
 	if _, ok := _c.mutation.RtspPort(); !ok {
 		return &ValidationError{Name: "rtsp_port", err: errors.New(`ent: missing required field "Camera.rtsp_port"`)}
+	}
+	if _, ok := _c.mutation.RtspTransport(); !ok {
+		return &ValidationError{Name: "rtsp_transport", err: errors.New(`ent: missing required field "Camera.rtsp_transport"`)}
+	}
+	if _, ok := _c.mutation.SegmentDuration(); !ok {
+		return &ValidationError{Name: "segment_duration", err: errors.New(`ent: missing required field "Camera.segment_duration"`)}
+	}
+	if _, ok := _c.mutation.VideoCodec(); !ok {
+		return &ValidationError{Name: "video_codec", err: errors.New(`ent: missing required field "Camera.video_codec"`)}
+	}
+	if _, ok := _c.mutation.AudioMode(); !ok {
+		return &ValidationError{Name: "audio_mode", err: errors.New(`ent: missing required field "Camera.audio_mode"`)}
+	}
+	if _, ok := _c.mutation.ExtraArgs(); !ok {
+		return &ValidationError{Name: "extra_args", err: errors.New(`ent: missing required field "Camera.extra_args"`)}
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Camera.is_active"`)}
@@ -221,9 +347,33 @@ func (_c *CameraCreate) createSpec() (*Camera, *sqlgraph.CreateSpec) {
 		_spec.SetField(camera.FieldHost, field.TypeString, value)
 		_node.Host = value
 	}
+	if value, ok := _c.mutation.Brand(); ok {
+		_spec.SetField(camera.FieldBrand, field.TypeString, value)
+		_node.Brand = value
+	}
 	if value, ok := _c.mutation.RtspPort(); ok {
 		_spec.SetField(camera.FieldRtspPort, field.TypeInt, value)
 		_node.RtspPort = value
+	}
+	if value, ok := _c.mutation.RtspTransport(); ok {
+		_spec.SetField(camera.FieldRtspTransport, field.TypeString, value)
+		_node.RtspTransport = value
+	}
+	if value, ok := _c.mutation.SegmentDuration(); ok {
+		_spec.SetField(camera.FieldSegmentDuration, field.TypeInt, value)
+		_node.SegmentDuration = value
+	}
+	if value, ok := _c.mutation.VideoCodec(); ok {
+		_spec.SetField(camera.FieldVideoCodec, field.TypeString, value)
+		_node.VideoCodec = value
+	}
+	if value, ok := _c.mutation.AudioMode(); ok {
+		_spec.SetField(camera.FieldAudioMode, field.TypeString, value)
+		_node.AudioMode = value
+	}
+	if value, ok := _c.mutation.ExtraArgs(); ok {
+		_spec.SetField(camera.FieldExtraArgs, field.TypeString, value)
+		_node.ExtraArgs = value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(camera.FieldIsActive, field.TypeBool, value)

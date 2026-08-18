@@ -18,8 +18,20 @@ const (
 	FieldName = "name"
 	// FieldHost holds the string denoting the host field in the database.
 	FieldHost = "host"
+	// FieldBrand holds the string denoting the brand field in the database.
+	FieldBrand = "brand"
 	// FieldRtspPort holds the string denoting the rtsp_port field in the database.
 	FieldRtspPort = "rtsp_port"
+	// FieldRtspTransport holds the string denoting the rtsp_transport field in the database.
+	FieldRtspTransport = "rtsp_transport"
+	// FieldSegmentDuration holds the string denoting the segment_duration field in the database.
+	FieldSegmentDuration = "segment_duration"
+	// FieldVideoCodec holds the string denoting the video_codec field in the database.
+	FieldVideoCodec = "video_codec"
+	// FieldAudioMode holds the string denoting the audio_mode field in the database.
+	FieldAudioMode = "audio_mode"
+	// FieldExtraArgs holds the string denoting the extra_args field in the database.
+	FieldExtraArgs = "extra_args"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -44,7 +56,13 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 	FieldHost,
+	FieldBrand,
 	FieldRtspPort,
+	FieldRtspTransport,
+	FieldSegmentDuration,
+	FieldVideoCodec,
+	FieldAudioMode,
+	FieldExtraArgs,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -65,8 +83,20 @@ var (
 	NameValidator func(string) error
 	// HostValidator is a validator for the "host" field. It is called by the builders before save.
 	HostValidator func(string) error
+	// DefaultBrand holds the default value on creation for the "brand" field.
+	DefaultBrand string
 	// DefaultRtspPort holds the default value on creation for the "rtsp_port" field.
 	DefaultRtspPort int
+	// DefaultRtspTransport holds the default value on creation for the "rtsp_transport" field.
+	DefaultRtspTransport string
+	// DefaultSegmentDuration holds the default value on creation for the "segment_duration" field.
+	DefaultSegmentDuration int
+	// DefaultVideoCodec holds the default value on creation for the "video_codec" field.
+	DefaultVideoCodec string
+	// DefaultAudioMode holds the default value on creation for the "audio_mode" field.
+	DefaultAudioMode string
+	// DefaultExtraArgs holds the default value on creation for the "extra_args" field.
+	DefaultExtraArgs string
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -95,9 +125,39 @@ func ByHost(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHost, opts...).ToFunc()
 }
 
+// ByBrand orders the results by the brand field.
+func ByBrand(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBrand, opts...).ToFunc()
+}
+
 // ByRtspPort orders the results by the rtsp_port field.
 func ByRtspPort(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRtspPort, opts...).ToFunc()
+}
+
+// ByRtspTransport orders the results by the rtsp_transport field.
+func ByRtspTransport(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRtspTransport, opts...).ToFunc()
+}
+
+// BySegmentDuration orders the results by the segment_duration field.
+func BySegmentDuration(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSegmentDuration, opts...).ToFunc()
+}
+
+// ByVideoCodec orders the results by the video_codec field.
+func ByVideoCodec(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoCodec, opts...).ToFunc()
+}
+
+// ByAudioMode orders the results by the audio_mode field.
+func ByAudioMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAudioMode, opts...).ToFunc()
+}
+
+// ByExtraArgs orders the results by the extra_args field.
+func ByExtraArgs(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExtraArgs, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.

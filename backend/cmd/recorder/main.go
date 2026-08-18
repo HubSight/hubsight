@@ -32,8 +32,7 @@ func main() {
 	log.Println("Starting dynamic Recorder service...")
 
 	type ActiveCamera struct {
-		Host   string
-		Name   string
+		Config recorder.CameraConfig
 		Cancel context.CancelFunc
 	}
 	activeRecorders := make(map[int]ActiveCamera)
@@ -52,11 +51,22 @@ func main() {
 				continue
 			}
 			currentCameraIDs[cam.ID] = true
+
+			camConfig := recorder.CameraConfig{
+				CameraID:        cam.ID,
+				Host:            cam.Host,
+				RTSPTransport:   cam.RtspTransport,
+				SegmentDuration: cam.SegmentDuration,
+				VideoCodec:      cam.VideoCodec,
+				AudioMode:       cam.AudioMode,
+				ExtraArgs:       cam.ExtraArgs,
+				OutDir:          outDir,
+			}
 			
 			activeCam, exists := activeRecorders[cam.ID]
 			needsRestart := false
 
-			if exists && (activeCam.Host != cam.Host || activeCam.Name != cam.Name) {
+			if exists && (activeCam.Config != camConfig) {
 				log.Printf("Camera %s (ID: %d) configuration changed. Restarting FFmpeg...", cam.Name, cam.ID)
 				activeCam.Cancel()
 				needsRestart = true
@@ -70,35 +80,34 @@ func main() {
 				
 				ctx, cancel := context.WithCancel(context.Background())
 				activeRecorders[cam.ID] = ActiveCamera{
-					Host:   cam.Host,
-					Name:   cam.Name,
+					Config: camConfig,
 					Cancel: cancel,
 				}
 				
-				go func(cID int, url string) {
+				go func(c recorder.CameraConfig) {
 					// Loop to restart ffmpeg if it crashes while still active
 					for {
 						select {
 						case <-ctx.Done():
-							log.Printf("Camera %d recorder stopped.", cID)
+							log.Printf("Camera %d recorder stopped.", c.CameraID)
 							return
 						default:
-							err := recorder.StartRecording(ctx, cID, url, outDir)
+							err := recorder.StartRecording(ctx, c)
 							if err != nil && ctx.Err() == nil {
-								log.Printf("FFmpeg for camera %d exited with error: %v, restarting in 5s...", cID, err)
+								log.Printf("FFmpeg for camera %d exited with error: %v, restarting in 5s...", c.CameraID, err)
 								time.Sleep(5 * time.Second)
 							} else if ctx.Err() != nil {
 								// Context was cancelled
-								log.Printf("Camera %d recorder stopped.", cID)
+								log.Printf("Camera %d recorder stopped.", c.CameraID)
 								return
 							} else {
 								// Exited cleanly but unexpectedly?
-								log.Printf("FFmpeg for camera %d exited cleanly. Restarting in 5s...", cID)
+								log.Printf("FFmpeg for camera %d exited cleanly. Restarting in 5s...", c.CameraID)
 								time.Sleep(5 * time.Second)
 							}
 						}
 					}
-				}(cam.ID, cam.Host)
+				}(camConfig)
 			}
 		}
 
