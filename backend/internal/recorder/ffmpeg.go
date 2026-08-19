@@ -44,14 +44,15 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "10")
 
 	// Audio Handling
-	if cfg.AudioMode == "disabled" || cfg.AudioMode == "none" {
+	switch cfg.AudioMode {
+	case "disabled", "none":
 		log.Printf("[Cam %d] Audio disabled by configuration.", cfg.CameraID)
 		args = append(args, "-an")
-	} else if cfg.AudioMode == "copy" {
+	case "copy":
 		args = append(args, "-c:a", "copy")
-	} else if cfg.AudioMode == "aac" {
+	case "aac":
 		args = append(args, "-c:a", "aac", "-b:a", "128k")
-	} else {
+	default:
 		// Auto detect audio stream
 		hasAudio, audioCodec := ProbeAudioStream(ctx, cfg.Host, transport)
 		if hasAudio {
