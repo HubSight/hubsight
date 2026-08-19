@@ -7,16 +7,19 @@ A modern, robust, and full-featured CCTV recording and playback surveillance sys
 ## 🌟 Key Features
 
 ### 1. 🔐 Role-Based Access Control (RBAC)
+
 - **Admin**: Full access to all features (Camera & Device Management, NVR Monitor, Playback, and Archive Downloads).
 - **Viewer**: View-only access dedicated to Live streaming and Historical Playback with Archive downloads. Restricted from device modifications and recorder internals.
 - **User Profiles & Role Badges**: Display Vietnamese Full Names with distinctive Red (**Admin**) and Blue (**Viewer**) visual badges.
 
 ### 2. ⚡ PWA Indefinite Sessions & Auto Refresh Token
+
 - **Seamless PWA Mode**: When installed as a Progressive Web App (Desktop, Android, or iOS standalone), users enjoy **indefinite sessions**.
 - **Silent Refresh Interceptor**: Axios interceptor silently exchanges rotating refresh tokens upon `401 Unauthorized` responses without interrupting the live or playback video stream.
 - **Standard Browser Security**: Regular browser tabs maintain standard 7-day session expiration.
 
 ### 3. 🛡️ PWA App Lock with WebAuthn Biometrics & Password Fallback
+
 - **Background Auto-Lock**: Automatically locks the application screen when the PWA is minimized or placed in the background, keeping the playback session alive.
 - **Biometric Unlock (WebAuthn / Passkeys)**: One-tap unlock using native device biometrics (**Face ID / Touch ID** on iOS/macOS, **Fingerprint / Face Unlock** on Android, or **Windows Hello / PIN**).
 - **Traditional Password Fallback**: Enter account password to unlock if biometrics is disabled or fails.
@@ -26,15 +29,18 @@ A modern, robust, and full-featured CCTV recording and playback surveillance sys
   - Configurable Lock Timeouts: *Immediately*, *1 Minute*, or *5 Minutes*.
 
 ### 4. 📥 Direct Archive Video Download
+
 - Direct one-click `.mp4` recording file downloads directly from the **Playback** screen (accessible by both Admin and Viewer roles).
 - Convenient download buttons located in both the Top Bar and the Bottom Video Control Bar.
 
 ### 5. 📹 Live Streaming & Smart RTSP Management
+
 - **Low-Latency Live Streaming**: Powered by MediaMTX with WebRTC / HLS streaming.
 - **Brand Presets & Custom URL Builder**: Supports Dahua, Hikvision, Ezviz, Imou, TP-Link, and Generic RTSP stream paths.
 - **Colorful Brand Badges**: Vibrant, distinct visual tags for each camera brand.
 
 ### 6. 📼 Automated Recording & NVR Engine
+
 - **Automated FFmpeg Worker**: Spawns independent recording workers per camera, chunking footage into MP4/TS segments seamlessly.
 - **Timeline Seeking**: Interactive YouTube-style 24-hour playback timeline with visual recording blocks and multi-speed playback (0.5x – 4.0x).
 
@@ -164,11 +170,13 @@ flowchart TB
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Docker & Docker Compose
 - Node.js (v20+) & pnpm (for local frontend development)
 - Go (1.23+) (for local backend development)
 
 ### 1. Quick Start with Docker Compose
+
 ```bash
 # Clone the repository
 git clone https://github.com/your-repo/cctv.git
@@ -179,6 +187,7 @@ docker compose up -d --build
 ```
 
 Services will be accessible at:
+
 - **Web Application (Frontend)**: `http://localhost:5173` (or production port)
 - **Backend API**: `http://localhost:8088`
 - **MediaMTX Streaming**: `http://localhost:8889` (WebRTC / HLS)
@@ -186,6 +195,7 @@ Services will be accessible at:
 ---
 
 ### 2. Seeding Accounts & RBAC Setup
+
 To seed default Admin and Viewer accounts with random 6-character passwords and export credentials to CSV:
 
 ```bash
@@ -199,18 +209,21 @@ This generates `users_credentials.csv` containing login details for all configur
 ### 3. Running Locally for Development
 
 #### Backend API:
+
 ```bash
 cd backend
 go run cmd/api/main.go
 ```
 
-#### NVR Recorder:
+#### NVR Recorder
+
 ```bash
 cd backend
 go run cmd/recorder/main.go
 ```
 
-#### Frontend:
+#### Frontend
+
 ```bash
 cd frontend
 pnpm install
@@ -230,4 +243,5 @@ pnpm dev
 ---
 
 ## 📄 License
+
 This project is open-source and available under the [MIT License](LICENSE).
