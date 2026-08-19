@@ -15,14 +15,14 @@ flowchart TB
     %% ==========================================
     subgraph ClientLayer ["📱 Frontend Client Layer (PWA & Web)"]
         direction TB
-        PWA["PWA Standalone App\n(Desktop / iOS / Android)"]
+        PWA["PWA Standalone App<br/>(Desktop / iOS / Android)"]
         Browser["Web Browser Client"]
-        SW["Service Worker & Workbox\n(Instant Auto-Update)"]
-        AuthApp["Auth & Refresh Interceptor\n(Indefinite Session)"]
-        LockEngine["App Lock & WebAuthn Engine\n(Face ID / Touch ID / PIN)"]
-        LiveView["Live Stream Player\n(WebRTC / HLS)"]
-        PlaybackView["Archive Player\n(24h Timeline & MP4 Download)"]
-        
+        SW["Service Worker & Workbox<br/>(Instant Auto-Update)"]
+        AuthApp["Auth & Refresh Interceptor<br/>(Indefinite Session)"]
+        LockEngine["App Lock & WebAuthn Engine<br/>(Face ID / Touch ID / PIN)"]
+        LiveView["Live Stream Player<br/>(WebRTC / HLS)"]
+        PlaybackView["Archive Player<br/>(24h Timeline & MP4 Download)"]
+
         PWA --- SW
         PWA --- LockEngine
         PWA --- AuthApp
@@ -35,21 +35,21 @@ flowchart TB
     %% ==========================================
     subgraph PublicBoundary ["🌐 Public Boundary (External Entrypoints)"]
         direction TB
-        APIGateway["🚪 API Gateway & Core Server\n(api-gateway :8088)\n- Single REST Entrypoint for FE\n- Proxies /api/auth/* & Token Validation\n- Proxies WebRTC Signaling"]
-        RelayWS["⚡ Socket.IO Relay Server\n(relay-service :3005)\n- Real-time Push Events & Rooms"]
-        RTCStream["📹 WebRTC Media Port\n(webrtc-service :8555 UDP/TCP)"]
+        APIGateway["🚪 API Gateway & Core Server (:8088)<br/>Single REST Entrypoint for FE<br/>Proxies Auth & WebRTC Signaling"]
+        RelayWS["⚡ Socket.IO Relay Server (:3005)<br/>Real-time Push Events & Rooms"]
+        RTCStream["📹 WebRTC Media Port (:8555 UDP/TCP)<br/>Direct RTP/SRTP Video Transport"]
     end
 
     %% ==========================================
     %% 3. INTERNAL PRIVATE MICROSERVICES
     %% ==========================================
-    subgraph InternalServices ["🔒 Internal Services (Private Network - No Public Ports)"]
+    subgraph InternalServices ["🔒 Internal Services (Private Network)"]
         direction TB
-        AuthSvc["🔐 Standalone Auth Service (:8081)\n- SSO/OIDC Ready Engine\n- Session & Refresh Tokens\n- Password & WebAuthn Verification"]
-        WebRTCSvc["📹 WebRTC Signaling Service (:1984)\n- Internal Dynamic RTSP Mapping"]
-        NVRSvc["📼 NVR Recorder Service\n- Multi-Camera FFmpeg Workers\n- 720p @ 15fps Segmentation"]
+        AuthSvc["🔐 Standalone Auth Service (:8081)<br/>SSO/OIDC Ready Engine<br/>Session & Token Verification"]
+        WebRTCSvc["📹 WebRTC Signaling Service (:1984)<br/>Internal Dynamic RTSP Mapping"]
+        NVRSvc["📼 NVR Recorder Service<br/>Multi-Camera FFmpeg Workers<br/>720p @ 15fps Segmentation"]
         Postgres[("Shared PostgreSQL DB")]
-        S3Storage[("S3 / MinIO Storage\n- YYYY-MM-DD/<Camera_ID>/")]
+        S3Storage[("S3 / MinIO Storage<br/>YYYY-MM-DD/Camera_ID/")]
     end
 
     %% ==========================================
@@ -66,33 +66,30 @@ flowchart TB
     %% ==========================================
     %% CONNECTIONS & FLOWS
     %% ==========================================
-    %% Client to Public Entrypoints
-    ClientLayer -->|1. All REST & Auth API Requests (:8088)| APIGateway
-    ClientLayer <-->|2. Real-time Events WebSocket (:3005)| RelayWS
-    LiveView <-->|3. WebRTC Video RTP/SRTP Media (:8555)| RTCStream
+    AuthApp -->|"1. All REST & Auth APIs (:8088)"| APIGateway
+    PWA <-->|"2. Real-time Events WebSocket (:3005)"| RelayWS
+    Browser <-->|"2. Real-time Events WebSocket (:3005)"| RelayWS
+    LiveView <-->|"3. WebRTC Video Media (:8555)"| RTCStream
 
-    %% Gateway to Internal Services
-    APIGateway -->|Reverse Proxy /api/auth/* & Validate Token| AuthSvc
-    APIGateway -->|WebRTC Signaling /api/live/:id/webrtc| WebRTCSvc
-    APIGateway -.->|Trigger Real-time Push Events| RelayWS
-    APIGateway -->|CRUD & Metadata| Postgres
-    APIGateway -->|Generate Presigned Stream URLs| S3Storage
+    APIGateway -->|"Reverse Proxy /api/auth/*"| AuthSvc
+    APIGateway -->|"Signaling /api/live/:id/webrtc"| WebRTCSvc
+    APIGateway -.->|"Trigger Push Events"| RelayWS
+    APIGateway -->|"CRUD & Metadata"| Postgres
+    APIGateway -->|"Generate Stream URLs"| S3Storage
 
-    %% Internal Services to DB / Storage
     AuthSvc --> Postgres
     NVRSvc --> Postgres
     NVRSvc --> S3Storage
 
-    %% Cameras to Internal Media & Recorder
-    CamDahua -->|RTSP Stream| WebRTCSvc
-    CamHik -->|RTSP Stream| WebRTCSvc
-    CamEzviz -->|RTSP Stream| WebRTCSvc
-    CamGeneric -->|RTSP Stream| WebRTCSvc
+    CamDahua -->|"RTSP Stream"| WebRTCSvc
+    CamHik -->|"RTSP Stream"| WebRTCSvc
+    CamEzviz -->|"RTSP Stream"| WebRTCSvc
+    CamGeneric -->|"RTSP Stream"| WebRTCSvc
 
-    CamDahua -.->|Direct RTSP Capture| NVRSvc
-    CamHik -.->|Direct RTSP Capture| NVRSvc
-    CamEzviz -.->|Direct RTSP Capture| NVRSvc
-    CamGeneric -.->|Direct RTSP Capture| NVRSvc
+    CamDahua -.->|"Direct Capture"| NVRSvc
+    CamHik -.->|"Direct Capture"| NVRSvc
+    CamEzviz -.->|"Direct Capture"| NVRSvc
+    CamGeneric -.->|"Direct Capture"| NVRSvc
 ```
 
 ---
