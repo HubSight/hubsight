@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Plus, Video } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
-import type { CameraType, CameraFormData } from '../types/camera';
-import { CameraCard } from '../components/camera/CameraCard';
-import { CameraModal } from '../components/camera/CameraModal';
-import { BRAND_PRESETS } from '../constants/cameraPresets';
+import type { DeviceType, DeviceFormData } from '../types/device';
+import { DeviceCard } from '../components/device/DeviceCard';
+import { DeviceModal } from '../components/device/DeviceModal';
+import { BRAND_PRESETS, parseRtspUrl } from '../constants/devicePresets';
 
-const initialFormData: CameraFormData = {
+const initialFormData: DeviceFormData = {
   name: '',
   brand: 'generic',
   host: '',
@@ -17,7 +17,7 @@ const initialFormData: CameraFormData = {
   builderPass: '',
   builderChannel: 1,
   builderIsSub: false,
-  rtspTransport: 'tcp',
+  rtspTransport: 'auto',
   rtspPort: 554,
   segmentDuration: 300,
   videoCodec: 'copy',
@@ -26,28 +26,28 @@ const initialFormData: CameraFormData = {
 };
 
 const Devices = () => {
-  const [cameras, setCameras] = useState<CameraType[]>([]);
+  const [devices, setDevices] = useState<DeviceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingCameraId, setEditingCameraId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<CameraFormData>(initialFormData);
+  const [editingDeviceId, setEditingDeviceId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<DeviceFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchCameras = async () => {
+  const fetchDevices = async () => {
     try {
       setIsLoading(true);
       const res = await axiosClient.get('/cameras');
-      setCameras(res.data || []);
+      setDevices(res.data || []);
     } catch (err) {
-      console.error('Failed to fetch cameras', err);
+      console.error('Failed to fetch devices', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCameras();
+    fetchDevices();
   }, []);
 
   // Update generated RTSP URL when builder fields change
@@ -75,36 +75,37 @@ const Devices = () => {
     formData.isManualUrl
   ]);
 
-  const handleOpenModal = (cam?: CameraType) => {
+  const handleOpenModal = (dev?: DeviceType) => {
     setError('');
-    if (cam) {
-      setEditingCameraId(cam.id);
+    if (dev) {
+      setEditingDeviceId(dev.id);
+      const parsed = dev.host ? parseRtspUrl(dev.host) : null;
       setFormData({
-        name: cam.name,
-        brand: cam.brand || 'generic',
-        host: cam.host,
-        isManualUrl: true,
-        builderIp: '',
-        builderPort: cam.rtsp_port || 554,
-        builderUser: 'admin',
-        builderPass: '',
-        builderChannel: 1,
-        builderIsSub: false,
-        rtspTransport: cam.rtsp_transport || 'tcp',
-        rtspPort: cam.rtsp_port || 554,
-        segmentDuration: cam.segment_duration || 300,
-        videoCodec: cam.video_codec || 'copy',
-        audioMode: cam.audio_mode || 'auto',
-        extraArgs: cam.extra_args || ''
+        name: dev.name,
+        brand: dev.brand || 'generic',
+        host: dev.host,
+        isManualUrl: false,
+        builderIp: parsed?.ip || '',
+        builderPort: parsed?.port || dev.rtsp_port || 554,
+        builderUser: parsed?.user || 'admin',
+        builderPass: parsed?.pass || '',
+        builderChannel: parsed?.channel || 1,
+        builderIsSub: parsed?.isSub ?? false,
+        rtspTransport: dev.rtsp_transport || 'auto',
+        rtspPort: parsed?.port || dev.rtsp_port || 554,
+        segmentDuration: dev.segment_duration || 300,
+        videoCodec: dev.video_codec || 'copy',
+        audioMode: dev.audio_mode || 'auto',
+        extraArgs: dev.extra_args || ''
       });
     } else {
-      setEditingCameraId(null);
+      setEditingDeviceId(null);
       setFormData(initialFormData);
     }
     setShowModal(true);
   };
 
-  const handleFormChange = (patch: Partial<CameraFormData>) => {
+  const handleFormChange = (patch: Partial<DeviceFormData>) => {
     setFormData((prev) => ({ ...prev, ...patch }));
   };
 
@@ -116,7 +117,7 @@ const Devices = () => {
     });
   };
 
-  const handleSaveCamera = async (e: React.FormEvent) => {
+  const handleSaveDevice = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -144,13 +145,13 @@ const Devices = () => {
     };
 
     try {
-      if (editingCameraId) {
-        await axiosClient.put(`/cameras/${editingCameraId}`, payload);
+      if (editingDeviceId) {
+        await axiosClient.put(`/cameras/${editingDeviceId}`, payload);
       } else {
         await axiosClient.post('/cameras', payload);
       }
       setShowModal(false);
-      fetchCameras();
+      fetchDevices();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to save device');
     } finally {
@@ -158,13 +159,13 @@ const Devices = () => {
     }
   };
 
-  const handleDeleteCamera = async (id: number) => {
+  const handleDeleteDevice = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this device? Recording will be stopped.')) {
       return;
     }
     try {
       await axiosClient.delete(`/cameras/${id}`);
-      fetchCameras();
+      fetchDevices();
     } catch (err) {
       console.error('Failed to delete device', err);
       alert('Failed to delete device');
@@ -184,9 +185,9 @@ const Devices = () => {
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
                 Device Management
               </h1>
-              {cameras.length > 0 && (
+              {devices.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200/80 text-slate-700">
-                  {cameras.length}
+                  {devices.length}
                 </span>
               )}
             </div>
@@ -197,7 +198,7 @@ const Devices = () => {
         </div>
 
         {/* Add Device Button */}
-        {cameras.length > 0 ? (
+        {devices.length > 0 ? (
           <button
             className="btn btn-primary px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
             onClick={() => handleOpenModal()}
@@ -216,13 +217,13 @@ const Devices = () => {
         )}
       </div>
 
-      {/* Camera Content Area */}
+      {/* Device Content Area */}
       <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-48 text-slate-400 text-sm">
             Loading registered devices...
           </div>
-        ) : cameras.length === 0 ? (
+        ) : devices.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-6 sm:py-10 w-full">
             <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-12 text-center shadow-sm w-full max-w-xl flex flex-col items-center">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-orange-50 border border-orange-100/80 flex items-center justify-center text-orange-600 mb-4 shadow-sm">
@@ -278,12 +279,12 @@ const Devices = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-5 pb-6">
-            {cameras.map((cam) => (
-              <CameraCard
-                key={cam.id}
-                camera={cam}
+            {devices.map((dev) => (
+              <DeviceCard
+                key={dev.id}
+                device={dev}
                 onEdit={handleOpenModal}
-                onDelete={handleDeleteCamera}
+                onDelete={handleDeleteDevice}
               />
             ))}
           </div>
@@ -292,14 +293,14 @@ const Devices = () => {
 
       {/* Add / Edit Modal */}
       {showModal && (
-        <CameraModal
-          isEditing={editingCameraId !== null}
+        <DeviceModal
+          isEditing={editingDeviceId !== null}
           formData={formData}
           error={error}
           isSubmitting={isSubmitting}
           onClose={() => setShowModal(false)}
           onChange={handleFormChange}
-          onSubmit={handleSaveCamera}
+          onSubmit={handleSaveDevice}
           onAddFfmpegTag={handleAddFfmpegTag}
         />
       )}

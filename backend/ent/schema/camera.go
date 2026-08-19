@@ -19,7 +19,7 @@ func (Camera) Fields() []ent.Field {
 		field.String("host").NotEmpty(),
 		field.String("brand").Default("generic"),
 		field.Int("rtsp_port").Default(554),
-		field.String("rtsp_transport").Default("tcp"),
+		field.String("rtsp_transport").Default("auto"),
 		field.Int("segment_duration").Default(300),
 		field.String("video_codec").Default("copy"),
 		field.String("audio_mode").Default("auto"),

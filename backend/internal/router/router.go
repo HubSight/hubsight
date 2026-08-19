@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"cctv/internal/auth"
-	"cctv/internal/camera"
+	"cctv/internal/device"
 	"cctv/internal/live"
 	"cctv/internal/nvr"
 	"cctv/internal/recording"
@@ -47,10 +47,17 @@ func New() *gin.Engine {
 			protected.GET("/auth/me", auth.MeHandler)
 			protected.PUT("/auth/password", auth.ChangePasswordHandler)
 			
-			protected.GET("/cameras", camera.ListCamerasHandler)
-			protected.POST("/cameras", camera.AddCameraHandler)
-			protected.PUT("/cameras/:id", camera.UpdateCameraHandler)
-			protected.DELETE("/cameras/:id", camera.DeleteCameraHandler)
+			// Devices endpoints
+			protected.GET("/devices", device.ListDevicesHandler)
+			protected.POST("/devices", device.AddDeviceHandler)
+			protected.PUT("/devices/:id", device.UpdateDeviceHandler)
+			protected.DELETE("/devices/:id", device.DeleteDeviceHandler)
+
+			// Camera endpoints (aliases for backward compatibility)
+			protected.GET("/cameras", device.ListDevicesHandler)
+			protected.POST("/cameras", device.AddDeviceHandler)
+			protected.PUT("/cameras/:id", device.UpdateDeviceHandler)
+			protected.DELETE("/cameras/:id", device.DeleteDeviceHandler)
 			
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)
