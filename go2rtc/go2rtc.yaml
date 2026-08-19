@@ -1,6 +1,7 @@
 webrtc:
   candidates:
     - 127.0.0.1:8555
+    - rtc.quoctran.space
     - stun:8555
 streams:
   cam_5:
