@@ -4,6 +4,8 @@ import axiosClient from '../api/axiosClient';
 interface User {
   id: number;
   username: string;
+  full_name?: string;
+  role: 'admin' | 'viewer';
   is_active: boolean;
   created_at: string;
   last_login_at: string;

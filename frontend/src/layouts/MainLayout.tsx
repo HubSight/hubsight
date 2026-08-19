@@ -74,28 +74,54 @@ const MainLayout = () => {
         </div>
 
         <nav className="flex-1 flex flex-col">
-          <NavLink to="/devices" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <Camera size={20} />
-            Devices
-          </NavLink>
+          {user?.role === 'admin' && (
+            <NavLink to="/devices" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <Camera size={20} />
+              Devices
+            </NavLink>
+          )}
           <NavLink to="/playback" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Video size={20} />
             Playback
           </NavLink>
-          <NavLink to="/recorder" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <Activity size={20} />
-            NVR Monitor
-          </NavLink>
+          {user?.role === 'admin' && (
+            <NavLink to="/recorder" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <Activity size={20} />
+              NVR Monitor
+            </NavLink>
+          )}
         </nav>
 
         <div className="mt-auto border-t border-slate-200 pt-6 px-6">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center">
-              <UserIcon size={18} className="text-orange-600" />
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                user?.role === 'admin' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+              }`}
+            >
+              <UserIcon size={18} />
             </div>
-            <div>
-              <p className="text-sm font-medium text-slate-800">{user?.username}</p>
-              <p className="text-xs text-slate-500">Administrator</p>
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-sm font-bold text-slate-800 truncate leading-tight"
+                title={user?.full_name || user?.username}
+              >
+                {user?.full_name || user?.username}
+              </p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 border leading-none ${
+                    user?.role === 'admin'
+                      ? 'bg-red-50 text-red-600 border-red-200'
+                      : 'bg-blue-50 text-blue-600 border-blue-200'
+                  }`}
+                >
+                  {user?.role === 'admin' ? 'Admin' : 'Viewer'}
+                </span>
+                <span className="text-xs text-slate-400 font-mono truncate">
+                  @{user?.username}
+                </span>
+              </div>
             </div>
           </div>
           <button

@@ -10,10 +10,37 @@ import NvrMonitor from './pages/NvrMonitor';
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) return <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        Loading...
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace />;
 
   return <>{children}</>;
+};
+
+const AdminRoute = ({ children }: { children: ReactNode }) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        Loading...
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'admin') return <Navigate to="/playback" replace />;
+
+  return <>{children}</>;
+};
+
+const IndexRedirect = () => {
+  const { user } = useAuth();
+  return <Navigate to={user?.role === 'viewer' ? '/playback' : '/devices'} replace />;
 };
 
 const App = () => {
@@ -23,11 +50,32 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
 
-          <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            <Route index element={<Navigate to="/devices" replace />} />
-            <Route path="devices" element={<Devices />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<IndexRedirect />} />
+            <Route
+              path="devices"
+              element={
+                <AdminRoute>
+                  <Devices />
+                </AdminRoute>
+              }
+            />
             <Route path="playback" element={<Playback />} />
-            <Route path="recorder" element={<NvrMonitor />} />
+            <Route
+              path="recorder"
+              element={
+                <AdminRoute>
+                  <NvrMonitor />
+                </AdminRoute>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

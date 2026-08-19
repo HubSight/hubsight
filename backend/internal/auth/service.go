@@ -148,6 +148,13 @@ func Logout(ctx context.Context, token string) error {
 func CreateInitialUser(ctx context.Context, username, password string) error {
 	exists, err := database.Client.User.Query().Where(user.Username(username)).Exist(ctx)
 	if err != nil || exists {
+		// Ensure initial user is admin
+		if exists {
+			_ = database.Client.User.Update().
+				Where(user.Username(username)).
+				SetRole(user.RoleAdmin).
+				Exec(ctx)
+		}
 		return err
 	}
 
@@ -159,6 +166,7 @@ func CreateInitialUser(ctx context.Context, username, password string) error {
 	_, err = database.Client.User.Create().
 		SetUsername(username).
 		SetPasswordHash(hash).
+		SetRole(user.RoleAdmin).
 		Save(ctx)
 	return err
 }

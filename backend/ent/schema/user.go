@@ -16,7 +16,9 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("username").Unique().NotEmpty(),
+		field.String("full_name").Default(""),
 		field.String("password_hash").NotEmpty(),
+		field.Enum("role").Values("admin", "viewer").Default("viewer"),
 		field.Bool("is_active").Default(true),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

@@ -47,17 +47,25 @@ func New() *gin.Engine {
 			protected.GET("/auth/me", auth.MeHandler)
 			protected.PUT("/auth/password", auth.ChangePasswordHandler)
 			
-			// Devices endpoints
+			// Devices endpoints (Read is allowed for all authenticated users)
 			protected.GET("/devices", device.ListDevicesHandler)
-			protected.POST("/devices", device.AddDeviceHandler)
-			protected.PUT("/devices/:id", device.UpdateDeviceHandler)
-			protected.DELETE("/devices/:id", device.DeleteDeviceHandler)
-
-			// Camera endpoints (aliases for backward compatibility)
 			protected.GET("/cameras", device.ListDevicesHandler)
-			protected.POST("/cameras", device.AddDeviceHandler)
-			protected.PUT("/cameras/:id", device.UpdateDeviceHandler)
-			protected.DELETE("/cameras/:id", device.DeleteDeviceHandler)
+
+			// Admin-only endpoints
+			adminOnly := protected.Group("/")
+			adminOnly.Use(auth.RequireRole("admin"))
+			{
+				adminOnly.POST("/devices", device.AddDeviceHandler)
+				adminOnly.PUT("/devices/:id", device.UpdateDeviceHandler)
+				adminOnly.DELETE("/devices/:id", device.DeleteDeviceHandler)
+
+				adminOnly.POST("/cameras", device.AddDeviceHandler)
+				adminOnly.PUT("/cameras/:id", device.UpdateDeviceHandler)
+				adminOnly.DELETE("/cameras/:id", device.DeleteDeviceHandler)
+
+				// NVR recorder monitor endpoint
+				adminOnly.GET("/recorder/status", nvr.NvrStatusHandler)
+			}
 			
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)
@@ -66,9 +74,6 @@ func New() *gin.Engine {
 			// Live streaming endpoints (WebRTC signaling)
 			protected.POST("/live/:id/webrtc", live.WebRTCHandler)
 			protected.GET("/live-status/:id", live.LiveStatusHandler)
-
-			// NVR recorder monitor endpoint
-			protected.GET("/recorder/status", nvr.NvrStatusHandler)
 		}
 	}
 
