@@ -40,8 +40,8 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	args = append(args, "-i", cfg.Host)
 
 	// Video Codec
-	// Always read frames at 1280x720 30fps to ensure server processing performance
-	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "30")
+	// Recording quality: 1280x720 (720p) at 10fps to optimize storage and server processing
+	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "10")
 
 	// Audio Handling
 	if cfg.AudioMode == "disabled" || cfg.AudioMode == "none" {
@@ -91,7 +91,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	cmd.Stderr = os.Stderr
 
 	// Start background segment monitor
-	go MonitorSegments(ctx, cfg.CameraID, cfg.OutDir, segDuration)
+	go MonitorSegments(ctx, cfg.CameraID, cfg.Name, cfg.OutDir, segDuration)
 
 	if err := cmd.Run(); err != nil {
 		log.Printf("[Cam %d] FFmpeg exited with error: %v", cfg.CameraID, err)

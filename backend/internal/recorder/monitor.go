@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -15,11 +16,33 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
+// SanitizeCameraFolder creates a clean, safe folder name combining Camera Name and Camera ID
+func SanitizeCameraFolder(name string, id int) string {
+	clean := strings.TrimSpace(name)
+	if clean == "" {
+		return fmt.Sprintf("camera_%d", id)
+	}
+
+	// Replace forbidden path/url characters
+	re := regexp.MustCompile(`[/\\:*?"<>|]+`)
+	clean = re.ReplaceAllString(clean, "_")
+	clean = strings.ReplaceAll(clean, " ", "_")
+	clean = strings.Trim(clean, "_-.")
+
+	if clean == "" {
+		return fmt.Sprintf("camera_%d", id)
+	}
+
+	return fmt.Sprintf("%s_%d", clean, id)
+}
+
 // MonitorSegments continuously watches the output folder for completed MP4 segments and uploads them to S3
-func MonitorSegments(ctx context.Context, cameraID int, outDir string, segDuration int) {
+func MonitorSegments(ctx context.Context, cameraID int, cameraName string, outDir string, segDuration int) {
 	seen := make(map[string]bool)
 	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
+
+	cameraFolder := SanitizeCameraFolder(cameraName, cameraID)
 
 	for {
 		select {
@@ -54,8 +77,9 @@ func MonitorSegments(ctx context.Context, cameraID int, outDir string, segDurati
 				if time.Since(info.ModTime()) > minAge {
 					seen[path] = true
 
+					// Storage path hierarchy: Date (YYYY-MM-DD) -> Camera (Name_ID) -> Filename.mp4
 					dateFolder := info.ModTime().Format("2006-01-02")
-					objectKey := fmt.Sprintf("%s/%s", dateFolder, filepath.Base(path))
+					objectKey := fmt.Sprintf("%s/%s/%s", dateFolder, cameraFolder, filepath.Base(path))
 
 					log.Printf("[Cam %d] Uploading %s to S3 as %s", cameraID, path, objectKey)
 					_, err = storage.S3Client.FPutObject(context.Background(), storage.S3Bucket, objectKey, path, minio.PutObjectOptions{
