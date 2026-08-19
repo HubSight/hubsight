@@ -1,24 +1,24 @@
-# 🎥 CCTV Surveillance & Playback Platform
+# CCTV Surveillance & Playback Platform
 
 A modern, robust, and full-featured CCTV recording and playback surveillance system built with **Go**, **Ent ORM**, **React (Vite + TypeScript)**, **MediaMTX**, **FFmpeg**, and **PostgreSQL**.
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-### 1. 🔐 Role-Based Access Control (RBAC)
+### 1. Role-Based Access Control (RBAC)
 
 - **Admin**: Full access to all features (Camera & Device Management, NVR Monitor, Playback, and Archive Downloads).
 - **Viewer**: View-only access dedicated to Live streaming and Historical Playback with Archive downloads. Restricted from device modifications and recorder internals.
 - **User Profiles & Role Badges**: Display Vietnamese Full Names with distinctive Red (**Admin**) and Blue (**Viewer**) visual badges.
 
-### 2. ⚡ PWA Indefinite Sessions & Auto Refresh Token
+### 2. PWA Indefinite Sessions & Auto Refresh Token
 
 - **Seamless PWA Mode**: When installed as a Progressive Web App (Desktop, Android, or iOS standalone), users enjoy **indefinite sessions**.
 - **Silent Refresh Interceptor**: Axios interceptor silently exchanges rotating refresh tokens upon `401 Unauthorized` responses without interrupting the live or playback video stream.
 - **Standard Browser Security**: Regular browser tabs maintain standard 7-day session expiration.
 
-### 3. 🛡️ PWA App Lock with WebAuthn Biometrics & Password Fallback
+### 3. PWA App Lock with WebAuthn Biometrics & Password Fallback
 
 - **Background Auto-Lock**: Automatically locks the application screen when the PWA is minimized or placed in the background, keeping the playback session alive.
 - **Biometric Unlock (WebAuthn / Passkeys)**: One-tap unlock using native device biometrics (**Face ID / Touch ID** on iOS/macOS, **Fingerprint / Face Unlock** on Android, or **Windows Hello / PIN**).
@@ -28,25 +28,25 @@ A modern, robust, and full-featured CCTV recording and playback surveillance sys
   - Toggle *Biometric Unlock* ON/OFF.
   - Configurable Lock Timeouts: *Immediately*, *1 Minute*, or *5 Minutes*.
 
-### 4. 📥 Direct Archive Video Download
+### 4. Direct Archive Video Download
 
 - Direct one-click `.mp4` recording file downloads directly from the **Playback** screen (accessible by both Admin and Viewer roles).
 - Convenient download buttons located in both the Top Bar and the Bottom Video Control Bar.
 
-### 5. 📹 Live Streaming & Smart RTSP Management
+### 5. Live Streaming & Smart RTSP Management
 
 - **Low-Latency Live Streaming**: Powered by MediaMTX with WebRTC / HLS streaming.
 - **Brand Presets & Custom URL Builder**: Supports Dahua, Hikvision, Ezviz, Imou, TP-Link, and Generic RTSP stream paths.
 - **Colorful Brand Badges**: Vibrant, distinct visual tags for each camera brand.
 
-### 6. 📼 Automated Recording & NVR Engine
+### 6. Automated Recording & NVR Engine
 
 - **Automated FFmpeg Worker**: Spawns independent recording workers per camera, chunking footage into MP4/TS segments seamlessly.
 - **Timeline Seeking**: Interactive YouTube-style 24-hour playback timeline with visual recording blocks and multi-speed playback (0.5x – 4.0x).
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 The following diagram illustrates the high-level architecture and data flows across the system components:
 
@@ -155,7 +155,7 @@ flowchart TB
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technologies |
 | :--- | :--- |
@@ -167,7 +167,7 @@ flowchart TB
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -202,13 +202,14 @@ To seed default Admin and Viewer accounts with random 6-character passwords and 
 cd backend
 go run cmd/seed/main.go
 ```
+
 This generates `users_credentials.csv` containing login details for all configured viewers and administrators.
 
 ---
 
 ### 3. Running Locally for Development
 
-#### Backend API:
+#### Backend API
 
 ```bash
 cd backend
