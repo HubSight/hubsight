@@ -2,7 +2,9 @@ package router
 
 import (
 	"net/http"
-
+	"net/http/httputil"
+	"net/url"
+	"os"
 	"strings"
 
 	"cctv/internal/auth"
@@ -32,23 +34,26 @@ func New() *gin.Engine {
 		c.String(http.StatusOK, "OK")
 	})
 
+	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
+	if authServiceURL == "" {
+		authServiceURL = "http://localhost:8081"
+	}
+	targetURL, _ := url.Parse(authServiceURL)
+	authProxy := httputil.NewSingleHostReverseProxy(targetURL)
+
 	api := r.Group("/api")
 	{
-		authGroup := api.Group("/auth")
-		{
-			authGroup.POST("/login", auth.LoginHandler)
-			authGroup.POST("/refresh", auth.RefreshHandler)
-			authGroup.POST("/logout", auth.LogoutHandler)
-		}
+		// Forward all /api/auth/* requests to the standalone auth-service
+		api.Any("/auth/*action", func(c *gin.Context) {
+			c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/api")
+			c.Request.Host = targetURL.Host
+			authProxy.ServeHTTP(c.Writer, c.Request)
+		})
 
-		// Protected routes
+		// Protected routes (Validated via auth-service)
 		protected := api.Group("/")
 		protected.Use(auth.Middleware())
 		{
-			protected.GET("/auth/me", auth.MeHandler)
-			protected.PUT("/auth/password", auth.ChangePasswordHandler)
-			protected.POST("/auth/verify-password", auth.VerifyPasswordHandler)
-			
 			// Devices endpoints (Read is allowed for all authenticated users)
 			protected.GET("/devices", device.ListDevicesHandler)
 			protected.GET("/cameras", device.ListDevicesHandler)

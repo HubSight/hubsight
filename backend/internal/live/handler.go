@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"cctv/internal/database"
@@ -42,8 +43,16 @@ func WebRTCHandler(c *gin.Context) {
 
 	camName := fmt.Sprintf("cam_%d", camID)
 
-	// 1. Ensure the stream is registered in go2rtc dynamically
-	putURL := fmt.Sprintf("http://go2rtc:1984/api/streams?name=%s&src=%s", url.QueryEscape(camName), url.QueryEscape(cam.Host))
+	webrtcURL := os.Getenv("WEBRTC_SERVICE_URL")
+	if webrtcURL == "" {
+		webrtcURL = os.Getenv("GO2RTC_URL")
+		if webrtcURL == "" {
+			webrtcURL = "http://webrtc-service:1984"
+		}
+	}
+
+	// 1. Ensure the stream is registered in webrtc-service dynamically
+	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s", webrtcURL, url.QueryEscape(camName), url.QueryEscape(cam.Host))
 	putReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPut, putURL, nil)
 	if err == nil {
 		client := &http.Client{}
@@ -52,9 +61,9 @@ func WebRTCHandler(c *gin.Context) {
 		}
 	}
 
-	// 2. Forward SDP Offer to go2rtc
-	go2rtcURL := fmt.Sprintf("http://go2rtc:1984/api/webrtc?src=%s", url.QueryEscape(camName))
-	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, go2rtcURL, bytes.NewReader(body))
+	// 2. Forward SDP Offer to webrtc-service
+	signalingURL := fmt.Sprintf("%s/api/webrtc?src=%s", webrtcURL, url.QueryEscape(camName))
+	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, signalingURL, bytes.NewReader(body))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create proxy request"})
 		return

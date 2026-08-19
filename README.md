@@ -1,54 +1,12 @@
 # CCTV Surveillance & Playback Platform
 
-A modern, robust, and full-featured CCTV recording and playback surveillance system built with **Go**, **Ent ORM**, **React (Vite + TypeScript)**, **MediaMTX**, **FFmpeg**, and **PostgreSQL**.
+A modern, robust, and full-featured CCTV recording and playback surveillance system built with **Go**, **Ent ORM**, **NestJS (Socket.IO Relay)**, **React (Vite + TypeScript)**, **webrtc-service (go2rtc)**, **FFmpeg**, and **PostgreSQL**.
 
 ---
 
-## Key Features
+## 🏛️ System Architecture: Single-Entry API Gateway Topology
 
-### 1. Role-Based Access Control (RBAC)
-
-- **Admin**: Full access to all features (Camera & Device Management, NVR Monitor, Playback, and Archive Downloads).
-- **Viewer**: View-only access dedicated to Live streaming and Historical Playback with Archive downloads. Restricted from device modifications and recorder internals.
-- **User Profiles & Role Badges**: Display Vietnamese Full Names with distinctive Red (**Admin**) and Blue (**Viewer**) visual badges.
-
-### 2. PWA Indefinite Sessions & Auto Refresh Token
-
-- **Seamless PWA Mode**: When installed as a Progressive Web App (Desktop, Android, or iOS standalone), users enjoy **indefinite sessions**.
-- **Silent Refresh Interceptor**: Axios interceptor silently exchanges rotating refresh tokens upon `401 Unauthorized` responses without interrupting the live or playback video stream.
-- **Standard Browser Security**: Regular browser tabs maintain standard 7-day session expiration.
-
-### 3. PWA App Lock with WebAuthn Biometrics & Password Fallback
-
-- **Background Auto-Lock**: Automatically locks the application screen when the PWA is minimized or placed in the background, keeping the playback session alive.
-- **Biometric Unlock (WebAuthn / Passkeys)**: One-tap unlock using native device biometrics (**Face ID / Touch ID** on iOS/macOS, **Fingerprint / Face Unlock** on Android, or **Windows Hello / PIN**).
-- **Traditional Password Fallback**: Enter account password to unlock if biometrics is disabled or fails.
-- **Customizable Security Settings**:
-  - Toggle *Lock on Background* ON/OFF.
-  - Toggle *Biometric Unlock* ON/OFF.
-  - Configurable Lock Timeouts: *Immediately*, *1 Minute*, or *5 Minutes*.
-
-### 4. Direct Archive Video Download
-
-- Direct one-click `.mp4` recording file downloads directly from the **Playback** screen (accessible by both Admin and Viewer roles).
-- Convenient download buttons located in both the Top Bar and the Bottom Video Control Bar.
-
-### 5. Live Streaming & Smart RTSP Management
-
-- **Low-Latency Live Streaming**: Powered by MediaMTX with WebRTC / HLS streaming.
-- **Brand Presets & Custom URL Builder**: Supports Dahua, Hikvision, Ezviz, Imou, TP-Link, and Generic RTSP stream paths.
-- **Colorful Brand Badges**: Vibrant, distinct visual tags for each camera brand.
-
-### 6. Automated Recording & NVR Engine
-
-- **Automated FFmpeg Worker**: Spawns independent recording workers per camera, chunking footage into MP4/TS segments seamlessly.
-- **Timeline Seeking**: Interactive YouTube-style 24-hour playback timeline with visual recording blocks and multi-speed playback (0.5x – 4.0x).
-
----
-
-## System Architecture
-
-The following diagram illustrates the high-level architecture and data flows across the system components:
+The platform adopts a clean **API Gateway Pattern**:
 
 ```mermaid
 flowchart TB
@@ -73,49 +31,29 @@ flowchart TB
     end
 
     %% ==========================================
-    %% 2. BACKEND API & AUTH LAYER
+    %% 2. PUBLIC API GATEWAY & WEBSOCKET BOUNDARY
     %% ==========================================
-    subgraph BackendAPI ["⚙️ Backend API Server (Golang & Gin)"]
+    subgraph PublicBoundary ["🌐 Public Boundary (External Entrypoints)"]
         direction TB
-        Router["Gin HTTP Router & Middleware\n(:8088)"]
-        RBAC["RBAC & Role Guard\n(Admin vs Viewer)"]
-        AuthSvc["Auth & Session Service\n(Login / Refresh / Verify)"]
-        DeviceSvc["Device & Camera Manager\n(CRUD & RTSP Builder)"]
-        ArchiveSvc["Recording & Stream Handler\n(Archive / Download API)"]
-        EntORM["Ent ORM Layer\n(PostgreSQL Client)"]
-
-        Router --> RBAC
-        RBAC --> AuthSvc
-        RBAC --> DeviceSvc
-        RBAC --> ArchiveSvc
-        AuthSvc --> EntORM
-        DeviceSvc --> EntORM
-        ArchiveSvc --> EntORM
+        APIGateway["🚪 API Gateway & Core Server\n(api-gateway :8088)\n- Single REST Entrypoint for FE\n- Proxies /api/auth/* & Token Validation\n- Proxies WebRTC Signaling"]
+        RelayWS["⚡ Socket.IO Relay Server\n(relay-service :3005)\n- Real-time Push Events & Rooms"]
+        RTCStream["📹 WebRTC Media Port\n(webrtc-service :8555 UDP/TCP)"]
     end
 
     %% ==========================================
-    %% 3. MEDIA STREAMING & RECORDING LAYER
+    %% 3. INTERNAL PRIVATE MICROSERVICES
     %% ==========================================
-    subgraph MediaLayer ["📹 Media Streaming & NVR Recording"]
+    subgraph InternalServices ["🔒 Internal Services (Private Network - No Public Ports)"]
         direction TB
-        MediaMTX["MediaMTX / go2rtc\n(WebRTC :8555 / RTSP :8554 / API :1984)"]
-        RecorderWorker["NVR Recorder Service\n(Golang Multi-Camera Worker)"]
-        FFmpeg["FFmpeg Subprocesses\n(H.264 / MP4 Segmentation)"]
-
-        RecorderWorker --> FFmpeg
+        AuthSvc["🔐 Standalone Auth Service (:8081)\n- SSO/OIDC Ready Engine\n- Session & Refresh Tokens\n- Password & WebAuthn Verification"]
+        WebRTCSvc["📹 WebRTC Signaling Service (:1984)\n- Internal Dynamic RTSP Mapping"]
+        NVRSvc["📼 NVR Recorder Service\n- Multi-Camera FFmpeg Workers\n- 720p @ 15fps Segmentation"]
+        Postgres[("Shared PostgreSQL DB")]
+        S3Storage[("S3 / MinIO Storage\n- YYYY-MM-DD/<Camera_ID>/")]
     end
 
     %% ==========================================
-    %% 4. STORAGE & DATABASE LAYER
-    %% ==========================================
-    subgraph StorageLayer ["💾 Storage & Persistence Layer"]
-        direction TB
-        Postgres[("PostgreSQL Database\n- Users & RBAC\n- Sessions & Refresh Tokens\n- Devices & RTSP Configs\n- Recording Metadata")]
-        S3Storage[("S3 / Local Storage\n- MP4 Video Chunks\n- 24h Recording Archives")]
-    end
-
-    %% ==========================================
-    %% 5. CAMERA HARDWARE
+    %% 4. CAMERA HARDWARE
     %% ==========================================
     subgraph CameraLayer ["📷 IP Cameras & RTSP Sources"]
         direction TB
@@ -128,118 +66,110 @@ flowchart TB
     %% ==========================================
     %% CONNECTIONS & FLOWS
     %% ==========================================
-    %% Cameras to Media & Recorder
-    CamDahua -->|RTSP Stream| MediaMTX
-    CamHik -->|RTSP Stream| MediaMTX
-    CamEzviz -->|RTSP Stream| MediaMTX
-    CamGeneric -->|RTSP Stream| MediaMTX
+    %% Client to Public Entrypoints
+    ClientLayer -->|1. All REST & Auth API Requests (:8088)| APIGateway
+    ClientLayer <-->|2. Real-time Events WebSocket (:3005)| RelayWS
+    LiveView <-->|3. WebRTC Video RTP/SRTP Media (:8555)| RTCStream
 
-    CamDahua -.->|Direct RTSP Capture| FFmpeg
-    CamHik -.->|Direct RTSP Capture| FFmpeg
-    CamEzviz -.->|Direct RTSP Capture| FFmpeg
-    CamGeneric -.->|Direct RTSP Capture| FFmpeg
+    %% Gateway to Internal Services
+    APIGateway -->|Reverse Proxy /api/auth/* & Validate Token| AuthSvc
+    APIGateway -->|WebRTC Signaling /api/live/:id/webrtc| WebRTCSvc
+    APIGateway -.->|Trigger Real-time Push Events| RelayWS
+    APIGateway -->|CRUD & Metadata| Postgres
+    APIGateway -->|Generate Presigned Stream URLs| S3Storage
 
-    %% Recorder to Storage & DB
-    FFmpeg -->|Store MP4 Segments| S3Storage
-    RecorderWorker -->|Save Metadata| Postgres
+    %% Internal Services to DB / Storage
+    AuthSvc --> Postgres
+    NVRSvc --> Postgres
+    NVRSvc --> S3Storage
 
-    %% Client to Backend & Media
-    ClientLayer -->|REST API / HTTPS :8088| Router
-    LiveView -->|Low-Latency WebRTC :8555 / WSS| MediaMTX
-    PlaybackView -->|Stream & Download MP4| ArchiveSvc
-    ArchiveSvc -->|Read Video File| S3Storage
+    %% Cameras to Internal Media & Recorder
+    CamDahua -->|RTSP Stream| WebRTCSvc
+    CamHik -->|RTSP Stream| WebRTCSvc
+    CamEzviz -->|RTSP Stream| WebRTCSvc
+    CamGeneric -->|RTSP Stream| WebRTCSvc
 
-    %% Backend to Database
-    EntORM -->|SQL Queries & Auto Migration| Postgres
+    CamDahua -.->|Direct RTSP Capture| NVRSvc
+    CamHik -.->|Direct RTSP Capture| NVRSvc
+    CamEzviz -.->|Direct RTSP Capture| NVRSvc
+    CamGeneric -.->|Direct RTSP Capture| NVRSvc
 ```
 
 ---
 
-## Technology Stack
+## 🌐 Microservices & Network Topology
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Backend API** | Go 1.23+, Gin Web Framework, Ent ORM, bcrypt, WebAuthn standard |
-| **NVR & Streaming** | Go Recorder Worker, MediaMTX (WebRTC/RTSP/HLS), FFmpeg, S3 Storage |
-| **Frontend App** | React 19, Vite, TypeScript, Tailwind CSS, Lucide Icons, `vite-plugin-pwa` |
-| **Database** | PostgreSQL with Ent ORM migration |
-| **Infrastructure** | Docker & Docker Compose (`api`, `recorder`, `mediamtx`, `frontend`) |
+| Service Name | Role | Public Host Port | Internal Address | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **`api-gateway`** | **API Gateway & Core API** | **`:8088`** | `http://api-gateway:8080` | **Sole REST Entrypoint** for frontend HTTP requests (`/api/auth/*`, `/api/devices`, `/api/archive/*`, `/api/live/*`). |
+| **`relay-service`** | **Socket.IO Relay** | **`:3005`** | `http://relay-service:3001` | **WebSocket Entrypoint** for frontend real-time notifications, rooms, and client relay. Protected by Auth & M2M bypass. |
+| **`webrtc-service`** | **WebRTC Media Engine** | **`:8555`** | `http://webrtc-service:1984` | Port `:8555` UDP/TCP transmits WebRTC video RTP media. Signaling API port `:1984` is **strictly internal**. |
+| **`auth-service`** | **Auth & SSO Engine** | *None* | `http://auth-service:8081` | **Private Internal Microservice** for SSO/OIDC auth, session verification, and token rotation. |
+| **`nvr-service`** | **NVR Recording Engine** | *None* | *Background Worker* | **Private Internal Worker** for FFmpeg chunking and S3 archiving. |
+
+---
+
+## Key Features
+
+### 1. Unified API Gateway Pattern (`api-gateway`)
+- Frontend only needs **one API origin** (`http://localhost:8088`) for all operations.
+- Zero CORS / Cross-Origin Cookie complications between Auth and Application services.
+- All internal microservices (`auth-service`, `webrtc-service API`, `nvr-service`) remain fully protected behind the internal Docker network.
+
+### 2. Dedicated Socket.IO Relay Service with Auth & M2M Protection (`relay-service`)
+- **Frontend Auth Guard**: All WebSocket connections from Frontend clients are verified against `auth-service` (via session cookie, auth token, or `Authorization: Bearer`). Invalid connections are instantly rejected with `auth_error`.
+- **Machine-to-Machine (M2M) Internal Bypass**: Identified internal services (`x-service-key` / `M2M_SECRET`) bypass user auth and connect directly for cluster-wide message relaying.
+- **Rooms & Namespaces**: Auto-joins users to personal `user_<id>` and role `role_<role>` rooms, and supports manual room subscriptions (`join_room`, `leave_room`, `relay_message`).
+- **REST Endpoints**: HTTP webhook endpoints (`POST /relay/emit`, `POST /relay/broadcast`) allow backend services to push real-time alerts.
+
+### 3. Standalone Auth Service (`auth-service`)
+- Dedicated auth microservice handling users, sessions, rotating PWA refresh tokens, and password verification.
+- Exposes standard OIDC discovery (`/.well-known/openid-configuration`) and `/auth/validate-token`.
+- Shares the existing PostgreSQL database schema.
+
+### 4. Role-Based Access Control (RBAC)
+- **Admin**: Full access (Camera Management, NVR Monitor, Playback, and Archive Downloads).
+- **Viewer**: View-only access dedicated to Live streaming and Historical Playback with Archive downloads.
+- **Role Badges**: Red (**Admin**) and Blue (**Viewer**) visual badges.
+
+### 5. PWA Indefinite Sessions & WebAuthn App Lock
+- **Indefinite Sessions**: PWA standalone mode automatically refreshes tokens via background interceptor.
+- **App Lock**: Locks screen on background minimization with **Face ID / Touch ID / Fingerprint / PIN** or account password fallback.
+
+### 6. Automated NVR Recording (`nvr-service`) & S3 Hierarchy
+- Multi-camera FFmpeg workers store MP4 segments structured by `YYYY-MM-DD/<CameraName>_<ID>/<Filename>.mp4` (720p @ 15fps).
+- 24-hour interactive playback timeline and direct MP4 downloads.
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-
-- Docker & Docker Compose
-- Node.js (v20+) & pnpm (for local frontend development)
-- Go (1.23+) (for local backend development)
-
 ### 1. Quick Start with Docker Compose
 
 ```bash
-# Clone the repository
+# Clone repository and start all microservices
 git clone https://github.com/your-repo/cctv.git
 cd cctv
 
-# Build and start all services
 docker compose up -d --build
 ```
 
-Services will be accessible at:
-
-- **Web Application (Frontend)**: `http://localhost:5173` (or production port)
-- **Backend API**: `http://localhost:8088`
-- **MediaMTX Streaming**: `http://localhost:8889` (WebRTC / HLS)
+Access points:
+- **Frontend App**: `http://localhost:5173` (or deployed URL)
+- **CCTV API Gateway**: `http://localhost:8088` (Proxies all REST & Auth APIs)
+- **Socket.IO Relay**: `http://localhost:3005` (WebSocket events)
+- **WebRTC Stream Media**: `http://localhost:8555`
 
 ---
 
 ### 2. Seeding Accounts & RBAC Setup
-
-To seed default Admin and Viewer accounts with random 6-character passwords and export credentials to CSV:
 
 ```bash
 cd backend
 go run cmd/seed/main.go
 ```
 
-This generates `users_credentials.csv` containing login details for all configured viewers and administrators.
-
----
-
-### 3. Running Locally for Development
-
-#### Backend API
-
-```bash
-cd backend
-go run cmd/api/main.go
-```
-
-#### NVR Recorder
-
-```bash
-cd backend
-go run cmd/recorder/main.go
-```
-
-#### Frontend
-
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-
----
-
-## 📱 Progressive Web App (PWA) Setup
-
-1. Open the web application in Chrome, Edge, or Safari on your phone or computer.
-2. Click **Install App** / **Add to Home Screen**.
-3. Launch the installed PWA:
-   - Sessions will persist indefinitely via background Refresh Tokens.
-   - Open **Sidebar > Security & App Lock** to enable **Face ID / Fingerprint** unlock.
+Generates `users_credentials.csv` with credentials for configured accounts.
 
 ---
 
