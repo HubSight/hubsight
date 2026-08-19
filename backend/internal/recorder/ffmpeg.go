@@ -41,7 +41,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 
 	// Video Codec
 	// Recording quality: 1280x720 (720p) at 10fps to optimize storage and server processing
-	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "10")
+	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "15")
 
 	// Audio Handling
 	switch cfg.AudioMode {
