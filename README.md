@@ -4,9 +4,9 @@ A modern, robust, and full-featured CCTV recording and playback surveillance sys
 
 ---
 
-## 🏛️ System Architecture: Single-Entry API Gateway Topology
+## 🏛️ System Architecture: Single Unified API Gateway Entrypoint
 
-The platform adopts a clean **API Gateway Pattern**:
+The frontend client communicates **exclusively** with the **API Gateway (`api-gateway :8088`)**. All REST APIs, Auth flows, Relay (WebSocket) real-time events, and WebRTC signaling are transparently routed through the gateway:
 
 ```mermaid
 flowchart TB
@@ -31,22 +31,23 @@ flowchart TB
     end
 
     %% ==========================================
-    %% 2. PUBLIC API GATEWAY & WEBSOCKET BOUNDARY
+    %% 2. PUBLIC API GATEWAY (THE ONLY EXTERNAL ENTRYPOINT)
     %% ==========================================
-    subgraph PublicBoundary ["🌐 Public Boundary (External Entrypoints)"]
+    subgraph PublicBoundary ["🌐 Public Boundary (Single Host Entrypoint)"]
         direction TB
-        APIGateway["🚪 API Gateway & Core Server (:8088)<br/>Single REST Entrypoint for FE<br/>Proxies Auth & WebRTC Signaling"]
-        RelayWS["⚡ Socket.IO Relay Server (:3005)<br/>Real-time Push Events & Rooms"]
+        APIGateway["🚪 Pure API Gateway (:8088)<br/>Single Unified Entrypoint for FE<br/>- REST APIs (/api/*)<br/>- Auth Endpoints (/api/auth/*)<br/>- WebSocket Relay (/relay)<br/>- WebRTC Signaling & WHEP (/webrtc/*)"]
         RTCStream["📹 WebRTC Media Port (:8555 UDP/TCP)<br/>Direct RTP/SRTP Video Transport"]
     end
 
     %% ==========================================
     %% 3. INTERNAL PRIVATE MICROSERVICES
     %% ==========================================
-    subgraph InternalServices ["🔒 Internal Services (Private Network)"]
+    subgraph InternalServices ["🔒 Internal Services (100% Private Network)"]
         direction TB
         AuthSvc["🔐 Standalone Auth Service (:8081)<br/>SSO/OIDC Ready Engine<br/>Session & Token Verification"]
-        WebRTCSvc["📹 WebRTC Signaling Service (:1984)<br/>Internal Dynamic RTSP Mapping"]
+        CoreSvc["⚙️ Core CCTV Service (:8080)<br/>Devices, Cameras, Archive & Playback Logic"]
+        RelayWS["⚡ Socket.IO Relay Server (:3001)<br/>Real-time Push Events & Rooms (Path: /relay)"]
+        WebRTCSvc["📹 WebRTC Engine (:1984)<br/>Internal Dynamic RTSP Mapping"]
         NVRSvc["📼 NVR Recorder Service<br/>Multi-Camera FFmpeg Workers<br/>720p @ 15fps Segmentation"]
         Postgres[("Shared PostgreSQL DB")]
         S3Storage[("S3 / MinIO Storage<br/>YYYY-MM-DD/Camera_ID/")]
@@ -66,18 +67,28 @@ flowchart TB
     %% ==========================================
     %% CONNECTIONS & FLOWS
     %% ==========================================
-    AuthApp -->|"1. All REST & Auth APIs (:8088)"| APIGateway
-    PWA <-->|"2. Real-time Events WebSocket (:3005)"| RelayWS
-    Browser <-->|"2. Real-time Events WebSocket (:3005)"| RelayWS
-    LiveView <-->|"3. WebRTC Video Media (:8555)"| RTCStream
+    %% FE communicates ONLY with API Gateway
+    ClientLayer -->|"1. REST APIs (/api/*)"| APIGateway
+    ClientLayer <-->|"2. Real-time WebSocket (ws://host:8088/relay)"| APIGateway
+    LiveView -->|"3. WebRTC Signaling (/webrtc/*, /api/live/*)"| APIGateway
+    LiveView <-->|"4. Direct RTP Media (:8555)"| RTCStream
 
-    APIGateway -->|"Reverse Proxy /api/auth/*"| AuthSvc
-    APIGateway -->|"Signaling /api/live/:id/webrtc"| WebRTCSvc
-    APIGateway -.->|"Trigger Push Events"| RelayWS
-    APIGateway -->|"CRUD & Metadata"| Postgres
-    APIGateway -->|"Generate Stream URLs"| S3Storage
+    %% Gateway Dispatches to Internal Services
+    APIGateway -->|"Proxy /api/auth/*"| AuthSvc
+    APIGateway -->|"Proxy /relay (WebSocket Upgrade & Engine)"| RelayWS
+    APIGateway -->|"Proxy /webrtc/*"| WebRTCSvc
+    APIGateway -->|"Proxy /api/* (Devices, Archive, Live)"| CoreSvc
 
+    %% Core Service Interactions
+    CoreSvc -->|"Validate Session / Token"| AuthSvc
+    CoreSvc -->|"Signaling /api/live/:id/webrtc"| WebRTCSvc
+    CoreSvc -.->|"Trigger Push Events"| RelayWS
+    CoreSvc -->|"CRUD & Metadata"| Postgres
+    CoreSvc -->|"Generate Stream URLs"| S3Storage
+
+    %% Internal Microservices
     AuthSvc --> Postgres
+    RelayWS -->|"Auth Guard Handshake"| AuthSvc
     NVRSvc --> Postgres
     NVRSvc --> S3Storage
 
@@ -98,44 +109,48 @@ flowchart TB
 
 | Service Name | Role | Public Host Port | Internal Address | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **`api-gateway`** | **API Gateway & Core API** | **`:8088`** | `http://api-gateway:8080` | **Sole REST Entrypoint** for frontend HTTP requests (`/api/auth/*`, `/api/devices`, `/api/archive/*`, `/api/live/*`). |
-| **`relay-service`** | **Socket.IO Relay** | **`:3005`** | `http://relay-service:3001` | **WebSocket Entrypoint** for frontend real-time notifications, rooms, and client relay. Protected by Auth & M2M bypass. |
-| **`webrtc-service`** | **WebRTC Media Engine** | **`:8555`** | `http://webrtc-service:1984` | Port `:8555` UDP/TCP transmits WebRTC video RTP media. Signaling API port `:1984` is **strictly internal**. |
+| **`api-gateway`** | **Single Unified API Gateway** | **`:8088`** | `http://api-gateway:8080` | **Sole Public HTTP & WebSocket Entrypoint** for FE. Proxies REST APIs (`/api/*`), Auth (`/api/auth/*`), WebSocket Relay (`/relay`), and WebRTC signaling (`/webrtc/*`). |
+| **`core-service`** | **Core CCTV Business Logic** | *None* | `http://core-service:8080` | **Private Internal Microservice** handling devices, camera CRUD, RTSP URL generation, archive playback timeline, and WebRTC signaling. |
+| **`relay-service`** | **Socket.IO Relay Server** | *None* | `http://relay-service:3001` | **Private Internal Service** for real-time notifications and rooms, routed through Gateway `:8088/relay` (Path: `/relay`). Protected by Auth & M2M bypass. |
 | **`auth-service`** | **Auth & SSO Engine** | *None* | `http://auth-service:8081` | **Private Internal Microservice** for SSO/OIDC auth, session verification, and token rotation. |
+| **`webrtc-service`** | **WebRTC Media Engine** | **`:8555`** | `http://webrtc-service:1984` | Port `:8555` UDP/TCP transmits direct WebRTC video RTP media. All signaling APIs are routed via Gateway `:8088/webrtc`. |
 | **`nvr-service`** | **NVR Recording Engine** | *None* | *Background Worker* | **Private Internal Worker** for FFmpeg chunking and S3 archiving. |
 
 ---
 
 ## Key Features
 
-### 1. Unified API Gateway Pattern (`api-gateway`)
-- Frontend only needs **one API origin** (`http://localhost:8088`) for all operations.
-- Zero CORS / Cross-Origin Cookie complications between Auth and Application services.
-- All internal microservices (`auth-service`, `webrtc-service API`, `nvr-service`) remain fully protected behind the internal Docker network.
+### 1. Single-Entry API Gateway (`api-gateway`)
+- **Single Origin For All Protocols**: Frontend only targets **`http://localhost:8088`** for REST, Auth, and WebSockets (`ws://`/`wss://`).
+- **Pure Path Names**:
+  - `/api/auth/*` ➔ `http://auth-service:8081` (rewrites to `/auth/*`)
+  - `/relay` & `/relay/*` ➔ `http://relay-service:3001` (WebSocket upgrades on path `/relay`)
+  - `/webrtc/*` ➔ `http://webrtc-service:1984/*` (WebRTC signaling & WHEP streams)
+  - `/api/*` (devices, archive, live, recorder) ➔ `http://core-service:8080`
+- **Complete Internal Isolation**: `core-service`, `auth-service`, `relay-service`, and `nvr-service` have zero host port exposure.
 
-### 2. Dedicated Socket.IO Relay Service with Auth & M2M Protection (`relay-service`)
-- **Frontend Auth Guard**: All WebSocket connections from Frontend clients are verified against `auth-service` (via session cookie, auth token, or `Authorization: Bearer`). Invalid connections are instantly rejected with `auth_error`.
-- **Machine-to-Machine (M2M) Internal Bypass**: Identified internal services (`x-service-key` / `M2M_SECRET`) bypass user auth and connect directly for cluster-wide message relaying.
-- **Rooms & Namespaces**: Auto-joins users to personal `user_<id>` and role `role_<role>` rooms, and supports manual room subscriptions (`join_room`, `leave_room`, `relay_message`).
-- **REST Endpoints**: HTTP webhook endpoints (`POST /relay/emit`, `POST /relay/broadcast`) allow backend services to push real-time alerts.
+### 2. Client Connection Examples
 
-### 3. Standalone Auth Service (`auth-service`)
-- Dedicated auth microservice handling users, sessions, rotating PWA refresh tokens, and password verification.
-- Exposes standard OIDC discovery (`/.well-known/openid-configuration`) and `/auth/validate-token`.
-- Shares the existing PostgreSQL database schema.
+#### Frontend Socket.IO Connection:
+```typescript
+import { io } from 'socket.io-client';
 
-### 4. Role-Based Access Control (RBAC)
-- **Admin**: Full access (Camera Management, NVR Monitor, Playback, and Archive Downloads).
-- **Viewer**: View-only access dedicated to Live streaming and Historical Playback with Archive downloads.
-- **Role Badges**: Red (**Admin**) and Blue (**Viewer**) visual badges.
+const socket = io('http://localhost:8088', {
+  path: '/relay',
+  withCredentials: true,
+  transports: ['websocket', 'polling'],
+});
+```
 
-### 5. PWA Indefinite Sessions & WebAuthn App Lock
-- **Indefinite Sessions**: PWA standalone mode automatically refreshes tokens via background interceptor.
-- **App Lock**: Locks screen on background minimization with **Face ID / Touch ID / Fingerprint / PIN** or account password fallback.
-
-### 6. Automated NVR Recording (`nvr-service`) & S3 Hierarchy
-- Multi-camera FFmpeg workers store MP4 segments structured by `YYYY-MM-DD/<CameraName>_<ID>/<Filename>.mp4` (720p @ 15fps).
-- 24-hour interactive playback timeline and direct MP4 downloads.
+#### Frontend WebRTC Live Video:
+```typescript
+const response = await fetch('http://localhost:8088/api/live/5/webrtc', {
+  method: 'POST',
+  body: peerConnection.localDescription?.sdp,
+  headers: { 'Content-Type': 'application/sdp' },
+  credentials: 'include',
+});
+```
 
 ---
 
@@ -153,9 +168,8 @@ docker compose up -d --build
 
 Access points:
 - **Frontend App**: `http://localhost:5173` (or deployed URL)
-- **CCTV API Gateway**: `http://localhost:8088` (Proxies all REST & Auth APIs)
-- **Socket.IO Relay**: `http://localhost:3005` (WebSocket events)
-- **WebRTC Stream Media**: `http://localhost:8555`
+- **Unified API Gateway**: `http://localhost:8088` (Proxies all REST APIs, Auth, WebSocket `/relay` & WebRTC signaling `/webrtc/*`)
+- **WebRTC Stream Media**: `http://localhost:8555` (RTP media transport)
 
 ---
 

@@ -2,9 +2,6 @@ package router
 
 import (
 	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"os"
 	"strings"
 
 	"cctv/internal/auth"
@@ -24,33 +21,19 @@ func New() *gin.Engine {
 			return origin == "https://cctv.quoctran.space" || strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "https://localhost")
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-Service-Key"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
 
-	// Public routes
+	// Health check
 	r.GET("/healthz", func(c *gin.Context) {
-		c.String(http.StatusOK, "OK")
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "core-service"})
 	})
-
-	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
-	if authServiceURL == "" {
-		authServiceURL = "http://localhost:8081"
-	}
-	targetURL, _ := url.Parse(authServiceURL)
-	authProxy := httputil.NewSingleHostReverseProxy(targetURL)
 
 	api := r.Group("/api")
 	{
-		// Forward all /api/auth/* requests to the standalone auth-service
-		api.Any("/auth/*action", func(c *gin.Context) {
-			c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/api")
-			c.Request.Host = targetURL.Host
-			authProxy.ServeHTTP(c.Writer, c.Request)
-		})
-
-		// Protected routes (Validated via auth-service)
+		// Protected domain routes (Validated via auth-service)
 		protected := api.Group("/")
 		protected.Use(auth.Middleware())
 		{
@@ -73,7 +56,8 @@ func New() *gin.Engine {
 				// NVR recorder monitor endpoint
 				adminOnly.GET("/recorder/status", nvr.NvrStatusHandler)
 			}
-			
+
+			// Archive and timeline endpoints
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)
 			protected.GET("/archive/:id/stream", recording.StreamHandler)

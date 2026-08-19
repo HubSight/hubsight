@@ -5,11 +5,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o dist/api cmd/api/main.go
+RUN go build -o dist/core cmd/core/main.go
 
 FROM alpine:latest
 WORKDIR /app
-COPY --from=builder /app/dist/api /app/api
+COPY --from=builder /app/dist/core /app/core
 
 EXPOSE 8080
-CMD ["/app/api"]
+ENV PORT=8080
+CMD ["/app/core"]

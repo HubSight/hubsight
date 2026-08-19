@@ -27,6 +27,7 @@ interface ValidateTokenResponse {
 }
 
 @WebSocketGateway({
+  path: '/relay',
   cors: {
     origin: '*',
     credentials: true,
