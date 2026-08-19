@@ -1851,19 +1851,21 @@ func (m *RecordingMutation) ResetEdge(name string) error {
 // SessionMutation represents an operation that mutates the Session nodes in the graph.
 type SessionMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	token_hash    *[]byte
-	expires_at    *time.Time
-	created_at    *time.Time
-	last_seen_at  *time.Time
-	clearedFields map[string]struct{}
-	user          *int
-	cleareduser   bool
-	done          bool
-	oldValue      func(context.Context) (*Session, error)
-	predicates    []predicate.Session
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	token_hash         *[]byte
+	refresh_token_hash *[]byte
+	is_pwa             *bool
+	expires_at         *time.Time
+	created_at         *time.Time
+	last_seen_at       *time.Time
+	clearedFields      map[string]struct{}
+	user               *int
+	cleareduser        bool
+	done               bool
+	oldValue           func(context.Context) (*Session, error)
+	predicates         []predicate.Session
 }
 
 var _ ent.Mutation = (*SessionMutation)(nil)
@@ -2004,6 +2006,91 @@ func (m *SessionMutation) OldTokenHash(ctx context.Context) (v []byte, err error
 // ResetTokenHash resets all changes to the "token_hash" field.
 func (m *SessionMutation) ResetTokenHash() {
 	m.token_hash = nil
+}
+
+// SetRefreshTokenHash sets the "refresh_token_hash" field.
+func (m *SessionMutation) SetRefreshTokenHash(b []byte) {
+	m.refresh_token_hash = &b
+}
+
+// RefreshTokenHash returns the value of the "refresh_token_hash" field in the mutation.
+func (m *SessionMutation) RefreshTokenHash() (r []byte, exists bool) {
+	v := m.refresh_token_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRefreshTokenHash returns the old "refresh_token_hash" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldRefreshTokenHash(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRefreshTokenHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRefreshTokenHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRefreshTokenHash: %w", err)
+	}
+	return oldValue.RefreshTokenHash, nil
+}
+
+// ClearRefreshTokenHash clears the value of the "refresh_token_hash" field.
+func (m *SessionMutation) ClearRefreshTokenHash() {
+	m.refresh_token_hash = nil
+	m.clearedFields[session.FieldRefreshTokenHash] = struct{}{}
+}
+
+// RefreshTokenHashCleared returns if the "refresh_token_hash" field was cleared in this mutation.
+func (m *SessionMutation) RefreshTokenHashCleared() bool {
+	_, ok := m.clearedFields[session.FieldRefreshTokenHash]
+	return ok
+}
+
+// ResetRefreshTokenHash resets all changes to the "refresh_token_hash" field.
+func (m *SessionMutation) ResetRefreshTokenHash() {
+	m.refresh_token_hash = nil
+	delete(m.clearedFields, session.FieldRefreshTokenHash)
+}
+
+// SetIsPwa sets the "is_pwa" field.
+func (m *SessionMutation) SetIsPwa(b bool) {
+	m.is_pwa = &b
+}
+
+// IsPwa returns the value of the "is_pwa" field in the mutation.
+func (m *SessionMutation) IsPwa() (r bool, exists bool) {
+	v := m.is_pwa
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsPwa returns the old "is_pwa" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldIsPwa(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsPwa is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsPwa requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsPwa: %w", err)
+	}
+	return oldValue.IsPwa, nil
+}
+
+// ResetIsPwa resets all changes to the "is_pwa" field.
+func (m *SessionMutation) ResetIsPwa() {
+	m.is_pwa = nil
 }
 
 // SetExpiresAt sets the "expires_at" field.
@@ -2200,9 +2287,15 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 6)
 	if m.token_hash != nil {
 		fields = append(fields, session.FieldTokenHash)
+	}
+	if m.refresh_token_hash != nil {
+		fields = append(fields, session.FieldRefreshTokenHash)
+	}
+	if m.is_pwa != nil {
+		fields = append(fields, session.FieldIsPwa)
 	}
 	if m.expires_at != nil {
 		fields = append(fields, session.FieldExpiresAt)
@@ -2223,6 +2316,10 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case session.FieldTokenHash:
 		return m.TokenHash()
+	case session.FieldRefreshTokenHash:
+		return m.RefreshTokenHash()
+	case session.FieldIsPwa:
+		return m.IsPwa()
 	case session.FieldExpiresAt:
 		return m.ExpiresAt()
 	case session.FieldCreatedAt:
@@ -2240,6 +2337,10 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 	switch name {
 	case session.FieldTokenHash:
 		return m.OldTokenHash(ctx)
+	case session.FieldRefreshTokenHash:
+		return m.OldRefreshTokenHash(ctx)
+	case session.FieldIsPwa:
+		return m.OldIsPwa(ctx)
 	case session.FieldExpiresAt:
 		return m.OldExpiresAt(ctx)
 	case session.FieldCreatedAt:
@@ -2261,6 +2362,20 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTokenHash(v)
+		return nil
+	case session.FieldRefreshTokenHash:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRefreshTokenHash(v)
+		return nil
+	case session.FieldIsPwa:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsPwa(v)
 		return nil
 	case session.FieldExpiresAt:
 		v, ok := value.(time.Time)
@@ -2313,6 +2428,9 @@ func (m *SessionMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *SessionMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(session.FieldRefreshTokenHash) {
+		fields = append(fields, session.FieldRefreshTokenHash)
+	}
 	if m.FieldCleared(session.FieldLastSeenAt) {
 		fields = append(fields, session.FieldLastSeenAt)
 	}
@@ -2330,6 +2448,9 @@ func (m *SessionMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *SessionMutation) ClearField(name string) error {
 	switch name {
+	case session.FieldRefreshTokenHash:
+		m.ClearRefreshTokenHash()
+		return nil
 	case session.FieldLastSeenAt:
 		m.ClearLastSeenAt()
 		return nil
@@ -2343,6 +2464,12 @@ func (m *SessionMutation) ResetField(name string) error {
 	switch name {
 	case session.FieldTokenHash:
 		m.ResetTokenHash()
+		return nil
+	case session.FieldRefreshTokenHash:
+		m.ResetRefreshTokenHash()
+		return nil
+	case session.FieldIsPwa:
+		m.ResetIsPwa()
 		return nil
 	case session.FieldExpiresAt:
 		m.ResetExpiresAt()

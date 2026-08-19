@@ -59,6 +59,8 @@ var (
 	SessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "token_hash", Type: field.TypeBytes, Unique: true},
+		{Name: "refresh_token_hash", Type: field.TypeBytes, Nullable: true},
+		{Name: "is_pwa", Type: field.TypeBool, Default: false},
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
@@ -72,7 +74,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sessions_users_sessions",
-				Columns:    []*schema.Column{SessionsColumns[5]},
+				Columns:    []*schema.Column{SessionsColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

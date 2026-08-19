@@ -61,6 +61,16 @@ func TokenHash(v []byte) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldTokenHash, v))
 }
 
+// RefreshTokenHash applies equality check predicate on the "refresh_token_hash" field. It's identical to RefreshTokenHashEQ.
+func RefreshTokenHash(v []byte) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldRefreshTokenHash, v))
+}
+
+// IsPwa applies equality check predicate on the "is_pwa" field. It's identical to IsPwaEQ.
+func IsPwa(v bool) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldIsPwa, v))
+}
+
 // ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
 func ExpiresAt(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldExpiresAt, v))
@@ -114,6 +124,66 @@ func TokenHashLT(v []byte) predicate.Session {
 // TokenHashLTE applies the LTE predicate on the "token_hash" field.
 func TokenHashLTE(v []byte) predicate.Session {
 	return predicate.Session(sql.FieldLTE(FieldTokenHash, v))
+}
+
+// RefreshTokenHashEQ applies the EQ predicate on the "refresh_token_hash" field.
+func RefreshTokenHashEQ(v []byte) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldRefreshTokenHash, v))
+}
+
+// RefreshTokenHashNEQ applies the NEQ predicate on the "refresh_token_hash" field.
+func RefreshTokenHashNEQ(v []byte) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldRefreshTokenHash, v))
+}
+
+// RefreshTokenHashIn applies the In predicate on the "refresh_token_hash" field.
+func RefreshTokenHashIn(vs ...[]byte) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldRefreshTokenHash, vs...))
+}
+
+// RefreshTokenHashNotIn applies the NotIn predicate on the "refresh_token_hash" field.
+func RefreshTokenHashNotIn(vs ...[]byte) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldRefreshTokenHash, vs...))
+}
+
+// RefreshTokenHashGT applies the GT predicate on the "refresh_token_hash" field.
+func RefreshTokenHashGT(v []byte) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldRefreshTokenHash, v))
+}
+
+// RefreshTokenHashGTE applies the GTE predicate on the "refresh_token_hash" field.
+func RefreshTokenHashGTE(v []byte) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldRefreshTokenHash, v))
+}
+
+// RefreshTokenHashLT applies the LT predicate on the "refresh_token_hash" field.
+func RefreshTokenHashLT(v []byte) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldRefreshTokenHash, v))
+}
+
+// RefreshTokenHashLTE applies the LTE predicate on the "refresh_token_hash" field.
+func RefreshTokenHashLTE(v []byte) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldRefreshTokenHash, v))
+}
+
+// RefreshTokenHashIsNil applies the IsNil predicate on the "refresh_token_hash" field.
+func RefreshTokenHashIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldRefreshTokenHash))
+}
+
+// RefreshTokenHashNotNil applies the NotNil predicate on the "refresh_token_hash" field.
+func RefreshTokenHashNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldRefreshTokenHash))
+}
+
+// IsPwaEQ applies the EQ predicate on the "is_pwa" field.
+func IsPwaEQ(v bool) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldIsPwa, v))
+}
+
+// IsPwaNEQ applies the NEQ predicate on the "is_pwa" field.
+func IsPwaNEQ(v bool) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldIsPwa, v))
 }
 
 // ExpiresAtEQ applies the EQ predicate on the "expires_at" field.

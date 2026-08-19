@@ -77,8 +77,12 @@ func init() {
 	recording.DefaultCreatedAt = recordingDescCreatedAt.Default.(func() time.Time)
 	sessionFields := schema.Session{}.Fields()
 	_ = sessionFields
+	// sessionDescIsPwa is the schema descriptor for is_pwa field.
+	sessionDescIsPwa := sessionFields[3].Descriptor()
+	// session.DefaultIsPwa holds the default value on creation for the is_pwa field.
+	session.DefaultIsPwa = sessionDescIsPwa.Default.(bool)
 	// sessionDescCreatedAt is the schema descriptor for created_at field.
-	sessionDescCreatedAt := sessionFields[3].Descriptor()
+	sessionDescCreatedAt := sessionFields[5].Descriptor()
 	// session.DefaultCreatedAt holds the default value on creation for the created_at field.
 	session.DefaultCreatedAt = sessionDescCreatedAt.Default.(func() time.Time)
 	// sessionDescID is the schema descriptor for id field.

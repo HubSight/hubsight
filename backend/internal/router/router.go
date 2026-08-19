@@ -37,6 +37,7 @@ func New() *gin.Engine {
 		authGroup := api.Group("/auth")
 		{
 			authGroup.POST("/login", auth.LoginHandler)
+			authGroup.POST("/refresh", auth.RefreshHandler)
 			authGroup.POST("/logout", auth.LogoutHandler)
 		}
 
@@ -46,6 +47,7 @@ func New() *gin.Engine {
 		{
 			protected.GET("/auth/me", auth.MeHandler)
 			protected.PUT("/auth/password", auth.ChangePasswordHandler)
+			protected.POST("/auth/verify-password", auth.VerifyPasswordHandler)
 			
 			// Devices endpoints (Read is allowed for all authenticated users)
 			protected.GET("/devices", device.ListDevicesHandler)

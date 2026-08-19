@@ -75,41 +75,89 @@ func GenerateToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-func Login(ctx context.Context, username, password string) (*ent.Session, string, error) {
+func Login(ctx context.Context, username, password string, isPWA bool) (*ent.Session, string, string, error) {
 	u, err := database.Client.User.Query().
 		Where(user.Username(username)).
 		Only(ctx)
 	if err != nil {
-		return nil, "", errors.New("invalid credentials")
+		return nil, "", "", errors.New("invalid credentials")
 	}
 	
 	if !u.IsActive {
-		return nil, "", errors.New("user is inactive")
+		return nil, "", "", errors.New("user is inactive")
 	}
 	
 	match, err := verifyPassword(password, u.PasswordHash)
 	if err != nil || !match {
-		return nil, "", errors.New("invalid credentials")
+		return nil, "", "", errors.New("invalid credentials")
 	}
 	
 	token := GenerateToken()
 	expiresAt := time.Now().Add(24 * 7 * time.Hour) // 1 week
 	
-	sess, err := database.Client.Session.Create().
+	createSess := database.Client.Session.Create().
 		SetID(uuid.New()).
 		SetUser(u).
 		SetTokenHash(hashToken(token)).
 		SetExpiresAt(expiresAt).
-		Save(ctx)
+		SetIsPwa(isPWA)
+
+	var refreshToken string
+	if isPWA {
+		refreshToken = GenerateToken()
+		createSess.SetRefreshTokenHash(hashToken(refreshToken))
+	}
+	
+	sess, err := createSess.Save(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	
 	database.Client.User.UpdateOne(u).
 		SetLastLoginAt(time.Now()).
 		Exec(ctx)
 	
-	return sess, token, nil
+	return sess, token, refreshToken, nil
+}
+
+func RefreshPWASession(ctx context.Context, refreshToken string) (*ent.Session, string, string, error) {
+	if refreshToken == "" {
+		return nil, "", "", errors.New("invalid refresh token")
+	}
+
+	rHash := hashToken(refreshToken)
+	sess, err := database.Client.Session.Query().
+		Where(
+			session.IsPwa(true),
+			session.RefreshTokenHash(rHash),
+		).
+		WithUser().
+		Only(ctx)
+	if err != nil {
+		return nil, "", "", errors.New("invalid refresh token")
+	}
+
+	u := sess.Edges.User
+	if u == nil || !u.IsActive {
+		return nil, "", "", errors.New("user inactive or not found")
+	}
+
+	// Generate new session token and rotated refresh token
+	newToken := GenerateToken()
+	newRefreshToken := GenerateToken()
+	newExpiresAt := time.Now().Add(24 * 7 * time.Hour)
+
+	updatedSess, err := database.Client.Session.UpdateOne(sess).
+		SetTokenHash(hashToken(newToken)).
+		SetRefreshTokenHash(hashToken(newRefreshToken)).
+		SetExpiresAt(newExpiresAt).
+		SetLastSeenAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	return updatedSess, newToken, newRefreshToken, nil
 }
 
 func GetUserBySession(ctx context.Context, token string) (*ent.User, error) {

@@ -35,6 +35,32 @@ func (_u *SessionUpdate) SetTokenHash(v []byte) *SessionUpdate {
 	return _u
 }
 
+// SetRefreshTokenHash sets the "refresh_token_hash" field.
+func (_u *SessionUpdate) SetRefreshTokenHash(v []byte) *SessionUpdate {
+	_u.mutation.SetRefreshTokenHash(v)
+	return _u
+}
+
+// ClearRefreshTokenHash clears the value of the "refresh_token_hash" field.
+func (_u *SessionUpdate) ClearRefreshTokenHash() *SessionUpdate {
+	_u.mutation.ClearRefreshTokenHash()
+	return _u
+}
+
+// SetIsPwa sets the "is_pwa" field.
+func (_u *SessionUpdate) SetIsPwa(v bool) *SessionUpdate {
+	_u.mutation.SetIsPwa(v)
+	return _u
+}
+
+// SetNillableIsPwa sets the "is_pwa" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableIsPwa(v *bool) *SessionUpdate {
+	if v != nil {
+		_u.SetIsPwa(*v)
+	}
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *SessionUpdate) SetExpiresAt(v time.Time) *SessionUpdate {
 	_u.mutation.SetExpiresAt(v)
@@ -155,6 +181,15 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.TokenHash(); ok {
 		_spec.SetField(session.FieldTokenHash, field.TypeBytes, value)
 	}
+	if value, ok := _u.mutation.RefreshTokenHash(); ok {
+		_spec.SetField(session.FieldRefreshTokenHash, field.TypeBytes, value)
+	}
+	if _u.mutation.RefreshTokenHashCleared() {
+		_spec.ClearField(session.FieldRefreshTokenHash, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.IsPwa(); ok {
+		_spec.SetField(session.FieldIsPwa, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(session.FieldExpiresAt, field.TypeTime, value)
 	}
@@ -219,6 +254,32 @@ type SessionUpdateOne struct {
 // SetTokenHash sets the "token_hash" field.
 func (_u *SessionUpdateOne) SetTokenHash(v []byte) *SessionUpdateOne {
 	_u.mutation.SetTokenHash(v)
+	return _u
+}
+
+// SetRefreshTokenHash sets the "refresh_token_hash" field.
+func (_u *SessionUpdateOne) SetRefreshTokenHash(v []byte) *SessionUpdateOne {
+	_u.mutation.SetRefreshTokenHash(v)
+	return _u
+}
+
+// ClearRefreshTokenHash clears the value of the "refresh_token_hash" field.
+func (_u *SessionUpdateOne) ClearRefreshTokenHash() *SessionUpdateOne {
+	_u.mutation.ClearRefreshTokenHash()
+	return _u
+}
+
+// SetIsPwa sets the "is_pwa" field.
+func (_u *SessionUpdateOne) SetIsPwa(v bool) *SessionUpdateOne {
+	_u.mutation.SetIsPwa(v)
+	return _u
+}
+
+// SetNillableIsPwa sets the "is_pwa" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableIsPwa(v *bool) *SessionUpdateOne {
+	if v != nil {
+		_u.SetIsPwa(*v)
+	}
 	return _u
 }
 
@@ -371,6 +432,15 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 	}
 	if value, ok := _u.mutation.TokenHash(); ok {
 		_spec.SetField(session.FieldTokenHash, field.TypeBytes, value)
+	}
+	if value, ok := _u.mutation.RefreshTokenHash(); ok {
+		_spec.SetField(session.FieldRefreshTokenHash, field.TypeBytes, value)
+	}
+	if _u.mutation.RefreshTokenHashCleared() {
+		_spec.ClearField(session.FieldRefreshTokenHash, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.IsPwa(); ok {
+		_spec.SetField(session.FieldIsPwa, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(session.FieldExpiresAt, field.TypeTime, value)

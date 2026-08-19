@@ -21,6 +21,10 @@ type Session struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// TokenHash holds the value of the "token_hash" field.
 	TokenHash []byte `json:"token_hash,omitempty"`
+	// RefreshTokenHash holds the value of the "refresh_token_hash" field.
+	RefreshTokenHash []byte `json:"refresh_token_hash,omitempty"`
+	// IsPwa holds the value of the "is_pwa" field.
+	IsPwa bool `json:"is_pwa,omitempty"`
 	// ExpiresAt holds the value of the "expires_at" field.
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -59,8 +63,10 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldTokenHash:
+		case session.FieldTokenHash, session.FieldRefreshTokenHash:
 			values[i] = new([]byte)
+		case session.FieldIsPwa:
+			values[i] = new(sql.NullBool)
 		case session.FieldExpiresAt, session.FieldCreatedAt, session.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
 		case session.FieldID:
@@ -93,6 +99,18 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field token_hash", values[i])
 			} else if value != nil {
 				_m.TokenHash = *value
+			}
+		case session.FieldRefreshTokenHash:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field refresh_token_hash", values[i])
+			} else if value != nil {
+				_m.RefreshTokenHash = *value
+			}
+		case session.FieldIsPwa:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_pwa", values[i])
+			} else if value.Valid {
+				_m.IsPwa = value.Bool
 			}
 		case session.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -162,6 +180,12 @@ func (_m *Session) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("token_hash=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TokenHash))
+	builder.WriteString(", ")
+	builder.WriteString("refresh_token_hash=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RefreshTokenHash))
+	builder.WriteString(", ")
+	builder.WriteString("is_pwa=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsPwa))
 	builder.WriteString(", ")
 	builder.WriteString("expires_at=")
 	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))

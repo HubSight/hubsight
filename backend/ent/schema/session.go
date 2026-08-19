@@ -18,6 +18,8 @@ func (Session) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
 		field.Bytes("token_hash").Unique(),
+		field.Bytes("refresh_token_hash").Optional(),
+		field.Bool("is_pwa").Default(false),
 		field.Time("expires_at"),
 		field.Time("created_at").Default(time.Now),
 		field.Time("last_seen_at").Optional(),

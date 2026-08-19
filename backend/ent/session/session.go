@@ -17,6 +17,10 @@ const (
 	FieldID = "id"
 	// FieldTokenHash holds the string denoting the token_hash field in the database.
 	FieldTokenHash = "token_hash"
+	// FieldRefreshTokenHash holds the string denoting the refresh_token_hash field in the database.
+	FieldRefreshTokenHash = "refresh_token_hash"
+	// FieldIsPwa holds the string denoting the is_pwa field in the database.
+	FieldIsPwa = "is_pwa"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -40,6 +44,8 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldTokenHash,
+	FieldRefreshTokenHash,
+	FieldIsPwa,
 	FieldExpiresAt,
 	FieldCreatedAt,
 	FieldLastSeenAt,
@@ -67,6 +73,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultIsPwa holds the default value on creation for the "is_pwa" field.
+	DefaultIsPwa bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -79,6 +87,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByIsPwa orders the results by the is_pwa field.
+func ByIsPwa(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsPwa, opts...).ToFunc()
 }
 
 // ByExpiresAt orders the results by the expires_at field.

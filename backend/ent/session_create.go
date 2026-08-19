@@ -28,6 +28,26 @@ func (_c *SessionCreate) SetTokenHash(v []byte) *SessionCreate {
 	return _c
 }
 
+// SetRefreshTokenHash sets the "refresh_token_hash" field.
+func (_c *SessionCreate) SetRefreshTokenHash(v []byte) *SessionCreate {
+	_c.mutation.SetRefreshTokenHash(v)
+	return _c
+}
+
+// SetIsPwa sets the "is_pwa" field.
+func (_c *SessionCreate) SetIsPwa(v bool) *SessionCreate {
+	_c.mutation.SetIsPwa(v)
+	return _c
+}
+
+// SetNillableIsPwa sets the "is_pwa" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableIsPwa(v *bool) *SessionCreate {
+	if v != nil {
+		_c.SetIsPwa(*v)
+	}
+	return _c
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_c *SessionCreate) SetExpiresAt(v time.Time) *SessionCreate {
 	_c.mutation.SetExpiresAt(v)
@@ -122,6 +142,10 @@ func (_c *SessionCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *SessionCreate) defaults() {
+	if _, ok := _c.mutation.IsPwa(); !ok {
+		v := session.DefaultIsPwa
+		_c.mutation.SetIsPwa(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := session.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -136,6 +160,9 @@ func (_c *SessionCreate) defaults() {
 func (_c *SessionCreate) check() error {
 	if _, ok := _c.mutation.TokenHash(); !ok {
 		return &ValidationError{Name: "token_hash", err: errors.New(`ent: missing required field "Session.token_hash"`)}
+	}
+	if _, ok := _c.mutation.IsPwa(); !ok {
+		return &ValidationError{Name: "is_pwa", err: errors.New(`ent: missing required field "Session.is_pwa"`)}
 	}
 	if _, ok := _c.mutation.ExpiresAt(); !ok {
 		return &ValidationError{Name: "expires_at", err: errors.New(`ent: missing required field "Session.expires_at"`)}
@@ -184,6 +211,14 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TokenHash(); ok {
 		_spec.SetField(session.FieldTokenHash, field.TypeBytes, value)
 		_node.TokenHash = value
+	}
+	if value, ok := _c.mutation.RefreshTokenHash(); ok {
+		_spec.SetField(session.FieldRefreshTokenHash, field.TypeBytes, value)
+		_node.RefreshTokenHash = value
+	}
+	if value, ok := _c.mutation.IsPwa(); ok {
+		_spec.SetField(session.FieldIsPwa, field.TypeBool, value)
+		_node.IsPwa = value
 	}
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(session.FieldExpiresAt, field.TypeTime, value)

@@ -3,15 +3,20 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import { AppSettingsModal } from '../components/settings/AppSettingsModal';
+import { AppLockScreen } from '../components/lock/AppLockScreen';
 import axiosClient from '../api/axiosClient';
+import { clearPwaRefreshToken } from '../utils/pwa';
 
 const MainLayout = () => {
   const { user, checkAuth } = useAuth();
   const navigate = useNavigate();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
+    clearPwaRefreshToken();
     await axiosClient.post('/auth/logout');
     await checkAuth();
     navigate('/login');
@@ -19,6 +24,8 @@ const MainLayout = () => {
 
   return (
     <div className="flex h-[100dvh] w-screen overflow-hidden bg-slate-50">
+      {/* App Lock Screen Overlay */}
+      <AppLockScreen />
       
       {/* Background Grid */}
       <div
@@ -59,14 +66,18 @@ const MainLayout = () => {
         transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between mb-8 px-6">
+        <div className="flex items-center justify-between px-6 mb-8">
           <div className="flex items-center gap-3">
-            <Shield className="text-orange-600" size={28} />
-            <h2 className="text-xl font-bold m-0 hidden md:block text-slate-800">CCTV Viewer</h2>
-            <h2 className="text-xl font-bold m-0 md:hidden text-slate-800">Menu</h2>
+            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-600/20">
+              <Camera size={22} />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg leading-none text-slate-800">CCTV Viewer</h1>
+              <span className="text-[11px] text-slate-600 font-medium tracking-wide">Live Surveillance</span>
+            </div>
           </div>
-          <button
-            className="md:hidden p-1 text-slate-500 hover:text-slate-800"
+          <button 
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <X size={24} />
@@ -92,8 +103,8 @@ const MainLayout = () => {
           )}
         </nav>
 
-        <div className="mt-auto border-t border-slate-200 pt-6 px-6">
-          <div className="flex items-center gap-3 mb-4 px-2">
+        <div className="mt-auto border-t border-slate-200 pt-5 px-6">
+          <div className="flex items-center gap-3 mb-3 px-2">
             <div
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                 user?.role === 'admin' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
@@ -124,18 +135,28 @@ const MainLayout = () => {
               </div>
             </div>
           </div>
+
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors mb-1 cursor-pointer"
+          >
+            <Shield size={15} className="text-orange-600" />
+            Security & App Lock
+          </button>
+
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors mb-2"
+            className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors mb-1 cursor-pointer"
           >
-            <KeyRound size={16} />
+            <KeyRound size={15} />
             Change Password
           </button>
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors cursor-pointer"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
             Logout
           </button>
         </div>
@@ -147,6 +168,7 @@ const MainLayout = () => {
       </div>
 
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
+      {showSettingsModal && <AppSettingsModal onClose={() => setShowSettingsModal(false)} />}
     </div>
   );
 };

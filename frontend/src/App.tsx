@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AppLockProvider } from './context/AppLockContext';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Playback from './pages/Playback';
@@ -46,41 +47,44 @@ const IndexRedirect = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+      <AppLockProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<IndexRedirect />} />
             <Route
-              path="devices"
+              path="/"
               element={
-                <AdminRoute>
-                  <Devices />
-                </AdminRoute>
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
               }
-            />
-            <Route path="playback" element={<Playback />} />
-            <Route
-              path="recorder"
-              element={
-                <AdminRoute>
-                  <NvrMonitor />
-                </AdminRoute>
-              }
-            />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+            >
+              <Route index element={<IndexRedirect />} />
+              <Route
+                path="devices"
+                element={
+                  <AdminRoute>
+                    <Devices />
+                  </AdminRoute>
+                }
+              />
+              <Route path="playback" element={<Playback />} />
+              <Route
+                path="recorder"
+                element={
+                  <AdminRoute>
+                    <NvrMonitor />
+                  </AdminRoute>
+                }
+              />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AppLockProvider>
     </AuthProvider>
   );
 };
 
 export default App;
+

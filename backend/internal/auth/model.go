@@ -3,6 +3,15 @@ package auth
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	IsPWA    bool   `json:"is_pwa"`
+}
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type VerifyPasswordRequest struct {
+	Password string `json:"password"`
 }
 
 type ChangePasswordRequest struct {

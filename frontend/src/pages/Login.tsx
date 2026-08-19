@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Camera, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import { AxiosError } from 'axios';
+import { isPwa, setPwaRefreshToken, clearPwaRefreshToken } from '../utils/pwa';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -21,7 +22,19 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await axiosClient.post('/auth/login', { username, password });
+      const runningAsPwa = isPwa();
+      const res = await axiosClient.post('/auth/login', {
+        username,
+        password,
+        is_pwa: runningAsPwa
+      });
+
+      if (runningAsPwa && res.data?.refresh_token) {
+        setPwaRefreshToken(res.data.refresh_token);
+      } else {
+        clearPwaRefreshToken();
+      }
+
       await checkAuth();
       navigate('/devices');
     } catch (error) {
