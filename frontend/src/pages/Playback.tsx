@@ -4,7 +4,6 @@ import axiosClient from '../api/axiosClient';
 import type { CameraItem, Recording } from '../types/recording';
 import TimelineControl from '../components/TimelineControl';
 import { VideoPlayer } from '../components/archive/VideoPlayer';
-import { MediaControlBar } from '../components/archive/MediaControlBar';
 import { ArchiveSidebar } from '../components/archive/ArchiveSidebar';
 
 const Playback = () => {
@@ -110,12 +109,6 @@ const Playback = () => {
     }
   };
 
-  const handleSkip = (seconds: number) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime += seconds;
-    }
-  };
-
   const handleGoLive = () => {
     setMode('live');
   };
@@ -147,7 +140,7 @@ const Playback = () => {
       {/* Left Area (Main Content) */}
       <div className="flex-1 flex flex-col min-w-0 h-full lg:overflow-hidden relative">
         <div className="flex-1 flex flex-col h-full overflow-y-auto lg:overflow-hidden relative">
-          {/* 1. Video Player with Live & Archive support */}
+          {/* 1. YouTube-style Video Player with embedded controls for Live & Archive */}
           <VideoPlayer
             mode={mode}
             cameraId={currentCamId}
@@ -162,34 +155,17 @@ const Playback = () => {
 
           {/* Wrapper for items below video */}
           <div className="flex flex-col shrink-0">
-            {/* 2. Controls */}
-            <MediaControlBar
-              mode={mode}
-              cameraId={currentCamId}
-              isLive={isLiveStreaming}
-              activeRecording={activeRecording}
-              onPlay={() => videoRef.current?.play()}
-              onPause={() => videoRef.current?.pause()}
-              onStop={() => {
-                if (videoRef.current) {
-                  videoRef.current.pause();
-                  videoRef.current.currentTime = 0;
-                }
-              }}
-              onSkip={handleSkip}
-              onGoLive={handleGoLive}
-            />
-
-            {/* 3. Settings - Mobile Only */}
-            <div className="p-4 lg:hidden flex flex-col bg-white border-y border-slate-200 shadow-sm mt-2 mb-4">
+            {/* 2. Settings - Mobile Only */}
+            <div className="p-4 lg:hidden flex flex-col bg-white border-y border-slate-200 shadow-sm mb-4">
               <h2 className="text-lg font-bold mb-4 text-slate-800">Playback Settings</h2>
               <ArchiveSidebar {...sidebarProps} />
             </div>
 
-            {/* 4. Timeline */}
+            {/* 3. Interactive Timeline */}
             <div
-              className={`p-4 lg:px-6 lg:pt-0 lg:pb-4 shrink-0 ${!selectedCam ? 'opacity-50 pointer-events-none' : ''
-                }`}
+              className={`p-4 lg:px-6 lg:pt-3 lg:pb-4 shrink-0 ${
+                !selectedCam ? 'opacity-50 pointer-events-none' : ''
+              }`}
             >
               <TimelineControl
                 recordings={recordings}
@@ -211,3 +187,4 @@ const Playback = () => {
 };
 
 export default Playback;
+

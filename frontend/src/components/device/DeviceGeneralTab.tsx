@@ -128,23 +128,27 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Username</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Username <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
               <input
                 type="text"
                 value={formData.builderUser}
                 onChange={(e) => onChange({ builderUser: e.target.value })}
                 className="input-field w-full text-sm"
-                placeholder="admin"
+                placeholder="e.g. admin"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Password <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
               <input
                 type="password"
                 value={formData.builderPass}
                 onChange={(e) => onChange({ builderPass: e.target.value })}
                 className="input-field w-full text-sm"
-                placeholder="••••••••"
+                placeholder="Leave blank if none"
               />
             </div>
             <div>

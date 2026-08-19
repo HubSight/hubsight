@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
-import { BRAND_PRESETS } from '../../constants/devicePresets';
+import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
 
 export interface DeviceBrandDropdownProps {
   selectedBrand: string;
@@ -55,8 +55,12 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="input-field w-full flex items-center justify-between text-left cursor-pointer bg-white hover:border-orange-300 transition-colors"
       >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-bold uppercase tracking-wider shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            className={`w-20 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider shrink-0 text-center truncate flex items-center justify-center ${getBrandBadgeColor(
+              selectedPreset.id
+            )}`}
+          >
             {selectedPreset.tag}
           </span>
           <span className="font-medium text-slate-800 truncate">{selectedPreset.name}</span>
@@ -78,7 +82,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm hãng camera/thiết bị (Hikvision, Dahua, Ezviz, Tapo, Imou...)"
+                placeholder="Search brand (Hikvision, Dahua, EZVIZ, Tapo, Imou...)"
                 className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
               />
               {searchQuery && (
@@ -97,7 +101,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
           <div className="overflow-y-auto py-1 divide-y divide-slate-50">
             {filteredPresets.length === 0 ? (
               <div className="px-4 py-4 text-center text-xs text-slate-400">
-                Không tìm thấy thương hiệu phù hợp
+                No matching brand found
               </div>
             ) : (
               filteredPresets.map((b) => (
@@ -109,31 +113,37 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
                   }}
                   className={`px-3.5 py-2 flex items-center justify-between cursor-pointer transition-colors ${
                     selectedBrand === b.id
-                      ? 'bg-orange-50 text-orange-600 font-semibold'
+                      ? 'bg-orange-50/80 font-semibold'
                       : 'hover:bg-slate-50 text-slate-700'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div className="flex items-center gap-3 min-w-0 pr-2 flex-1">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                      className={`w-[74px] py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 text-center truncate flex items-center justify-center ${
                         selectedBrand === b.id
-                          ? 'bg-orange-600 text-white'
-                          : 'bg-slate-100 text-slate-600'
+                          ? 'bg-orange-600 text-white shadow-xs'
+                          : getBrandBadgeColor(b.id)
                       }`}
                     >
                       {b.tag}
                     </span>
-                    <div className="min-w-0">
-                      <div className="text-xs truncate">{b.name}</div>
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={`text-xs font-medium truncate ${
+                          selectedBrand === b.id ? 'text-orange-950 font-bold' : 'text-slate-800'
+                        }`}
+                      >
+                        {b.name}
+                      </div>
                       {b.hint && (
-                        <div className="text-[10px] text-slate-400 font-normal truncate">
+                        <div className="text-[10px] text-slate-400 font-normal truncate mt-0.5">
                           {b.hint}
                         </div>
                       )}
                     </div>
                   </div>
                   {selectedBrand === b.id && (
-                    <Check size={16} className="text-orange-600 shrink-0" />
+                    <Check size={16} className="text-orange-600 shrink-0 ml-2" />
                   )}
                 </div>
               ))

@@ -17,6 +17,50 @@ export interface BrandPreset {
 
 export type DeviceBrandPreset = BrandPreset;
 
+/**
+ * Builds the authentication prefix for an RTSP URL: 'user:pass@', 'user@', ':pass@' or '' if empty
+ */
+export function buildAuthPrefix(user?: string, pass?: string): string {
+  const u = (user || '').trim();
+  const p = (pass || '').trim();
+  if (!u && !p) return '';
+  if (u && p) return `${u}:${p}@`;
+  if (u) return `${u}@`;
+  return `:${p}@`;
+}
+
+export const BADGE_COLOR_PALETTES = [
+  'bg-blue-100 text-blue-700 border border-blue-200/80',
+  'bg-emerald-100 text-emerald-700 border border-emerald-200/80',
+  'bg-violet-100 text-violet-700 border border-violet-200/80',
+  'bg-amber-100 text-amber-800 border border-amber-200/80',
+  'bg-rose-100 text-rose-700 border border-rose-200/80',
+  'bg-cyan-100 text-cyan-700 border border-cyan-200/80',
+  'bg-indigo-100 text-indigo-700 border border-indigo-200/80',
+  'bg-orange-100 text-orange-700 border border-orange-200/80',
+  'bg-teal-100 text-teal-700 border border-teal-200/80',
+  'bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-200/80',
+  'bg-sky-100 text-sky-700 border border-sky-200/80',
+  'bg-lime-100 text-lime-800 border border-lime-200/80',
+  'bg-purple-100 text-purple-700 border border-purple-200/80',
+  'bg-pink-100 text-pink-700 border border-pink-200/80'
+];
+
+/**
+ * Returns a consistent distinct color class for any brand ID
+ */
+export function getBrandBadgeColor(brandId?: string): string {
+  if (!brandId) return BADGE_COLOR_PALETTES[0];
+  let hash = 0;
+  for (let i = 0; i < brandId.length; i++) {
+    hash = (hash << 5) - hash + brandId.charCodeAt(i);
+    hash |= 0;
+  }
+  const index = Math.abs(hash) % BADGE_COLOR_PALETTES.length;
+  return BADGE_COLOR_PALETTES[index];
+}
+
+
 export const BRAND_PRESETS: BrandPreset[] = [
   {
     id: 'generic',
@@ -24,9 +68,9 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Generic',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Sử dụng đường dẫn RTSP tùy chỉnh hoặc luồng stream chuẩn',
+    hint: 'Custom RTSP stream URL or standard direct streaming path',
     generateUrl: (ip, port, user, pass) => {
-      const auth = user ? (pass ? `${user}:${pass}@` : `${user}@`) : '';
+      const auth = buildAuthPrefix(user, pass);
       return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/stream`;
     },
   },
@@ -36,11 +80,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Hikvision',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Cổng 554. Luồng chính: channel 101, Luồng phụ: channel 102',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/Streaming/Channels/${channel || 1}0${
-        isSub ? '2' : '1'
-      }`,
+    hint: 'Port 554. Main stream: channel 101, Sub stream: channel 102',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/Streaming/Channels/${
+        channel || 1
+      }0${isSub ? '2' : '1'}`;
+    },
   },
   {
     id: 'ezviz',
@@ -48,11 +94,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'EZVIZ',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Mật khẩu là Verification Code (6 ký tự in hoa) in dưới đáy camera',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/h264/ch${channel || 1}/${
-        isSub ? 'sub' : 'main'
-      }/av_stream`,
+    hint: 'Password is the 6-character Verification Code printed on camera bottom label',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/h264/ch${
+        channel || 1
+      }/${isSub ? 'sub' : 'main'}/av_stream`;
+    },
   },
   {
     id: 'hilook',
@@ -60,11 +108,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'HiLook',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Dòng sản phẩm giá rẻ của Hikvision, chuẩn cổng 554',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/Streaming/Channels/${channel || 1}0${
-        isSub ? '2' : '1'
-      }`,
+    hint: 'Hikvision budget line, standard RTSP port 554',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/Streaming/Channels/${
+        channel || 1
+      }0${isSub ? '2' : '1'}`;
+    },
   },
   {
     id: 'dahua',
@@ -72,11 +122,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Dahua',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Luồng chính subtype=0, Luồng phụ subtype=1',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/cam/realmonitor?channel=${channel || 1}&subtype=${
-        isSub ? 1 : 0
-      }`,
+    hint: 'Main stream subtype=0, Sub stream subtype=1',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/cam/realmonitor?channel=${
+        channel || 1
+      }&subtype=${isSub ? 1 : 0}`;
+    },
   },
   {
     id: 'imou',
@@ -84,11 +136,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Imou',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Mật khẩu là Safety Code / Device Password trên tem nhãn thiết bị',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/cam/realmonitor?channel=${channel || 1}&subtype=${
-        isSub ? 1 : 0
-      }`,
+    hint: 'Password is the Safety Code / Device Password printed on the device label',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/cam/realmonitor?channel=${
+        channel || 1
+      }&subtype=${isSub ? 1 : 0}`;
+    },
   },
   {
     id: 'kbvision',
@@ -96,11 +150,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'KBVision',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Sử dụng giao thức Dahua Realmonitor chuẩn',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/cam/realmonitor?channel=${channel || 1}&subtype=${
-        isSub ? 1 : 0
-      }`,
+    hint: 'Uses standard Dahua Realmonitor protocol',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/cam/realmonitor?channel=${
+        channel || 1
+      }&subtype=${isSub ? 1 : 0}`;
+    },
   },
   {
     id: 'tapo',
@@ -108,9 +164,11 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Tapo',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Tạo tài khoản trong App Tapo: Cài đặt thiết bị -> Nâng cao -> Tài khoản camera',
-    generateUrl: (ip, port, user, pass, _channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/stream${isSub ? 2 : 1}`,
+    hint: 'Create account in Tapo App: Device Settings -> Advanced -> Camera Account',
+    generateUrl: (ip, port, user, pass, _channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/stream${isSub ? 2 : 1}`;
+    },
   },
   {
     id: 'vigi',
@@ -118,9 +176,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'VIGI',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Dòng camera giám sát chuyên dụng VIGI của TP-Link',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/ch${channel || 1}/stream${isSub ? 2 : 1}`,
+    hint: 'TP-Link enterprise surveillance camera line',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/ch${
+        channel || 1
+      }/stream${isSub ? 2 : 1}`;
+    },
   },
   {
     id: 'uniview',
@@ -128,11 +190,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Uniview',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Định dạng luồng unicast UNV: c{kênh}/s{0/1}/live',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/unicast/c${channel || 1}/s${
-        isSub ? 1 : 0
-      }/live`,
+    hint: 'UNV unicast stream format: c{channel}/s{0/1}/live',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/unicast/c${
+        channel || 1
+      }/s${isSub ? 1 : 0}/live`;
+    },
   },
   {
     id: 'yoosee',
@@ -140,11 +204,15 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Yoosee',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Bật RTSP / NVR trong app Yoosee và đặt mật khẩu kết nối camera',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/user=${user}&password=${pass}&channel=${
+    hint: 'Enable RTSP / NVR in Yoosee app and set connection password',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const u = (user || '').trim();
+      const p = (pass || '').trim();
+      const authParams = u || p ? `user=${u}&password=${p}&` : '';
+      return `rtsp://${ip || '192.168.1.100'}:${port || 554}/${authParams}channel=${
         channel || 1
-      }&stream=${isSub ? 1 : 0}.sdp`,
+      }&stream=${isSub ? 1 : 0}.sdp`;
+    },
   },
   {
     id: 'reolink',
@@ -152,11 +220,12 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Reolink',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Bật RTSP trong Reolink Client (Settings -> Network -> Server Settings)',
+    hint: 'Enable RTSP in Reolink Client (Settings -> Network -> Server Settings)',
     generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
       const ch = Number(channel) || 1;
       const chStr = ch < 10 ? `0${ch}` : `${ch}`;
-      return `rtsp://${user}:${pass}@${ip}:${port}/h264Preview_${chStr}_${
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/h264Preview_${chStr}_${
         isSub ? 'sub' : 'main'
       }`;
     },
@@ -167,11 +236,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Tiandy',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Cú pháp luồng /video{channel}/main hoặc sub',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/video${channel || 1}/${
-        isSub ? 'sub' : 'main'
-      }`,
+    hint: 'Stream syntax /video{channel}/main or sub',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/video${
+        channel || 1
+      }/${isSub ? 'sub' : 'main'}`;
+    },
   },
   {
     id: 'wisenet',
@@ -180,8 +251,12 @@ export const BRAND_PRESETS: BrandPreset[] = [
     defaultPort: 554,
     defaultUser: 'admin',
     hint: 'Profile 1 (Main Stream), Profile 2 (Sub Stream)',
-    generateUrl: (ip, port, user, pass, _channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/profile${isSub ? 2 : 1}/media.smp`,
+    generateUrl: (ip, port, user, pass, _channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/profile${
+        isSub ? 2 : 1
+      }/media.smp`;
+    },
   },
   {
     id: 'axis',
@@ -189,11 +264,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Axis',
     defaultPort: 554,
     defaultUser: 'root',
-    hint: 'Tài khoản mặc định: root. Hỗ trợ tham số camera channel và streamprofile',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/axis-media/media.amp?camera=${
+    hint: 'Default account: root. Supports camera channel and streamprofile parameters',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/axis-media/media.amp?camera=${
         channel || 1
-      }${isSub ? '&streamprofile=sub' : ''}`,
+      }${isSub ? '&streamprofile=sub' : ''}`;
+    },
   },
   {
     id: 'bosch',
@@ -201,11 +278,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Bosch',
     defaultPort: 554,
     defaultUser: 'service',
-    hint: 'Định dạng tunnel Bosch: rtsp_tunnel?inst={channel}&stream={1/2}',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/rtsp_tunnel?inst=${channel || 1}&stream=${
-        isSub ? 2 : 1
-      }`,
+    hint: 'Bosch tunnel format: rtsp_tunnel?inst={channel}&stream={1/2}',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/rtsp_tunnel?inst=${
+        channel || 1
+      }&stream=${isSub ? 2 : 1}`;
+    },
   },
   {
     id: 'vivotek',
@@ -213,9 +292,11 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Vivotek',
     defaultPort: 554,
     defaultUser: 'root',
-    hint: 'Tài khoản mặc định: root. Luồng live.sdp (chính), live2.sdp (phụ)',
-    generateUrl: (ip, port, user, pass, _channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/live${isSub ? '2' : ''}.sdp`,
+    hint: 'Default user: root. Streams live.sdp (main) and live2.sdp (sub)',
+    generateUrl: (ip, port, user, pass, _channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/live${isSub ? '2' : ''}.sdp`;
+    },
   },
   {
     id: 'amcrest',
@@ -223,11 +304,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Amcrest',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Tương thích chuẩn định dạng Dahua Realmonitor',
-    generateUrl: (ip, port, user, pass, channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/cam/realmonitor?channel=${channel || 1}&subtype=${
-        isSub ? 1 : 0
-      }`,
+    hint: 'Compatible with standard Dahua Realmonitor format',
+    generateUrl: (ip, port, user, pass, channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/cam/realmonitor?channel=${
+        channel || 1
+      }&subtype=${isSub ? 1 : 0}`;
+    },
   },
   {
     id: 'tuya',
@@ -235,9 +318,14 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Tuya',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Áp dụng cho camera Tuya / Smart Life có kích hoạt luồng ONVIF / RTSP cục bộ',
-    generateUrl: (ip, port, user, pass, channel) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/live/ch${Math.max(0, (channel || 1) - 1)}`,
+    hint: 'For Tuya / Smart Life cameras with local ONVIF / RTSP enabled',
+    generateUrl: (ip, port, user, pass, channel) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/live/ch${Math.max(
+        0,
+        (channel || 1) - 1
+      )}`;
+    },
   },
   {
     id: 'xiaomi',
@@ -245,9 +333,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Xiaomi',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Dành cho camera Xiaomi / Yi chạy firmware hỗ trợ RTSP (Yi-Hack / RTSP Mod)',
-    generateUrl: (ip, port, user, pass, _channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/ch0_${isSub ? 1 : 0}.h264`,
+    hint: 'For Xiaomi / Yi cameras running custom RTSP firmware (Yi-Hack / RTSP Mod)',
+    generateUrl: (ip, port, user, pass, _channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/ch0_${
+        isSub ? 1 : 0
+      }.h264`;
+    },
   },
   {
     id: 'foscam',
@@ -255,9 +347,11 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Foscam',
     defaultPort: 88,
     defaultUser: 'admin',
-    hint: 'Cổng RTSP thường dùng là 88 hoặc 554',
-    generateUrl: (ip, port, user, pass, _channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/video${isSub ? 'Sub' : 'Main'}`,
+    hint: 'Standard RTSP port is 88 or 554',
+    generateUrl: (ip, port, user, pass, _channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 88}/video${isSub ? 'Sub' : 'Main'}`;
+    },
   },
   {
     id: 'sonoff',
@@ -265,9 +359,11 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Sonoff',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Bật tính năng RTSP trong ứng dụng eWeLink (Camera Settings -> RTSP)',
-    generateUrl: (ip, port, user, pass) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/av_stream/ch0`,
+    hint: 'Enable RTSP in eWeLink app (Camera Settings -> RTSP)',
+    generateUrl: (ip, port, user, pass) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/av_stream/ch0`;
+    },
   },
   {
     id: 'panasonic',
@@ -275,9 +371,13 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'Panasonic',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Chuẩn MediaInput/h264 (1: Main Stream, 2: Sub Stream)',
-    generateUrl: (ip, port, user, pass, _channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/MediaInput/h264/${isSub ? 2 : 1}`,
+    hint: 'Standard MediaInput/h264 (1: Main Stream, 2: Sub Stream)',
+    generateUrl: (ip, port, user, pass, _channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/MediaInput/h264/${
+        isSub ? 2 : 1
+      }`;
+    },
   },
   {
     id: 'onvif',
@@ -285,9 +385,11 @@ export const BRAND_PRESETS: BrandPreset[] = [
     tag: 'ONVIF',
     defaultPort: 554,
     defaultUser: 'admin',
-    hint: 'Đường dẫn ONVIF RTSP chuẩn cho camera hỗ trợ ONVIF Profile S',
-    generateUrl: (ip, port, user, pass, _channel, isSub) =>
-      `rtsp://${user}:${pass}@${ip}:${port}/onvif${isSub ? 2 : 1}`,
+    hint: 'Standard ONVIF RTSP stream path for ONVIF Profile S compatible cameras',
+    generateUrl: (ip, port, user, pass, _channel, isSub) => {
+      const auth = buildAuthPrefix(user, pass);
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/onvif${isSub ? 2 : 1}`;
+    },
   },
 ];
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import type { DeviceType } from '../../types/device';
-import { BRAND_PRESETS } from '../../constants/devicePresets';
+import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
 
 export interface DeviceCardProps {
   device: DeviceType;
@@ -24,7 +24,11 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
             />
             <div className="min-w-0">
               <h3 className="font-bold text-base sm:text-lg text-slate-800 truncate">{device.name}</h3>
-              <span className="inline-block px-2 py-0.5 bg-orange-50 text-orange-600 rounded text-[11px] font-semibold border border-orange-200">
+              <span
+                className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold mt-0.5 ${getBrandBadgeColor(
+                  device.brand
+                )}`}
+              >
                 {brandPreset ? brandPreset.name : device.brand || 'Generic'}
               </span>
             </div>
