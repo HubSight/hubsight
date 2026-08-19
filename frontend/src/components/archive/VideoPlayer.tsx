@@ -10,7 +10,8 @@ import {
   Radio,
   Gauge,
   Camera,
-  Check
+  Check,
+  Download
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import type { Recording } from '../../types/recording';
@@ -65,6 +66,21 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [centerAnim, setCenterAnim] = useState<'play' | 'pause' | null>(null);
 
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Download Recording Video
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!activeRecording) return;
+    const baseUrl = import.meta.env.VITE_API_URL || '/api';
+    const downloadUrl = `${baseUrl}/archive/${activeRecording.id}/stream?download=true`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.target = '_blank';
+    link.download = `recording_${activeRecording.id}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
 
   // Format seconds to mm:ss
@@ -342,9 +358,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Mode = ARCHIVE: Top details + Switch to Live */}
       {mode === 'archive' && activeRecording && (
         <div
-          className={`absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between transition-opacity duration-300 ${
-            showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+          className={`absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
         >
           {/* Top-Left: Archive Segment Time Badge */}
           <div className="flex items-center gap-2">
@@ -355,17 +370,27 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </span>
             </div>
           </div>
-
-          {/* Top-Right: Switch to Live button */}
-          {onGoLive && cameraId && (
+          {/* Top-Right: Download & Switch to Live button */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={onGoLive}
-              className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-lg shadow-orange-600/30 transition-all cursor-pointer backdrop-blur-md active:scale-95"
+              onClick={handleDownload}
+              className="flex items-center gap-1.5 bg-slate-900/85 hover:bg-slate-800 text-white/90 hover:text-white px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide border border-white/15 shadow-lg backdrop-blur-md transition-all cursor-pointer active:scale-95"
+              title="Download Recording (MP4)"
             >
-              <Radio size={14} className="text-white" />
-              <span>Switch to Live</span>
+              <Download size={14} className="text-orange-500" />
+              <span className="hidden sm:inline">Download</span>
             </button>
-          )}
+
+            {onGoLive && cameraId && (
+              <button
+                onClick={onGoLive}
+                className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-lg shadow-orange-600/30 transition-all cursor-pointer backdrop-blur-md active:scale-95"
+              >
+                <Radio size={14} className="text-white" />
+                <span>Switch to Live</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -433,9 +458,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* CASE B: ARCHIVE MODE -> Full YouTube Player Controls */}
       {mode === 'archive' && activeRecording && (
         <div
-          className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-8 transition-opacity duration-300 pointer-events-auto ${
-            showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+          className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-8 transition-opacity duration-300 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
         >
           {/* --- Interactive YouTube Progress Bar --- */}
           <div
@@ -468,50 +492,50 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 style={{ width: `${progressPercent}%` }}
                 className="absolute top-0 left-0 h-full bg-orange-600 rounded-full pointer-events-none"
               />
-              {/* Scrubber Knob (Thumb) */}
+              {/* Seeking Scrubber Knob */}
               <div
                 style={{ left: `${progressPercent}%` }}
-                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-orange-600 rounded-full shadow-md ring-2 ring-white/30 scale-0 group-hover/progress:scale-100 transition-transform pointer-events-none"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-orange-600 rounded-full shadow-md scale-0 group-hover/progress:scale-100 transition-transform pointer-events-none"
               />
             </div>
           </div>
 
-          {/* --- Bottom Controls Row --- */}
-          <div className="px-3 sm:px-4 py-2 flex items-center justify-between gap-2 text-white">
+          {/* --- Control Bar Buttons --- */}
+          <div className="px-4 py-2.5 flex items-center justify-between">
             {/* Left Controls */}
-            <div className="flex items-center gap-1 sm:gap-2">
-              {/* Play / Pause Button */}
+            <div className="flex items-center gap-1 sm:gap-3">
+              {/* Play / Pause Toggle */}
               <button
                 onClick={togglePlay}
-                className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer"
+                className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
                 title={isPlaying ? 'Pause (k / space)' : 'Play (k / space)'}
               >
-                {isPlaying ? <Pause size={22} /> : <Play size={22} className="fill-current ml-0.5" />}
+                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
               </button>
 
-              {/* Rewind 10s */}
+              {/* Skip -10s */}
               <button
                 onClick={() => handleSkip(-10)}
-                className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer"
-                title="Rewind 10s (j / ←)"
+                className="p-2 text-white/80 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                title="Rewind 10 seconds (j / ←)"
               >
-                <RotateCcw size={19} />
+                <RotateCcw size={18} />
               </button>
 
-              {/* Forward 10s */}
+              {/* Skip +10s */}
               <button
                 onClick={() => handleSkip(10)}
-                className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer"
-                title="Forward 10s (l / →)"
+                className="p-2 text-white/80 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                title="Fast-forward 10 seconds (l / →)"
               >
-                <RotateCw size={19} />
+                <RotateCw size={18} />
               </button>
 
               {/* Volume & Slider */}
-              <div className="group/vol flex items-center gap-1.5 ml-1">
+              <div className="group/vol flex items-center gap-1 pl-1">
                 <button
                   onClick={toggleMute}
-                  className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer"
+                  className="p-2 text-white/80 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
                   title={isMuted ? 'Unmute (m)' : 'Mute (m)'}
                 >
                   {isMuted || volume === 0 ? (
@@ -564,9 +588,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                       <button
                         key={rate}
                         onClick={() => changePlaybackRate(rate)}
-                        className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between hover:bg-white/15 transition-colors cursor-pointer ${
-                          playbackRate === rate ? 'text-orange-500 font-bold' : 'text-white'
-                        }`}
+                        className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between hover:bg-white/15 transition-colors cursor-pointer ${playbackRate === rate ? 'text-orange-500 font-bold' : 'text-white'
+                          }`}
                       >
                         <span>{rate === 1 ? '1.0x (Normal)' : `${rate}x`}</span>
                         {playbackRate === rate && <Check size={14} className="text-orange-500" />}
@@ -575,6 +598,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Download Recording Video Button */}
+              <button
+                onClick={handleDownload}
+                className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                title="Download Recording Video (MP4)"
+              >
+                <Download size={18} />
+              </button>
 
               {/* Fullscreen Button */}
               <button

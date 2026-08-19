@@ -1,10 +1,13 @@
 package recording
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"net/url"
+	"path/filepath"
 	"strconv"
 	"time"
-	"log"
 
 	"cctv/ent"
 	"cctv/internal/storage"
@@ -61,7 +64,17 @@ func StreamHandler(c *gin.Context) {
 	}
 
 	expiry := time.Hour * 1
-	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, rec.FilePath, expiry, nil)
+	var reqParams url.Values
+	if c.Query("download") == "true" {
+		reqParams = make(url.Values)
+		filename := filepath.Base(rec.FilePath)
+		if filename == "" || filename == "." {
+			filename = fmt.Sprintf("recording_%d_%s.mp4", rec.ID, rec.StartAt.Format("20060102_150405"))
+		}
+		reqParams.Set("response-content-disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	}
+
+	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, rec.FilePath, expiry, reqParams)
 	if err != nil {
 		log.Printf("Failed to generate presigned URL: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stream"})
