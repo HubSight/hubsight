@@ -11,7 +11,8 @@ export interface BrandPreset {
     user: string,
     pass: string,
     channel: number,
-    isSub: boolean
+    isSub: boolean,
+    customPath?: string
   ) => string;
 }
 
@@ -69,9 +70,11 @@ export const BRAND_PRESETS: BrandPreset[] = [
     defaultPort: 554,
     defaultUser: 'admin',
     hint: 'Custom RTSP stream URL or standard direct streaming path',
-    generateUrl: (ip, port, user, pass) => {
+    generateUrl: (ip, port, user, pass, _channel, _isSub, customPath) => {
       const auth = buildAuthPrefix(user, pass);
-      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}/stream`;
+      let path = (customPath !== undefined ? customPath : '/stream').trim();
+      if (path && !path.startsWith('/')) path = '/' + path;
+      return `rtsp://${auth}${ip || '192.168.1.100'}:${port || 554}${path || '/stream'}`;
     },
   },
   {

@@ -151,46 +151,66 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                 placeholder="Leave blank if none"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                Channel Number
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="64"
-                value={formData.builderChannel}
-                onChange={(e) => onChange({ builderChannel: Number(e.target.value) || 1 })}
-                className="input-field w-full text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Stream Type</label>
-              <div className="grid grid-cols-2 gap-1 bg-white p-1 rounded-xl border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => onChange({ builderIsSub: false })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    !formData.builderIsSub
-                      ? 'bg-orange-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Main Stream
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChange({ builderIsSub: true })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    formData.builderIsSub
-                      ? 'bg-orange-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Sub Stream
-                </button>
+            {formData.brand === 'generic' ? (
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  RTSP Stream Path
+                </label>
+                <input
+                  type="text"
+                  value={formData.builderPath ?? '/stream'}
+                  onChange={(e) => onChange({ builderPath: e.target.value })}
+                  className="input-field w-full text-sm font-mono"
+                  placeholder="e.g. /stream, /live, /h264, /cam1..."
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Specify the custom stream endpoint or URI path exposed by your RTSP server
+                </p>
               </div>
-            </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Channel Number
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="64"
+                    value={formData.builderChannel}
+                    onChange={(e) => onChange({ builderChannel: Number(e.target.value) || 1 })}
+                    className="input-field w-full text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Stream Type</label>
+                  <div className="grid grid-cols-2 gap-1 bg-white p-1 rounded-xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => onChange({ builderIsSub: false })}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        !formData.builderIsSub
+                          ? 'bg-orange-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Main Stream
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onChange({ builderIsSub: true })}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        formData.builderIsSub
+                          ? 'bg-orange-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Sub Stream
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ) : null}
 

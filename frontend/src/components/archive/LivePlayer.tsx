@@ -36,12 +36,23 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
 
         pc.ontrack = (event) => {
           if (!isActive) return;
-          if (video.srcObject !== event.streams[0]) {
-            video.srcObject = event.streams[0];
-            setIsInitializing(false);
-            onLiveStatusChange?.(true);
-            video.play().catch(() => {});
+          if (event.streams && event.streams[0]) {
+            if (video.srcObject !== event.streams[0]) {
+              video.srcObject = event.streams[0];
+            }
+          } else if (event.track) {
+            let stream = video.srcObject as MediaStream;
+            if (!stream || !(stream instanceof MediaStream)) {
+              stream = new MediaStream();
+              video.srcObject = stream;
+            }
+            stream.addTrack(event.track);
           }
+          setIsInitializing(false);
+          onLiveStatusChange?.(true);
+          video.play().catch((err) => {
+            console.warn('Autoplay prevented:', err);
+          });
         };
 
         const offer = await pc.createOffer();

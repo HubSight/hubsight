@@ -4,4 +4,4 @@ webrtc:
     - stun:8555
 streams:
   cam_5:
-    - rtsp://host.docker.internal:8554/webcam
+    - rtsp://admin@138.2.87.35:8554/bunny

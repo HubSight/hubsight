@@ -15,6 +15,7 @@ const initialFormData: DeviceFormData = {
   builderPort: 554,
   builderUser: 'admin',
   builderPass: '',
+  builderPath: '/stream',
   builderChannel: 1,
   builderIsSub: false,
   rtspTransport: 'auto',
@@ -60,7 +61,8 @@ const Devices = () => {
         formData.builderUser,
         formData.builderPass,
         formData.builderChannel,
-        formData.builderIsSub
+        formData.builderIsSub,
+        formData.builderPath
       );
       setFormData((prev) => ({ ...prev, host: generated }));
     }
@@ -70,6 +72,7 @@ const Devices = () => {
     formData.builderPort,
     formData.builderUser,
     formData.builderPass,
+    formData.builderPath,
     formData.builderChannel,
     formData.builderIsSub,
     formData.isManualUrl
@@ -89,6 +92,7 @@ const Devices = () => {
         builderPort: parsed?.port || dev.rtsp_port || 554,
         builderUser: parsed?.user || 'admin',
         builderPass: parsed?.pass || '',
+        builderPath: parsed?.path || '/stream',
         builderChannel: parsed?.channel || 1,
         builderIsSub: parsed?.isSub ?? false,
         rtspTransport: dev.rtsp_transport || 'auto',

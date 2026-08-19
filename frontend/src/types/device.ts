@@ -23,6 +23,7 @@ export interface DeviceFormData {
   builderPort: number;
   builderUser: string;
   builderPass: string;
+  builderPath?: string;
   builderChannel: number;
   builderIsSub: boolean;
   rtspTransport: string;
