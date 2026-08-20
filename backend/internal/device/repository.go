@@ -18,6 +18,7 @@ type DeviceInput struct {
 	AudioMode       string `json:"audio_mode"`
 	ExtraArgs       string `json:"extra_args"`
 	IsActive        *bool  `json:"is_active"`
+	EnableAi        *bool  `json:"enable_ai"`
 }
 
 // Backward compatibility alias
@@ -56,6 +57,9 @@ func Create(ctx context.Context, input DeviceInput) (*ent.Camera, error) {
 	if input.IsActive != nil {
 		query.SetIsActive(*input.IsActive)
 	}
+	if input.EnableAi != nil {
+		query.SetEnableAi(*input.EnableAi)
+	}
 
 	return query.Save(ctx)
 }
@@ -86,6 +90,9 @@ func Update(ctx context.Context, id int, input DeviceInput) (*ent.Camera, error)
 	query.SetExtraArgs(input.ExtraArgs)
 	if input.IsActive != nil {
 		query.SetIsActive(*input.IsActive)
+	}
+	if input.EnableAi != nil {
+		query.SetEnableAi(*input.EnableAi)
 	}
 
 	return query.Save(ctx)

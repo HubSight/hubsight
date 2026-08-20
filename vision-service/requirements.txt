@@ -5,3 +5,4 @@ opencv-python-headless
 ultralytics
 pika
 python-dotenv
+requests

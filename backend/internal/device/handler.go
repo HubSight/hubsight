@@ -2,9 +2,12 @@ package device
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 	
 	"cctv/ent"
+	"cctv/ent/camera"
+	"cctv/internal/database"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,6 +22,32 @@ func ListDevicesHandler(c *gin.Context) {
 		devices = []*ent.Camera{}
 	}
 	
+	c.JSON(http.StatusOK, devices)
+}
+
+func ListAICamerasHandler(c *gin.Context) {
+	// Simple M2M Secret check
+	secret := c.GetHeader("X-Service-Key")
+	expected := os.Getenv("M2M_SECRET")
+	if expected != "" && secret != expected {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized internal access"})
+		return
+	}
+
+	devices, err := database.Client.Camera.Query().
+		Where(camera.IsActive(true), camera.EnableAi(true)).
+		Order(ent.Asc("id")).
+		All(c.Request.Context())
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch AI cameras"})
+		return
+	}
+
+	if devices == nil {
+		devices = []*ent.Camera{}
+	}
+
 	c.JSON(http.StatusOK, devices)
 }
 

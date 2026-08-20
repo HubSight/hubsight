@@ -74,6 +74,22 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
         />
       </div>
 
+      <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+        <div>
+          <label className="block text-sm font-medium text-slate-800">Enable AI Detection</label>
+          <p className="text-[11px] text-slate-500 mt-0.5">Allow YOLO Vision Service to process this stream</p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={formData.enable_ai || false}
+            onChange={(e) => onChange({ enable_ai: e.target.checked })}
+          />
+          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-600"></div>
+        </label>
+      </div>
+
       <DeviceBrandDropdown selectedBrand={formData.brand} onSelectBrand={handleBrandSelect} />
 
       {/* Friendly URL Builder or Manual Input Toggle */}

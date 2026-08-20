@@ -34,6 +34,12 @@ func New() *gin.Engine {
 
 	api := r.Group("/api")
 	{
+		// Internal service-to-service routes
+		internal := api.Group("/internal")
+		{
+			internal.GET("/ai-cameras", device.ListAICamerasHandler)
+		}
+
 		// Protected domain routes (Validated via auth-service)
 		protected := api.Group("/")
 		protected.Use(auth.Middleware())

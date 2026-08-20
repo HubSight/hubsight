@@ -10,6 +10,7 @@ export interface DeviceType {
   audio_mode: string;
   extra_args: string;
   is_active: boolean;
+  enable_ai: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +33,7 @@ export interface DeviceFormData {
   videoCodec: string;
   audioMode: string;
   extraArgs: string;
+  enable_ai: boolean;
 }
 
 // Backward compatibility aliases
