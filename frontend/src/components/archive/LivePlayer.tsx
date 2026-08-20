@@ -105,7 +105,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
     renderLoop();
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [personDetected, boundingBoxes]);
+  }, []);
 
   useEffect(() => {
     let pc: RTCPeerConnection | null = null;

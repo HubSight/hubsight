@@ -23,7 +23,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const socketInstance = io(import.meta.env.VITE_RELAY_URL || 'http://localhost:3001', {
+    const baseURL = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || '';
+    const socketInstance = io(baseURL || '/', {
+      path: '/relay',
       transports: ['websocket'],
       autoConnect: true,
       withCredentials: true,
