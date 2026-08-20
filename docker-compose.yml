@@ -77,6 +77,19 @@ services:
     depends_on:
       - mq-service
 
+  # 👁️ Vision Service (Person Detection via YOLO)
+  vision-service:
+    build:
+      context: ./vision-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      RTSP_URL: rtsp://host.docker.internal:8554/cam
+      RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
+      PROCESS_FPS: "5"
+    depends_on:
+      - mq-service
+
   # 📹 WebRTC Media Server (Media RTP port 8555; Signaling routed via API Gateway :8088/webrtc)
   webrtc-service:
     image: alexxit/go2rtc:latest

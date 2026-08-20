@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppLockProvider } from './context/AppLockContext';
+import { SocketProvider } from './context/SocketContext';
 import { I18nProvider } from './i18n';
 import { LocaleSync } from './components/LocaleSync';
 import MainLayout from './layouts/MainLayout';
@@ -52,39 +53,41 @@ const App = () => {
       <AuthProvider>
         <LocaleSync />
         <AppLockProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
+          <SocketProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<Login />} />
 
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<IndexRedirect />} />
                 <Route
-                  path="devices"
+                  path="/"
                   element={
-                    <AdminRoute>
-                      <Devices />
-                    </AdminRoute>
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
                   }
-                />
-                <Route path="playback" element={<Playback />} />
-                <Route
-                  path="recorder"
-                  element={
-                    <AdminRoute>
-                      <NvrMonitor />
-                    </AdminRoute>
-                  }
-                />
-              </Route>
-            </Routes>
-          </BrowserRouter>
+                >
+                  <Route index element={<IndexRedirect />} />
+                  <Route
+                    path="devices"
+                    element={
+                      <AdminRoute>
+                        <Devices />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route path="playback" element={<Playback />} />
+                  <Route
+                    path="recorder"
+                    element={
+                      <AdminRoute>
+                        <NvrMonitor />
+                      </AdminRoute>
+                    }
+                  />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </SocketProvider>
         </AppLockProvider>
       </AuthProvider>
     </I18nProvider>

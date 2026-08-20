@@ -24,4 +24,28 @@ export class RelayConsumer {
   handleBroadcastEvent(@Payload() dto: BroadcastEventDto) {
     return this.relayService.broadcastEvent(dto);
   }
+
+  @EventPattern('vision.person.entered')
+  handlePersonEntered(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'vision.person.entered',
+      data,
+    });
+  }
+
+  @EventPattern('vision.person.update')
+  handlePersonUpdate(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'vision.person.update',
+      data,
+    });
+  }
+
+  @EventPattern('vision.person.left')
+  handlePersonLeft(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'vision.person.left',
+      data,
+    });
+  }
 }

@@ -40,3 +40,4 @@ backend/tmp/
 # Logs
 logs/
 *.log
+npm_cache
