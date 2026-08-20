@@ -49,8 +49,10 @@ flowchart TB
         RelayWS["⚡ Socket.IO Relay Server (:3001)<br/>Real-time Push Events & Rooms (Path: /relay)"]
         WebRTCSvc["📹 WebRTC Engine (:1984)<br/>Internal Dynamic RTSP Mapping"]
         NVRSvc["📼 NVR Recorder Service<br/>Multi-Camera FFmpeg Workers<br/>720p @ 15fps Segmentation"]
+        BgrdSvc["🕒 Background Worker<br/>Retention Cron & Asynq Jobs"]
         Postgres[("Shared PostgreSQL DB")]
         S3Storage[("S3 / MinIO Storage<br/>YYYY-MM-DD/Camera_ID/")]
+        Redis[("Redis Cache & Queue")]
     end
 
     %% ==========================================
@@ -91,6 +93,9 @@ flowchart TB
     RelayWS -->|"Auth Guard Handshake"| AuthSvc
     NVRSvc --> Postgres
     NVRSvc --> S3Storage
+    BgrdSvc -->|"Execute Jobs"| Redis
+    BgrdSvc --> Postgres
+    BgrdSvc --> S3Storage
 
     CamDahua -->|"RTSP Stream"| WebRTCSvc
     CamHik -->|"RTSP Stream"| WebRTCSvc
@@ -116,6 +121,8 @@ flowchart TB
 | **`auth-service`** | **Auth & SSO Engine** | *None* | `http://auth-service:8081` | **Private Internal Microservice** for SSO/OIDC auth, session verification, and token rotation. |
 | **`webrtc-service`** | **WebRTC Media Engine** | **`:8555`** | `http://webrtc-service:1984` | Port `:8555` UDP/TCP transmits direct WebRTC video RTP media. All signaling APIs are routed via Gateway `:8088/webrtc`. |
 | **`nvr-service`** | **NVR Recording Engine** | *None* | *Background Worker* | **Private Internal Worker** for FFmpeg chunking and S3 archiving. |
+| **`bgrd-service`** | **Background Job Worker** | *None* | *Background Worker* | **Private Internal Worker** handling periodic tasks like 3-day retention cron via `asynq`. |
+| **`redis-service`** | **Redis Queue** | *None* | `redis://redis-service:6379` | **Private Internal Cache** used by `asynq` for job queues. |
 
 ---
 
