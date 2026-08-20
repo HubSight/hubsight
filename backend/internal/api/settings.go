@@ -12,6 +12,7 @@ import (
 type SettingsRequest struct {
 	NvrStatus      *bool `json:"nvr_status"`
 	StorageQuotaGb *int  `json:"storage_quota_gb"`
+	RetentionDays  *int  `json:"retention_days"`
 }
 
 // GetSettings handles GET /api/settings
@@ -29,6 +30,7 @@ func GetSettings(c *gin.Context) {
 				SetID("global").
 				SetNvrStatus(true).
 				SetStorageQuotaGB(50).
+				SetRetentionDays(4).
 				Save(ctx)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create default settings"})
@@ -60,6 +62,9 @@ func UpdateSettings(c *gin.Context) {
 	if req.StorageQuotaGb != nil {
 		update = update.SetStorageQuotaGB(*req.StorageQuotaGb)
 	}
+	if req.RetentionDays != nil {
+		update = update.SetRetentionDays(*req.RetentionDays)
+	}
 
 	set, err := update.Save(ctx)
 	if err != nil {
@@ -75,6 +80,11 @@ func UpdateSettings(c *gin.Context) {
 				creator = creator.SetStorageQuotaGB(*req.StorageQuotaGb)
 			} else {
 				creator = creator.SetStorageQuotaGB(50)
+			}
+			if req.RetentionDays != nil {
+				creator = creator.SetRetentionDays(*req.RetentionDays)
+			} else {
+				creator = creator.SetRetentionDays(4)
 			}
 			set, err = creator.Save(ctx)
 			if err != nil {

@@ -47,6 +47,20 @@ func (_c *SettingCreate) SetNillableStorageQuotaGB(v *int) *SettingCreate {
 	return _c
 }
 
+// SetRetentionDays sets the "retention_days" field.
+func (_c *SettingCreate) SetRetentionDays(v int) *SettingCreate {
+	_c.mutation.SetRetentionDays(v)
+	return _c
+}
+
+// SetNillableRetentionDays sets the "retention_days" field if the given value is not nil.
+func (_c *SettingCreate) SetNillableRetentionDays(v *int) *SettingCreate {
+	if v != nil {
+		_c.SetRetentionDays(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SettingCreate) SetID(v string) *SettingCreate {
 	_c.mutation.SetID(v)
@@ -96,6 +110,10 @@ func (_c *SettingCreate) defaults() {
 		v := setting.DefaultStorageQuotaGB
 		_c.mutation.SetStorageQuotaGB(v)
 	}
+	if _, ok := _c.mutation.RetentionDays(); !ok {
+		v := setting.DefaultRetentionDays
+		_c.mutation.SetRetentionDays(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -105,6 +123,9 @@ func (_c *SettingCreate) check() error {
 	}
 	if _, ok := _c.mutation.StorageQuotaGB(); !ok {
 		return &ValidationError{Name: "storage_quota_gb", err: errors.New(`ent: missing required field "Setting.storage_quota_gb"`)}
+	}
+	if _, ok := _c.mutation.RetentionDays(); !ok {
+		return &ValidationError{Name: "retention_days", err: errors.New(`ent: missing required field "Setting.retention_days"`)}
 	}
 	return nil
 }
@@ -148,6 +169,10 @@ func (_c *SettingCreate) createSpec() (*Setting, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.StorageQuotaGB(); ok {
 		_spec.SetField(setting.FieldStorageQuotaGB, field.TypeInt, value)
 		_node.StorageQuotaGB = value
+	}
+	if value, ok := _c.mutation.RetentionDays(); ok {
+		_spec.SetField(setting.FieldRetentionDays, field.TypeInt, value)
+		_node.RetentionDays = value
 	}
 	return _node, _spec
 }

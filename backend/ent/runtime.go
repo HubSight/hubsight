@@ -100,6 +100,10 @@ func init() {
 	settingDescStorageQuotaGB := settingFields[2].Descriptor()
 	// setting.DefaultStorageQuotaGB holds the default value on creation for the storage_quota_gb field.
 	setting.DefaultStorageQuotaGB = settingDescStorageQuotaGB.Default.(int)
+	// settingDescRetentionDays is the schema descriptor for retention_days field.
+	settingDescRetentionDays := settingFields[3].Descriptor()
+	// setting.DefaultRetentionDays holds the default value on creation for the retention_days field.
+	setting.DefaultRetentionDays = settingDescRetentionDays.Default.(int)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescUsername is the schema descriptor for username field.

@@ -46,41 +46,99 @@ const NvrMonitor = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    type: 'confirm' | 'prompt' | 'alert';
+    title: string;
+    message: string;
+    inputValue: string;
+    onConfirm: (val?: string) => void;
+  }>({
+    isOpen: false,
+    type: 'alert',
+    title: '',
+    message: '',
+    inputValue: '',
+    onConfirm: () => {}
+  });
 
-  const toggleNvrStatus = async (currentStatus: boolean) => {
-    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'disable' : 'enable'} the NVR Engine globally?`)) return;
-    setIsUpdatingSettings(true);
-    try {
-      await axiosClient.put('/settings', { nvr_status: !currentStatus });
-      await fetchStatus(false);
-    } catch (err) {
-      console.error('Failed to toggle NVR status', err);
-      alert('Failed to update NVR status.');
-    } finally {
-      setIsUpdatingSettings(false);
-    }
+  const toggleNvrStatus = (currentStatus: boolean) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Confirm Action',
+      message: `Are you sure you want to ${currentStatus ? 'disable' : 'enable'} the NVR Engine globally?`,
+      inputValue: '',
+      onConfirm: async () => {
+        setIsUpdatingSettings(true);
+        try {
+          await axiosClient.put('/settings', { nvr_status: !currentStatus });
+          await fetchStatus(false);
+        } catch (err) {
+          console.error('Failed to toggle NVR status', err);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Failed to update NVR status.', inputValue: '', onConfirm: () => {} }), 100);
+        } finally {
+          setIsUpdatingSettings(false);
+        }
+      }
+    });
   };
 
-  const promptUpdateQuota = async (currentQuotaBytes: number) => {
+  const promptUpdateQuota = (currentQuotaBytes: number) => {
     const currentGb = Math.round(currentQuotaBytes / (1024 * 1024 * 1024));
-    const input = window.prompt('Enter new Storage Quota (in GB):', currentGb.toString());
-    if (!input) return;
-    const newQuota = parseInt(input, 10);
-    if (isNaN(newQuota) || newQuota <= 0) {
-      alert('Invalid quota value. Must be a positive integer.');
-      return;
-    }
+    setModalConfig({
+      isOpen: true,
+      type: 'prompt',
+      title: 'Edit Storage Quota',
+      message: 'Enter new Storage Quota (in GB):',
+      inputValue: currentGb.toString(),
+      onConfirm: async (val) => {
+        const newQuota = parseInt(val || '', 10);
+        if (isNaN(newQuota) || newQuota <= 0) {
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Invalid quota value. Must be a positive integer.', inputValue: '', onConfirm: () => {} }), 100);
+          return;
+        }
 
-    setIsUpdatingSettings(true);
-    try {
-      await axiosClient.put('/settings', { storage_quota_gb: newQuota });
-      await fetchStatus(false);
-    } catch (err) {
-      console.error('Failed to update quota', err);
-      alert('Failed to update Storage Quota.');
-    } finally {
-      setIsUpdatingSettings(false);
-    }
+        setIsUpdatingSettings(true);
+        try {
+          await axiosClient.put('/settings', { storage_quota_gb: newQuota });
+          await fetchStatus(false);
+        } catch (err) {
+          console.error('Failed to update quota', err);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Failed to update Storage Quota.', inputValue: '', onConfirm: () => {} }), 100);
+        } finally {
+          setIsUpdatingSettings(false);
+        }
+      }
+    });
+  };
+
+  const promptUpdateRetention = (currentRetentionDays: number) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'prompt',
+      title: 'Edit Retention Policy',
+      message: 'Enter new Retention Policy (in Days):',
+      inputValue: currentRetentionDays.toString(),
+      onConfirm: async (val) => {
+        const newDays = parseInt(val || '', 10);
+        if (isNaN(newDays) || newDays <= 0) {
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Invalid retention value. Must be a positive integer.', inputValue: '', onConfirm: () => {} }), 100);
+          return;
+        }
+        
+        setIsUpdatingSettings(true);
+        try {
+          await axiosClient.put('/settings', { retention_days: newDays });
+          await fetchStatus(false);
+        } catch (err) {
+          console.error('Failed to update retention', err);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Failed to update Retention Policy.', inputValue: '', onConfirm: () => {} }), 100);
+        } finally {
+          setIsUpdatingSettings(false);
+        }
+      }
+    });
   };
 
   const fetchStatus = async (showLoading = false) => {
@@ -166,8 +224,20 @@ const NvrMonitor = () => {
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               NVR Engine Status
             </span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <Server size={20} />
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => toggleNvrStatus(!!data?.is_global_enabled)}
+                disabled={isUpdatingSettings || !data}
+                className={`text-xs px-3 py-1.5 font-semibold rounded-md transition-colors ${data?.is_global_enabled
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                  }`}
+              >
+                {data?.is_global_enabled ? 'Stop Engine' : 'Start Engine'}
+              </button>
+              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                <Server size={20} />
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3 mb-1">
@@ -175,17 +245,6 @@ const NvrMonitor = () => {
             <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">
               {data?.is_global_enabled ? (data?.status || 'HEALTHY') : 'DISABLED'}
             </h3>
-
-            <button
-              onClick={() => toggleNvrStatus(!!data?.is_global_enabled)}
-              disabled={isUpdatingSettings || !data}
-              className={`ml-auto text-xs px-3 py-1.5 font-semibold rounded-md transition-colors ${data?.is_global_enabled
-                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                }`}
-            >
-              {data?.is_global_enabled ? 'Stop Engine' : 'Start Engine'}
-            </button>
           </div>
           <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
             <Clock size={14} className="text-slate-400" />
@@ -219,13 +278,13 @@ const NvrMonitor = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Storage Quota
+              Storage Quota & Policy
             </span>
             <div className="flex gap-2 items-center">
               <button
                 onClick={() => promptUpdateQuota(data?.storage.quota_bytes || 0)}
                 disabled={isUpdatingSettings || !data}
-                className="text-xs text-orange-600 hover:text-orange-700 bg-orange-50 px-2 py-1 rounded hover:bg-orange-100 font-medium transition-colors"
+                className="text-xs px-3 py-1.5 font-semibold bg-orange-50 text-orange-600 rounded-md hover:bg-orange-100 transition-colors"
               >
                 Edit Limit
               </button>
@@ -255,8 +314,8 @@ const NvrMonitor = () => {
           </div>
           <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1.5">
             <span>{(data?.storage.used_percentage || 0).toFixed(1)}% Used</span>
-            <span className="flex items-center gap-1 text-emerald-600 font-semibold">
-              <Trash2 size={11} /> 6-Day TTL (Every 7d)
+            <span className="flex items-center gap-1 text-emerald-600 font-semibold cursor-pointer hover:text-emerald-700 transition-colors" onClick={() => promptUpdateRetention(data?.storage.retention_days || 4)}>
+              <Trash2 size={11} /> {data?.storage.retention_days || 4}-Day TTL (Edit)
             </span>
           </div>
         </div>
@@ -398,6 +457,58 @@ const NvrMonitor = () => {
           </div>
         )}
       </div>
+
+      {/* Premium Custom Modal */}
+      {modalConfig.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">{modalConfig.title}</h3>
+              <p className="text-sm text-slate-600 mb-5">{modalConfig.message}</p>
+              
+              {modalConfig.type === 'prompt' && (
+                <div className="mb-2">
+                  <input
+                    type="number"
+                    autoFocus
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    value={modalConfig.inputValue}
+                    onChange={(e) => setModalConfig({ ...modalConfig, inputValue: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        modalConfig.onConfirm(modalConfig.inputValue);
+                        setModalConfig({ ...modalConfig, isOpen: false });
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-slate-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-100">
+              {modalConfig.type !== 'alert' && (
+                <button
+                  onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  modalConfig.onConfirm(modalConfig.inputValue);
+                  setModalConfig({ ...modalConfig, isOpen: false });
+                }}
+                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm ${
+                  modalConfig.type === 'confirm' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                {modalConfig.type === 'alert' ? 'OK' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

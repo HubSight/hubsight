@@ -15,6 +15,8 @@ const (
 	FieldNvrStatus = "nvr_status"
 	// FieldStorageQuotaGB holds the string denoting the storage_quota_gb field in the database.
 	FieldStorageQuotaGB = "storage_quota_gb"
+	// FieldRetentionDays holds the string denoting the retention_days field in the database.
+	FieldRetentionDays = "retention_days"
 	// Table holds the table name of the setting in the database.
 	Table = "settings"
 )
@@ -24,6 +26,7 @@ var Columns = []string{
 	FieldID,
 	FieldNvrStatus,
 	FieldStorageQuotaGB,
+	FieldRetentionDays,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -41,6 +44,8 @@ var (
 	DefaultNvrStatus bool
 	// DefaultStorageQuotaGB holds the default value on creation for the "storage_quota_gb" field.
 	DefaultStorageQuotaGB int
+	// DefaultRetentionDays holds the default value on creation for the "retention_days" field.
+	DefaultRetentionDays int
 )
 
 // OrderOption defines the ordering options for the Setting queries.
@@ -59,4 +64,9 @@ func ByNvrStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByStorageQuotaGB orders the results by the storage_quota_gb field.
 func ByStorageQuotaGB(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStorageQuotaGB, opts...).ToFunc()
+}
+
+// ByRetentionDays orders the results by the retention_days field.
+func ByRetentionDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRetentionDays, opts...).ToFunc()
 }

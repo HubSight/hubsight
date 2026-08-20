@@ -62,6 +62,27 @@ func (_u *SettingUpdate) AddStorageQuotaGB(v int) *SettingUpdate {
 	return _u
 }
 
+// SetRetentionDays sets the "retention_days" field.
+func (_u *SettingUpdate) SetRetentionDays(v int) *SettingUpdate {
+	_u.mutation.ResetRetentionDays()
+	_u.mutation.SetRetentionDays(v)
+	return _u
+}
+
+// SetNillableRetentionDays sets the "retention_days" field if the given value is not nil.
+func (_u *SettingUpdate) SetNillableRetentionDays(v *int) *SettingUpdate {
+	if v != nil {
+		_u.SetRetentionDays(*v)
+	}
+	return _u
+}
+
+// AddRetentionDays adds value to the "retention_days" field.
+func (_u *SettingUpdate) AddRetentionDays(v int) *SettingUpdate {
+	_u.mutation.AddRetentionDays(v)
+	return _u
+}
+
 // Mutation returns the SettingMutation object of the builder.
 func (_u *SettingUpdate) Mutation() *SettingMutation {
 	return _u.mutation
@@ -111,6 +132,12 @@ func (_u *SettingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedStorageQuotaGB(); ok {
 		_spec.AddField(setting.FieldStorageQuotaGB, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.RetentionDays(); ok {
+		_spec.SetField(setting.FieldRetentionDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRetentionDays(); ok {
+		_spec.AddField(setting.FieldRetentionDays, field.TypeInt, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -164,6 +191,27 @@ func (_u *SettingUpdateOne) SetNillableStorageQuotaGB(v *int) *SettingUpdateOne 
 // AddStorageQuotaGB adds value to the "storage_quota_gb" field.
 func (_u *SettingUpdateOne) AddStorageQuotaGB(v int) *SettingUpdateOne {
 	_u.mutation.AddStorageQuotaGB(v)
+	return _u
+}
+
+// SetRetentionDays sets the "retention_days" field.
+func (_u *SettingUpdateOne) SetRetentionDays(v int) *SettingUpdateOne {
+	_u.mutation.ResetRetentionDays()
+	_u.mutation.SetRetentionDays(v)
+	return _u
+}
+
+// SetNillableRetentionDays sets the "retention_days" field if the given value is not nil.
+func (_u *SettingUpdateOne) SetNillableRetentionDays(v *int) *SettingUpdateOne {
+	if v != nil {
+		_u.SetRetentionDays(*v)
+	}
+	return _u
+}
+
+// AddRetentionDays adds value to the "retention_days" field.
+func (_u *SettingUpdateOne) AddRetentionDays(v int) *SettingUpdateOne {
+	_u.mutation.AddRetentionDays(v)
 	return _u
 }
 
@@ -246,6 +294,12 @@ func (_u *SettingUpdateOne) sqlSave(ctx context.Context) (_node *Setting, err er
 	}
 	if value, ok := _u.mutation.AddedStorageQuotaGB(); ok {
 		_spec.AddField(setting.FieldStorageQuotaGB, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.RetentionDays(); ok {
+		_spec.SetField(setting.FieldRetentionDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRetentionDays(); ok {
+		_spec.AddField(setting.FieldRetentionDays, field.TypeInt, value)
 	}
 	_node = &Setting{config: _u.config}
 	_spec.Assign = _node.assignValues

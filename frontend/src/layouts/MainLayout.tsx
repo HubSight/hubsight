@@ -1,19 +1,28 @@
-import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity } from 'lucide-react';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
 import { AppLockScreen } from '../components/lock/AppLockScreen';
+import { AppFooter } from '../components/AppFooter';
 import axiosClient from '../api/axiosClient';
 import { clearPwaRefreshToken } from '../utils/pwa';
 
 const MainLayout = () => {
   const { user, checkAuth } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (location.pathname === '/playback') {
+      setIsSidebarCollapsed(true);
+    }
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     clearPwaRefreshToken();
@@ -27,14 +36,7 @@ const MainLayout = () => {
       {/* App Lock Screen Overlay */}
       <AppLockScreen />
       
-      {/* Background Grid */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-60 z-0"
-        style={{
-          backgroundImage: `linear-gradient(to right, rgba(148, 163, 184, 0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.25) 1px, transparent 1px)`,
-          backgroundSize: '32px 32px'
-        }}
-      />
+      {/* Background */}
 
 
       {/* Mobile Header */}
@@ -62,9 +64,10 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-[260px] min-w-[260px] shrink-0 bg-white shadow-[4px_0_24px_rgba(148,163,184,0.25)] border-r border-slate-200/80 flex flex-col py-6 
-        transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col py-6 overflow-hidden
+        transition-all duration-300 ease-in-out md:relative
+        ${isMobileMenuOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full w-[260px] md:translate-x-0'}
+        ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
       `}>
         <div className="flex items-center justify-between px-6 mb-8">
           <div className="flex items-center gap-3">
@@ -159,8 +162,21 @@ const MainLayout = () => {
             <LogOut size={15} />
             Logout
           </button>
+
+          <AppFooter className="mt-6" />
         </div>
       </aside>
+
+      {/* Desktop Sidebar Toggle Button */}
+      <button
+        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-200 shadow-md py-3 px-1 rounded-r-xl transition-all duration-300 hover:bg-slate-50 text-slate-400 hover:text-slate-700 cursor-pointer ${
+          isSidebarCollapsed ? 'left-0' : 'left-[260px]'
+        }`}
+        title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      >
+        {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+      </button>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-y-auto relative pt-14 md:pt-0">

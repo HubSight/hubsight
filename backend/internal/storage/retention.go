@@ -7,13 +7,12 @@ import (
 
 	"cctv/ent"
 	"cctv/ent/recording"
+	"cctv/ent/setting"
 	"cctv/internal/database"
 	"github.com/minio/minio-go/v7"
 )
 
 const (
-	// RetentionPeriod defines the age beyond which archives are purged (3 days)
-	RetentionPeriod = 3 * 24 * time.Hour
 	// CleanupInterval defines how frequently the retention purge routine executes (every 1 day)
 	CleanupInterval = 24 * time.Hour
 )
@@ -27,10 +26,18 @@ type RetentionStats struct {
 
 var CurrentRetentionStats RetentionStats
 
-// CleanupOldArchives scans for and deletes all recordings older than 6 days from S3 and Ent DB
+// CleanupOldArchives scans for and deletes all recordings older than retention days from S3 and Ent DB
 func CleanupOldArchives(ctx context.Context) (int, int64, error) {
-	cutoff := time.Now().Add(-RetentionPeriod)
-	log.Printf("[Retention Worker] Scanning for archives older than 3 days (cutoff: %s)...", cutoff.Format(time.RFC3339))
+	globalSettings, err := database.Client.Setting.Query().Where(setting.ID("global")).Only(ctx)
+	if err != nil {
+		globalSettings = &ent.Setting{
+			RetentionDays: 4,
+		}
+	}
+
+	retentionPeriod := time.Duration(globalSettings.RetentionDays) * 24 * time.Hour
+	cutoff := time.Now().Add(-retentionPeriod)
+	log.Printf("[Retention Worker] Scanning for archives older than %d days (cutoff: %s)...", globalSettings.RetentionDays, cutoff.Format(time.RFC3339))
 
 	oldRecordings, err := database.Client.Recording.Query().
 		Where(recording.StartAtLT(cutoff)).
@@ -43,7 +50,7 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 	}
 
 	if len(oldRecordings) == 0 {
-		log.Printf("[Retention Worker] Retention check complete: 0 expired recordings found (>3 days old).")
+		log.Printf("[Retention Worker] Retention check complete: 0 expired recordings found (>%d days old).", globalSettings.RetentionDays)
 		CurrentRetentionStats = RetentionStats{
 			LastRun:      time.Now(),
 			DeletedCount: 0,
@@ -73,8 +80,8 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 		freedBytes += rec.SizeBytes
 	}
 
-	log.Printf("[Retention Worker] Purge finished: Removed %d expired recordings (>3 days old), freed %.2f MB (%.2f GB).",
-		deletedCount, float64(freedBytes)/(1024*1024), float64(freedBytes)/(1024*1024*1024))
+	log.Printf("[Retention Worker] Purge finished: Removed %d expired recordings (>%d days old), freed %.2f MB (%.2f GB).",
+		deletedCount, globalSettings.RetentionDays, float64(freedBytes)/(1024*1024), float64(freedBytes)/(1024*1024*1024))
 
 	CurrentRetentionStats = RetentionStats{
 		LastRun:      time.Now(),

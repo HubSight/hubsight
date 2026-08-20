@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Camera, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import { AxiosError } from 'axios';
+import { AppFooter } from '../components/AppFooter';
 import { isPwa, setPwaRefreshToken, clearPwaRefreshToken } from '../utils/pwa';
 
 const Login = () => {
@@ -152,9 +153,8 @@ const Login = () => {
           </form>
 
           {/* Footer inside card */}
-          <div className="pt-4 mt-6 border-t border-slate-100 text-center text-xs text-slate-400 font-medium space-y-0.5">
-            <div>Private Cloud NVR System</div>
-            <div className="text-[11px] text-slate-400/80">&copy; anhquoctran</div>
+          <div className="pt-4 mt-6 border-t border-slate-100">
+            <AppFooter className="pb-0 pt-2" />
           </div>
         </div>
       </div>

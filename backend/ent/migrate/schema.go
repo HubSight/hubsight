@@ -85,6 +85,7 @@ var (
 		{Name: "id", Type: field.TypeString},
 		{Name: "nvr_status", Type: field.TypeBool, Default: true},
 		{Name: "storage_quota_gb", Type: field.TypeInt, Default: 50},
+		{Name: "retention_days", Type: field.TypeInt, Default: 4},
 	}
 	// SettingsTable holds the schema information for the "settings" table.
 	SettingsTable = &schema.Table{

@@ -73,6 +73,11 @@ func StorageQuotaGB(v int) predicate.Setting {
 	return predicate.Setting(sql.FieldEQ(FieldStorageQuotaGB, v))
 }
 
+// RetentionDays applies equality check predicate on the "retention_days" field. It's identical to RetentionDaysEQ.
+func RetentionDays(v int) predicate.Setting {
+	return predicate.Setting(sql.FieldEQ(FieldRetentionDays, v))
+}
+
 // NvrStatusEQ applies the EQ predicate on the "nvr_status" field.
 func NvrStatusEQ(v bool) predicate.Setting {
 	return predicate.Setting(sql.FieldEQ(FieldNvrStatus, v))
@@ -121,6 +126,46 @@ func StorageQuotaGBLT(v int) predicate.Setting {
 // StorageQuotaGBLTE applies the LTE predicate on the "storage_quota_gb" field.
 func StorageQuotaGBLTE(v int) predicate.Setting {
 	return predicate.Setting(sql.FieldLTE(FieldStorageQuotaGB, v))
+}
+
+// RetentionDaysEQ applies the EQ predicate on the "retention_days" field.
+func RetentionDaysEQ(v int) predicate.Setting {
+	return predicate.Setting(sql.FieldEQ(FieldRetentionDays, v))
+}
+
+// RetentionDaysNEQ applies the NEQ predicate on the "retention_days" field.
+func RetentionDaysNEQ(v int) predicate.Setting {
+	return predicate.Setting(sql.FieldNEQ(FieldRetentionDays, v))
+}
+
+// RetentionDaysIn applies the In predicate on the "retention_days" field.
+func RetentionDaysIn(vs ...int) predicate.Setting {
+	return predicate.Setting(sql.FieldIn(FieldRetentionDays, vs...))
+}
+
+// RetentionDaysNotIn applies the NotIn predicate on the "retention_days" field.
+func RetentionDaysNotIn(vs ...int) predicate.Setting {
+	return predicate.Setting(sql.FieldNotIn(FieldRetentionDays, vs...))
+}
+
+// RetentionDaysGT applies the GT predicate on the "retention_days" field.
+func RetentionDaysGT(v int) predicate.Setting {
+	return predicate.Setting(sql.FieldGT(FieldRetentionDays, v))
+}
+
+// RetentionDaysGTE applies the GTE predicate on the "retention_days" field.
+func RetentionDaysGTE(v int) predicate.Setting {
+	return predicate.Setting(sql.FieldGTE(FieldRetentionDays, v))
+}
+
+// RetentionDaysLT applies the LT predicate on the "retention_days" field.
+func RetentionDaysLT(v int) predicate.Setting {
+	return predicate.Setting(sql.FieldLT(FieldRetentionDays, v))
+}
+
+// RetentionDaysLTE applies the LTE predicate on the "retention_days" field.
+func RetentionDaysLTE(v int) predicate.Setting {
+	return predicate.Setting(sql.FieldLTE(FieldRetentionDays, v))
 }
 
 // And groups predicates with the AND operator between them.

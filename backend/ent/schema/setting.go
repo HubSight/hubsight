@@ -21,6 +21,9 @@ func (Setting) Fields() []ent.Field {
 		field.Int("storage_quota_gb").
 			Default(50).
 			Comment("Maximum storage quota in GB"),
+		field.Int("retention_days").
+			Default(4).
+			Comment("Number of days to keep recordings before deleting"),
 	}
 }
 

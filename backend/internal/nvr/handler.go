@@ -64,6 +64,7 @@ func NvrStatusHandler(c *gin.Context) {
 		globalSettings = &ent.Setting{
 			NvrStatus:      true,
 			StorageQuotaGB: 50,
+			RetentionDays:  4,
 		}
 	}
 
@@ -80,7 +81,7 @@ func NvrStatusHandler(c *gin.Context) {
 		TotalSegmentsCount:  totalRecordingsCount,
 		OldestSegmentAt:     oldestSegmentAt,
 		NewestSegmentAt:     newestSegmentAt,
-		RetentionDays:       3,
+		RetentionDays:       globalSettings.RetentionDays,
 		CleanupIntervalDays: 1,
 		RetentionStats:      &storage.CurrentRetentionStats,
 	}

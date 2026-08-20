@@ -21,7 +21,9 @@ type Setting struct {
 	NvrStatus bool `json:"nvr_status,omitempty"`
 	// Maximum storage quota in GB
 	StorageQuotaGB int `json:"storage_quota_gb,omitempty"`
-	selectValues   sql.SelectValues
+	// Number of days to keep recordings before deleting
+	RetentionDays int `json:"retention_days,omitempty"`
+	selectValues  sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -31,7 +33,7 @@ func (*Setting) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case setting.FieldNvrStatus:
 			values[i] = new(sql.NullBool)
-		case setting.FieldStorageQuotaGB:
+		case setting.FieldStorageQuotaGB, setting.FieldRetentionDays:
 			values[i] = new(sql.NullInt64)
 		case setting.FieldID:
 			values[i] = new(sql.NullString)
@@ -67,6 +69,12 @@ func (_m *Setting) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field storage_quota_gb", values[i])
 			} else if value.Valid {
 				_m.StorageQuotaGB = int(value.Int64)
+			}
+		case setting.FieldRetentionDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field retention_days", values[i])
+			} else if value.Valid {
+				_m.RetentionDays = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -109,6 +117,9 @@ func (_m *Setting) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("storage_quota_gb=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StorageQuotaGB))
+	builder.WriteString(", ")
+	builder.WriteString("retention_days=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RetentionDays))
 	builder.WriteByte(')')
 	return builder.String()
 }

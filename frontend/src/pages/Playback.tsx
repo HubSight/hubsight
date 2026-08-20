@@ -136,7 +136,7 @@ const Playback = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-50/50">
+    <div className="h-full overflow-y-auto bg-slate-50/50 playback-scrollbar">
       <div className="flex-1 flex flex-col min-w-0 max-w-[1920px] mx-auto">
           {/* 1. YouTube-style Video Player with embedded controls for Live & Archive */}
           <VideoPlayer

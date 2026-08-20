@@ -27,6 +27,7 @@ export interface NvrStatusResponse {
     used_bytes: number;
     free_bytes: number;
     used_percentage: number;
+    retention_days: number;
   };
   active_live_streams_count: number;
   cameras: NvrCameraStatus[];
