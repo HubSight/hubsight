@@ -15,25 +15,25 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [streamError, setStreamError] = useState<string | null>(null);
-  const [personDetected, setPersonDetected] = useState(false);
-  const [boundingBoxes, setBoundingBoxes] = useState<any[]>([]);
+  
+  // Use refs instead of state to prevent 30+ FPS React re-renders which freeze the browser
+  const personDetectedRef = useRef(false);
+  const boundingBoxesRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!socket) return;
     
-    socket.on('vision.person.entered', (data) => {
-      setPersonDetected(true);
-      setBoundingBoxes(data.boxes || []);
-    });
+    const handleUpdate = (data: any) => {
+      personDetectedRef.current = true;
+      boundingBoxesRef.current = data.boxes || [];
+    };
 
-    socket.on('vision.person.update', (data) => {
-      setPersonDetected(true);
-      setBoundingBoxes(data.boxes || []);
-    });
+    socket.on('vision.person.entered', handleUpdate);
+    socket.on('vision.person.update', handleUpdate);
 
     socket.on('vision.person.left', () => {
-      setPersonDetected(false);
-      setBoundingBoxes([]);
+      personDetectedRef.current = false;
+      boundingBoxesRef.current = [];
     });
 
     return () => {
@@ -63,7 +63,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       canvas.height = canvas.clientHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (personDetected && boundingBoxes.length > 0) {
+      if (personDetectedRef.current && boundingBoxesRef.current.length > 0) {
         const videoRatio = video.videoWidth / video.videoHeight;
         const containerRatio = canvas.width / canvas.height;
         
@@ -84,7 +84,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
         ctx.lineWidth = 3;
         ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
 
-        boundingBoxes.forEach(box => {
+        boundingBoxesRef.current.forEach(box => {
           const x = offsetX + (box.x1 * drawWidth);
           const y = offsetY + (box.y1 * drawHeight);
           const w = (box.x2 - box.x1) * drawWidth;
