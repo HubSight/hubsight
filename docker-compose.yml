@@ -28,12 +28,13 @@ services:
     environment:
       PORT: "8080"
       AUTH_SERVICE_URL: "http://auth-service:8081"
-      RELAY_SERVICE_URL: "http://relay-service:3001"
       WEBRTC_SERVICE_URL: "http://webrtc-service:1984"
+      RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       M2M_SECRET: "cctv-internal-m2m-secret"
     depends_on:
       - auth-service
       - webrtc-service
+      - mq-service
 
   # 🔐 Internal Auth Microservice (Private, not exposed to host)
   auth-service:
@@ -43,6 +44,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: "8081"
+      RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
+    depends_on:
+      - mq-service
 
   # ⚡ Dedicated Socket.IO Relay Microservice (Private, routed via API Gateway :8088/socket.io)
   relay-service:
@@ -53,9 +57,11 @@ services:
     environment:
       PORT: "3001"
       AUTH_SERVICE_URL: "http://auth-service:8081"
+      RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       M2M_SECRET: "cctv-internal-m2m-secret"
     depends_on:
       - auth-service
+      - mq-service
 
   # 📼 Internal NVR Recording Engine (Private, not exposed to host)
   nvr-service:
@@ -67,6 +73,9 @@ services:
       - cctv_data:/data/camera
     environment:
       RTSP_URL: rtsp://host.docker.internal:8554/
+      RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
+    depends_on:
+      - mq-service
 
   # 📹 WebRTC Media Server (Media RTP port 8555; Signaling routed via API Gateway :8088/webrtc)
   webrtc-service:
@@ -77,6 +86,13 @@ services:
       - "8555:8555/udp" # WebRTC UDP media
     volumes:
       - ./go2rtc:/config
+
+  # 🐇 RabbitMQ Message Broker for internal events
+  mq-service:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - "15672:15672" # Management UI
 
 volumes:
   cctv_data:

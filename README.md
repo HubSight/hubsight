@@ -111,7 +111,8 @@ flowchart TB
 | :--- | :--- | :--- | :--- | :--- |
 | **`api-gateway`** | **Single Unified API Gateway** | **`:8088`** | `http://api-gateway:8080` | **Sole Public HTTP & WebSocket Entrypoint** for FE. Proxies REST APIs (`/api/*`), Auth (`/api/auth/*`), WebSocket Relay (`/relay`), and WebRTC signaling (`/webrtc/*`). |
 | **`core-service`** | **Core CCTV Business Logic** | *None* | `http://core-service:8080` | **Private Internal Microservice** handling devices, camera CRUD, RTSP URL generation, archive playback timeline, and WebRTC signaling. |
-| **`relay-service`** | **Socket.IO Relay Server** | *None* | `http://relay-service:3001` | **Private Internal Service** for real-time notifications and rooms, routed through Gateway `:8088/relay` (Path: `/relay`). Protected by Auth & M2M bypass. |
+| **`relay-service`** | **Socket.IO Relay Server** | *None* | `http://relay-service:3001` | **Private Internal Service** for real-time notifications and rooms, routed through Gateway `:8088/relay`. Uses RabbitMQ for internal events. |
+| **`mq-service`** | **Message Broker** | **`:15672`** (UI) | `amqp://mq-service:5672` | **Private Internal Broker**. Used for async pub/sub events from Core, NVR, Auth services to Relay service. |
 | **`auth-service`** | **Auth & SSO Engine** | *None* | `http://auth-service:8081` | **Private Internal Microservice** for SSO/OIDC auth, session verification, and token rotation. |
 | **`webrtc-service`** | **WebRTC Media Engine** | **`:8555`** | `http://webrtc-service:1984` | Port `:8555` UDP/TCP transmits direct WebRTC video RTP media. All signaling APIs are routed via Gateway `:8088/webrtc`. |
 | **`nvr-service`** | **NVR Recording Engine** | *None* | *Background Worker* | **Private Internal Worker** for FFmpeg chunking and S3 archiving. |

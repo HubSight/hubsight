@@ -5,6 +5,7 @@ import (
 
 	"cctv/internal/config"
 	"cctv/internal/database"
+	"cctv/internal/mq"
 	"cctv/internal/router"
 	"cctv/internal/storage"
 )
@@ -21,6 +22,12 @@ func main() {
 
 	if err := storage.ConnectS3(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket, cfg.S3UseSSL); err != nil {
 		log.Fatalf("S3 connection failed: %v", err)
+	}
+
+	if err := mq.Init(); err != nil {
+		log.Printf("RabbitMQ connection failed: %v (Real-time events may not work)", err)
+	} else {
+		defer mq.Close()
 	}
 
 	r := router.New()
