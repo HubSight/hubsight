@@ -1,14 +1,25 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import { execSync } from 'child_process';
+import path from 'path';
 import fs from 'fs';
 
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
 
 let commitHash = 'unknown';
 try {
-  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+  const gitHeadPath = path.resolve('.git/HEAD');
+  if (fs.existsSync(gitHeadPath)) {
+    const headContent = fs.readFileSync(gitHeadPath, 'utf-8').trim();
+    if (headContent.startsWith('ref: ')) {
+      const refPath = path.resolve('.git', headContent.substring(5));
+      if (fs.existsSync(refPath)) {
+        commitHash = fs.readFileSync(refPath, 'utf-8').trim().substring(0, 7);
+      }
+    } else {
+      commitHash = headContent.substring(0, 7);
+    }
+  }
 } catch (e) {
   console.error('Failed to get commit hash', e);
 }

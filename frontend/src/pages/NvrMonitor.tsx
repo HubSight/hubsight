@@ -141,6 +141,47 @@ const NvrMonitor = () => {
     });
   };
 
+  const handleCleanupStorage = () => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Danger: Format Storage',
+      message: 'Are you absolutely sure you want to clean up all storage? This will delete all recordings from the S3/MinIO bucket and all metadata from the database. This action CANNOT be undone.',
+      type: 'confirm',
+      inputValue: '',
+      onConfirm: async () => {
+        setIsUpdatingSettings(true);
+        try {
+          const res = await axiosClient.post('/settings/storage/cleanup');
+          const freedGb = (res.data.freed_bytes / (1024 * 1024 * 1024)).toFixed(2);
+          
+          setModalConfig({
+            isOpen: true,
+            title: 'Cleanup Complete',
+            message: `Successfully deleted ${res.data.deleted_count} recordings, freeing up ${freedGb} GB.`,
+            type: 'alert',
+            inputValue: '',
+            onConfirm: () => {
+              setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => {} });
+              fetchStatus(true);
+            },
+          });
+        } catch (error) {
+          console.error('Failed to cleanup storage:', error);
+          setModalConfig({
+            isOpen: true,
+            title: 'Error',
+            message: 'Failed to format storage. Please check the logs.',
+            type: 'alert',
+            inputValue: '',
+            onConfirm: () => setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => {} }),
+          });
+        } finally {
+          setIsUpdatingSettings(false);
+        }
+      },
+    });
+  };
+
   const fetchStatus = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     setIsRefreshing(true);
@@ -281,6 +322,13 @@ const NvrMonitor = () => {
               Storage Quota & Policy
             </span>
             <div className="flex gap-2 items-center">
+              <button
+                onClick={handleCleanupStorage}
+                disabled={isUpdatingSettings || !data}
+                className="text-xs px-3 py-1.5 font-semibold bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
+              >
+                Format
+              </button>
               <button
                 onClick={() => promptUpdateQuota(data?.storage.quota_bytes || 0)}
                 disabled={isUpdatingSettings || !data}

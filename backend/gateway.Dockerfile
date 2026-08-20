@@ -5,6 +5,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml* frontend/pnpm-workspace.yaml* frontend/.npmrc* ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ .
+COPY .git/ ./.git/
 RUN pnpm run build
 
 # Stage 2: Build Backend API Gateway (Go)

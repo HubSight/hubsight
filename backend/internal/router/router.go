@@ -60,6 +60,7 @@ func New() *gin.Engine {
 				// Global settings
 				adminOnly.GET("/settings", cctvapi.GetSettings)
 				adminOnly.PUT("/settings", cctvapi.UpdateSettings)
+				adminOnly.POST("/settings/storage/cleanup", cctvapi.CleanupStorage)
 			}
 
 			// Archive and timeline endpoints

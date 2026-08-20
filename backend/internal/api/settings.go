@@ -6,6 +6,7 @@ import (
 	"cctv/ent"
 	"cctv/ent/setting"
 	"cctv/internal/database"
+	"cctv/internal/storage"
 	"github.com/gin-gonic/gin"
 )
 
@@ -98,4 +99,20 @@ func UpdateSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, set)
+}
+
+// CleanupStorage handles POST /api/settings/storage/cleanup
+func CleanupStorage(c *gin.Context) {
+	ctx := c.Request.Context()
+	deletedCount, freedBytes, err := storage.CleanupAllArchives(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clean up storage"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Storage cleaned successfully",
+		"deleted_count": deletedCount,
+		"freed_bytes": freedBytes,
+	})
 }
