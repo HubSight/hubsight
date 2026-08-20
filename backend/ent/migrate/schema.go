@@ -101,6 +101,7 @@ var (
 		{Name: "password_hash", Type: field.TypeString},
 		{Name: "role", Type: field.TypeEnum, Enums: []string{"admin", "viewer"}, Default: "viewer"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "locale", Type: field.TypeEnum, Enums: []string{"vi", "en"}, Default: "vi"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},

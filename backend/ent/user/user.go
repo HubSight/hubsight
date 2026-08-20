@@ -25,6 +25,8 @@ const (
 	FieldRole = "role"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldLocale holds the string denoting the locale field in the database.
+	FieldLocale = "locale"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldPasswordHash,
 	FieldRole,
 	FieldIsActive,
+	FieldLocale,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldLastLoginAt,
@@ -110,6 +113,32 @@ func RoleValidator(r Role) error {
 	}
 }
 
+// Locale defines the type for the "locale" enum field.
+type Locale string
+
+// LocaleVi is the default value of the Locale enum.
+const DefaultLocale = LocaleVi
+
+// Locale values.
+const (
+	LocaleVi Locale = "vi"
+	LocaleEn Locale = "en"
+)
+
+func (l Locale) String() string {
+	return string(l)
+}
+
+// LocaleValidator is a validator for the "locale" field enum values. It is called by the builders before save.
+func LocaleValidator(l Locale) error {
+	switch l {
+	case LocaleVi, LocaleEn:
+		return nil
+	default:
+		return fmt.Errorf("user: invalid enum value for locale field: %q", l)
+	}
+}
+
 // OrderOption defines the ordering options for the User queries.
 type OrderOption func(*sql.Selector)
 
@@ -141,6 +170,11 @@ func ByRole(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByLocale orders the results by the locale field.
+func ByLocale(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLocale, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
