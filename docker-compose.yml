@@ -92,5 +92,26 @@ services:
     image: rabbitmq:3-management
     restart: unless-stopped
 
+  # 🔴 Redis Cache & Queue for Asynq background jobs
+  redis-service:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - cctv_redis:/data
+    command: redis-server --appendonly yes
+
+  # 🕒 Background Cron & Job Worker Service (Retention, etc.)
+  bgrd-service:
+    build:
+      context: ./backend
+      dockerfile: bgrd.Dockerfile
+    restart: unless-stopped
+    environment:
+      REDIS_URL: "redis://redis-service:6379"
+      POSTGRES_HOST: "cctv-postgres" # Make sure to point to correct DB host if applicable
+    depends_on:
+      - redis-service
+
 volumes:
   cctv_data:
+  cctv_redis:

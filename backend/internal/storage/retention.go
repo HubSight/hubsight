@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	// RetentionPeriod defines the age beyond which archives are purged (6 days)
-	RetentionPeriod = 6 * 24 * time.Hour
-	// CleanupInterval defines how frequently the retention purge routine executes (every 7 days)
-	CleanupInterval = 7 * 24 * time.Hour
+	// RetentionPeriod defines the age beyond which archives are purged (3 days)
+	RetentionPeriod = 3 * 24 * time.Hour
+	// CleanupInterval defines how frequently the retention purge routine executes (every 1 day)
+	CleanupInterval = 24 * time.Hour
 )
 
 // LastCleanupStats tracks the latest retention execution telemetry
@@ -30,7 +30,7 @@ var CurrentRetentionStats RetentionStats
 // CleanupOldArchives scans for and deletes all recordings older than 6 days from S3 and Ent DB
 func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 	cutoff := time.Now().Add(-RetentionPeriod)
-	log.Printf("[Retention Worker] Scanning for archives older than 6 days (cutoff: %s)...", cutoff.Format(time.RFC3339))
+	log.Printf("[Retention Worker] Scanning for archives older than 3 days (cutoff: %s)...", cutoff.Format(time.RFC3339))
 
 	oldRecordings, err := database.Client.Recording.Query().
 		Where(recording.StartAtLT(cutoff)).
@@ -43,7 +43,7 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 	}
 
 	if len(oldRecordings) == 0 {
-		log.Printf("[Retention Worker] Retention check complete: 0 expired recordings found (>6 days old).")
+		log.Printf("[Retention Worker] Retention check complete: 0 expired recordings found (>3 days old).")
 		CurrentRetentionStats = RetentionStats{
 			LastRun:      time.Now(),
 			DeletedCount: 0,
@@ -73,7 +73,7 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 		freedBytes += rec.SizeBytes
 	}
 
-	log.Printf("[Retention Worker] Purge finished: Removed %d expired recordings (>6 days old), freed %.2f MB (%.2f GB).",
+	log.Printf("[Retention Worker] Purge finished: Removed %d expired recordings (>3 days old), freed %.2f MB (%.2f GB).",
 		deletedCount, float64(freedBytes)/(1024*1024), float64(freedBytes)/(1024*1024*1024))
 
 	CurrentRetentionStats = RetentionStats{
@@ -85,26 +85,3 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 	return deletedCount, freedBytes, nil
 }
 
-// StartRetentionWorker launches a background worker that executes archive retention on startup and every 7 days
-func StartRetentionWorker(ctx context.Context) {
-	go func() {
-		// Initial check 10 seconds after system boot
-		time.Sleep(10 * time.Second)
-		log.Printf("[Retention Worker] Performing initial 6-day archive retention audit...")
-		_, _, _ = CleanupOldArchives(ctx)
-
-		ticker := time.NewTicker(CleanupInterval)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				log.Printf("[Retention Worker] Triggering scheduled 7-day archive cleanup...")
-				_, _, _ = CleanupOldArchives(ctx)
-			case <-ctx.Done():
-				log.Printf("[Retention Worker] Retention worker gracefully terminated.")
-				return
-			}
-		}
-	}()
-}

@@ -70,8 +70,8 @@ func NvrStatusHandler(c *gin.Context) {
 		TotalSegmentsCount:  totalRecordingsCount,
 		OldestSegmentAt:     oldestSegmentAt,
 		NewestSegmentAt:     newestSegmentAt,
-		RetentionDays:       6,
-		CleanupIntervalDays: 7,
+		RetentionDays:       3,
+		CleanupIntervalDays: 1,
 		RetentionStats:      &storage.CurrentRetentionStats,
 	}
 
