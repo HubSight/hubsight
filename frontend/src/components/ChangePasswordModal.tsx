@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { KeyRound, Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import { AxiosError } from 'axios';
+import { useTranslation } from '../i18n';
 
 interface ChangePasswordModalProps {
   onClose: () => void;
 }
 
 export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,22 +39,22 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
     setSuccess('');
 
     if (!oldPassword.trim()) {
-      setError('Please enter your current password');
+      setError(t('password.errEmpty'));
       return;
     }
 
     if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters long');
+      setError(t('password.errShort'));
       return;
     }
 
     if (newPassword === oldPassword) {
-      setError('New password cannot be the same as your current password');
+      setError(t('password.errSame'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Password confirmation does not match');
+      setError(t('password.errMismatch'));
       return;
     }
 
@@ -63,13 +65,13 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
         old_password: oldPassword,
         new_password: newPassword
       });
-      setSuccess('Password updated successfully!');
+      setSuccess(t('password.success'));
       setTimeout(() => onClose(), 1200);
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
-        setError(err.response.data.error || 'Failed to update password. Please check your current password.');
+        setError(err.response.data.error || t('password.errDefault'));
       } else {
-        setError('Network error. Please try again later.');
+        setError(t('password.errNetwork'));
       }
     } finally {
       setLoading(false);
@@ -93,10 +95,10 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">
-                Change Password
+                {t('password.title')}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Update your administrator account password
+                {t('password.subtitle')}
               </p>
             </div>
           </div>
@@ -104,7 +106,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Close (Esc)"
+            title={`${t('close')} (Esc)`}
           >
             <X size={18} />
           </button>
@@ -129,7 +131,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
           {/* Old Password */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 tracking-wider">
-              Current Password
+              {t('password.currentPassword')}
             </label>
             <div className="relative">
               <input
@@ -137,7 +139,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
                 required
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
-                placeholder="Enter current password"
+                placeholder={t('password.currentPasswordPlaceholder')}
                 className="input-field w-full pr-10 text-sm"
               />
               <button
@@ -154,7 +156,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
           {/* New Password */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 tracking-wider">
-              New Password
+              {t('password.newPassword')}
             </label>
             <div className="relative">
               <input
@@ -162,7 +164,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="At least 6 characters"
+                placeholder={t('password.newPasswordPlaceholder')}
                 className="input-field w-full pr-10 text-sm"
               />
               <button
@@ -179,7 +181,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
           {/* Confirm New Password */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 tracking-wider">
-              Confirm New Password
+              {t('password.confirmPassword')}
             </label>
             <div className="relative">
               <input
@@ -187,7 +189,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter new password"
+                placeholder={t('password.confirmPasswordPlaceholder')}
                 className={`input-field w-full pr-10 text-sm ${confirmPassword && newPassword !== confirmPassword
                   ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                   : ''
@@ -203,7 +205,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
               </button>
             </div>
             {confirmPassword && newPassword !== confirmPassword && (
-              <p className="text-[11px] text-red-500 mt-1">Passwords do not match</p>
+              <p className="text-[11px] text-red-500 mt-1">{t('password.mismatch')}</p>
             )}
           </div>
 
@@ -215,7 +217,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
               onClick={onClose}
               disabled={loading}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -223,7 +225,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
               disabled={loading}
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
-              <span>{loading ? 'Saving...' : 'Save Password'}</span>
+              <span>{loading ? t('password.saving') : t('password.save')}</span>
             </button>
           </div>
         </form>

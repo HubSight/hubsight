@@ -20,6 +20,8 @@ func (User) Fields() []ent.Field {
 		field.String("password_hash").NotEmpty(),
 		field.Enum("role").Values("admin", "viewer").Default("viewer"),
 		field.Bool("is_active").Default(true),
+		field.Enum("locale").Values("vi", "en").Default("vi").
+			Comment("User's preferred UI language"),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 		field.Time("last_login_at").Optional(),

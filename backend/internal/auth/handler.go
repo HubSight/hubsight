@@ -5,6 +5,8 @@ import (
 	"time"
 	"github.com/gin-gonic/gin"
 	"cctv/ent"
+	"cctv/ent/user"
+	"cctv/internal/database"
 )
 
 func LoginHandler(c *gin.Context) {
@@ -119,4 +121,35 @@ func VerifyPasswordHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+func UpdateLocaleHandler(c *gin.Context) {
+	userObj, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	u := userObj.(*ent.User)
+
+	var req UpdateLocaleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	if req.Locale != "vi" && req.Locale != "en" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid locale. Must be 'vi' or 'en'"})
+		return
+	}
+
+	updated, err := database.Client.User.UpdateOneID(u.ID).
+		SetLocale(user.Locale(req.Locale)).
+		Save(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update locale"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
 }

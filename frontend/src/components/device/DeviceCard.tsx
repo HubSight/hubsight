@@ -2,6 +2,7 @@ import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import type { DeviceType } from '../../types/device';
 import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
+import { useTranslation } from '../../i18n';
 
 export interface DeviceCardProps {
   device: DeviceType;
@@ -10,6 +11,7 @@ export interface DeviceCardProps {
 }
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete }) => {
+  const { t } = useTranslation();
   const brandPreset = BRAND_PRESETS.find((b) => b.id === device.brand);
 
   return (
@@ -37,16 +39,16 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
             <button
               onClick={() => onEdit(device)}
               className="text-slate-400 hover:text-orange-600 active:text-orange-700 transition-colors w-9 h-9 rounded-xl hover:bg-orange-50 active:bg-orange-100 flex items-center justify-center cursor-pointer touch-manipulation"
-              title="Edit device"
-              aria-label="Edit device"
+              title={t('devices.editDevice')}
+              aria-label={t('devices.editDevice')}
             >
               <Pencil size={17} />
             </button>
             <button
               onClick={() => onDelete(device.id)}
               className="text-slate-400 hover:text-red-600 active:text-red-700 transition-colors w-9 h-9 rounded-xl hover:bg-red-50 active:bg-red-100 flex items-center justify-center cursor-pointer touch-manipulation"
-              title="Delete device"
-              aria-label="Delete device"
+              title={t('devices.deleteDevice')}
+              aria-label={t('devices.deleteDevice')}
             >
               <Trash2 size={17} />
             </button>
@@ -65,15 +67,15 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
             Segment: {(device.segment_duration || 1800) / 60}m
           </span>
           <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
-            Codec: {device.video_codec === 'copy' ? 'Copy (0% CPU)' : device.video_codec}
+            Codec: {device.video_codec === 'copy' ? t('devices.copyCpu') : device.video_codec}
           </span>
           {device.audio_mode === 'disabled' ? (
             <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-200">
-              Mute Audio
+              {t('devices.muteAudio')}
             </span>
           ) : (
             <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
-              Audio: {device.audio_mode === 'auto' ? 'Auto Detect' : device.audio_mode}
+              Audio: {device.audio_mode === 'auto' ? t('devices.autoDetect') : device.audio_mode}
             </span>
           )}
           {device.extra_args && (
@@ -81,7 +83,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
               className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-200 font-mono"
               title={device.extra_args}
             >
-              Custom FFmpeg
+              {t('devices.customFfmpeg')}
             </span>
           )}
         </div>

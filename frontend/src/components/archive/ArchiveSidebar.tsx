@@ -4,6 +4,7 @@ import Calendar from 'react-calendar';
 import dayjs from 'dayjs';
 import 'react-calendar/dist/Calendar.css';
 import type { CameraItem, Recording } from '../../types/recording';
+import { useTranslation } from '../../i18n';
 
 interface ArchiveSidebarProps {
   cameras: CameraItem[];
@@ -28,6 +29,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
   availableDays,
   onMonthChange
 }) => {
+  const { t } = useTranslation();
   const [showCalendar, setShowCalendar] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +54,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
       {/* Camera Selection */}
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-1.5 text-sm text-slate-600 font-medium whitespace-nowrap">
-          <Camera size={16} /> Device:
+          <Camera size={16} /> {t('playback.device')}
         </label>
         <select
           className="input-field bg-slate-50 border-slate-200 min-w-[150px] py-1.5"
@@ -61,7 +63,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           disabled={cameras.length === 0}
         >
           {cameras.length === 0 ? (
-            <option value="">No devices</option>
+            <option value="">{t('playback.noDevices')}</option>
           ) : (
             cameras.map((c) => (
               <option key={c.id} value={c.id}>
@@ -75,11 +77,11 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
       {/* Date Selection (Popover) */}
       <div className="flex items-center gap-3 relative" ref={calendarRef}>
         <label className="flex items-center gap-1.5 text-sm text-slate-600 font-medium whitespace-nowrap">
-          <CalendarIcon size={16} /> Date:
+          <CalendarIcon size={16} /> {t('playback.date')}
         </label>
         <button
           className={`input-field bg-slate-50 border-slate-200 min-w-[150px] py-1.5 flex justify-between items-center ${
-            !selectedCam ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100'
+            !selectedCam ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'
           }`}
           onClick={() => selectedCam && setShowCalendar(!showCalendar)}
           disabled={!selectedCam}
@@ -116,14 +118,14 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
 
       {/* Recording Status */}
       <div className="flex items-center gap-2 text-sm ml-auto">
-        <span className="text-slate-500 font-medium">Recordings:</span>
+        <span className="text-slate-500 font-medium">{t('playback.recordings')}</span>
         {loading ? (
-          <span className="text-slate-400">Loading...</span>
+          <span className="text-slate-400">{t('loading')}</span>
         ) : recordings.length === 0 ? (
-          <span className="text-slate-400">No data</span>
+          <span className="text-slate-400">{t('noData')}</span>
         ) : (
           <span className="text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded-md">
-            {recordings.length} clips
+            {recordings.length} {t('playback.clips')}
           </span>
         )}
       </div>

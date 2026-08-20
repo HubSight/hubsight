@@ -14,6 +14,7 @@ import dayjs from 'dayjs';
 import type { Recording } from '../../types/recording';
 import { LivePlayer } from './LivePlayer';
 import { FullscreenEnterIcon, FullscreenExitIcon } from '../common/FullscreenIcons';
+import { useTranslation } from '../../i18n';
 
 interface VideoPlayerProps {
   mode: 'live' | 'archive';
@@ -40,6 +41,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onLoadedMetadata,
   onGoLive
 }) => {
+  const { t } = useTranslation();
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = externalContainerRef || internalContainerRef;
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -362,7 +364,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-lg shadow-orange-600/30 transition-all cursor-pointer backdrop-blur-md active:scale-95"
               >
                 <Radio size={14} className="text-white" />
-                <span>Switch to Live</span>
+                <span>{t('playback.switchToLive')}</span>
               </button>
             )}
           </div>
@@ -417,7 +419,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ) : (
         <div className="flex flex-col items-center justify-center text-slate-400 gap-3">
           <Camera size={48} className="opacity-20" />
-          <div className="text-lg">No stream or recording selected</div>
+          <div className="text-lg">{t('playback.noStreamOrRecording')}</div>
         </div>
       )}
 
@@ -435,13 +437,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <div className="px-4 py-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-semibold text-white/90">
               <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-              <span className="tracking-wide">Real-time Stream</span>
+              <span className="tracking-wide">{t('playback.realtimeStream')}</span>
             </div>
 
             <button
               onClick={toggleFullscreen}
               className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-              title={isFullscreen ? 'Exit Fullscreen (f)' : 'Fullscreen (f)'}
+              title={isFullscreen ? t('playback.exitFullscreen') : t('playback.fullscreen')}
             >
               {isFullscreen ? <FullscreenExitIcon size={20} /> : <FullscreenEnterIcon size={20} />}
             </button>
@@ -502,7 +504,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button
                 onClick={togglePlay}
                 className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                title={isPlaying ? 'Pause (k / space)' : 'Play (k / space)'}
+                title={isPlaying ? `${t('playback.pause')} (k / space)` : `${t('playback.play')} (k / space)`}
               >
                 {isPlaying ? <Pause size={20} /> : <Play size={20} />}
               </button>
@@ -511,7 +513,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button
                 onClick={() => handleSkip(-10)}
                 className="p-2 text-white/80 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                title="Rewind 10 seconds (j / ←)"
+                title={t('playback.rewind10s')}
               >
                 <RotateCcw size={18} />
               </button>
@@ -520,38 +522,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button
                 onClick={() => handleSkip(10)}
                 className="p-2 text-white/80 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                title="Fast-forward 10 seconds (l / →)"
+                title={t('playback.forward10s')}
               >
                 <RotateCw size={18} />
               </button>
-
-              {/* Volume & Slider (Hidden for now as audio stream is not supported) */}
-              {/*
-              <div className="group/vol flex items-center gap-1 pl-1">
-                <button
-                  onClick={toggleMute}
-                  className="p-2 text-white/80 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                  title={isMuted ? 'Unmute (m)' : 'Mute (m)'}
-                >
-                  {isMuted || volume === 0 ? (
-                    <VolumeX size={20} />
-                  ) : volume < 0.5 ? (
-                    <Volume1 size={20} />
-                  ) : (
-                    <Volume2 size={20} />
-                  )}
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={isMuted ? 0 : volume}
-                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className="w-0 group-hover/vol:w-16 sm:group-hover/vol:w-20 transition-all duration-200 accent-orange-500 h-1 cursor-pointer opacity-0 group-hover/vol:opacity-100"
-                />
-              </div>
-              */}
 
               {/* Time Display: 01:23 / 05:00 */}
               <div className="text-xs font-mono text-white/80 ml-2 select-none">
@@ -568,7 +542,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 <button
                   onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                   className="px-2 py-1.5 text-xs font-semibold text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
-                  title="Playback Speed"
+                  title={t('playback.speed')}
                 >
                   <Gauge size={16} />
                   <span>{playbackRate}x</span>
@@ -578,7 +552,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 {showSpeedMenu && (
                   <div className="absolute bottom-full right-0 mb-2 w-32 bg-slate-900/95 border border-white/15 rounded-xl shadow-2xl overflow-hidden py-1 backdrop-blur-md z-40">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-white/10">
-                      Speed
+                      {t('playback.speed')}
                     </div>
                     {PLAYBACK_RATES.map((rate) => (
                       <button
@@ -599,7 +573,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button
                 onClick={handleDownload}
                 className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                title="Download Recording Video (MP4)"
+                title={t('playback.downloadMp4')}
               >
                 <Download size={18} />
               </button>
@@ -608,7 +582,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button
                 onClick={toggleFullscreen}
                 className="p-2 text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                title={isFullscreen ? 'Exit Fullscreen (f)' : 'Fullscreen (f)'}
+                title={isFullscreen ? t('playback.exitFullscreen') : t('playback.fullscreen')}
               >
                 {isFullscreen ? (
                   <FullscreenExitIcon size={20} />

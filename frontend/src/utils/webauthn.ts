@@ -62,7 +62,7 @@ export const registerPlatformCredential = async (
   const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
     challenge,
     rp: {
-      name: 'CCTV Surveillance',
+      name: 'HubSight',
       id: window.location.hostname,
     },
     user: {

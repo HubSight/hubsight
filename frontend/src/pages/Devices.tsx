@@ -5,6 +5,7 @@ import type { DeviceType, DeviceFormData } from '../types/device';
 import { DeviceCard } from '../components/device/DeviceCard';
 import { DeviceModal } from '../components/device/DeviceModal';
 import { BRAND_PRESETS, parseRtspUrl } from '../constants/devicePresets';
+import { useTranslation } from '../i18n';
 
 const initialFormData: DeviceFormData = {
   name: '',
@@ -27,6 +28,7 @@ const initialFormData: DeviceFormData = {
 };
 
 const Devices = () => {
+  const { t } = useTranslation();
   const [devices, setDevices] = useState<DeviceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -187,7 +189,7 @@ const Devices = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
-                Device Management
+                {t('devices.title')}
               </h1>
               {devices.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200/80 text-slate-700">
@@ -196,7 +198,7 @@ const Devices = () => {
               )}
             </div>
             <p className="text-slate-500 text-xs sm:text-sm hidden sm:block mt-0.5">
-              Configure RTSP streams by brand, transport protocols, and FFmpeg recording options.
+              {t('devices.subtitle')}
             </p>
           </div>
         </div>
@@ -208,7 +210,7 @@ const Devices = () => {
             onClick={() => handleOpenModal()}
           >
             <Plus size={16} />
-            <span>Add device</span>
+            <span>{t('devices.addDevice')}</span>
           </button>
         ) : (
           <button
@@ -216,7 +218,7 @@ const Devices = () => {
             onClick={() => handleOpenModal()}
           >
             <Plus size={16} />
-            <span>Add device</span>
+            <span>{t('devices.addDevice')}</span>
           </button>
         )}
       </div>
@@ -225,7 +227,7 @@ const Devices = () => {
       <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-48 text-slate-400 text-sm">
-            Loading registered devices...
+            {t('devices.loading')}
           </div>
         ) : devices.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-6 sm:py-10 w-full">
@@ -234,17 +236,17 @@ const Devices = () => {
                 <Video className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
               <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-slate-800 tracking-tight">
-                No devices connected yet
+                {t('devices.noDevicesTitle')}
               </h3>
               <p className="text-slate-500 text-xs sm:text-sm mb-6 max-w-md leading-relaxed">
-                Connect your device via RTSP stream URL to enable automated 24/7 recording and instant timeline playback.
+                {t('devices.noDevicesSubtitle')}
               </p>
               <button
                 className="btn btn-primary w-full sm:w-auto px-7 py-3 min-h-[46px] rounded-xl flex items-center justify-center gap-2 shadow-md shadow-orange-600/20 text-sm font-semibold active:scale-[0.99] transition-all cursor-pointer touch-manipulation"
                 onClick={() => handleOpenModal()}
               >
                 <Plus size={18} />
-                <span>Add Your First Device</span>
+                <span>{t('devices.addFirstDevice')}</span>
               </button>
             </div>
 

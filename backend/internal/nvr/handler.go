@@ -163,7 +163,7 @@ func NvrStatusHandler(c *gin.Context) {
 	}
 
 	res := NvrStatusResponse{
-		ServiceName:            "CCTV NVR Engine",
+		ServiceName:            "HubSight NVR Engine",
 		Status:                 "healthy",
 		IsGlobalEnabled:        globalSettings.NvrStatus,
 		Timestamp:              now,

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { Clock, Play, Radio, Eye, EyeOff } from 'lucide-react';
 import type { Recording } from '../types/recording';
+import { useTranslation } from '../i18n';
 
 interface TimelineControlProps {
   recordings: Recording[];
@@ -33,6 +34,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
   onSeek,
   onGoLive
 }) => {
+  const { t } = useTranslation();
   const [hideEmpty, setHideEmpty] = useState<boolean>(false);
 
   // Compute 30-minute interval slots from 00:00 to 23:30 (or up to current live time)
@@ -99,29 +101,30 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
     return result;
   }, [recordings, currentDate, activeRecording, mode]);
 
-  // Statistics
-  const availableCount = useMemo(() => slots.filter((s) => s.hasData).length, [slots]);
-  const totalValidSlots = useMemo(() => slots.filter((s) => !s.isFuture).length, [slots]);
-
+  // Filter out future slots and optionally empty slots
   const displayedSlots = useMemo(() => {
-    if (hideEmpty) {
-      return slots.filter((s) => s.hasData);
-    }
-    // Only show slots up to current time if today, or all 48 slots if past date
-    return slots.filter((s) => !s.isFuture);
+    return slots.filter((slot) => {
+      if (slot.isFuture) return false;
+      if (hideEmpty && !slot.hasData) return false;
+      return true;
+    });
   }, [slots, hideEmpty]);
 
+  // Statistics
+  const availableCount = slots.filter((s) => s.hasData && !s.isFuture).length;
+  const totalValidSlots = slots.filter((s) => !s.isFuture).length;
+
   return (
-    <div className="w-full bg-slate-900/90 text-slate-100 rounded-xl border border-slate-800 p-4 shadow-xl backdrop-blur-md">
-      {/* Header / Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5 pb-3 border-b border-slate-800/80">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/30">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md flex flex-col gap-3">
+      {/* Header Info & Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-slate-800 text-orange-400 rounded-lg">
             <Clock size={18} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm text-slate-100">Seeking Control (30-Minute Intervals)</span>
+              <span className="font-semibold text-sm text-slate-100">{t('timeline.title')}</span>
               <span className="text-xs bg-slate-800 text-slate-300 font-mono px-2 py-0.5 rounded-full border border-slate-700">
                 {currentDate}
               </span>
@@ -133,7 +136,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                   {totalValidSlots} intervals with recordings
                 </span>
               ) : (
-                <span className="text-amber-400">No recordings recorded for this date</span>
+                <span className="text-amber-400">{t('timeline.noRecordingsDate')}</span>
               )}
             </p>
           </div>
@@ -149,20 +152,20 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                   ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30 border border-orange-500 ring-2 ring-orange-500/20 animate-pulse'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700'
               }`}
-              title="Watch Real-time Live Stream"
+              title={t('timeline.watchLive')}
             >
               <Radio size={13} className={mode === 'live' ? 'text-white' : 'text-orange-500'} />
-              <span>LIVE</span>
+              <span>{t('timeline.live')}</span>
             </button>
           )}
 
           <button
             onClick={() => setHideEmpty((prev) => !prev)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer"
-            title={hideEmpty ? 'Show all time intervals' : 'Hide intervals without recordings'}
+            title={hideEmpty ? t('timeline.showAll') : t('timeline.hideEmpty')}
           >
             {hideEmpty ? <Eye size={13} className="text-orange-400" /> : <EyeOff size={13} className="text-slate-400" />}
-            <span>{hideEmpty ? 'Show All Intervals' : 'Hide Empty'}</span>
+            <span>{hideEmpty ? t('timeline.showAll') : t('timeline.hideEmpty')}</span>
           </button>
         </div>
       </div>
@@ -171,7 +174,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
       {displayedSlots.length === 0 ? (
         <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1">
           <Clock size={24} className="text-slate-600 mb-1" />
-          <span>No recordings available in any 30-minute intervals for this date.</span>
+          <span>{t('timeline.noDataInterval')}</span>
         </div>
       ) : (
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
@@ -181,11 +184,11 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                 <button
                   key={slot.index}
                   disabled
-                  title={`${slot.timeRangeLabel} - No recording available`}
+                  title={`${slot.timeRangeLabel} - ${t('noData')}`}
                   className="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-mono font-medium border border-slate-800/60 bg-slate-900/40 text-slate-600 opacity-40 cursor-not-allowed select-none"
                 >
                   <span className="text-[11px] font-semibold">{slot.label}</span>
-                  <span className="text-[9px] text-slate-600 mt-0.5 tracking-tighter">No data</span>
+                  <span className="text-[9px] text-slate-600 mt-0.5 tracking-tighter">{t('noData')}</span>
                 </button>
               );
             }
@@ -219,7 +222,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                     slot.isActive ? 'text-orange-100 font-semibold' : 'text-emerald-400 group-hover:text-emerald-300'
                   }`}
                 >
-                  {slot.isActive ? 'Playing' : 'Ready'}
+                  {slot.isActive ? t('timeline.playing') : t('timeline.ready')}
                 </span>
               </button>
             );

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 interface LivePlayerProps {
   cameraId: number;
@@ -7,6 +8,7 @@ interface LivePlayerProps {
 }
 
 export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusChange }) => {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [streamError, setStreamError] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       } catch (err) {
         if (!isActive) return;
         console.error('WebRTC error:', err);
-        setStreamError('Unable to connect to live camera stream via WebRTC.');
+        setStreamError(t('playback.liveError'));
         onLiveStatusChange?.(false);
         setIsInitializing(false);
       }
@@ -118,7 +120,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
         pc.close();
       }
     };
-  }, [cameraId, onLiveStatusChange]);
+  }, [cameraId, onLiveStatusChange, t]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-black">
@@ -134,14 +136,14 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       {isInitializing && !streamError && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-3 text-white z-10">
           <Loader2 className="animate-spin text-orange-500" size={36} />
-          <p className="text-sm font-medium">Connecting to WebRTC live feed...</p>
+          <p className="text-sm font-medium">{t('playback.connectingWebRtc')}</p>
         </div>
       )}
 
       {streamError && (
         <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 text-slate-300 p-6 text-center z-10">
           <AlertCircle className="text-red-500" size={40} />
-          <div className="text-base font-semibold text-white">Live Stream Unavailable</div>
+          <div className="text-base font-semibold text-white">{t('playback.liveUnavailable')}</div>
           <p className="text-xs text-slate-400 max-w-sm">{streamError}</p>
         </div>
       )}

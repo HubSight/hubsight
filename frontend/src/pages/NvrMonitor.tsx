@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import type { NvrStatusResponse } from '../types/nvr';
+import { useTranslation } from '../i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -41,6 +42,7 @@ const formatUptime = (seconds: number) => {
 };
 
 const NvrMonitor = () => {
+  const { t } = useTranslation();
   const [data, setData] = useState<NvrStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -59,24 +61,26 @@ const NvrMonitor = () => {
     title: '',
     message: '',
     inputValue: '',
-    onConfirm: () => {}
+    onConfirm: () => {},
   });
 
-  const toggleNvrStatus = (currentStatus: boolean) => {
+  const toggleNvrStatus = async (currentStatus: boolean) => {
+    const nextStatus = !currentStatus;
     setModalConfig({
       isOpen: true,
       type: 'confirm',
-      title: 'Confirm Action',
-      message: `Are you sure you want to ${currentStatus ? 'disable' : 'enable'} the NVR Engine globally?`,
+      title: nextStatus ? t('nvr.startEngine') : t('nvr.stopEngine'),
+      message: nextStatus
+        ? 'Are you sure you want to enable the global NVR recorder engine?'
+        : 'Are you sure you want to pause all background camera recording pipelines?',
       inputValue: '',
       onConfirm: async () => {
         setIsUpdatingSettings(true);
         try {
-          await axiosClient.put('/settings', { nvr_status: !currentStatus });
+          await axiosClient.put('/settings', { nvr_status: nextStatus });
           await fetchStatus(false);
         } catch (err) {
-          console.error('Failed to toggle NVR status', err);
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Failed to update NVR status.', inputValue: '', onConfirm: () => {} }), 100);
+          console.error('Failed to update NVR status', err);
         } finally {
           setIsUpdatingSettings(false);
         }
@@ -89,13 +93,13 @@ const NvrMonitor = () => {
     setModalConfig({
       isOpen: true,
       type: 'prompt',
-      title: 'Edit Storage Quota',
-      message: 'Enter new Storage Quota (in GB):',
+      title: t('nvr.editQuotaTitle'),
+      message: t('nvr.editQuotaMessage'),
       inputValue: currentGb.toString(),
       onConfirm: async (val) => {
         const newQuota = parseInt(val || '', 10);
         if (isNaN(newQuota) || newQuota <= 0) {
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Invalid quota value. Must be a positive integer.', inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.invalidQuota'), inputValue: '', onConfirm: () => {} }), 100);
           return;
         }
 
@@ -105,7 +109,7 @@ const NvrMonitor = () => {
           await fetchStatus(false);
         } catch (err) {
           console.error('Failed to update quota', err);
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Failed to update Storage Quota.', inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.failedUpdateQuota'), inputValue: '', onConfirm: () => {} }), 100);
         } finally {
           setIsUpdatingSettings(false);
         }
@@ -117,13 +121,13 @@ const NvrMonitor = () => {
     setModalConfig({
       isOpen: true,
       type: 'prompt',
-      title: 'Edit Retention Policy',
-      message: 'Enter new Retention Policy (in Days):',
+      title: t('nvr.editRetentionTitle'),
+      message: t('nvr.editRetentionMessage'),
       inputValue: currentRetentionDays.toString(),
       onConfirm: async (val) => {
         const newDays = parseInt(val || '', 10);
         if (isNaN(newDays) || newDays <= 0) {
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Invalid retention value. Must be a positive integer.', inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.invalidRetention'), inputValue: '', onConfirm: () => {} }), 100);
           return;
         }
         
@@ -133,7 +137,7 @@ const NvrMonitor = () => {
           await fetchStatus(false);
         } catch (err) {
           console.error('Failed to update retention', err);
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: 'Error', message: 'Failed to update Retention Policy.', inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.failedUpdateRetention'), inputValue: '', onConfirm: () => {} }), 100);
         } finally {
           setIsUpdatingSettings(false);
         }
@@ -144,8 +148,8 @@ const NvrMonitor = () => {
   const handleCleanupStorage = () => {
     setModalConfig({
       isOpen: true,
-      title: 'Danger: Format Storage',
-      message: 'Are you absolutely sure you want to clean up all storage? This will delete all recordings from the S3/MinIO bucket and all metadata from the database. This action CANNOT be undone.',
+      title: t('nvr.formatTitle'),
+      message: t('nvr.formatMessage'),
       type: 'confirm',
       inputValue: '',
       onConfirm: async () => {
@@ -156,8 +160,8 @@ const NvrMonitor = () => {
           
           setModalConfig({
             isOpen: true,
-            title: 'Cleanup Complete',
-            message: `Successfully deleted ${res.data.deleted_count} recordings, freeing up ${freedGb} GB.`,
+            title: t('nvr.formatCompleteTitle'),
+            message: t('nvr.formatSuccess', { count: res.data.deleted_count, size: freedGb }),
             type: 'alert',
             inputValue: '',
             onConfirm: () => {
@@ -169,8 +173,8 @@ const NvrMonitor = () => {
           console.error('Failed to cleanup storage:', error);
           setModalConfig({
             isOpen: true,
-            title: 'Error',
-            message: 'Failed to format storage. Please check the logs.',
+            title: t('error'),
+            message: t('nvr.formatFailed'),
             type: 'alert',
             inputValue: '',
             onConfirm: () => setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => {} }),
@@ -212,7 +216,7 @@ const NvrMonitor = () => {
     return (
       <div className="p-8 flex items-center justify-center h-full text-slate-400">
         <RefreshCw className="animate-spin text-orange-500 mr-2" size={24} />
-        Loading NVR Status...
+        {t('loading')}
       </div>
     );
   }
@@ -227,10 +231,10 @@ const NvrMonitor = () => {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3 text-slate-800">
             <Activity className="text-orange-600" size={32} />
-            NVR Recorder Service Monitor
+            {t('nvr.title')}
           </h1>
           <p className="text-slate-500 text-sm md:text-base">
-            Real-time pipeline diagnostics, camera recording states, S3 quota & server metrics.
+            {t('nvr.subtitle')}
           </p>
         </div>
 
@@ -242,16 +246,16 @@ const NvrMonitor = () => {
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="accent-orange-600 rounded"
             />
-            Auto-refresh (5s)
+            {t('nvr.autoRefresh')}
           </label>
           <button
             onClick={() => fetchStatus(false)}
             disabled={isRefreshing}
-            className="btn btn-secondary flex items-center gap-2 text-sm shadow-2xs"
-            title="Refresh now"
+            className="btn btn-secondary flex items-center gap-2 text-sm shadow-2xs cursor-pointer"
+            title={t('refresh')}
           >
             <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-orange-600' : ''} />
-            Refresh
+            {t('refresh')}
           </button>
         </div>
       </div>
@@ -263,18 +267,18 @@ const NvrMonitor = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              NVR Engine Status
+              {t('nvr.engineStatus')}
             </span>
             <div className="flex gap-2 items-center">
               <button
                 onClick={() => toggleNvrStatus(!!data?.is_global_enabled)}
                 disabled={isUpdatingSettings || !data}
-                className={`text-xs px-3 py-1.5 font-semibold rounded-md transition-colors ${data?.is_global_enabled
+                className={`text-xs px-3 py-1.5 font-semibold rounded-md transition-colors cursor-pointer ${data?.is_global_enabled
                     ? 'bg-red-50 text-red-600 hover:bg-red-100'
                     : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                   }`}
               >
-                {data?.is_global_enabled ? 'Stop Engine' : 'Start Engine'}
+                {data?.is_global_enabled ? t('nvr.stopEngine') : t('nvr.startEngine')}
               </button>
               <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                 <Server size={20} />
@@ -284,12 +288,12 @@ const NvrMonitor = () => {
           <div className="flex items-center gap-3 mb-1">
             <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${data?.is_global_enabled ? 'bg-emerald-500' : 'bg-red-500'}`} />
             <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">
-              {data?.is_global_enabled ? (data?.status || 'HEALTHY') : 'DISABLED'}
+              {data?.is_global_enabled ? (data?.status || t('nvr.healthy')) : t('nvr.disabled')}
             </h3>
           </div>
           <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
             <Clock size={14} className="text-slate-400" />
-            Uptime: {data ? formatUptime(data.system.uptime_seconds) : '0s'}
+            {t('nvr.uptime')}: {data ? formatUptime(data.system.uptime_seconds) : '0s'}
           </p>
         </div>
 
@@ -297,7 +301,7 @@ const NvrMonitor = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Recording Devices
+              {t('nvr.recordingDevices')}
             </span>
             <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
               <Video size={20} />
@@ -306,12 +310,12 @@ const NvrMonitor = () => {
           <div className="flex items-baseline gap-2 mb-1">
             <h3 className="text-2xl font-bold text-slate-800">
               {recordingCamsCount}
-              <span className="text-sm font-medium text-slate-400"> / {totalCamsCount} Active</span>
+              <span className="text-sm font-medium text-slate-400"> / {totalCamsCount} {t('nvr.active')}</span>
             </h3>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
             <Radio size={14} className="text-orange-500" />
-            Live Streams Active: {data?.active_live_streams_count || 0}
+            {t('nvr.liveStreamsActive')}: {data?.active_live_streams_count || 0}
           </p>
         </div>
 
@@ -319,22 +323,22 @@ const NvrMonitor = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Storage Quota & Policy
+              {t('nvr.storageQuota')}
             </span>
             <div className="flex gap-2 items-center">
               <button
                 onClick={handleCleanupStorage}
                 disabled={isUpdatingSettings || !data}
-                className="text-xs px-3 py-1.5 font-semibold bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
+                className="text-xs px-3 py-1.5 font-semibold bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors cursor-pointer"
               >
-                Format
+                {t('nvr.format')}
               </button>
               <button
                 onClick={() => promptUpdateQuota(data?.storage.quota_bytes || 0)}
                 disabled={isUpdatingSettings || !data}
-                className="text-xs px-3 py-1.5 font-semibold bg-orange-50 text-orange-600 rounded-md hover:bg-orange-100 transition-colors"
+                className="text-xs px-3 py-1.5 font-semibold bg-orange-50 text-orange-600 rounded-md hover:bg-orange-100 transition-colors cursor-pointer"
               >
-                Edit Limit
+                {t('nvr.editLimit')}
               </button>
               <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
                 <HardDrive size={20} />
@@ -361,9 +365,9 @@ const NvrMonitor = () => {
             />
           </div>
           <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1.5">
-            <span>{(data?.storage.used_percentage || 0).toFixed(1)}% Used</span>
+            <span>{(data?.storage.used_percentage || 0).toFixed(1)}% {t('nvr.used')}</span>
             <span className="flex items-center gap-1 text-emerald-600 font-semibold cursor-pointer hover:text-emerald-700 transition-colors" onClick={() => promptUpdateRetention(data?.storage.retention_days || 4)}>
-              <Trash2 size={11} /> {data?.storage.retention_days || 4}-Day TTL (Edit)
+              <Trash2 size={11} /> {data?.storage.retention_days || 4} {t('nvr.retentionDays')} ({t('edit')})
             </span>
           </div>
         </div>
@@ -372,7 +376,7 @@ const NvrMonitor = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Server Resources
+              {t('nvr.systemResources')}
             </span>
             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
               <Cpu size={20} />
@@ -382,7 +386,7 @@ const NvrMonitor = () => {
             <h3 className="text-xl font-bold text-slate-800">
               {data?.system.memory_alloc_mb.toFixed(1)} MB
             </h3>
-            <span className="text-xs text-slate-400">RAM Allocated</span>
+            <span className="text-xs text-slate-400">{t('nvr.memoryUsage')}</span>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">
             <span>Goroutines: {data?.system.goroutines || 0}</span>
@@ -397,7 +401,7 @@ const NvrMonitor = () => {
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <Database size={18} className="text-orange-600" />
-              Device Recording Pipelines
+              {t('nvr.cameraDetails')}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Live ingest health, latest video segment saved to S3, and stream parameters.
@@ -410,19 +414,19 @@ const NvrMonitor = () => {
 
         {data?.cameras.length === 0 ? (
           <div className="p-12 text-center text-slate-400">
-            No devices configured. Go to Devices tab to add a device.
+            {t('noData')}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/30 text-xs font-semibold text-slate-500">
-                  <th className="py-3.5 px-5">Device</th>
-                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-5">{t('nvr.camera')}</th>
+                  <th className="py-3.5 px-4">{t('nvr.status')}</th>
                   <th className="py-3.5 px-4">Stream Pipeline</th>
                   <th className="py-3.5 px-4">Segment Length</th>
-                  <th className="py-3.5 px-4">Latest S3 Segment</th>
-                  <th className="py-3.5 px-4">Total Segments</th>
+                  <th className="py-3.5 px-4">{t('nvr.latestSegment')}</th>
+                  <th className="py-3.5 px-4">{t('nvr.totalSegments')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -442,7 +446,7 @@ const NvrMonitor = () => {
                       {cam.status === 'recording' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          RECORDING
+                          {t('nvr.recording').toUpperCase()}
                         </span>
                       ) : cam.status === 'stalled' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
@@ -452,7 +456,7 @@ const NvrMonitor = () => {
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                           <span className="w-2 h-2 rounded-full bg-slate-400" />
-                          DISABLED
+                          {t('nvr.disabled')}
                         </span>
                       )}
                     </td>
@@ -490,13 +494,13 @@ const NvrMonitor = () => {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-slate-400 italic">No segments recorded yet</span>
+                        <span className="text-slate-400 italic">{t('nvr.noSegments')}</span>
                       )}
                     </td>
 
                     {/* Total Segments */}
                     <td className="py-4 px-4 text-xs font-semibold text-slate-800">
-                      {cam.total_segments.toLocaleString()} files
+                      {cam.total_segments.toLocaleString()} {t('nvr.files')}
                     </td>
                   </tr>
                 ))}
@@ -537,9 +541,9 @@ const NvrMonitor = () => {
               {modalConfig.type !== 'alert' && (
                 <button
                   onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               )}
               <button
@@ -547,11 +551,11 @@ const NvrMonitor = () => {
                   modalConfig.onConfirm(modalConfig.inputValue);
                   setModalConfig({ ...modalConfig, isOpen: false });
                 }}
-                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm ${
+                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm cursor-pointer ${
                   modalConfig.type === 'confirm' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
                 }`}
               >
-                {modalConfig.type === 'alert' ? 'OK' : 'Confirm'}
+                {modalConfig.type === 'alert' ? t('ok') : t('confirm')}
               </button>
             </div>
           </div>

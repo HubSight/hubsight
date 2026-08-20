@@ -4,6 +4,7 @@ import type { DeviceFormData } from '../../types/device';
 import { DeviceGeneralTab } from './DeviceGeneralTab';
 import { DeviceRtspTab } from './DeviceRtspTab';
 import { DeviceFfmpegTab } from './DeviceFfmpegTab';
+import { useTranslation } from '../../i18n';
 
 export interface DeviceModalProps {
   isEditing: boolean;
@@ -26,6 +27,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   onSubmit,
   onAddFfmpegTag
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'general' | 'rtsp' | 'ffmpeg'>('general');
 
   return (
@@ -35,10 +37,10 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
         <div className="p-4 sm:p-5 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-slate-50/70">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-slate-800">
-              {isEditing ? 'Edit Device' : 'Add New Device'}
+              {isEditing ? t('devices.editDeviceTitle') : t('devices.addDeviceTitle')}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Customize RTSP and FFmpeg recording options
+              {t('devices.modalSubtitle')}
             </p>
           </div>
 
@@ -54,7 +56,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               }`}
             >
               <Layers size={14} />
-              General
+              {t('devices.tabGeneral')}
             </button>
             <button
               type="button"
@@ -66,7 +68,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               }`}
             >
               <Globe size={14} />
-              RTSP Options
+              {t('devices.tabRtsp')}
             </button>
             <button
               type="button"
@@ -78,7 +80,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               }`}
             >
               <Sliders size={14} />
-              FFmpeg & Recording
+              {t('devices.tabFfmpeg')}
             </button>
           </div>
         </div>
@@ -115,14 +117,14 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="btn btn-primary w-full sm:w-auto px-6 py-2.5 text-sm font-semibold shadow-sm cursor-pointer"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : isEditing ? 'Update Device' : 'Save Device'}
+              {isSubmitting ? t('devices.saving') : isEditing ? t('devices.updateDevice') : t('devices.saveDevice')}
             </button>
           </div>
         </form>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppLock } from '../../context/AppLockContext';
+import { useTranslation } from '../../i18n';
 import { Fingerprint, Lock, KeyRound, Eye, EyeOff, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
@@ -8,6 +9,7 @@ import { clearPwaRefreshToken } from '../../utils/pwa';
 
 export const AppLockScreen: React.FC = () => {
   const { user, checkAuth } = useAuth();
+  const { t } = useTranslation();
   const {
     isLocked,
     biometricEnabled,
@@ -30,10 +32,10 @@ export const AppLockScreen: React.FC = () => {
     try {
       const success = await unlockWithBiometrics();
       if (!success) {
-        setError('Biometric authentication failed or was cancelled. Please try again or use your password.');
+        setError(t('lock.errBioFailed'));
       }
     } catch {
-      setError('Unable to authenticate with biometrics. Please use your password.');
+      setError(t('lock.errBioUnavailable'));
     } finally {
       setIsPromptingBio(false);
     }
@@ -50,7 +52,7 @@ export const AppLockScreen: React.FC = () => {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) {
-      setError('Please enter your account password.');
+      setError(t('lock.errEmptyPass'));
       return;
     }
 
@@ -62,10 +64,10 @@ export const AppLockScreen: React.FC = () => {
       if (success) {
         setPassword('');
       } else {
-        setError('Incorrect password. Please try again.');
+        setError(t('lock.errWrongPass'));
       }
     } catch {
-      setError('Verification failed. Please check your password.');
+      setError(t('lock.errVerificationFailed'));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export const AppLockScreen: React.FC = () => {
                 : 'bg-blue-50 text-blue-600 border-blue-200'
             }`}
           >
-            {user.role === 'admin' ? 'Admin' : 'Viewer'}
+            {user.role === 'admin' ? t('admin') : t('viewer')}
           </span>
           <span className="text-xs text-slate-400 font-mono truncate">
             @{user.username}
@@ -151,16 +153,16 @@ export const AppLockScreen: React.FC = () => {
             </button>
 
             <p className="text-xs text-slate-500 font-medium">
-              Touch ID / Face ID / Device PIN
+              {t('lock.touchIdPrompt')}
             </p>
 
             <button
               type="button"
               onClick={triggerBiometricUnlock}
               disabled={isPromptingBio}
-              className="btn btn-primary w-full py-2.5 text-sm font-semibold rounded-xl"
+              className="btn btn-primary w-full py-2.5 text-sm font-semibold rounded-xl cursor-pointer"
             >
-              {isPromptingBio ? 'Scanning...' : 'Unlock with Biometrics'}
+              {isPromptingBio ? t('lock.scanning') : t('lock.unlockBio')}
             </button>
 
             <button
@@ -172,7 +174,7 @@ export const AppLockScreen: React.FC = () => {
               className="text-xs text-slate-500 hover:text-orange-600 font-medium transition-colors cursor-pointer flex items-center gap-1.5"
             >
               <KeyRound size={13} />
-              <span>Use Account Password instead</span>
+              <span>{t('lock.usePassword')}</span>
             </button>
           </div>
         ) : (
@@ -182,14 +184,14 @@ export const AppLockScreen: React.FC = () => {
           <form onSubmit={handlePasswordSubmit} className="w-full space-y-4">
             <div className="relative text-left">
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Enter Password to Unlock
+                {t('lock.enterPasswordToUnlock')}
               </label>
               <div className="relative flex items-center">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Account password"
+                  placeholder={t('lock.accountPasswordPlaceholder')}
                   autoFocus
                   className="input-field w-full pr-10 text-sm"
                   required
@@ -208,15 +210,15 @@ export const AppLockScreen: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2"
+              className="btn btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Verifying...</span>
+                  <span>{t('lock.verifying')}</span>
                 </>
               ) : (
-                <span>Unlock Application</span>
+                <span>{t('lock.unlockApp')}</span>
               )}
             </button>
 
@@ -231,7 +233,7 @@ export const AppLockScreen: React.FC = () => {
                 className="w-full text-xs text-orange-600 hover:text-orange-700 font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Fingerprint size={14} />
-                <span>Switch to Biometric Unlock</span>
+                <span>{t('lock.switchToBio')}</span>
               </button>
             )}
           </form>
@@ -244,7 +246,7 @@ export const AppLockScreen: React.FC = () => {
             className="text-xs text-slate-400 hover:text-red-600 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
           >
             <LogOut size={13} />
-            <span>Switch Account / Sign Out</span>
+            <span>{t('lock.signOut')}</span>
           </button>
         </div>
       </div>

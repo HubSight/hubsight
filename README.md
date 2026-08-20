@@ -1,6 +1,6 @@
-# CCTV Surveillance & Playback Platform
+# HubSight - Smart Surveillance & Playback Platform
 
-A modern, robust, and full-featured CCTV recording and playback surveillance system built with **Go**, **Ent ORM**, **NestJS (Socket.IO Relay)**, **React (Vite + TypeScript)**, **webrtc-service (go2rtc)**, **FFmpeg**, and **PostgreSQL**.
+A modern, robust, and full-featured camera recording and playback surveillance system built with **Go**, **Ent ORM**, **NestJS (Socket.IO Relay)**, **React (Vite + TypeScript)**, **webrtc-service (go2rtc)**, **FFmpeg**, and **PostgreSQL**.
 
 ---
 

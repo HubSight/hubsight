@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppLock } from '../../context/AppLockContext';
+import { useTranslation } from '../../i18n';
 import {
   Shield,
   Fingerprint,
@@ -18,6 +19,7 @@ interface AppSettingsModalProps {
 }
 
 export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const {
     appLockEnabled,
     biometricEnabled,
@@ -44,22 +46,22 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
       try {
         const success = await enableBiometricUnlock();
         if (success) {
-          setBioSuccess('Biometric authentication registered and enabled successfully!');
+          setBioSuccess(t('settings.bioSuccess'));
         } else {
-          setBioError('Failed to register biometric authentication.');
+          setBioError(t('settings.bioFailed'));
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
-          setBioError(err.message || 'WebAuthn registration was cancelled or failed.');
+          setBioError(err.message || t('settings.bioCancelled'));
         } else {
-          setBioError('WebAuthn registration was cancelled or failed.');
+          setBioError(t('settings.bioCancelled'));
         }
       } finally {
         setLoadingBio(false);
       }
     } else {
       disableBiometricUnlock();
-      setBioSuccess('Biometric unlock disabled. Password will be required on lock.');
+      setBioSuccess(t('settings.bioDisabled'));
     }
   };
 
@@ -81,8 +83,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               <Shield size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-base text-slate-800">Security & App Lock</h3>
-              <p className="text-xs text-slate-500">Manage device security and authentication</p>
+              <h3 className="font-bold text-base text-slate-800">{t('settings.securityTitle')}</h3>
+              <p className="text-xs text-slate-500">{t('settings.securitySubtitle')}</p>
             </div>
           </div>
           <button
@@ -106,12 +108,12 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
             <Smartphone size={18} className={isRunningPwa ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
             <div>
               <span className="font-semibold">
-                {isRunningPwa ? 'PWA Mode Active' : 'Web Browser Mode'}
+                {isRunningPwa ? t('settings.pwaActive') : t('settings.browserMode')}
               </span>
               <p className="text-[11px] opacity-80 mt-0.5">
                 {isRunningPwa
-                  ? 'App Lock protects your persistent session when switching apps.'
-                  : 'Install this app as a PWA for the best seamless App Lock experience.'}
+                  ? t('settings.pwaDesc')
+                  : t('settings.browserDesc')}
               </p>
             </div>
           </div>
@@ -135,10 +137,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
           <div className="flex items-center justify-between p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl">
             <div className="pr-3">
               <label className="text-sm font-semibold text-slate-800 block">
-                Lock on Background
+                {t('settings.lockOnBackground')}
               </label>
               <p className="text-xs text-slate-500 mt-0.5">
-                Automatically locks the screen when the app is minimized or hidden.
+                {t('settings.lockOnBackgroundDesc')}
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -163,14 +165,14 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                 <div className="flex items-center gap-2">
                   <Fingerprint size={16} className="text-orange-600 shrink-0" />
                   <label className="text-sm font-semibold text-slate-800 block">
-                    Biometric Unlock (Face ID / Fingerprint)
+                    {t('settings.bioUnlock')}
                   </label>
                   {loadingBio && <Loader2 size={14} className="animate-spin text-orange-600" />}
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {biometricSupported
-                    ? 'Use WebAuthn biometric sensors or Device PIN for fast unlock.'
-                    : 'Biometric authenticator is not detected on this browser/device.'}
+                    ? t('settings.bioSupported')
+                    : t('settings.bioNotSupported')}
                 </p>
               </div>
               <label
@@ -190,7 +192,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
             </div>
             {!biometricEnabled && appLockEnabled && (
               <p className="text-[11px] text-amber-700 bg-amber-50/80 border border-amber-200/60 p-2.5 rounded-xl mt-3">
-                🔒 When biometrics is off, you will enter your account password to unlock the app.
+                {t('settings.bioFallbackNote')}
               </p>
             )}
           </div>
@@ -203,16 +205,16 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
               <Clock size={16} className="text-slate-400" />
-              <span>Lock Screen Timeout</span>
+              <span>{t('settings.lockTimeout')}</span>
             </div>
             <p className="text-xs text-slate-500">
-              Choose how long the app must stay in the background before locking.
+              {t('settings.lockTimeoutDesc')}
             </p>
             <div className="grid grid-cols-3 gap-2 pt-1">
               {[
-                { label: 'Immediately', value: 0 },
-                { label: '1 Minute', value: 60 },
-                { label: '5 Minutes', value: 300 },
+                { label: t('settings.timeoutImmediate'), value: 0 },
+                { label: t('settings.timeout1m'), value: 60 },
+                { label: t('settings.timeout5m'), value: 300 },
               ].map((opt) => (
                 <button
                   key={opt.value}
@@ -241,7 +243,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               <Lock size={14} />
-              <span>Lock Application Now</span>
+              <span>{t('settings.lockNow')}</span>
             </button>
           )}
         </div>

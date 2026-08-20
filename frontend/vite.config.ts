@@ -43,9 +43,9 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api/, /^\/healthz/],
       },
       manifest: {
-        name: 'CCTV Surveillance & Playback',
-        short_name: 'CCTV Viewer',
-        description: 'Modern CCTV camera surveillance and playback system',
+        name: 'HubSight Surveillance & Playback',
+        short_name: 'HubSight',
+        description: 'HubSight camera surveillance and playback platform',
         theme_color: '#ea580c',
         background_color: '#0f172a',
         display: 'standalone',
