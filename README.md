@@ -25,6 +25,7 @@ The frontend client communicates **exclusively** with the **API Gateway (`api-ga
 | **`nvr-service`** | **NVR Recording Engine** | *None* | *Background Worker* | **Private Internal Worker** for FFmpeg chunking and S3 archiving. |
 | **`bgrd-service`** | **Background Job Worker** | *None* | *Background Worker* | **Private Internal Worker** handling periodic tasks like 3-day retention cron via `asynq`. |
 | **`redis-service`** | **Redis Queue** | *None* | `redis://redis-service:6379` | **Private Internal Cache** used by `asynq` for job queues. |
+| **`vision-service`**| **AI Vision Engine (YOLO)**| *None* | *Background Worker* | **Private Internal Service** for AI real-time person detection. Uses OpenCV and Ultralytics YOLO, and publishes bounding box coordinates to RabbitMQ. |
 
 ---
 
@@ -39,7 +40,12 @@ The frontend client communicates **exclusively** with the **API Gateway (`api-ga
   - `/api/*` (devices, archive, live, recorder) ➔ `http://core-service:8080`
 - **Complete Internal Isolation**: `core-service`, `auth-service`, `relay-service`, and `nvr-service` have zero host port exposure.
 
-### 2. Client Connection Examples
+### 2. AI Person Detection & Real-time Tracking (Phase 1)
+- **YOLOv11 Inference**: The `vision-service` reads RTSP camera streams and detects people in real-time using CPU-optimized `yolo11n`.
+- **Live Bounding Boxes**: The AI engine continuously publishes bounding box coordinates (normalized 0-1) to RabbitMQ.
+- **Socket.IO Relaying**: The NestJS `relay-service` forwards AI events (`vision.person.update`) directly to the React frontend, allowing the `<LivePlayer>` to render moving red tracking rectangles dynamically over the WebRTC stream via HTML5 Canvas.
+
+### 3. Client Connection Examples
 
 #### Frontend Socket.IO Connection:
 ```typescript

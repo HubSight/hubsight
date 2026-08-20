@@ -29,7 +29,11 @@ interface ValidateTokenResponse {
 @WebSocketGateway({
   path: '/relay',
   cors: {
-    origin: '*',
+    origin: (origin, callback) => {
+      // In production, restrict this to FRONTEND_URL or specific domains.
+      // For now, we allow the request but require valid credentials (token).
+      callback(null, true);
+    },
     credentials: true,
   },
 })
@@ -202,6 +206,13 @@ export class RelayGateway
   ) {
     if (!data || !data.event) {
       return { status: 'error', message: 'Event name required' };
+    }
+
+    // Security check: Only M2M services (or admins) can broadcast system/vision events
+    const isSystemEvent = data.event.startsWith('vision.') || data.event.startsWith('system.');
+    if (isSystemEvent && !client.data?.isM2M && client.data?.role !== 'admin') {
+      this.logger.warn(`Unauthorized attempt to broadcast system event "${data.event}" by socket ${client.id}`);
+      return { status: 'error', message: 'Unauthorized to broadcast system events' };
     }
 
     const payload = {

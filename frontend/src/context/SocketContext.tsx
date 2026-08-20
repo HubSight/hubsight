@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface SocketContextType {
@@ -25,6 +26,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const socketInstance = io(import.meta.env.VITE_RELAY_URL || 'http://localhost:3001', {
       transports: ['websocket'],
       autoConnect: true,
+      withCredentials: true,
     });
 
     socketInstance.on('connect', () => {

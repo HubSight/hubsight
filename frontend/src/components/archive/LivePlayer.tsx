@@ -31,7 +31,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       setBoundingBoxes(data.boxes || []);
     });
 
-    socket.on('vision.person.left', (data) => {
+    socket.on('vision.person.left', () => {
       setPersonDetected(false);
       setBoundingBoxes([]);
     });
