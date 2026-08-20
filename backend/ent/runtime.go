@@ -7,6 +7,7 @@ import (
 	"cctv/ent/recording"
 	"cctv/ent/schema"
 	"cctv/ent/session"
+	"cctv/ent/setting"
 	"cctv/ent/user"
 	"time"
 
@@ -89,6 +90,16 @@ func init() {
 	sessionDescID := sessionFields[0].Descriptor()
 	// session.DefaultID holds the default value on creation for the id field.
 	session.DefaultID = sessionDescID.Default.(func() uuid.UUID)
+	settingFields := schema.Setting{}.Fields()
+	_ = settingFields
+	// settingDescNvrStatus is the schema descriptor for nvr_status field.
+	settingDescNvrStatus := settingFields[1].Descriptor()
+	// setting.DefaultNvrStatus holds the default value on creation for the nvr_status field.
+	setting.DefaultNvrStatus = settingDescNvrStatus.Default.(bool)
+	// settingDescStorageQuotaGB is the schema descriptor for storage_quota_gb field.
+	settingDescStorageQuotaGB := settingFields[2].Descriptor()
+	// setting.DefaultStorageQuotaGB holds the default value on creation for the storage_quota_gb field.
+	setting.DefaultStorageQuotaGB = settingDescStorageQuotaGB.Default.(int)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescUsername is the schema descriptor for username field.

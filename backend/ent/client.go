@@ -14,6 +14,7 @@ import (
 	"cctv/ent/camera"
 	"cctv/ent/recording"
 	"cctv/ent/session"
+	"cctv/ent/setting"
 	"cctv/ent/user"
 
 	"entgo.io/ent"
@@ -34,6 +35,8 @@ type Client struct {
 	Recording *RecordingClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// Setting is the client for interacting with the Setting builders.
+	Setting *SettingClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -50,6 +53,7 @@ func (c *Client) init() {
 	c.Camera = NewCameraClient(c.config)
 	c.Recording = NewRecordingClient(c.config)
 	c.Session = NewSessionClient(c.config)
+	c.Setting = NewSettingClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -146,6 +150,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Camera:    NewCameraClient(cfg),
 		Recording: NewRecordingClient(cfg),
 		Session:   NewSessionClient(cfg),
+		Setting:   NewSettingClient(cfg),
 		User:      NewUserClient(cfg),
 	}, nil
 }
@@ -169,6 +174,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Camera:    NewCameraClient(cfg),
 		Recording: NewRecordingClient(cfg),
 		Session:   NewSessionClient(cfg),
+		Setting:   NewSettingClient(cfg),
 		User:      NewUserClient(cfg),
 	}, nil
 }
@@ -201,6 +207,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Camera.Use(hooks...)
 	c.Recording.Use(hooks...)
 	c.Session.Use(hooks...)
+	c.Setting.Use(hooks...)
 	c.User.Use(hooks...)
 }
 
@@ -210,6 +217,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Camera.Intercept(interceptors...)
 	c.Recording.Intercept(interceptors...)
 	c.Session.Intercept(interceptors...)
+	c.Setting.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
 }
 
@@ -222,6 +230,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Recording.mutate(ctx, m)
 	case *SessionMutation:
 		return c.Session.mutate(ctx, m)
+	case *SettingMutation:
+		return c.Setting.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
@@ -676,6 +686,139 @@ func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, 
 	}
 }
 
+// SettingClient is a client for the Setting schema.
+type SettingClient struct {
+	config
+}
+
+// NewSettingClient returns a client for the Setting from the given config.
+func NewSettingClient(c config) *SettingClient {
+	return &SettingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `setting.Hooks(f(g(h())))`.
+func (c *SettingClient) Use(hooks ...Hook) {
+	c.hooks.Setting = append(c.hooks.Setting, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `setting.Intercept(f(g(h())))`.
+func (c *SettingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Setting = append(c.inters.Setting, interceptors...)
+}
+
+// Create returns a builder for creating a Setting entity.
+func (c *SettingClient) Create() *SettingCreate {
+	mutation := newSettingMutation(c.config, OpCreate)
+	return &SettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Setting entities.
+func (c *SettingClient) CreateBulk(builders ...*SettingCreate) *SettingCreateBulk {
+	return &SettingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SettingClient) MapCreateBulk(slice any, setFunc func(*SettingCreate, int)) *SettingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SettingCreateBulk{err: fmt.Errorf("calling to SettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SettingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SettingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Setting.
+func (c *SettingClient) Update() *SettingUpdate {
+	mutation := newSettingMutation(c.config, OpUpdate)
+	return &SettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SettingClient) UpdateOne(_m *Setting) *SettingUpdateOne {
+	mutation := newSettingMutation(c.config, OpUpdateOne, withSetting(_m))
+	return &SettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SettingClient) UpdateOneID(id string) *SettingUpdateOne {
+	mutation := newSettingMutation(c.config, OpUpdateOne, withSettingID(id))
+	return &SettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Setting.
+func (c *SettingClient) Delete() *SettingDelete {
+	mutation := newSettingMutation(c.config, OpDelete)
+	return &SettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SettingClient) DeleteOne(_m *Setting) *SettingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SettingClient) DeleteOneID(id string) *SettingDeleteOne {
+	builder := c.Delete().Where(setting.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SettingDeleteOne{builder}
+}
+
+// Query returns a query builder for Setting.
+func (c *SettingClient) Query() *SettingQuery {
+	return &SettingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSetting},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Setting entity by its id.
+func (c *SettingClient) Get(ctx context.Context, id string) (*Setting, error) {
+	return c.Query().Where(setting.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SettingClient) GetX(ctx context.Context, id string) *Setting {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SettingClient) Hooks() []Hook {
+	return c.hooks.Setting
+}
+
+// Interceptors returns the client interceptors.
+func (c *SettingClient) Interceptors() []Interceptor {
+	return c.inters.Setting
+}
+
+func (c *SettingClient) mutate(ctx context.Context, m *SettingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Setting mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -828,9 +971,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Camera, Recording, Session, User []ent.Hook
+		Camera, Recording, Session, Setting, User []ent.Hook
 	}
 	inters struct {
-		Camera, Recording, Session, User []ent.Interceptor
+		Camera, Recording, Session, Setting, User []ent.Interceptor
 	}
 )

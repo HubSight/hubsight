@@ -45,6 +45,43 @@ const NvrMonitor = () => {
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+
+  const toggleNvrStatus = async (currentStatus: boolean) => {
+    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'disable' : 'enable'} the NVR Engine globally?`)) return;
+    setIsUpdatingSettings(true);
+    try {
+      await axiosClient.put('/settings', { nvr_status: !currentStatus });
+      await fetchStatus(false);
+    } catch (err) {
+      console.error('Failed to toggle NVR status', err);
+      alert('Failed to update NVR status.');
+    } finally {
+      setIsUpdatingSettings(false);
+    }
+  };
+
+  const promptUpdateQuota = async (currentQuotaBytes: number) => {
+    const currentGb = Math.round(currentQuotaBytes / (1024 * 1024 * 1024));
+    const input = window.prompt('Enter new Storage Quota (in GB):', currentGb.toString());
+    if (!input) return;
+    const newQuota = parseInt(input, 10);
+    if (isNaN(newQuota) || newQuota <= 0) {
+      alert('Invalid quota value. Must be a positive integer.');
+      return;
+    }
+
+    setIsUpdatingSettings(true);
+    try {
+      await axiosClient.put('/settings', { storage_quota_gb: newQuota });
+      await fetchStatus(false);
+    } catch (err) {
+      console.error('Failed to update quota', err);
+      alert('Failed to update Storage Quota.');
+    } finally {
+      setIsUpdatingSettings(false);
+    }
+  };
 
   const fetchStatus = async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -122,7 +159,7 @@ const NvrMonitor = () => {
 
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 md:mb-8">
-        
+
         {/* Card 1: Service Status */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
@@ -133,11 +170,22 @@ const NvrMonitor = () => {
               <Server size={20} />
             </div>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-3 mb-1">
+            <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${data?.is_global_enabled ? 'bg-emerald-500' : 'bg-red-500'}`} />
             <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">
-              {data?.status || 'HEALTHY'}
+              {data?.is_global_enabled ? (data?.status || 'HEALTHY') : 'DISABLED'}
             </h3>
+
+            <button
+              onClick={() => toggleNvrStatus(!!data?.is_global_enabled)}
+              disabled={isUpdatingSettings || !data}
+              className={`ml-auto text-xs px-3 py-1.5 font-semibold rounded-md transition-colors ${data?.is_global_enabled
+                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                }`}
+            >
+              {data?.is_global_enabled ? 'Stop Engine' : 'Start Engine'}
+            </button>
           </div>
           <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
             <Clock size={14} className="text-slate-400" />
@@ -171,10 +219,19 @@ const NvrMonitor = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              S3 Storage & Retention
+              Storage Quota
             </span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <HardDrive size={20} />
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => promptUpdateQuota(data?.storage.quota_bytes || 0)}
+                disabled={isUpdatingSettings || !data}
+                className="text-xs text-orange-600 hover:text-orange-700 bg-orange-50 px-2 py-1 rounded hover:bg-orange-100 font-medium transition-colors"
+              >
+                Edit Limit
+              </button>
+              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                <HardDrive size={20} />
+              </div>
             </div>
           </div>
           <div className="flex items-baseline gap-2 mb-2">
@@ -187,13 +244,12 @@ const NvrMonitor = () => {
           </div>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-1">
             <div
-              className={`h-full transition-all duration-500 ${
-                (data?.storage.used_percentage || 0) > 90
+              className={`h-full transition-all duration-500 ${(data?.storage.used_percentage || 0) > 90
                   ? 'bg-red-500'
                   : (data?.storage.used_percentage || 0) > 75
-                  ? 'bg-amber-500'
-                  : 'bg-blue-600'
-              }`}
+                    ? 'bg-amber-500'
+                    : 'bg-blue-600'
+                }`}
               style={{ width: `${Math.min(data?.storage.used_percentage || 0, 100)}%` }}
             />
           </div>
@@ -265,7 +321,7 @@ const NvrMonitor = () => {
               <tbody className="divide-y divide-slate-100">
                 {data?.cameras.map((cam) => (
                   <tr key={cam.camera_id} className="hover:bg-slate-50/60 transition-colors">
-                    
+
                     {/* Device Info */}
                     <td className="py-4 px-5">
                       <div className="font-semibold text-slate-800">{cam.name}</div>

@@ -8,6 +8,7 @@ import (
 	"cctv/ent"
 	"cctv/ent/camera"
 	"cctv/ent/recording"
+	"cctv/ent/setting"
 	"cctv/internal/database"
 	"cctv/internal/storage"
 	"github.com/gin-gonic/gin"
@@ -57,7 +58,16 @@ func NvrStatusHandler(c *gin.Context) {
 		newestSegmentAt = &newestRec.EndAt
 	}
 
-	quotaBytes := int64(storage.ThresholdBytes)
+	// Get global settings
+	globalSettings, err := database.Client.Setting.Query().Where(setting.ID("global")).Only(ctx)
+	if err != nil {
+		globalSettings = &ent.Setting{
+			NvrStatus:      true,
+			StorageQuotaGB: 50,
+		}
+	}
+
+	quotaBytes := int64(globalSettings.StorageQuotaGB) * 1024 * 1024 * 1024
 	usedPercent := 0.0
 	if quotaBytes > 0 {
 		usedPercent = (float64(totalUsedBytes) / float64(quotaBytes)) * 100
@@ -154,6 +164,7 @@ func NvrStatusHandler(c *gin.Context) {
 	res := NvrStatusResponse{
 		ServiceName:            "CCTV NVR Engine",
 		Status:                 "healthy",
+		IsGlobalEnabled:        globalSettings.NvrStatus,
 		Timestamp:              now,
 		System:                 sysStats,
 		Storage:                storeStats,

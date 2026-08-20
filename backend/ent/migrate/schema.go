@@ -16,7 +16,7 @@ var (
 		{Name: "brand", Type: field.TypeString, Default: "generic"},
 		{Name: "rtsp_port", Type: field.TypeInt, Default: 554},
 		{Name: "rtsp_transport", Type: field.TypeString, Default: "auto"},
-		{Name: "segment_duration", Type: field.TypeInt, Default: 300},
+		{Name: "segment_duration", Type: field.TypeInt, Default: 1800},
 		{Name: "video_codec", Type: field.TypeString, Default: "copy"},
 		{Name: "audio_mode", Type: field.TypeString, Default: "auto"},
 		{Name: "extra_args", Type: field.TypeString, Default: ""},
@@ -80,6 +80,18 @@ var (
 			},
 		},
 	}
+	// SettingsColumns holds the columns for the "settings" table.
+	SettingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "nvr_status", Type: field.TypeBool, Default: true},
+		{Name: "storage_quota_gb", Type: field.TypeInt, Default: 50},
+	}
+	// SettingsTable holds the schema information for the "settings" table.
+	SettingsTable = &schema.Table{
+		Name:       "settings",
+		Columns:    SettingsColumns,
+		PrimaryKey: []*schema.Column{SettingsColumns[0]},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -103,6 +115,7 @@ var (
 		CamerasTable,
 		RecordingsTable,
 		SessionsTable,
+		SettingsTable,
 		UsersTable,
 	}
 )

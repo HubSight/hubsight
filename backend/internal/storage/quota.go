@@ -6,12 +6,9 @@ import (
 
 	"cctv/ent"
 	"cctv/ent/recording"
+	"cctv/ent/setting"
 	"cctv/internal/database"
 	"github.com/minio/minio-go/v7"
-)
-
-const (
-	ThresholdBytes = 47 * 1024 * 1024 * 1024 // 47 GB
 )
 
 func CheckQuotaAndCleanup(ctx context.Context) error {
@@ -35,7 +32,17 @@ func CheckQuotaAndCleanup(ctx context.Context) error {
 
 	log.Printf("Storage used: %d bytes (%.2f GB)", totalSize, float64(totalSize)/(1024*1024*1024))
 
-	for totalSize > ThresholdBytes {
+	// Get global settings
+	globalSettings, err := database.Client.Setting.Query().Where(setting.ID("global")).Only(ctx)
+	if err != nil {
+		globalSettings = &ent.Setting{
+			StorageQuotaGB: 50,
+		}
+	}
+
+	thresholdBytes := int64(globalSettings.StorageQuotaGB) * 1024 * 1024 * 1024
+
+	for totalSize > thresholdBytes {
 		rec, err := database.Client.Recording.Query().
 			Order(ent.Asc(recording.FieldStartAt)).
 			First(ctx)

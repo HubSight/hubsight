@@ -15,5 +15,8 @@ type Recording func(*sql.Selector)
 // Session is the predicate function for session builders.
 type Session func(*sql.Selector)
 
+// Setting is the predicate function for setting builders.
+type Setting func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

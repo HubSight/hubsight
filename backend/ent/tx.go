@@ -18,6 +18,8 @@ type Tx struct {
 	Recording *RecordingClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// Setting is the client for interacting with the Setting builders.
+	Setting *SettingClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -154,6 +156,7 @@ func (tx *Tx) init() {
 	tx.Camera = NewCameraClient(tx.config)
 	tx.Recording = NewRecordingClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
+	tx.Setting = NewSettingClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

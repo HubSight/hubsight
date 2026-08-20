@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"cctv/ent/setting"
 	"cctv/internal/database"
 )
 
@@ -51,10 +52,22 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 		return
 	}
 
+	globalSettings, err := database.Client.Setting.Query().Where(setting.ID("global")).Only(parentCtx)
+	if err != nil {
+		// Assume enabled if setting is missing
+		globalSettings = nil
+	}
+
+	isNvrEnabled := true
+	if globalSettings != nil {
+		isNvrEnabled = globalSettings.NvrStatus
+	}
+
 	currentCameraIDs := make(map[int]bool)
 
 	for _, cam := range cameras {
-		if !cam.IsActive {
+		// If NVR is globally disabled, treat all cameras as inactive
+		if !isNvrEnabled || !cam.IsActive {
 			continue
 		}
 		currentCameraIDs[cam.ID] = true

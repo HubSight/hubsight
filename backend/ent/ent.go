@@ -6,6 +6,7 @@ import (
 	"cctv/ent/camera"
 	"cctv/ent/recording"
 	"cctv/ent/session"
+	"cctv/ent/setting"
 	"cctv/ent/user"
 	"context"
 	"errors"
@@ -79,6 +80,7 @@ func checkColumn(t, c string) error {
 			camera.Table:    camera.ValidColumn,
 			recording.Table: recording.ValidColumn,
 			session.Table:   session.ValidColumn,
+			setting.Table:   setting.ValidColumn,
 			user.Table:      user.ValidColumn,
 		})
 	})

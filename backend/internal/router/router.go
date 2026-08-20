@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	cctvapi "cctv/internal/api"
 	"cctv/internal/auth"
 	"cctv/internal/device"
 	"cctv/internal/live"
@@ -55,6 +56,10 @@ func New() *gin.Engine {
 
 				// NVR recorder monitor endpoint
 				adminOnly.GET("/recorder/status", nvr.NvrStatusHandler)
+				
+				// Global settings
+				adminOnly.GET("/settings", cctvapi.GetSettings)
+				adminOnly.PUT("/settings", cctvapi.UpdateSettings)
 			}
 
 			// Archive and timeline endpoints

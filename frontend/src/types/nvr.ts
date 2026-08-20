@@ -14,6 +14,7 @@ export interface NvrCameraStatus {
 
 export interface NvrStatusResponse {
   status: string;
+  is_global_enabled?: boolean;
   system: {
     cpu_usage_percent: number;
     memory_alloc_mb: number;
