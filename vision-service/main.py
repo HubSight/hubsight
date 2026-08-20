@@ -23,14 +23,15 @@ def main():
     
     detector = PersonDetector(mq_client=mq_client)
     
-    frame_interval = 1.0 / PROCESS_FPS
+    PROCESS_FPS = int(os.getenv("PROCESS_FPS", "0"))
+    frame_interval = 1.0 / PROCESS_FPS if PROCESS_FPS > 0 else 0
     
     while True:
         logger.info(f"Connecting to RTSP stream: {RTSP_URL}")
-        # Note: In production you might want to configure OpenCV properties 
-        # to drop frames and avoid lag in RTSP buffers (e.g. cv2.CAP_PROP_BUFFERSIZE)
+        # Configure OpenCV to drop old frames and avoid lag in RTSP buffers
         os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
         cap = cv2.VideoCapture(RTSP_URL)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
         if not cap.isOpened():
             logger.error("Failed to open RTSP stream. Retrying in 5 seconds...")
@@ -47,7 +48,7 @@ def main():
                     break
                 
                 current_time = time.time()
-                if (current_time - last_process_time) >= frame_interval:
+                if frame_interval == 0 or (current_time - last_process_time) >= frame_interval:
                     detector.process_frame(frame, camera_id="demo-camera")
                     last_process_time = current_time
                     

@@ -86,7 +86,7 @@ services:
     environment:
       RTSP_URL: rtsp://host.docker.internal:8554/cam
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
-      PROCESS_FPS: "5"
+      PROCESS_FPS: "0"
     depends_on:
       - mq-service
 
