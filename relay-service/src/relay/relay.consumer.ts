@@ -6,8 +6,8 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { RelayService } from './relay.service';
 import { EmitEventDto, BroadcastEventDto } from './dto/relay.dto';
 
-@Controller('relay')
-export class RelayController {
+@Controller()
+export class RelayConsumer {
   constructor(private readonly relayService: RelayService) {}
 
   @Get('health')

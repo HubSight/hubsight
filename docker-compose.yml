@@ -2,8 +2,8 @@ services:
   # 🚪 Pure API Gateway (Sole Public REST, WebSocket & WebRTC Signaling Entrypoint on :8088)
   api-gateway:
     build:
-      context: ./backend
-      dockerfile: gateway.Dockerfile
+      context: .
+      dockerfile: ./backend/gateway.Dockerfile
     restart: unless-stopped
     ports:
       - "8088:8080"
@@ -91,8 +91,6 @@ services:
   mq-service:
     image: rabbitmq:3-management
     restart: unless-stopped
-    ports:
-      - "15672:15672" # Management UI
 
 volumes:
   cctv_data:

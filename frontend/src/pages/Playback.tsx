@@ -136,10 +136,8 @@ const Playback = () => {
   };
 
   return (
-    <div className="h-full flex flex-col lg:flex-row overflow-hidden">
-      {/* Left Area (Main Content) */}
-      <div className="flex-1 flex flex-col min-w-0 h-full lg:overflow-hidden relative">
-        <div className="flex-1 flex flex-col h-full overflow-y-auto lg:overflow-hidden relative">
+    <div className="h-full overflow-y-auto bg-slate-50/50">
+      <div className="flex-1 flex flex-col min-w-0 max-w-[1920px] mx-auto">
           {/* 1. YouTube-style Video Player with embedded controls for Live & Archive */}
           <VideoPlayer
             mode={mode}
@@ -154,16 +152,13 @@ const Playback = () => {
           />
 
           {/* Wrapper for items below video */}
-          <div className="flex flex-col shrink-0">
-            {/* 2. Settings - Mobile Only */}
-            <div className="p-4 lg:hidden flex flex-col bg-white border-y border-slate-200 shadow-sm mb-4">
-              <h2 className="text-lg font-bold mb-4 text-slate-800">Playback Settings</h2>
-              <ArchiveSidebar {...sidebarProps} />
-            </div>
+          <div className="flex flex-col shrink-0 px-4 lg:px-6 mt-4 gap-4">
+            {/* 2. Horizontal Settings Toolbar */}
+            <ArchiveSidebar {...sidebarProps} />
 
             {/* 3. Interactive Timeline */}
             <div
-              className={`p-4 lg:px-6 lg:pt-3 lg:pb-4 shrink-0 ${
+              className={`pb-6 shrink-0 ${
                 !selectedCam ? 'opacity-50 pointer-events-none' : ''
               }`}
             >
@@ -177,13 +172,6 @@ const Playback = () => {
               />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Right Sidebar - Desktop Only */}
-      <div className="hidden lg:flex w-[340px] border-l border-slate-200/80 bg-white p-6 overflow-y-auto shrink-0 shadow-[-4px_0_24px_rgba(148,163,184,0.25)] z-10 flex-col">
-        <h2 className="text-xl font-bold mb-6 text-slate-800">Playback Settings</h2>
-        <ArchiveSidebar {...sidebarProps} />
       </div>
     </div>
   );

@@ -4,9 +4,6 @@ import {
   Pause,
   RotateCcw,
   RotateCw,
-  Volume2,
-  VolumeX,
-  Volume1,
   Radio,
   Gauge,
   Camera,
@@ -52,7 +49,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [bufferedEnd, setBufferedEnd] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -144,45 +141,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
-  // Video event listeners
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const onPlay = () => {
-      setIsPlaying(true);
-      resetControlsTimer();
-    };
-    const onPause = () => {
-      setIsPlaying(false);
-      setShowControls(true);
-    };
-    const onTimeUpdate = () => {
-      if (!isScrubbing) {
-        setCurrentTime(video.currentTime);
-      }
-      if (video.buffered.length > 0) {
-        setBufferedEnd(video.buffered.end(video.buffered.length - 1));
-      }
-    };
-    const onDurationChange = () => {
-      setDuration(video.duration || 0);
-    };
-
-    video.addEventListener('play', onPlay);
-    video.addEventListener('pause', onPause);
-    video.addEventListener('timeupdate', onTimeUpdate);
-    video.addEventListener('durationchange', onDurationChange);
-    video.addEventListener('loadedmetadata', onDurationChange);
-
-    return () => {
-      video.removeEventListener('play', onPlay);
-      video.removeEventListener('pause', onPause);
-      video.removeEventListener('timeupdate', onTimeUpdate);
-      video.removeEventListener('durationchange', onDurationChange);
-      video.removeEventListener('loadedmetadata', onDurationChange);
-    };
-  }, [videoRef, isScrubbing, resetControlsTimer]);
+  // Video event listeners replaced with React synthetic events directly on <video> tag.
 
   // Video controls
   const togglePlay = () => {
@@ -203,16 +162,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (!video) return;
     video.currentTime = Math.max(0, Math.min(video.currentTime + seconds, duration));
     resetControlsTimer();
-  };
-
-  const handleVolumeChange = (newVolume: number) => {
-    const video = videoRef.current;
-    if (!video) return;
-    const clamped = Math.max(0, Math.min(newVolume, 1));
-    video.volume = clamped;
-    video.muted = clamped === 0;
-    setVolume(clamped);
-    setIsMuted(clamped === 0);
   };
 
   const toggleMute = () => {
@@ -339,7 +288,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="sticky top-0 z-30 w-full bg-black aspect-video lg:aspect-auto lg:flex-1 lg:min-h-0 flex flex-col items-center justify-center shrink-0 overflow-hidden relative select-none group border-b border-slate-800"
+      className="w-full bg-black aspect-video flex flex-col items-center justify-center shrink-0 overflow-hidden relative select-none group border-b border-slate-800 lg:max-h-[75vh]"
     >
       {/* ---------------------------------------------------- */}
       {/* 1. TOP OVERLAY BADGES & ACTIONS                     */}
@@ -370,16 +319,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </span>
             </div>
           </div>
-          {/* Top-Right: Download & Switch to Live button */}
+          {/* Top-Right: Switch to Live button */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-1.5 bg-slate-900/85 hover:bg-slate-800 text-white/90 hover:text-white px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide border border-white/15 shadow-lg backdrop-blur-md transition-all cursor-pointer active:scale-95"
-              title="Download Recording (MP4)"
-            >
-              <Download size={14} className="text-orange-500" />
-              <span className="hidden sm:inline">Download</span>
-            </button>
 
             {onGoLive && cameraId && (
               <button
@@ -418,6 +359,25 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           playsInline
           onLoadedMetadata={onLoadedMetadata}
           onClick={togglePlay}
+          onPlay={() => {
+            setIsPlaying(true);
+            resetControlsTimer();
+          }}
+          onPause={() => {
+            setIsPlaying(false);
+            setShowControls(true);
+          }}
+          onTimeUpdate={(e) => {
+            if (!isScrubbing) {
+              setCurrentTime(e.currentTarget.currentTime);
+            }
+            if (e.currentTarget.buffered.length > 0) {
+              setBufferedEnd(e.currentTarget.buffered.end(e.currentTarget.buffered.length - 1));
+            }
+          }}
+          onDurationChange={(e) => {
+            setDuration(e.currentTarget.duration || 0);
+          }}
           className="w-full h-full object-contain cursor-pointer"
         />
       ) : (
@@ -531,7 +491,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 <RotateCw size={18} />
               </button>
 
-              {/* Volume & Slider */}
+              {/* Volume & Slider (Hidden for now as audio stream is not supported) */}
+              {/*
               <div className="group/vol flex items-center gap-1 pl-1">
                 <button
                   onClick={toggleMute}
@@ -556,6 +517,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   className="w-0 group-hover/vol:w-16 sm:group-hover/vol:w-20 transition-all duration-200 accent-orange-500 h-1 cursor-pointer opacity-0 group-hover/vol:opacity-100"
                 />
               </div>
+              */}
 
               {/* Time Display: 01:23 / 05:00 */}
               <div className="text-xs font-mono text-white/80 ml-2 select-none">

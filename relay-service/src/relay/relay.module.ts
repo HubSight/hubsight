@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { RelayGateway } from './relay.gateway';
 import { RelayService } from './relay.service';
-import { RelayController } from './relay.controller';
+import { RelayConsumer } from './relay.consumer';
 
 @Module({
   providers: [RelayGateway, RelayService],
-  controllers: [RelayController],
+  controllers: [RelayConsumer],
   exports: [RelayService, RelayGateway],
 })
 export class RelayModule {}

@@ -19,7 +19,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 
 	segDuration := cfg.SegmentDuration
 	if segDuration <= 0 {
-		segDuration = 300
+		segDuration = 1800 // Default to 30 minutes
 	}
 	segmentTime := fmt.Sprintf("%d", segDuration)
 	outPattern := filepath.Join(cfg.OutDir, fmt.Sprintf("cam%d_%%Y%%m%%d_%%H%%M%%S.mp4", cfg.CameraID))
@@ -69,10 +69,11 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 		}
 	}
 
-	// Output segmentation
+	// Output segmentation aligned to clock time (30-minute intervals aligned to real time)
 	args = append(args,
 		"-f", "segment",
 		"-segment_time", segmentTime,
+		"-segment_atclocktime", "1",
 		"-segment_format", "mp4",
 		"-reset_timestamps", "1",
 		"-strftime", "1",

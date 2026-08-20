@@ -12,6 +12,7 @@ import (
 	"cctv/internal/auth"
 	"cctv/internal/config"
 	"cctv/internal/database"
+	"cctv/internal/mq"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,6 +28,12 @@ func main() {
 	// Ensure default admin user exists
 	if err := auth.CreateInitialUser(context.Background(), "admin", "123Qwe!@"); err != nil {
 		log.Printf("CreateInitialUser notice: %v", err)
+	}
+
+	if err := mq.Init(); err != nil {
+		log.Printf("RabbitMQ connection failed: %v", err)
+	} else {
+		defer mq.Close()
 	}
 
 	port := os.Getenv("PORT")

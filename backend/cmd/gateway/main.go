@@ -6,6 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -123,6 +124,28 @@ func main() {
 		// Dispatch all other /api/... requests to Core CCTV Service
 		c.Request.Host = coreTarget.Host
 		coreProxy.ServeHTTP(c.Writer, c.Request)
+	})
+
+	// 4. Serve Frontend Static Files & SPA Fallback
+	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		publicDir := "./public"
+
+		// If the request is for an API route that wasn't matched, return 404 JSON
+		if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/relay") || strings.HasPrefix(path, "/webrtc") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "route not found in gateway"})
+			return
+		}
+
+		// Check if it's a direct file request (e.g. /assets/style.css)
+		file := filepath.Join(publicDir, path)
+		if info, err := os.Stat(file); err == nil && !info.IsDir() {
+			c.File(file)
+			return
+		}
+
+		// Fallback to index.html for SPA routing (React/Vite)
+		c.File(filepath.Join(publicDir, "index.html"))
 	})
 
 	log.Printf("API Gateway listening on :%s (Auth: %s, Core: %s, Relay: %s, WebRTC: %s)",
