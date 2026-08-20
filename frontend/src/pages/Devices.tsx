@@ -97,7 +97,7 @@ const Devices = () => {
         builderIsSub: parsed?.isSub ?? false,
         rtspTransport: dev.rtsp_transport || 'auto',
         rtspPort: parsed?.port || dev.rtsp_port || 554,
-        segmentDuration: dev.segment_duration || 300,
+        segmentDuration: dev.segment_duration || 1800,
         videoCodec: dev.video_codec || 'copy',
         audioMode: dev.audio_mode || 'auto',
         extraArgs: dev.extra_args || ''
@@ -141,7 +141,7 @@ const Devices = () => {
       brand: formData.brand,
       rtsp_port: Number(formData.rtspPort) || 554,
       rtsp_transport: formData.rtspTransport,
-      segment_duration: Number(formData.segmentDuration) || 300,
+      segment_duration: Number(formData.segmentDuration) || 1800,
       video_codec: formData.videoCodec,
       audio_mode: formData.audioMode,
       extra_args: formData.extraArgs.trim(),

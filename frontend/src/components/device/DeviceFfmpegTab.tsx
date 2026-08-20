@@ -10,11 +10,11 @@ export interface DeviceFfmpegTabProps {
 }
 
 const SEGMENT_DURATIONS = [
-  { secs: 60, label: '1 Minute' },
-  { secs: 300, label: '5 Minutes (Std)' },
-  { secs: 600, label: '10 Minutes' },
+  { secs: 1800, label: '30 Minutes (Standard)' },
   { secs: 900, label: '15 Minutes' },
-  { secs: 1800, label: '30 Minutes' }
+  { secs: 600, label: '10 Minutes' },
+  { secs: 300, label: '5 Minutes' },
+  { secs: 60, label: '1 Minute' }
 ];
 
 const VIDEO_CODECS = [

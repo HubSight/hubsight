@@ -170,7 +170,10 @@ const Playback = () => {
               <TimelineControl
                 recordings={recordings}
                 currentDate={dateStr}
+                activeRecording={activeRecording}
+                mode={mode}
                 onSeek={handleSeek}
+                onGoLive={handleGoLive}
               />
             </div>
           </div>
