@@ -22,7 +22,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
       brand: newBrand,
       builderPort: preset ? preset.defaultPort : formData.builderPort,
       rtspPort: preset ? preset.defaultPort : formData.rtspPort,
-      builderUser: preset ? preset.defaultUser : formData.builderUser
+      builderUser: formData.builderUser
     });
   };
 

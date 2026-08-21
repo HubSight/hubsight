@@ -67,10 +67,12 @@ const MainLayout = () => {
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <Shield className="text-orange-600" size={22} />
+        <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
+          <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-sm shadow-orange-600/20 group-active:scale-95 transition-transform">
+            <Camera size={18} />
+          </div>
           <h2 className="text-base font-bold m-0 text-slate-800 tracking-tight">HubSight</h2>
-        </div>
+        </NavLink>
         <button
           className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation"
           onClick={() => setIsMobileMenuOpen(true)}
@@ -96,15 +98,15 @@ const MainLayout = () => {
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
       `}>
         <div className="flex items-center justify-between px-6 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-600/20">
+          <NavLink to="/" className="flex items-center gap-3 no-underline group cursor-pointer">
+            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-600/20 group-hover:scale-105 transition-transform">
               <Camera size={22} />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-none text-slate-800">HubSight</h1>
+              <h1 className="font-bold text-lg leading-none text-slate-800 group-hover:text-orange-600 transition-colors">HubSight</h1>
               <span className="text-[11px] text-slate-600 font-medium tracking-wide">{t('nav.subtitle')}</span>
             </div>
-          </div>
+          </NavLink>
           <button 
             className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
