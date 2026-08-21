@@ -69,6 +69,17 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
     liveEdgeSyncRef.current = setInterval(async () => {
       if (!video || video.paused || video.ended || !pc) return;
 
+      // ── Live Edge Auto-Sync (Catch up if video buffer drifts > 400ms) ──
+      try {
+        if (video.buffered.length > 0) {
+          const liveEnd = video.buffered.end(video.buffered.length - 1);
+          const drift = liveEnd - video.currentTime;
+          if (drift > 0.4) {
+            video.currentTime = liveEnd;
+          }
+        }
+      } catch (_) {}
+
       try {
         const statsReport = await pc.getStats();
         let inboundVideo: any = null;
@@ -230,7 +241,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
   }, [socket, cameraId]);
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Canvas overlay render loop
+  // Canvas overlay render loop (Optimized with ResizeObserver)
   // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -239,17 +250,21 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Use ResizeObserver instead of polling clientWidth/clientHeight on every animation frame
+    const resizeObserver = new ResizeObserver(() => {
+      if (canvas) {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+    });
+    resizeObserver.observe(canvas);
+
     let animationFrameId: number;
     const renderLoop = () => {
       traceStateRef.current.frames++; // Track render FPS
-      if (video.videoWidth === 0 || video.videoHeight === 0) {
+      if (video.videoWidth === 0 || video.videoHeight === 0 || canvas.width === 0 || canvas.height === 0) {
         animationFrameId = requestAnimationFrame(renderLoop);
         return;
-      }
-      // Only resize when dimensions actually changed (avoid layout thrashing)
-      if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
       }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -300,7 +315,10 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       animationFrameId = requestAnimationFrame(renderLoop);
     };
     renderLoop();
-    return () => cancelAnimationFrame(animationFrameId);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+    };
   }, []);
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -330,7 +348,6 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
         });
 
         pc.addTransceiver('video', { direction: 'recvonly' });
-        pc.addTransceiver('audio', { direction: 'recvonly' });
 
         pc.ontrack = (event) => {
           if (!isActive) return;

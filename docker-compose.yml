@@ -90,7 +90,7 @@ services:
       # Read from go2rtc's internal RTSP server (same buffer as WebRTC stream)
       # so that bounding box timestamps align with the video shown in the browser.
       GO2RTC_RTSP_BASE: "rtsp://webrtc-service:8554"
-      PROCESS_FPS: "0"
+      PROCESS_FPS: "5"
     depends_on:
       - mq-service
       - webrtc-service
