@@ -464,9 +464,6 @@ const NvrMonitor = () => {
                     {/* Stream Pipeline Settings */}
                     <td className="py-4 px-4 text-xs">
                       <div className="flex flex-wrap gap-1">
-                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono">
-                          {cam.rtsp_transport.toUpperCase()}
-                        </span>
                         <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
                           {cam.video_codec === 'copy' ? '0% CPU Copy' : cam.video_codec}
                         </span>

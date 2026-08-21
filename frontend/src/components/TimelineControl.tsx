@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { Clock, Play, Radio, Eye, EyeOff } from 'lucide-react';
+import { Clock, Play, Radio, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Recording } from '../types/recording';
 import { useTranslation } from '../i18n';
 
@@ -36,6 +36,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
 }) => {
   const { t } = useTranslation();
   const [hideEmpty, setHideEmpty] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   // Compute 30-minute interval slots from 00:00 to 23:30 (or up to current live time)
   const slots: SlotItem[] = useMemo(() => {
@@ -159,75 +160,88 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
             </button>
           )}
 
+          <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+            <button
+              onClick={() => setHideEmpty(!hideEmpty)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+                hideEmpty ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+              }`}
+              title={hideEmpty ? t('timeline.showAll') : t('timeline.hideEmpty')}
+            >
+              {hideEmpty ? <EyeOff size={14} /> : <Eye size={14} />}
+              <span className="hidden sm:inline">{hideEmpty ? t('timeline.showAll') : t('timeline.hideEmpty')}</span>
+            </button>
+          </div>
+
           <button
-            onClick={() => setHideEmpty((prev) => !prev)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer"
-            title={hideEmpty ? t('timeline.showAll') : t('timeline.hideEmpty')}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1.5 ml-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition-colors"
           >
-            {hideEmpty ? <Eye size={13} className="text-orange-400" /> : <EyeOff size={13} className="text-slate-400" />}
-            <span>{hideEmpty ? t('timeline.showAll') : t('timeline.hideEmpty')}</span>
+            {isCollapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
         </div>
       </div>
 
       {/* Grid of 30-Minute Seeking Buttons */}
-      {displayedSlots.length === 0 ? (
-        <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1">
-          <Clock size={24} className="text-slate-600 mb-1" />
-          <span>{t('timeline.noDataInterval')}</span>
-        </div>
-      ) : (
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
-          {displayedSlots.map((slot) => {
-            if (!slot.hasData) {
+      {!isCollapsed && (
+        displayedSlots.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1">
+            <Clock size={24} className="text-slate-600 mb-1" />
+            <span>{t('timeline.noDataInterval')}</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
+            {displayedSlots.map((slot) => {
+              if (!slot.hasData) {
+                return (
+                  <button
+                    key={slot.index}
+                    disabled
+                    title={`${slot.timeRangeLabel} - ${t('noData')}`}
+                    className="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-mono font-medium border border-slate-800/60 bg-slate-900/40 text-slate-600 opacity-40 cursor-not-allowed select-none"
+                  >
+                    <span className="text-[11px] font-semibold">{slot.label}</span>
+                    <span className="text-[9px] text-slate-600 mt-0.5 tracking-tighter">{t('noData')}</span>
+                  </button>
+                );
+              }
+
               return (
                 <button
                   key={slot.index}
-                  disabled
-                  title={`${slot.timeRangeLabel} - ${t('noData')}`}
-                  className="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-mono font-medium border border-slate-800/60 bg-slate-900/40 text-slate-600 opacity-40 cursor-not-allowed select-none"
-                >
-                  <span className="text-[11px] font-semibold">{slot.label}</span>
-                  <span className="text-[9px] text-slate-600 mt-0.5 tracking-tighter">{t('noData')}</span>
-                </button>
-              );
-            }
-
-            return (
-              <button
-                key={slot.index}
-                onClick={() => {
-                  if (slot.matchingRecording) {
-                    onSeek(slot.matchingRecording, slot.offsetSeconds);
-                  }
-                }}
-                title={`Seek to ${slot.timeRangeLabel}`}
-                className={`group relative flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer select-none active:scale-95 ${
-                  slot.isActive
-                    ? 'bg-orange-600 text-white border-orange-500 shadow-md shadow-orange-600/30 ring-2 ring-orange-400/30'
-                    : 'bg-slate-800/90 hover:bg-slate-750 hover:border-orange-500/60 text-slate-200 hover:text-white border-slate-700/80 shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <Play
-                    size={10}
-                    className={`transition-colors ${
-                      slot.isActive ? 'text-white fill-white' : 'text-orange-500 group-hover:fill-orange-500'
-                    }`}
-                  />
-                  <span className="text-[11px] font-bold tracking-tight">{slot.label}</span>
-                </div>
-                <span
-                  className={`text-[9px] mt-0.5 tracking-tighter ${
-                    slot.isActive ? 'text-orange-100 font-semibold' : 'text-emerald-400 group-hover:text-emerald-300'
+                  onClick={() => {
+                    if (slot.matchingRecording) {
+                      onSeek(slot.matchingRecording, slot.offsetSeconds);
+                    }
+                  }}
+                  title={`Seek to ${slot.timeRangeLabel}`}
+                  className={`group relative flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer select-none active:scale-95 ${
+                    slot.isActive
+                      ? 'bg-orange-600 text-white border-orange-500 shadow-md shadow-orange-600/30 ring-2 ring-orange-400/30'
+                      : 'bg-slate-800/90 hover:bg-slate-750 hover:border-orange-500/60 text-slate-200 hover:text-white border-slate-700/80 shadow-sm'
                   }`}
                 >
-                  {slot.isActive ? t('timeline.playing') : t('timeline.ready')}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <div className="flex items-center gap-1">
+                    <Play
+                      size={10}
+                      className={`transition-colors ${
+                        slot.isActive ? 'text-white fill-white' : 'text-orange-500 group-hover:fill-orange-500'
+                      }`}
+                    />
+                    <span className="text-[11px] font-bold tracking-tight">{slot.label}</span>
+                  </div>
+                  <span
+                    className={`text-[9px] mt-0.5 tracking-tighter ${
+                      slot.isActive ? 'text-orange-100 font-semibold' : 'text-emerald-400 group-hover:text-emerald-300'
+                    }`}
+                  >
+                    {slot.isActive ? t('timeline.playing') : t('timeline.ready')}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )
       )}
     </div>
   );

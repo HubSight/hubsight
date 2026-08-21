@@ -7,6 +7,7 @@ api:
 
 rtsp:
   listen: ":8554"
+  default_query: "transport=tcp"
 
 webrtc:
   listen: ":8555"
@@ -17,4 +18,4 @@ webrtc:
     - 127.0.0.1:8555
 streams:
   cam_5:
-    - rtsp://138.2.87.35:8554/bunny#video=copy#audio=copy#backchannel=0
+    - rtsp://admin@138.2.87.35:8554/bunny#video=copy#audio=copy#backchannel=0#transport=tcp

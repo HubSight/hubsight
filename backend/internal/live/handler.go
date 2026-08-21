@@ -60,17 +60,12 @@ func WebRTCHandler(c *gin.Context) {
 	// 1. Ensure the stream is registered in webrtc-service dynamically
 	// #video=copy#audio=copy: pass bitstream straight through without re-encoding (lowest latency)
 	// #backchannel=0: skip 2-way audio handshake probe
+	// #transport=tcp: force TCP transport to eliminate packet drops and reduce jitter
 	srcURL := cam.Host
 	if !strings.Contains(srcURL, "#") {
-		switch strings.ToLower(cam.RtspTransport) {
-		case "tcp":
-			srcURL = fmt.Sprintf("%s#video=copy#audio=copy#backchannel=0#transport=tcp", srcURL)
-		case "udp":
-			srcURL = fmt.Sprintf("%s#video=copy#audio=copy#backchannel=0#transport=udp", srcURL)
-		default:
-			// Auto: let go2rtc negotiate transport, still copy bitstream
-			srcURL = fmt.Sprintf("%s#video=copy#audio=copy#backchannel=0", srcURL)
-		}
+		srcURL = fmt.Sprintf("%s#video=copy#audio=copy#backchannel=0#transport=tcp", srcURL)
+	} else if !strings.Contains(srcURL, "transport=") {
+		srcURL = fmt.Sprintf("%s#transport=tcp", srcURL)
 	}
 
 	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s", webrtcURL, url.QueryEscape(camName), url.QueryEscape(srcURL))

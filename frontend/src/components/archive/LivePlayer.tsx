@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Activity } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { useSocket } from '../../context/SocketContext';
 import axiosClient from '../../api/axiosClient';
@@ -39,26 +39,127 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
   );
   const liveEdgeSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── Debug Trace State ────────────────────────────────────────────────────
+  const [showTrace, setShowTrace] = useState(false);
+  const [stats, setStats] = useState({
+    renderFps: 0,
+    decodeFps: 0,
+    droppedFrames: 0,
+    latencyMs: 0,
+    resolution: '',
+    protocol: 'Unknown',
+    codec: 'Unknown',
+    packetsLost: 0,
+    jitter: 0,
+  });
+  const traceStateRef = useRef({ 
+    frames: 0, 
+    lastTime: performance.now(), 
+    lastDecoded: 0,
+    lastDropped: 0,
+    lastPacketsLost: 0 
+  });
+
   // ──────────────────────────────────────────────────────────────────────────
-  // Live-edge sync: periodically push the video element to the live edge.
-  // The browser buffers a few hundred ms by default; if it drifts > 0.5s
-  // behind the newest buffered position, we snap it forward.
+  // WebRTC Stats Polling
   // ──────────────────────────────────────────────────────────────────────────
-  const startLiveEdgeSync = useCallback((video: HTMLVideoElement) => {
+  
+  const startStatsPoll = useCallback((video: HTMLVideoElement, pc: RTCPeerConnection) => {
     if (liveEdgeSyncRef.current) clearInterval(liveEdgeSyncRef.current);
-    liveEdgeSyncRef.current = setInterval(() => {
-      if (!video || video.paused || video.ended) return;
-      if (video.buffered.length === 0) return;
-      const liveEdge = video.buffered.end(video.buffered.length - 1);
-      const lag = liveEdge - video.currentTime;
-      if (lag > 0.5) {
-        // Snap to live edge, leave a tiny 80ms buffer for smooth decode
-        video.currentTime = liveEdge - 0.08;
+    liveEdgeSyncRef.current = setInterval(async () => {
+      if (!video || video.paused || video.ended || !pc) return;
+
+      try {
+        const statsReport = await pc.getStats();
+        let inboundVideo: any = null;
+        let localCandidate: any = null;
+        let remoteCandidate: any = null;
+        let codecInfo: any = null;
+
+        statsReport.forEach((stat: any) => {
+          if (stat.type === 'inbound-rtp' && stat.kind === 'video') {
+            inboundVideo = stat;
+            if (inboundVideo.codecId && typeof (statsReport as any).get === 'function') {
+              codecInfo = (statsReport as any).get(inboundVideo.codecId);
+            }
+          }
+          if (stat.type === 'candidate-pair' && (stat.state === 'succeeded' || stat.nominated)) {
+            if (stat.localCandidateId && typeof (statsReport as any).get === 'function') {
+              localCandidate = (statsReport as any).get(stat.localCandidateId);
+            }
+            if (stat.remoteCandidateId && typeof (statsReport as any).get === 'function') {
+              remoteCandidate = (statsReport as any).get(stat.remoteCandidateId);
+            }
+          }
+        });
+
+        const now = performance.now();
+        const state = traceStateRef.current;
+        const dt = now - state.lastTime;
+        
+        if (dt >= 1000) {
+          const renderFps = Math.round((state.frames * 1000) / dt);
+          let decodeFps = 0;
+          let dropped = 0;
+          let pLost = 0;
+          let jitter = 0;
+          let codec = 'Unknown';
+          let protocol = 'Unknown';
+
+          if (inboundVideo) {
+            const newDecoded = inboundVideo.framesDecoded || 0;
+            decodeFps = Math.round(((newDecoded - state.lastDecoded) * 1000) / dt);
+            
+            const newDropped = inboundVideo.framesDropped || 0;
+            const newPacketsLost = inboundVideo.packetsLost || 0;
+            
+            if (state.lastDecoded === 0) {
+              // Initial tick: ignore cumulative drops that happened before polling started
+              dropped = 0;
+              pLost = 0;
+            } else {
+              dropped = Math.max(0, newDropped - state.lastDropped);
+              pLost = Math.max(0, newPacketsLost - state.lastPacketsLost);
+            }
+            
+            state.lastDecoded = newDecoded;
+            state.lastDropped = newDropped;
+            state.lastPacketsLost = newPacketsLost;
+            
+            jitter = Math.round((inboundVideo.jitter || 0) * 1000);
+          }
+
+          if (codecInfo) codec = codecInfo.mimeType ? codecInfo.mimeType.split('/')[1] : 'Unknown';
+          if (localCandidate) protocol = localCandidate.protocol || 'Unknown';
+          if (!protocol || protocol === 'Unknown') if (remoteCandidate) protocol = remoteCandidate.protocol || 'Unknown';
+
+          let latency = 0;
+          if (video.buffered.length > 0) {
+            latency = Math.round((video.buffered.end(video.buffered.length - 1) - video.currentTime) * 1000);
+          }
+
+          setStats({
+            renderFps,
+            decodeFps,
+            droppedFrames: dropped,
+            latencyMs: latency,
+            resolution: `${video.videoWidth}x${video.videoHeight}`,
+            protocol: protocol.toUpperCase(),
+            codec,
+            packetsLost: pLost,
+            jitter
+          });
+
+          state.lastTime = now;
+          state.frames = 0;
+        }
+      } catch (err) {
+        console.warn("Error getting WebRTC stats", err);
       }
     }, 1000);
   }, []);
 
-  const stopLiveEdgeSync = useCallback(() => {
+  const stopStatsPoll = useCallback(() => {
     if (liveEdgeSyncRef.current) {
       clearInterval(liveEdgeSyncRef.current);
       liveEdgeSyncRef.current = null;
@@ -140,6 +241,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
 
     let animationFrameId: number;
     const renderLoop = () => {
+      traceStateRef.current.frames++; // Track render FPS
       if (video.videoWidth === 0 || video.videoHeight === 0) {
         animationFrameId = requestAnimationFrame(renderLoop);
         return;
@@ -215,7 +317,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       setIsInitializing(true);
       setStreamError(null);
       onLiveStatusChange?.(false);
-      stopLiveEdgeSync();
+      stopStatsPoll();
 
       try {
         pc = new RTCPeerConnection({
@@ -246,7 +348,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
           setIsInitializing(false);
           onLiveStatusChange?.(true);
           video.play().catch(err => console.warn('Autoplay prevented:', err));
-          startLiveEdgeSync(video);
+          startStatsPoll(video, pc!);
         };
 
         const offer = await pc.createOffer();
@@ -281,13 +383,6 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
 
         await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answerSdp }));
 
-        // ── Minimize jitter buffer on all receivers for real-time display ──
-        pc.getReceivers().forEach(receiver => {
-          // jitterBufferTarget is a newer API, available in Chrome 107+
-          if ('jitterBufferTarget' in receiver) {
-            (receiver as any).jitterBufferTarget = 0;
-          }
-        });
 
       } catch (err) {
         if (!isActive) return;
@@ -302,11 +397,11 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
 
     return () => {
       isActive = false;
-      stopLiveEdgeSync();
+      stopStatsPoll();
       onLiveStatusChange?.(false);
       if (pc) pc.close();
     };
-  }, [cameraId, onLiveStatusChange, t, startLiveEdgeSync, stopLiveEdgeSync]);
+  }, [cameraId, onLiveStatusChange, t, startStatsPoll, stopStatsPoll]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none">
@@ -335,6 +430,65 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
           <p className="text-xs text-slate-400 max-w-sm">{streamError}</p>
         </div>
       )}
+      {/* Debug Trace Overlay */}
+      {showTrace && (
+        <div className="absolute top-14 right-4 bg-black/70 text-white font-mono text-[11px] p-2 rounded border border-white/20 z-50 backdrop-blur-sm shadow-xl pointer-events-none select-none">
+          <div className="text-orange-400 font-bold mb-1 uppercase tracking-wider flex items-center gap-1.5">
+            <Activity size={12} /> Live Trace
+          </div>
+          <table className="mt-1">
+            <tbody>
+              <tr><td className="pr-3 text-slate-300">Resolution</td><td className="font-semibold">{stats.resolution}</td></tr>
+              <tr><td className="pr-3 text-slate-300">Codec/Proto</td><td className="font-semibold text-sky-400">{stats.codec} / {stats.protocol}</td></tr>
+              <tr><td className="pr-3 text-slate-300">Render FPS</td><td className="font-semibold text-emerald-400">{stats.renderFps}</td></tr>
+              <tr><td className="pr-3 text-slate-300">Decode FPS</td><td className="font-semibold text-emerald-400">{stats.decodeFps}</td></tr>
+              <tr>
+                <td className="pr-3 text-slate-300">Frames Drop</td>
+                <td className={`font-semibold ${stats.droppedFrames > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {stats.droppedFrames}
+                </td>
+              </tr>
+              <tr>
+                <td className="pr-3 text-slate-300">Pkt Lost</td>
+                <td className={`font-semibold ${stats.packetsLost > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {stats.packetsLost}
+                </td>
+              </tr>
+              <tr>
+                <td className="pr-3 text-slate-300">Jitter</td>
+                <td className={`font-semibold ${stats.jitter > 200 ? 'text-red-400' : stats.jitter > 100 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                  {stats.jitter} ms
+                </td>
+              </tr>
+              <tr>
+                <td className="pr-3 text-slate-300">Buffer Lag</td>
+                <td className={`font-semibold ${stats.latencyMs > 500 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                  {stats.latencyMs} ms
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Control overlay */}
+      <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowTrace(!showTrace);
+          }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur shadow-lg transition-all cursor-pointer border ${
+            showTrace 
+              ? 'bg-orange-500/80 text-white border-orange-400' 
+              : 'bg-black/40 text-white/90 hover:bg-black/60 border-white/20 hover:border-white/40'
+          }`}
+          title="Toggle Debug Trace"
+        >
+          <Activity size={14} className="inline-block mr-1.5 -mt-0.5" />
+          Trace
+        </button>
+      </div>
     </div>
   );
 };

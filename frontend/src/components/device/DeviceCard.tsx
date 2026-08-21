@@ -60,9 +60,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
-          <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 font-mono">
-            Transport: {(device.rtsp_transport || 'auto').toUpperCase()}
-          </span>
           <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
             Segment: {(device.segment_duration || 1800) / 60}m
           </span>

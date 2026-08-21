@@ -400,8 +400,6 @@ export const DEVICE_BRAND_PRESETS = BRAND_PRESETS;
 
 export const FFMPEG_PRESET_TAGS = [
   { label: 'Drop Corrupt', value: '-fflags +genpts+discardcorrupt', desc: 'Drops corrupted frames' },
-  { label: 'TCP Transport', value: '-rtsp_transport tcp', desc: 'Force TCP' },
-  { label: 'UDP Transport', value: '-rtsp_transport udp', desc: 'Force UDP' },
   { label: 'No Audio', value: '-an', desc: 'Disable audio completely' }
 ];
 
