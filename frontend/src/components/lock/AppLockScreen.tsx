@@ -2,10 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppLock } from '../../context/AppLockContext';
 import { useTranslation } from '../../i18n';
-import { Fingerprint, Lock, KeyRound, Eye, EyeOff, LogOut, Loader2, AlertCircle } from 'lucide-react';
+import { Fingerprint, ScanFace, KeyRound, Lock, Eye, EyeOff, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
 import { clearPwaRefreshToken } from '../../utils/pwa';
+
+type BioType = 'face' | 'fingerprint' | 'key';
+
+const detectBioType = (): BioType => {
+  if (typeof window === 'undefined') return 'key';
+  const ua = navigator.userAgent || '';
+
+  // iOS Face ID detection (iPhone X and newer has viewport/screen height >= 812)
+  const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS) {
+    const isIPhoneWithFaceID = /iPhone/i.test(ua) && window.screen.height >= 812;
+    if (isIPhoneWithFaceID) return 'face';
+    return 'fingerprint';
+  }
+
+  // Android device biometrics (primarily fingerprint sensors)
+  if (/Android/i.test(ua)) {
+    return 'fingerprint';
+  }
+
+  // macOS with Touch ID
+  if (/Macintosh|Mac OS X/i.test(ua)) {
+    return 'fingerprint';
+  }
+
+  // Fallback: Windows Hello / Passkey / Generic Authenticator -> Key
+  return 'key';
+};
 
 export const AppLockScreen: React.FC = () => {
   const { user, checkAuth } = useAuth();
@@ -18,12 +46,25 @@ export const AppLockScreen: React.FC = () => {
   } = useAppLock();
 
   const navigate = useNavigate();
+  const [bioType] = useState<BioType>(() => detectBioType());
   const [usePasswordMode, setUsePasswordMode] = useState(!biometricEnabled);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isPromptingBio, setIsPromptingBio] = useState(false);
+
+  const getBioLabel = () => {
+    if (bioType === 'face') return t('lock.unlockFaceId');
+    if (bioType === 'fingerprint') return t('lock.unlockTouchId');
+    return t('lock.unlockKey');
+  };
+
+  const renderBioIcon = (size = 18) => {
+    if (bioType === 'face') return <ScanFace size={size} />;
+    if (bioType === 'fingerprint') return <Fingerprint size={size} />;
+    return <KeyRound size={size} />;
+  };
 
   // Trigger biometric prompt on mount if biometrics is enabled
   const triggerBiometricUnlock = async () => {
@@ -135,34 +176,27 @@ export const AppLockScreen: React.FC = () => {
         )}
 
         {/* ------------------------------------------- */}
-        {/* CASE 1: BIOMETRIC UNLOCK MODE               */}
+        {/* CASE 1: BIOMETRIC UNLOCK MODE (1 Button)   */}
         {/* ------------------------------------------- */}
         {biometricEnabled && !usePasswordMode ? (
-          <div className="w-full flex flex-col items-center gap-4">
-            <button
-              onClick={triggerBiometricUnlock}
-              disabled={isPromptingBio}
-              className="w-20 h-20 rounded-2xl bg-orange-50 border border-orange-200/80 hover:bg-orange-100 hover:border-orange-300 text-orange-600 flex items-center justify-center shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-              title="Click to authenticate with Face ID / Fingerprint / Device PIN"
-            >
-              {isPromptingBio ? (
-                <Loader2 size={36} className="animate-spin text-orange-600" />
-              ) : (
-                <Fingerprint size={42} className="animate-pulse" />
-              )}
-            </button>
-
-            <p className="text-xs text-slate-500 font-medium">
-              {t('lock.touchIdPrompt')}
-            </p>
-
+          <div className="w-full flex flex-col items-center gap-3">
             <button
               type="button"
               onClick={triggerBiometricUnlock}
               disabled={isPromptingBio}
-              className="btn btn-primary w-full py-2.5 text-sm font-semibold rounded-xl cursor-pointer"
+              className="btn btn-primary w-full py-3 px-4 text-sm font-semibold rounded-xl flex items-center justify-center gap-2.5 shadow-md active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60"
             >
-              {isPromptingBio ? t('lock.scanning') : t('lock.unlockBio')}
+              {isPromptingBio ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>{t('lock.scanning')}</span>
+                </>
+              ) : (
+                <>
+                  {renderBioIcon(19)}
+                  <span>{getBioLabel()}</span>
+                </>
+              )}
             </button>
 
             <button
@@ -171,7 +205,7 @@ export const AppLockScreen: React.FC = () => {
                 setError('');
                 setUsePasswordMode(true);
               }}
-              className="text-xs text-slate-500 hover:text-orange-600 font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+              className="text-xs text-slate-500 hover:text-orange-600 font-medium transition-colors cursor-pointer flex items-center gap-1.5 py-1"
             >
               <KeyRound size={13} />
               <span>{t('lock.usePassword')}</span>
@@ -230,9 +264,9 @@ export const AppLockScreen: React.FC = () => {
                   setUsePasswordMode(false);
                   triggerBiometricUnlock();
                 }}
-                className="w-full text-xs text-orange-600 hover:text-orange-700 font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full text-xs text-orange-600 hover:text-orange-700 font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 pt-1"
               >
-                <Fingerprint size={14} />
+                {renderBioIcon(14)}
                 <span>{t('lock.switchToBio')}</span>
               </button>
             )}
