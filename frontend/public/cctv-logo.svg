@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Minimal Dark Background -->
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+
+  <!-- CCTV Camera Icon Group (Centered, clean 2D perspective, tilted -22deg) -->
+  <g transform="rotate(-22 256 256)">
+    <!-- Mount Base on Wall (Right) -->
+    <rect x="392" y="165" width="24" height="70" rx="12" fill="#ffffff" />
+    
+    <!-- Mount Joint & Arm -->
+    <path d="M320 280 L404 280 L404 200" 
+          fill="none" 
+          stroke="#ffffff" 
+          stroke-width="22" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+    
+    <!-- Mount Joint Pivot Circle -->
+    <circle cx="320" cy="280" r="15" fill="#ea580c" />
+
+    <!-- Top Sunshield (Orange Accent) -->
+    <path d="M88 195 L346 195 C356 195 364 203 364 213 L364 222 L80 222 C72 222 68 212 74 206 L84 196 C85 195 86 195 88 195 Z" 
+          fill="#ea580c" />
+
+    <!-- Camera Main Body (Solid Clean White) -->
+    <rect x="130" y="222" width="220" height="116" rx="18" fill="#ffffff" />
+
+    <!-- Lens Front Bezel (Orange) -->
+    <path d="M130 234 L92 248 L92 312 L130 326 Z" fill="#ea580c" />
+    <rect x="80" y="244" width="16" height="72" rx="8" fill="#ea580c" />
+
+    <!-- Inner Lens Aperture (Dark Slate Core) -->
+    <circle cx="102" cy="280" r="14" fill="#0f172a" />
+    <circle cx="102" cy="280" r="6" fill="#ffffff" />
+
+    <!-- Recording Status Dot -->
+    <circle cx="165" cy="254" r="7" fill="#ea580c" />
+  </g>
+</svg>
