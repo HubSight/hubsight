@@ -21,6 +21,7 @@ var (
 		{Name: "audio_mode", Type: field.TypeString, Default: "auto"},
 		{Name: "extra_args", Type: field.TypeString, Default: ""},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "enable_ai", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}

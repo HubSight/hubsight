@@ -1,8 +1,20 @@
+log:
+  level: info
+
+api:
+  listen: ":1984"
+  origin: "*"
+
+rtsp:
+  listen: ":8554"
+
 webrtc:
+  listen: ":8555"
   candidates:
-    - 127.0.0.1:8555
-    - rtc.quoctran.space
+    - 138.2.87.35:8555
+    - rtc.quoctran.space:8555
     - stun:8555
+    - 127.0.0.1:8555
 streams:
   cam_5:
-    - rtsp://admin@138.2.87.35:8554/bunny
+    - rtsp://138.2.87.35:8554/bunny#video=copy#audio=copy#backchannel=0

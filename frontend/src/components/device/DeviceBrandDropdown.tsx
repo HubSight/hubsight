@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
+import { useTranslation } from '../../i18n';
 
 export interface DeviceBrandDropdownProps {
   selectedBrand: string;
@@ -11,6 +12,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
   selectedBrand,
   onSelectBrand
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,7 +50,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
   return (
     <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-slate-700 mb-1.5">
-        Device Brand (Brand Preset)
+        {t('device.brandPreset')}
       </label>
       <button
         type="button"
@@ -82,7 +84,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search brand (Hikvision, Dahua, EZVIZ, Tapo, Imou...)"
+                placeholder={t('device.brandSearchPlaceholder')}
                 className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
               />
               {searchQuery && (
@@ -101,7 +103,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
           <div className="overflow-y-auto py-1 divide-y divide-slate-50">
             {filteredPresets.length === 0 ? (
               <div className="px-4 py-4 text-center text-xs text-slate-400">
-                No matching brand found
+                {t('device.brandNotFound')}
               </div>
             ) : (
               filteredPresets.map((b) => (

@@ -37,6 +37,8 @@ type Camera struct {
 	ExtraArgs string `json:"extra_args,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
+	// EnableAi holds the value of the "enable_ai" field.
+	EnableAi bool `json:"enable_ai,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -70,7 +72,7 @@ func (*Camera) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case camera.FieldIsActive:
+		case camera.FieldIsActive, camera.FieldEnableAi:
 			values[i] = new(sql.NullBool)
 		case camera.FieldID, camera.FieldRtspPort, camera.FieldSegmentDuration:
 			values[i] = new(sql.NullInt64)
@@ -159,6 +161,12 @@ func (_m *Camera) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IsActive = value.Bool
 			}
+		case camera.FieldEnableAi:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field enable_ai", values[i])
+			} else if value.Valid {
+				_m.EnableAi = value.Bool
+			}
 		case camera.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -241,6 +249,9 @@ func (_m *Camera) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
+	builder.WriteString(", ")
+	builder.WriteString("enable_ai=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EnableAi))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

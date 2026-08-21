@@ -74,9 +74,13 @@ func New() *gin.Engine {
 			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)
 			protected.GET("/archive/:id/stream", recording.StreamHandler)
 
-			// Live streaming endpoints (WebRTC signaling)
+			// Live streaming endpoints (WebRTC signaling + on-demand AI viewer tracking)
 			protected.POST("/live/:id/webrtc", live.WebRTCHandler)
 			protected.GET("/live-status/:id", live.LiveStatusHandler)
+			// Heartbeat: frontend calls this every 15s while watching live.
+			// Vision-service only runs CV for cameras with active viewers.
+			protected.POST("/live/:id/ai/heartbeat", live.AIHeartbeatHandler)
+			protected.POST("/live/:id/ai/stop", live.AIStopHandler)
 		}
 	}
 

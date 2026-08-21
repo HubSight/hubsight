@@ -84,11 +84,17 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      RTSP_URL: rtsp://host.docker.internal:8554/cam
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
+      CORE_SERVICE_URL: "http://core-service:8080"
+      M2M_SECRET: "cctv-internal-m2m-secret"
+      # Read from go2rtc's internal RTSP server (same buffer as WebRTC stream)
+      # so that bounding box timestamps align with the video shown in the browser.
+      GO2RTC_RTSP_BASE: "rtsp://webrtc-service:8554"
       PROCESS_FPS: "0"
     depends_on:
       - mq-service
+      - webrtc-service
+      - core-service
 
   # 📹 WebRTC Media Server (Media RTP port 8555; Signaling routed via API Gateway :8088/webrtc)
   webrtc-service:
@@ -97,6 +103,8 @@ services:
     ports:
       - "8555:8555/tcp" # WebRTC TCP media
       - "8555:8555/udp" # WebRTC UDP media
+      # RTSP port 8554 is NOT exposed to host; only accessible within Docker network
+      # Vision-service uses it internally to read the same buffered stream as WebRTC.
     volumes:
       - ./go2rtc:/config
 

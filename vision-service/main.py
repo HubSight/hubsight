@@ -17,6 +17,9 @@ RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
 CORE_SERVICE_URL = os.getenv("CORE_SERVICE_URL", "http://core-service:8080")
 M2M_SECRET = os.getenv("M2M_SECRET", "cctv-internal-m2m-secret")
 PROCESS_FPS = int(os.getenv("PROCESS_FPS", "0"))
+# Internal go2rtc RTSP server – vision-service reads from the same buffered
+# source that WebRTC uses, ensuring temporal alignment with the live stream.
+GO2RTC_RTSP_BASE = os.getenv("GO2RTC_RTSP_BASE", "rtsp://webrtc-service:8554")
 
 active_streams = {} # cam_id -> {'thread': t, 'stop_event': e, 'host': url}
 detector = None
@@ -33,19 +36,29 @@ def get_ai_cameras():
     return []
 
 def stream_worker(cam_id, rtsp_url, stop_event):
-    logger.info(f"[{cam_id}] Starting AI processing thread for {rtsp_url}")
+    # Read from go2rtc's internal RTSP server so that vision-service and the
+    # WebRTC stream consume the same buffer, keeping detections temporally
+    # aligned with the video displayed in the browser.
+    go2rtc_url = f"{GO2RTC_RTSP_BASE}/cam_{cam_id}"
+    logger.info(f"[{cam_id}] Starting AI processing thread. Source: {go2rtc_url}")
     
     frame_interval = 1.0 / PROCESS_FPS if PROCESS_FPS > 0 else 0
     
     while not stop_event.is_set():
         os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
-        cap = cv2.VideoCapture(rtsp_url)
+        cap = cv2.VideoCapture(go2rtc_url)
+        # Keep OpenCV buffer at 1 frame to stay as close to live edge as possible.
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
         if not cap.isOpened():
-            logger.error(f"[{cam_id}] Failed to open RTSP stream. Retrying in 5s...")
+            logger.warning(f"[{cam_id}] go2rtc stream not ready yet. Retrying in 5s...")
             time.sleep(5)
             continue
+        
+        # Drain any frames that accumulated during connection setup so that the
+        # first processed frame is current (not stale).
+        for _ in range(5):
+            cap.grab()
             
         last_process_time = 0
         
@@ -67,7 +80,7 @@ def stream_worker(cam_id, rtsp_url, stop_event):
         finally:
             cap.release()
             if not stop_event.is_set():
-                logger.info(f"[{cam_id}] Connection dropped. Reconnecting...")
+                logger.info(f"[{cam_id}] Connection dropped. Reconnecting in 2s...")
                 time.sleep(2)
                 
     logger.info(f"[{cam_id}] Thread stopped.")
@@ -116,7 +129,7 @@ def main():
                 active_streams[cam_id]['thread'].join(timeout=5)
                 del active_streams[cam_id]
                 
-        time.sleep(10)
+        time.sleep(5)  # Poll every 5s for fast on-demand activation/deactivation
 
 if __name__ == "__main__":
     main()

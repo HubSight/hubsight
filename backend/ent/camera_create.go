@@ -145,6 +145,20 @@ func (_c *CameraCreate) SetNillableIsActive(v *bool) *CameraCreate {
 	return _c
 }
 
+// SetEnableAi sets the "enable_ai" field.
+func (_c *CameraCreate) SetEnableAi(v bool) *CameraCreate {
+	_c.mutation.SetEnableAi(v)
+	return _c
+}
+
+// SetNillableEnableAi sets the "enable_ai" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableEnableAi(v *bool) *CameraCreate {
+	if v != nil {
+		_c.SetEnableAi(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *CameraCreate) SetCreatedAt(v time.Time) *CameraCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -255,6 +269,10 @@ func (_c *CameraCreate) defaults() {
 		v := camera.DefaultIsActive
 		_c.mutation.SetIsActive(v)
 	}
+	if _, ok := _c.mutation.EnableAi(); !ok {
+		v := camera.DefaultEnableAi
+		_c.mutation.SetEnableAi(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := camera.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -306,6 +324,9 @@ func (_c *CameraCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Camera.is_active"`)}
+	}
+	if _, ok := _c.mutation.EnableAi(); !ok {
+		return &ValidationError{Name: "enable_ai", err: errors.New(`ent: missing required field "Camera.enable_ai"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Camera.created_at"`)}
@@ -378,6 +399,10 @@ func (_c *CameraCreate) createSpec() (*Camera, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(camera.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
+	}
+	if value, ok := _c.mutation.EnableAi(); ok {
+		_spec.SetField(camera.FieldEnableAi, field.TypeBool, value)
+		_node.EnableAi = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(camera.FieldCreatedAt, field.TypeTime, value)

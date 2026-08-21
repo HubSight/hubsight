@@ -8,6 +8,7 @@ import (
 	"cctv/ent"
 	"cctv/ent/camera"
 	"cctv/internal/database"
+	"cctv/internal/live"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,6 +35,7 @@ func ListAICamerasHandler(c *gin.Context) {
 		return
 	}
 
+	// Fetch all cameras with AI enabled from the database.
 	devices, err := database.Client.Camera.Query().
 		Where(camera.IsActive(true), camera.EnableAi(true)).
 		Order(ent.Asc("id")).
@@ -44,11 +46,26 @@ func ListAICamerasHandler(c *gin.Context) {
 		return
 	}
 
-	if devices == nil {
-		devices = []*ent.Camera{}
+	// Filter to only cameras that currently have at least one active viewer.
+	// This enables on-demand CV processing: vision-service only spins up threads
+	// when a real user is watching, saving significant server resources.
+	activeSet := make(map[int]struct{})
+	for _, id := range live.Tracker.ActiveCameraIDs() {
+		activeSet[id] = struct{}{}
 	}
 
-	c.JSON(http.StatusOK, devices)
+	var result []*ent.Camera
+	for _, d := range devices {
+		if _, watched := activeSet[d.ID]; watched {
+			result = append(result, d)
+		}
+	}
+
+	if result == nil {
+		result = []*ent.Camera{}
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func AddDeviceHandler(c *gin.Context) {

@@ -105,6 +105,11 @@ func IsActive(v bool) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldIsActive, v))
 }
 
+// EnableAi applies equality check predicate on the "enable_ai" field. It's identical to EnableAiEQ.
+func EnableAi(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldEnableAi, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldCreatedAt, v))
@@ -658,6 +663,16 @@ func IsActiveEQ(v bool) predicate.Camera {
 // IsActiveNEQ applies the NEQ predicate on the "is_active" field.
 func IsActiveNEQ(v bool) predicate.Camera {
 	return predicate.Camera(sql.FieldNEQ(FieldIsActive, v))
+}
+
+// EnableAiEQ applies the EQ predicate on the "enable_ai" field.
+func EnableAiEQ(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldEnableAi, v))
+}
+
+// EnableAiNEQ applies the NEQ predicate on the "enable_ai" field.
+func EnableAiNEQ(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldEnableAi, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 import type { DeviceFormData } from '../../types/device';
 import { BRAND_PRESETS, parseRtspUrl } from '../../constants/devicePresets';
 import { DeviceBrandDropdown } from './DeviceBrandDropdown';
+import { useTranslation } from '../../i18n';
 
 export interface DeviceGeneralTabProps {
   formData: DeviceFormData;
@@ -10,6 +11,8 @@ export interface DeviceGeneralTabProps {
 }
 
 export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, onChange }) => {
+  const { t } = useTranslation();
+
   const selectedPreset =
     BRAND_PRESETS.find((b) => b.id === formData.brand) || BRAND_PRESETS[0];
 
@@ -41,7 +44,6 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
   const handleToggleManual = () => {
     const nextIsManual = !formData.isManualUrl;
     if (!nextIsManual && formData.host) {
-      // Switching back to Builder: parse current URL to fill any missing builder fields
       const parsed = parseRtspUrl(formData.host);
       if (parsed) {
         onChange({
@@ -63,21 +65,21 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">Display Name</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('device.displayName')}</label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => onChange({ name: e.target.value })}
           className="input-field w-full"
-          placeholder="e.g. Front Door, Living Room, Backyard..."
+          placeholder={t('device.displayNamePlaceholder')}
           required
         />
       </div>
 
       <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
         <div>
-          <label className="block text-sm font-medium text-slate-800">Enable AI Detection</label>
-          <p className="text-[11px] text-slate-500 mt-0.5">Allow YOLO Vision Service to process this stream</p>
+          <label className="block text-sm font-medium text-slate-800">{t('device.enableAi')}</label>
+          <p className="text-[11px] text-slate-500 mt-0.5">{t('device.enableAiDesc')}</p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input
@@ -92,20 +94,20 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
 
       <DeviceBrandDropdown selectedBrand={formData.brand} onSelectBrand={handleBrandSelect} />
 
-      {/* Friendly URL Builder or Manual Input Toggle */}
+      {/* URL Builder or Manual Input */}
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3.5">
         <div className="flex justify-between items-center">
           <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
             {formData.isManualUrl
-              ? 'Manual RTSP URL Entry'
-              : `Standard URL Builder for ${selectedPreset.name}`}
+              ? t('device.manualUrlEntry')
+              : t('device.urlBuilderFor', { brand: selectedPreset.name })}
           </span>
           <button
             type="button"
             onClick={handleToggleManual}
             className="text-xs text-orange-600 hover:text-orange-700 font-medium underline cursor-pointer"
           >
-            {formData.isManualUrl ? '← Use Parameter Builder' : 'Direct URL Edit →'}
+            {formData.isManualUrl ? t('device.useParamBuilder') : t('device.directUrlEdit')}
           </button>
         </div>
 
@@ -120,7 +122,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">
-                IP Address / Host
+                {t('device.ipAddress')}
               </label>
               <input
                 type="text"
@@ -131,7 +133,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">RTSP Port</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('device.rtspPort')}</label>
               <input
                 type="number"
                 value={formData.builderPort}
@@ -145,7 +147,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">
-                Username <span className="text-slate-400 font-normal">(Optional)</span>
+                {t('device.username')} <span className="text-slate-400 font-normal">{t('device.usernameOptional')}</span>
               </label>
               <input
                 type="text"
@@ -157,20 +159,20 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">
-                Password <span className="text-slate-400 font-normal">(Optional)</span>
+                {t('device.password')} <span className="text-slate-400 font-normal">{t('device.passwordOptional')}</span>
               </label>
               <input
                 type="password"
                 value={formData.builderPass}
                 onChange={(e) => onChange({ builderPass: e.target.value })}
                 className="input-field w-full text-sm"
-                placeholder="Leave blank if none"
+                placeholder={t('device.passwordPlaceholder')}
               />
             </div>
             {formData.brand === 'generic' ? (
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-slate-600 mb-1">
-                  RTSP Stream Path
+                  {t('device.rtspStreamPath')}
                 </label>
                 <input
                   type="text"
@@ -180,14 +182,14 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                   placeholder="e.g. /stream, /live, /h264, /cam1..."
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Specify the custom stream endpoint or URI path exposed by your RTSP server
+                  {t('device.rtspStreamPathDesc')}
                 </p>
               </div>
             ) : (
               <>
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Channel Number
+                    {t('device.channelNumber')}
                   </label>
                   <input
                     type="number"
@@ -199,7 +201,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Stream Type</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('device.streamType')}</label>
                   <div className="grid grid-cols-2 gap-1 bg-white p-1 rounded-xl border border-slate-200">
                     <button
                       type="button"
@@ -210,7 +212,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Main Stream
+                      {t('device.mainStream')}
                     </button>
                     <button
                       type="button"
@@ -221,7 +223,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Sub Stream
+                      {t('device.subStream')}
                     </button>
                   </div>
                 </div>
@@ -231,7 +233,7 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
         ) : null}
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Complete RTSP URL</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('device.completeRtspUrl')}</label>
           <input
             type="text"
             value={formData.host}

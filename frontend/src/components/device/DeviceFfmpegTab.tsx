@@ -2,6 +2,7 @@ import React from 'react';
 import { Tv, Volume2 } from 'lucide-react';
 import type { DeviceFormData } from '../../types/device';
 import { FFMPEG_PRESET_TAGS } from '../../constants/devicePresets';
+import { useTranslation } from '../../i18n';
 
 export interface DeviceFfmpegTabProps {
   formData: DeviceFormData;
@@ -9,67 +10,69 @@ export interface DeviceFfmpegTabProps {
   onAddFfmpegTag: (tag: string) => void;
 }
 
-const SEGMENT_DURATIONS = [
-  { secs: 1800, label: '30 Minutes (Standard)' },
-  { secs: 900, label: '15 Minutes' },
-  { secs: 600, label: '10 Minutes' },
-  { secs: 300, label: '5 Minutes' },
-  { secs: 60, label: '1 Minute' }
-];
-
-const VIDEO_CODECS = [
-  {
-    id: 'copy',
-    title: 'Direct Stream Copy',
-    badge: '0% CPU',
-    desc: 'Preserves stream quality with zero server CPU re-encoding overhead.'
-  },
-  {
-    id: 'h264',
-    title: 'Re-encode H.264',
-    badge: 'libx264',
-    desc: 'Re-encodes video stream to standard H.264 for maximum device compatibility.'
-  }
-];
-
-const AUDIO_MODES = [
-  {
-    id: 'auto',
-    title: 'Auto Detect',
-    badge: 'Recommended',
-    desc: 'Automatically probes audio & transcodes PCM/G.711 to browser-compatible AAC.'
-  },
-  {
-    id: 'copy',
-    title: 'Direct Copy',
-    badge: 'Direct Copy',
-    desc: 'Preserves incoming raw audio stream directly from device without changes.'
-  },
-  {
-    id: 'aac',
-    title: 'Encode AAC',
-    badge: 'Transcode',
-    desc: 'Forces audio stream transcoding into standard AAC format.'
-  },
-  {
-    id: 'disabled',
-    title: 'Mute Audio',
-    badge: 'Mute (-an)',
-    desc: 'Disables audio track recording for privacy.'
-  }
-];
-
 export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
   formData,
   onChange,
   onAddFfmpegTag
 }) => {
+  const { t } = useTranslation();
+
+  const SEGMENT_DURATIONS = [
+    { secs: 1800, label: t('device.seg30m') },
+    { secs: 900, label: t('device.seg15m') },
+    { secs: 600, label: t('device.seg10m') },
+    { secs: 300, label: t('device.seg5m') },
+    { secs: 60, label: t('device.seg1m') }
+  ];
+
+  const VIDEO_CODECS = [
+    {
+      id: 'copy',
+      title: t('device.codecCopyTitle'),
+      badge: '0% CPU',
+      desc: t('device.codecCopyDesc')
+    },
+    {
+      id: 'h264',
+      title: t('device.codecH264Title'),
+      badge: 'libx264',
+      desc: t('device.codecH264Desc')
+    }
+  ];
+
+  const AUDIO_MODES = [
+    {
+      id: 'auto',
+      title: t('device.audioAutoTitle'),
+      badge: 'Recommended',
+      desc: t('device.audioAutoDesc')
+    },
+    {
+      id: 'copy',
+      title: t('device.audioCopyTitle'),
+      badge: 'Direct Copy',
+      desc: t('device.audioCopyDesc')
+    },
+    {
+      id: 'aac',
+      title: t('device.audioAacTitle'),
+      badge: 'Transcode',
+      desc: t('device.audioAacDesc')
+    },
+    {
+      id: 'disabled',
+      title: t('device.audioMuteTitle'),
+      badge: 'Mute (-an)',
+      desc: t('device.audioMuteDesc')
+    }
+  ];
+
   return (
     <div className="space-y-4">
       {/* Segment Duration */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">
-          Video Segment Duration
+          {t('device.segmentDuration')}
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {SEGMENT_DURATIONS.map((item) => (
@@ -93,7 +96,7 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
           <Tv size={16} className="text-orange-600" />
-          Video Codec Mode
+          {t('device.videoCodecMode')}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {VIDEO_CODECS.map((vc) => (
@@ -122,7 +125,7 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
           <Volume2 size={16} className="text-orange-600" />
-          Audio Processing Mode
+          {t('device.audioMode')}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {AUDIO_MODES.map((am) => (
@@ -153,10 +156,10 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
         </div>
       </div>
 
-      {/* Quick FFmpeg presets add */}
+      {/* Quick FFmpeg presets */}
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
         <label className="block text-sm font-medium text-slate-700 mb-2">
-          Quick FFmpeg Options (Click to add)
+          {t('device.quickFfmpegOptions')}
         </label>
         <div className="flex flex-wrap gap-1.5 mb-3">
           {FFMPEG_PRESET_TAGS.map((tag) => (
@@ -174,7 +177,7 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">
-            Custom FFmpeg Arguments (Extra Arguments)
+            {t('device.customFfmpegArgs')}
           </label>
           <input
             type="text"
@@ -184,7 +187,7 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
             placeholder="e.g. -fflags nobuffer -loglevel warning"
           />
           <p className="text-[11px] text-slate-400 mt-1">
-            These flags are inserted directly into the FFmpeg command before output.
+            {t('device.customFfmpegArgsDesc')}
           </p>
         </div>
       </div>

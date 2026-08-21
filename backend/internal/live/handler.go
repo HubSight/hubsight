@@ -8,11 +8,17 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"cctv/internal/database"
 
 	"github.com/gin-gonic/gin"
 )
+
+func init() {
+	// Start background cleanup of stale viewers at startup.
+	Tracker.StartCleanup()
+}
 
 // WebRTCHandler acts as a signaling proxy for go2rtc.
 func WebRTCHandler(c *gin.Context) {
@@ -52,7 +58,22 @@ func WebRTCHandler(c *gin.Context) {
 	}
 
 	// 1. Ensure the stream is registered in webrtc-service dynamically
-	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s", webrtcURL, url.QueryEscape(camName), url.QueryEscape(cam.Host))
+	// #video=copy#audio=copy: pass bitstream straight through without re-encoding (lowest latency)
+	// #backchannel=0: skip 2-way audio handshake probe
+	srcURL := cam.Host
+	if !strings.Contains(srcURL, "#") {
+		switch strings.ToLower(cam.RtspTransport) {
+		case "tcp":
+			srcURL = fmt.Sprintf("%s#video=copy#audio=copy#backchannel=0#transport=tcp", srcURL)
+		case "udp":
+			srcURL = fmt.Sprintf("%s#video=copy#audio=copy#backchannel=0#transport=udp", srcURL)
+		default:
+			// Auto: let go2rtc negotiate transport, still copy bitstream
+			srcURL = fmt.Sprintf("%s#video=copy#audio=copy#backchannel=0", srcURL)
+		}
+	}
+
+	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s", webrtcURL, url.QueryEscape(camName), url.QueryEscape(srcURL))
 	putReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPut, putURL, nil)
 	if err == nil {
 		client := &http.Client{}
@@ -118,5 +139,56 @@ func LiveStatusHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"camera_id": camID,
 		"is_live":   cam.IsActive,
+	})
+}
+
+// AIHeartbeatHandler registers or refreshes a viewer for on-demand CV processing.
+// The frontend calls this every 15 seconds while the user is watching a live stream.
+// The viewer_id must be a stable UUID generated per browser session.
+// When the first viewer registers for a camera, the vision-service will automatically
+// pick it up on its next poll cycle and begin AI detection.
+func AIHeartbeatHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	camID, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
+		return
+	}
+
+	viewerID := c.Query("viewer_id")
+	if viewerID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "viewer_id is required"})
+		return
+	}
+
+	firstViewer := Tracker.RegisterViewer(camID, viewerID)
+	c.JSON(http.StatusOK, gin.H{
+		"camera_id":    camID,
+		"viewer_id":    viewerID,
+		"first_viewer": firstViewer, // true when CV was just activated for this camera
+	})
+}
+
+// AIStopHandler explicitly unregisters a viewer, freeing CV resources immediately
+// instead of waiting for the heartbeat TTL to expire.
+func AIStopHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	camID, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
+		return
+	}
+
+	viewerID := c.Query("viewer_id")
+	if viewerID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "viewer_id is required"})
+		return
+	}
+
+	lastViewer := Tracker.UnregisterViewer(camID, viewerID)
+	c.JSON(http.StatusOK, gin.H{
+		"camera_id":   camID,
+		"viewer_id":   viewerID,
+		"last_viewer": lastViewer, // true when CV was just deactivated for this camera
 	})
 }
