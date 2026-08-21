@@ -489,7 +489,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       )}
 
       {/* Control overlay */}
-      <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-40 flex items-center gap-2">
         <button
           onClick={(e) => {
             e.stopPropagation();

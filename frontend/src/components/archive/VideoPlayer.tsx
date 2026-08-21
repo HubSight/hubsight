@@ -15,6 +15,7 @@ import type { Recording } from '../../types/recording';
 import { LivePlayer } from './LivePlayer';
 import { FullscreenEnterIcon, FullscreenExitIcon } from '../common/FullscreenIcons';
 import { useTranslation } from '../../i18n';
+import { useOrientation } from '../../hooks/useOrientation';
 
 interface VideoPlayerProps {
   mode: 'live' | 'archive';
@@ -46,6 +47,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const containerRef = externalContainerRef || internalContainerRef;
   const progressBarRef = useRef<HTMLDivElement>(null);
 
+  const { isLandscape, isMobile } = useOrientation();
+
   // Playback & UI State
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -54,7 +57,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [volume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
+  const [isCssFullscreen, setIsCssFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
@@ -81,7 +85,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     document.body.removeChild(link);
   };
 
-
   // Format seconds to mm:ss
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || seconds < 0) return '00:00';
@@ -96,15 +99,56 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return dayjs(isoString).format('HH:mm:ss');
   };
 
-  // Fullscreen change listener
+  const isFullscreen = isNativeFullscreen || isCssFullscreen;
+
+  // Auto-handle mobile orientation change:
+  // - Rotate to Landscape -> Trigger Fullscreen
+  // - Rotate back to Portrait -> Exit Fullscreen
+  useEffect(() => {
+    if (!isMobile) return;
+
+    if (isLandscape) {
+      setIsCssFullscreen(true);
+      const container = containerRef.current;
+      if (
+        container &&
+        !document.fullscreenElement &&
+        !(document as any).webkitFullscreenElement
+      ) {
+        if (container.requestFullscreen) {
+          container.requestFullscreen().catch(() => { });
+        } else if ((container as any).webkitRequestFullscreen) {
+          (container as any).webkitRequestFullscreen().catch(() => { });
+        }
+      }
+    } else {
+      setIsCssFullscreen(false);
+      if (
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement
+      ) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => { });
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen().catch(() => { });
+        }
+      }
+    }
+  }, [isLandscape, isMobile, containerRef]);
+
+  // Fullscreen change listener for Native Fullscreen API
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!(
+      const isFull = !!(
         document.fullscreenElement ||
         (document as any).webkitFullscreenElement ||
         (document as any).mozFullScreenElement ||
         (document as any).msFullscreenElement
-      ));
+      );
+      setIsNativeFullscreen(isFull);
+      if (!isFull && !isLandscape) {
+        setIsCssFullscreen(false);
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -117,22 +161,37 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
-  }, []);
+  }, [isLandscape]);
 
   const toggleFullscreen = async () => {
     const container = containerRef.current;
     if (!container) return;
 
-    try {
-      const isFull = document.fullscreenElement || (document as any).webkitFullscreenElement;
-
-      if (!isFull) {
+    if (isFullscreen) {
+      // Exit fullscreen
+      setIsCssFullscreen(false);
+      try {
+        if (
+          document.fullscreenElement ||
+          (document as any).webkitFullscreenElement
+        ) {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          } else if ((document as any).webkitExitFullscreen) {
+            await (document as any).webkitExitFullscreen();
+          }
+        }
+      } catch (err) {
+        console.error('Exit fullscreen error:', err);
+      }
+    } else {
+      // Enter fullscreen: use CSS viewport as guarantee + try native
+      setIsCssFullscreen(true);
+      try {
         if (container.requestFullscreen) {
           await container.requestFullscreen();
         } else if ((container as any).webkitRequestFullscreen) {
           await (container as any).webkitRequestFullscreen();
-        } else if ((container as any).msRequestFullscreen) {
-          await (container as any).msRequestFullscreen();
         } else {
           // Fallback for iOS Safari which only supports fullscreen directly on <video> elements
           const videoElement = videoRef.current || container.querySelector('video');
@@ -140,17 +199,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             (videoElement as any).webkitEnterFullscreen();
           }
         }
-      } else {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen();
-        } else if ((document as any).msExitFullscreen) {
-          await (document as any).msExitFullscreen();
-        }
+      } catch (err) {
+        console.debug('Native fullscreen not permitted, relying on CSS viewport fullscreen:', err);
       }
-    } catch (err) {
-      console.error('Fullscreen toggle error:', err);
     }
   };
 
