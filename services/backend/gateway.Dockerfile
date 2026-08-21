@@ -2,18 +2,18 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
-COPY frontend/package.json frontend/pnpm-lock.yaml* frontend/pnpm-workspace.yaml* frontend/.npmrc* ./
+COPY webapp/package.json webapp/pnpm-lock.yaml* webapp/pnpm-workspace.yaml* webapp/.npmrc* ./
 RUN pnpm install --no-frozen-lockfile
-COPY frontend/ .
+COPY webapp/ .
 COPY .git/ ./.git/
 RUN pnpm run build
 
 # Stage 2: Build Backend API Gateway (Go)
 FROM golang:alpine AS backend-builder
 WORKDIR /app
-COPY backend/go.mod backend/go.sum ./
+COPY services/backend/go.mod services/backend/go.sum ./
 RUN go mod download
-COPY backend/ .
+COPY services/backend/ .
 RUN go build -o dist/gateway cmd/gateway/main.go
 
 # Stage 3: Final Production Image

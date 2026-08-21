@@ -1,5 +1,5 @@
 export interface NvrCameraStatus {
-  camera_id: number;
+  camera_id: string;
   name: string;
   host: string;
   status: 'recording' | 'stalled' | 'disabled';

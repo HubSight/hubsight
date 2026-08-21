@@ -17,7 +17,9 @@ import (
 type Recording struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
+	// CameraID holds the value of the "camera_id" field.
+	CameraID string `json:"camera_id,omitempty"`
 	// StartAt holds the value of the "start_at" field.
 	StartAt time.Time `json:"start_at,omitempty"`
 	// EndAt holds the value of the "end_at" field.
@@ -32,9 +34,8 @@ type Recording struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RecordingQuery when eager-loading is set.
-	Edges             RecordingEdges `json:"edges"`
-	camera_recordings *int
-	selectValues      sql.SelectValues
+	Edges        RecordingEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // RecordingEdges holds the relations/edges for other nodes in the graph.
@@ -62,14 +63,12 @@ func (*Recording) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case recording.FieldID, recording.FieldDurationSeconds, recording.FieldSizeBytes:
+		case recording.FieldDurationSeconds, recording.FieldSizeBytes:
 			values[i] = new(sql.NullInt64)
-		case recording.FieldFilePath:
+		case recording.FieldID, recording.FieldCameraID, recording.FieldFilePath:
 			values[i] = new(sql.NullString)
 		case recording.FieldStartAt, recording.FieldEndAt, recording.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case recording.ForeignKeys[0]: // camera_recordings
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -86,11 +85,17 @@ func (_m *Recording) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case recording.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value.Valid {
+				_m.ID = value.String
 			}
-			_m.ID = int(value.Int64)
+		case recording.FieldCameraID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field camera_id", values[i])
+			} else if value.Valid {
+				_m.CameraID = value.String
+			}
 		case recording.FieldStartAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field start_at", values[i])
@@ -126,13 +131,6 @@ func (_m *Recording) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
-			}
-		case recording.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field camera_recordings", value)
-			} else if value.Valid {
-				_m.camera_recordings = new(int)
-				*_m.camera_recordings = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -175,6 +173,9 @@ func (_m *Recording) String() string {
 	var builder strings.Builder
 	builder.WriteString("Recording(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("camera_id=")
+	builder.WriteString(_m.CameraID)
+	builder.WriteString(", ")
 	builder.WriteString("start_at=")
 	builder.WriteString(_m.StartAt.Format(time.ANSIC))
 	builder.WriteString(", ")

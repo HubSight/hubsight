@@ -7,7 +7,6 @@ import (
 
 	"cctv/ent"
 	"cctv/ent/recording"
-	"cctv/ent/setting"
 	"cctv/internal/database"
 	"github.com/minio/minio-go/v7"
 )
@@ -28,7 +27,7 @@ var CurrentRetentionStats RetentionStats
 
 // CleanupOldArchives scans for and deletes all recordings older than retention days from S3 and Ent DB
 func CleanupOldArchives(ctx context.Context) (int, int64, error) {
-	globalSettings, err := database.Client.Setting.Query().Where(setting.ID("global")).Only(ctx)
+	globalSettings, err := database.Client.Setting.Query().Only(ctx)
 	if err != nil {
 		globalSettings = &ent.Setting{
 			RetentionDays: 4,
@@ -72,7 +71,7 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 
 		// 2. Delete metadata row from Database
 		if err := database.Client.Recording.DeleteOne(rec).Exec(ctx); err != nil {
-			log.Printf("[Retention Worker] Warning: Failed to remove DB record for %s (ID: %d): %v", rec.FilePath, rec.ID, err)
+			log.Printf("[Retention Worker] Warning: Failed to remove DB record for %s (ID: %s): %v", rec.FilePath, rec.ID, err)
 			continue
 		}
 
@@ -91,7 +90,6 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 
 	return deletedCount, freedBytes, nil
 }
-
 
 // CleanupAllArchives scans for and deletes ALL recordings from S3 and Ent DB
 func CleanupAllArchives(ctx context.Context) (int, int64, error) {
@@ -124,7 +122,7 @@ func CleanupAllArchives(ctx context.Context) (int, int64, error) {
 
 		// 2. Delete metadata row from Database
 		if err := database.Client.Recording.DeleteOne(rec).Exec(ctx); err != nil {
-			log.Printf("[Retention Worker] Warning: Failed to remove DB record for %s (ID: %d): %v", rec.FilePath, rec.ID, err)
+			log.Printf("[Retention Worker] Warning: Failed to remove DB record for %s (ID: %s): %v", rec.FilePath, rec.ID, err)
 			continue
 		}
 

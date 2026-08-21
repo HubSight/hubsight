@@ -22,7 +22,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 		segDuration = 1800 // Default to 30 minutes
 	}
 	segmentTime := fmt.Sprintf("%d", segDuration)
-	outPattern := filepath.Join(cfg.OutDir, fmt.Sprintf("cam%d_%%Y%%m%%d_%%H%%M%%S.mp4", cfg.CameraID))
+	outPattern := filepath.Join(cfg.OutDir, fmt.Sprintf("cam%s_%%Y%%m%%d_%%H%%M%%S.mp4", cfg.CameraID))
 
 	args := []string{}
 
@@ -46,7 +46,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	// Audio Handling
 	switch cfg.AudioMode {
 	case "disabled", "none":
-		log.Printf("[Cam %d] Audio disabled by configuration.", cfg.CameraID)
+		log.Printf("[Cam %s] Audio disabled by configuration.", cfg.CameraID)
 		args = append(args, "-an")
 	case "copy":
 		args = append(args, "-c:a", "copy")
@@ -56,7 +56,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 		// Auto detect audio stream
 		hasAudio, audioCodec := ProbeAudioStream(ctx, cfg.Host, transport)
 		if hasAudio {
-			log.Printf("[Cam %d] Detected audio stream (codec: %s). Recording audio...", cfg.CameraID, audioCodec)
+			log.Printf("[Cam %s] Detected audio stream (codec: %s). Recording audio...", cfg.CameraID, audioCodec)
 			if audioCodec == "aac" {
 				args = append(args, "-c:a", "copy")
 			} else {
@@ -64,7 +64,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 			}
 			args = append(args, "-map", "0:v:0", "-map", "0:a:0")
 		} else {
-			log.Printf("[Cam %d] No audio stream detected. Recording video only.", cfg.CameraID)
+			log.Printf("[Cam %s] No audio stream detected. Recording video only.", cfg.CameraID)
 			args = append(args, "-an")
 		}
 	}
@@ -88,7 +88,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	args = append(args, outPattern)
 
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
-	log.Printf("[Cam %d] Running FFmpeg: %s", cfg.CameraID, strings.Join(cmd.Args, " "))
+	log.Printf("[Cam %s] Running FFmpeg: %s", cfg.CameraID, strings.Join(cmd.Args, " "))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -96,7 +96,7 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	go MonitorSegments(ctx, cfg.CameraID, cfg.Name, cfg.OutDir, segDuration)
 
 	if err := cmd.Run(); err != nil {
-		log.Printf("[Cam %d] FFmpeg exited with error: %v", cfg.CameraID, err)
+		log.Printf("[Cam %s] FFmpeg exited with error: %v", cfg.CameraID, err)
 		return err
 	}
 

@@ -11,14 +11,15 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/google/uuid"
 )
 
 // Session is the model entity for the Session schema.
 type Session struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID string `json:"user_id,omitempty"`
 	// TokenHash holds the value of the "token_hash" field.
 	TokenHash []byte `json:"token_hash,omitempty"`
 	// RefreshTokenHash holds the value of the "refresh_token_hash" field.
@@ -33,9 +34,8 @@ type Session struct {
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SessionQuery when eager-loading is set.
-	Edges         SessionEdges `json:"edges"`
-	user_sessions *int
-	selectValues  sql.SelectValues
+	Edges        SessionEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // SessionEdges holds the relations/edges for other nodes in the graph.
@@ -67,12 +67,10 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case session.FieldIsPwa:
 			values[i] = new(sql.NullBool)
+		case session.FieldID, session.FieldUserID:
+			values[i] = new(sql.NullString)
 		case session.FieldExpiresAt, session.FieldCreatedAt, session.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
-		case session.FieldID:
-			values[i] = new(uuid.UUID)
-		case session.ForeignKeys[0]: // user_sessions
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -89,10 +87,16 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case session.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
-			} else if value != nil {
-				_m.ID = *value
+			} else if value.Valid {
+				_m.ID = value.String
+			}
+		case session.FieldUserID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value.Valid {
+				_m.UserID = value.String
 			}
 		case session.FieldTokenHash:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -129,13 +133,6 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
 				_m.LastSeenAt = value.Time
-			}
-		case session.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field user_sessions", value)
-			} else if value.Valid {
-				_m.user_sessions = new(int)
-				*_m.user_sessions = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -178,6 +175,9 @@ func (_m *Session) String() string {
 	var builder strings.Builder
 	builder.WriteString("Session(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("user_id=")
+	builder.WriteString(_m.UserID)
+	builder.WriteString(", ")
 	builder.WriteString("token_hash=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TokenHash))
 	builder.WriteString(", ")

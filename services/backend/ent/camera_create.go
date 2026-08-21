@@ -187,15 +187,29 @@ func (_c *CameraCreate) SetNillableUpdatedAt(v *time.Time) *CameraCreate {
 	return _c
 }
 
+// SetID sets the "id" field.
+func (_c *CameraCreate) SetID(v string) *CameraCreate {
+	_c.mutation.SetID(v)
+	return _c
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (_c *CameraCreate) SetNillableID(v *string) *CameraCreate {
+	if v != nil {
+		_c.SetID(*v)
+	}
+	return _c
+}
+
 // AddRecordingIDs adds the "recordings" edge to the Recording entity by IDs.
-func (_c *CameraCreate) AddRecordingIDs(ids ...int) *CameraCreate {
+func (_c *CameraCreate) AddRecordingIDs(ids ...string) *CameraCreate {
 	_c.mutation.AddRecordingIDs(ids...)
 	return _c
 }
 
 // AddRecordings adds the "recordings" edges to the Recording entity.
 func (_c *CameraCreate) AddRecordings(v ...*Recording) *CameraCreate {
-	ids := make([]int, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -281,6 +295,10 @@ func (_c *CameraCreate) defaults() {
 		v := camera.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.ID(); !ok {
+		v := camera.DefaultID()
+		_c.mutation.SetID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -348,8 +366,13 @@ func (_c *CameraCreate) sqlSave(ctx context.Context) (*Camera, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(string); ok {
+			_node.ID = id
+		} else {
+			return nil, fmt.Errorf("unexpected Camera.ID type: %T", _spec.ID.Value)
+		}
+	}
 	_c.mutation.id = &_node.ID
 	_c.mutation.done = true
 	return _node, nil
@@ -358,8 +381,12 @@ func (_c *CameraCreate) sqlSave(ctx context.Context) (*Camera, error) {
 func (_c *CameraCreate) createSpec() (*Camera, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Camera{config: _c.config}
-		_spec = sqlgraph.NewCreateSpec(camera.Table, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(camera.Table, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeString))
 	)
+	if id, ok := _c.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = id
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(camera.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -420,7 +447,7 @@ func (_c *CameraCreate) createSpec() (*Camera, *sqlgraph.CreateSpec) {
 			Columns: []string{camera.RecordingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -476,10 +503,6 @@ func (_c *CameraCreateBulk) Save(ctx context.Context) ([]*Camera, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

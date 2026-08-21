@@ -24,7 +24,6 @@ type RecordingQuery struct {
 	inters     []Interceptor
 	predicates []predicate.Recording
 	withCamera *CameraQuery
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -107,8 +106,8 @@ func (_q *RecordingQuery) FirstX(ctx context.Context) *Recording {
 
 // FirstID returns the first Recording ID from the query.
 // Returns a *NotFoundError when no Recording ID was found.
-func (_q *RecordingQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (_q *RecordingQuery) FirstID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -120,7 +119,7 @@ func (_q *RecordingQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *RecordingQuery) FirstIDX(ctx context.Context) int {
+func (_q *RecordingQuery) FirstIDX(ctx context.Context) string {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -158,8 +157,8 @@ func (_q *RecordingQuery) OnlyX(ctx context.Context) *Recording {
 // OnlyID is like Only, but returns the only Recording ID in the query.
 // Returns a *NotSingularError when more than one Recording ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *RecordingQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (_q *RecordingQuery) OnlyID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -175,7 +174,7 @@ func (_q *RecordingQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *RecordingQuery) OnlyIDX(ctx context.Context) int {
+func (_q *RecordingQuery) OnlyIDX(ctx context.Context) string {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -203,7 +202,7 @@ func (_q *RecordingQuery) AllX(ctx context.Context) []*Recording {
 }
 
 // IDs executes the query and returns a list of Recording IDs.
-func (_q *RecordingQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (_q *RecordingQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
@@ -215,7 +214,7 @@ func (_q *RecordingQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *RecordingQuery) IDsX(ctx context.Context) []int {
+func (_q *RecordingQuery) IDsX(ctx context.Context) []string {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -299,12 +298,12 @@ func (_q *RecordingQuery) WithCamera(opts ...func(*CameraQuery)) *RecordingQuery
 // Example:
 //
 //	var v []struct {
-//		StartAt time.Time `json:"start_at,omitempty"`
+//		CameraID string `json:"camera_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Recording.Query().
-//		GroupBy(recording.FieldStartAt).
+//		GroupBy(recording.FieldCameraID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *RecordingQuery) GroupBy(field string, fields ...string) *RecordingGroupBy {
@@ -322,11 +321,11 @@ func (_q *RecordingQuery) GroupBy(field string, fields ...string) *RecordingGrou
 // Example:
 //
 //	var v []struct {
-//		StartAt time.Time `json:"start_at,omitempty"`
+//		CameraID string `json:"camera_id,omitempty"`
 //	}
 //
 //	client.Recording.Query().
-//		Select(recording.FieldStartAt).
+//		Select(recording.FieldCameraID).
 //		Scan(ctx, &v)
 func (_q *RecordingQuery) Select(fields ...string) *RecordingSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -370,18 +369,11 @@ func (_q *RecordingQuery) prepareQuery(ctx context.Context) error {
 func (_q *RecordingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Recording, error) {
 	var (
 		nodes       = []*Recording{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
 			_q.withCamera != nil,
 		}
 	)
-	if _q.withCamera != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, recording.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Recording).scanValues(nil, columns)
 	}
@@ -410,13 +402,10 @@ func (_q *RecordingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Re
 }
 
 func (_q *RecordingQuery) loadCamera(ctx context.Context, query *CameraQuery, nodes []*Recording, init func(*Recording), assign func(*Recording, *Camera)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Recording)
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Recording)
 	for i := range nodes {
-		if nodes[i].camera_recordings == nil {
-			continue
-		}
-		fk := *nodes[i].camera_recordings
+		fk := nodes[i].CameraID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -433,7 +422,7 @@ func (_q *RecordingQuery) loadCamera(ctx context.Context, query *CameraQuery, no
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "camera_recordings" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "camera_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -452,7 +441,7 @@ func (_q *RecordingQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (_q *RecordingQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(recording.Table, recording.Columns, sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(recording.Table, recording.Columns, sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -466,6 +455,9 @@ func (_q *RecordingQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != recording.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withCamera != nil {
+			_spec.Node.AddColumnOnce(recording.FieldCameraID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

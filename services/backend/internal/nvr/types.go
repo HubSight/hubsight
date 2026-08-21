@@ -17,19 +17,19 @@ type SystemStats struct {
 }
 
 type StorageStats struct {
-	UsedBytes          int64                   `json:"used_bytes"`
-	QuotaBytes         int64                   `json:"quota_bytes"`
-	UsedPercentage     float64                 `json:"used_percentage"`
-	TotalSegmentsCount int                     `json:"total_segments_count"`
-	OldestSegmentAt    *time.Time              `json:"oldest_segment_at,omitempty"`
-	NewestSegmentAt    *time.Time              `json:"newest_segment_at,omitempty"`
-	RetentionDays      int                     `json:"retention_days"`
-	CleanupIntervalDays int                    `json:"cleanup_interval_days"`
-	RetentionStats     *storage.RetentionStats `json:"retention_stats,omitempty"`
+	UsedBytes           int64                   `json:"used_bytes"`
+	QuotaBytes          int64                   `json:"quota_bytes"`
+	UsedPercentage      float64                 `json:"used_percentage"`
+	TotalSegmentsCount  int                     `json:"total_segments_count"`
+	OldestSegmentAt     *time.Time              `json:"oldest_segment_at,omitempty"`
+	NewestSegmentAt     *time.Time              `json:"newest_segment_at,omitempty"`
+	RetentionDays       int                     `json:"retention_days"`
+	CleanupIntervalDays int                     `json:"cleanup_interval_days"`
+	RetentionStats      *storage.RetentionStats `json:"retention_stats,omitempty"`
 }
 
 type CameraRecorderStatus struct {
-	CameraID              int        `json:"camera_id"`
+	CameraID              string     `json:"camera_id"`
 	Name                  string     `json:"name"`
 	Host                  string     `json:"host"`
 	Brand                 string     `json:"brand"`

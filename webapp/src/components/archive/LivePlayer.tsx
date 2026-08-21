@@ -5,7 +5,7 @@ import { useSocket } from '../../context/SocketContext';
 import axiosClient from '../../api/axiosClient';
 
 interface LivePlayerProps {
-  cameraId: number;
+  cameraId: string;
   onLiveStatusChange?: (isLive: boolean) => void;
 }
 

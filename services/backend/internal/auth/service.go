@@ -12,11 +12,10 @@ import (
 	"time"
 
 	"cctv/ent"
-	"cctv/ent/user"
 	"cctv/ent/session"
+	"cctv/ent/user"
 	"cctv/internal/database"
 
-	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -37,10 +36,10 @@ func hashPassword(password string) (string, error) {
 	hash := argon2.IDKey([]byte(password), salt, timeCost, memory, threads, keyLen)
 	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
 	b64Hash := base64.RawStdEncoding.EncodeToString(hash)
-	
+
 	encodedHash := fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
 		argon2.Version, memory, timeCost, threads, b64Salt, b64Hash)
-	
+
 	return encodedHash, nil
 }
 
@@ -49,17 +48,17 @@ func verifyPassword(password, encodedHash string) (bool, error) {
 	if len(parts) != 6 {
 		return false, errors.New("invalid hash format")
 	}
-	
+
 	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
 		return false, err
 	}
-	
+
 	hash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
 		return false, err
 	}
-	
+
 	compareHash := argon2.IDKey([]byte(password), salt, timeCost, memory, threads, uint32(len(hash)))
 	return bytes.Equal(hash, compareHash), nil
 }
@@ -82,21 +81,20 @@ func Login(ctx context.Context, username, password string, isPWA bool) (*ent.Ses
 	if err != nil {
 		return nil, "", "", errors.New("invalid credentials")
 	}
-	
+
 	if !u.IsActive {
 		return nil, "", "", errors.New("user is inactive")
 	}
-	
+
 	match, err := verifyPassword(password, u.PasswordHash)
 	if err != nil || !match {
 		return nil, "", "", errors.New("invalid credentials")
 	}
-	
+
 	token := GenerateToken()
 	expiresAt := time.Now().Add(24 * 7 * time.Hour) // 1 week
-	
+
 	createSess := database.Client.Session.Create().
-		SetID(uuid.New()).
 		SetUser(u).
 		SetTokenHash(hashToken(token)).
 		SetExpiresAt(expiresAt).
@@ -107,16 +105,16 @@ func Login(ctx context.Context, username, password string, isPWA bool) (*ent.Ses
 		refreshToken = GenerateToken()
 		createSess.SetRefreshTokenHash(hashToken(refreshToken))
 	}
-	
+
 	sess, err := createSess.Save(ctx)
 	if err != nil {
 		return nil, "", "", err
 	}
-	
+
 	database.Client.User.UpdateOne(u).
 		SetLastLoginAt(time.Now()).
 		Exec(ctx)
-	
+
 	return sess, token, refreshToken, nil
 }
 
@@ -172,12 +170,12 @@ func GetUserBySession(ctx context.Context, token string) (*ent.User, error) {
 	if err != nil {
 		return nil, errors.New("unauthorized")
 	}
-	
+
 	u := sess.Edges.User
 	if u == nil || !u.IsActive {
 		return nil, errors.New("unauthorized")
 	}
-	
+
 	// Update last_seen
 	database.Client.Session.UpdateOne(sess).
 		SetLastSeenAt(time.Now()).

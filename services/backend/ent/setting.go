@@ -15,7 +15,7 @@ import (
 type Setting struct {
 	config `json:"-"`
 	// ID of the ent.
-	// The ID of the setting, always 'global'
+	// Nano ID for the singleton settings record
 	ID string `json:"id,omitempty"`
 	// Global status of the NVR Recorder Service
 	NvrStatus bool `json:"nvr_status,omitempty"`

@@ -16,19 +16,19 @@ import (
 // The tracker is intentionally in-memory: if the backend restarts,
 // viewers simply re-register on the next heartbeat ping.
 type viewerTracker struct {
-	mu          sync.RWMutex
-	cameras     map[int]map[string]time.Time // camID -> viewerID -> lastSeen
+	mu           sync.RWMutex
+	cameras      map[string]map[string]time.Time // camID -> viewerID -> lastSeen
 	heartbeatTTL time.Duration
 }
 
 var Tracker = &viewerTracker{
-	cameras:     make(map[int]map[string]time.Time),
+	cameras:      make(map[string]map[string]time.Time),
 	heartbeatTTL: 25 * time.Second, // must exceed frontend ping interval (15s)
 }
 
 // RegisterViewer marks a viewer as active for the given camera.
 // Returns true if this is the first viewer (camera was idle before).
-func (t *viewerTracker) RegisterViewer(camID int, viewerID string) bool {
+func (t *viewerTracker) RegisterViewer(camID, viewerID string) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -42,7 +42,7 @@ func (t *viewerTracker) RegisterViewer(camID int, viewerID string) bool {
 
 // UnregisterViewer marks a viewer as gone.
 // Returns true if this was the last viewer (camera is now idle).
-func (t *viewerTracker) UnregisterViewer(camID int, viewerID string) bool {
+func (t *viewerTracker) UnregisterViewer(camID, viewerID string) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -58,12 +58,12 @@ func (t *viewerTracker) UnregisterViewer(camID int, viewerID string) bool {
 
 // ActiveCameraIDs returns the set of camera IDs that currently have at least
 // one active (non-stale) viewer. Stale viewers are pruned in the same pass.
-func (t *viewerTracker) ActiveCameraIDs() []int {
+func (t *viewerTracker) ActiveCameraIDs() []string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	cutoff := time.Now().Add(-t.heartbeatTTL)
-	var active []int
+	var active []string
 
 	for camID, viewers := range t.cameras {
 		for viewerID, lastSeen := range viewers {

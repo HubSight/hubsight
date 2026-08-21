@@ -1,5 +1,5 @@
 export interface CameraItem {
-  id: number;
+  id: string;
   name: string;
   host: string;
   brand: string;
@@ -7,8 +7,8 @@ export interface CameraItem {
 }
 
 export interface Recording {
-  id: number;
-  camera_id: number;
+  id: string;
+  camera_id: string;
   start_at: string;
   end_at: string;
   duration_seconds: number;

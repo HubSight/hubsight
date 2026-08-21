@@ -17,7 +17,6 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/google/uuid"
 )
 
 const (
@@ -41,7 +40,7 @@ type CameraMutation struct {
 	config
 	op                  Op
 	typ                 string
-	id                  *int
+	id                  *string
 	name                *string
 	host                *string
 	brand               *string
@@ -58,8 +57,8 @@ type CameraMutation struct {
 	created_at          *time.Time
 	updated_at          *time.Time
 	clearedFields       map[string]struct{}
-	recordings          map[int]struct{}
-	removedrecordings   map[int]struct{}
+	recordings          map[string]struct{}
+	removedrecordings   map[string]struct{}
 	clearedrecordings   bool
 	done                bool
 	oldValue            func(context.Context) (*Camera, error)
@@ -86,7 +85,7 @@ func newCameraMutation(c config, op Op, opts ...cameraOption) *CameraMutation {
 }
 
 // withCameraID sets the ID field of the mutation.
-func withCameraID(id int) cameraOption {
+func withCameraID(id string) cameraOption {
 	return func(m *CameraMutation) {
 		var (
 			err   error
@@ -136,9 +135,15 @@ func (m CameraMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Camera entities.
+func (m *CameraMutation) SetID(id string) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *CameraMutation) ID() (id int, exists bool) {
+func (m *CameraMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -149,12 +154,12 @@ func (m *CameraMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *CameraMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *CameraMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []string{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -673,9 +678,9 @@ func (m *CameraMutation) ResetUpdatedAt() {
 }
 
 // AddRecordingIDs adds the "recordings" edge to the Recording entity by ids.
-func (m *CameraMutation) AddRecordingIDs(ids ...int) {
+func (m *CameraMutation) AddRecordingIDs(ids ...string) {
 	if m.recordings == nil {
-		m.recordings = make(map[int]struct{})
+		m.recordings = make(map[string]struct{})
 	}
 	for i := range ids {
 		m.recordings[ids[i]] = struct{}{}
@@ -693,9 +698,9 @@ func (m *CameraMutation) RecordingsCleared() bool {
 }
 
 // RemoveRecordingIDs removes the "recordings" edge to the Recording entity by IDs.
-func (m *CameraMutation) RemoveRecordingIDs(ids ...int) {
+func (m *CameraMutation) RemoveRecordingIDs(ids ...string) {
 	if m.removedrecordings == nil {
-		m.removedrecordings = make(map[int]struct{})
+		m.removedrecordings = make(map[string]struct{})
 	}
 	for i := range ids {
 		delete(m.recordings, ids[i])
@@ -704,7 +709,7 @@ func (m *CameraMutation) RemoveRecordingIDs(ids ...int) {
 }
 
 // RemovedRecordings returns the removed IDs of the "recordings" edge to the Recording entity.
-func (m *CameraMutation) RemovedRecordingsIDs() (ids []int) {
+func (m *CameraMutation) RemovedRecordingsIDs() (ids []string) {
 	for id := range m.removedrecordings {
 		ids = append(ids, id)
 	}
@@ -712,7 +717,7 @@ func (m *CameraMutation) RemovedRecordingsIDs() (ids []int) {
 }
 
 // RecordingsIDs returns the "recordings" edge IDs in the mutation.
-func (m *CameraMutation) RecordingsIDs() (ids []int) {
+func (m *CameraMutation) RecordingsIDs() (ids []string) {
 	for id := range m.recordings {
 		ids = append(ids, id)
 	}
@@ -1177,7 +1182,7 @@ type RecordingMutation struct {
 	config
 	op                  Op
 	typ                 string
-	id                  *int
+	id                  *string
 	start_at            *time.Time
 	end_at              *time.Time
 	duration_seconds    *int
@@ -1187,7 +1192,7 @@ type RecordingMutation struct {
 	addsize_bytes       *int64
 	created_at          *time.Time
 	clearedFields       map[string]struct{}
-	camera              *int
+	camera              *string
 	clearedcamera       bool
 	done                bool
 	oldValue            func(context.Context) (*Recording, error)
@@ -1214,7 +1219,7 @@ func newRecordingMutation(c config, op Op, opts ...recordingOption) *RecordingMu
 }
 
 // withRecordingID sets the ID field of the mutation.
-func withRecordingID(id int) recordingOption {
+func withRecordingID(id string) recordingOption {
 	return func(m *RecordingMutation) {
 		var (
 			err   error
@@ -1264,9 +1269,15 @@ func (m RecordingMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Recording entities.
+func (m *RecordingMutation) SetID(id string) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *RecordingMutation) ID() (id int, exists bool) {
+func (m *RecordingMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1277,12 +1288,12 @@ func (m *RecordingMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *RecordingMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *RecordingMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []string{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1290,6 +1301,42 @@ func (m *RecordingMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCameraID sets the "camera_id" field.
+func (m *RecordingMutation) SetCameraID(s string) {
+	m.camera = &s
+}
+
+// CameraID returns the value of the "camera_id" field in the mutation.
+func (m *RecordingMutation) CameraID() (r string, exists bool) {
+	v := m.camera
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCameraID returns the old "camera_id" field's value of the Recording entity.
+// If the Recording object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecordingMutation) OldCameraID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCameraID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCameraID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCameraID: %w", err)
+	}
+	return oldValue.CameraID, nil
+}
+
+// ResetCameraID resets all changes to the "camera_id" field.
+func (m *RecordingMutation) ResetCameraID() {
+	m.camera = nil
 }
 
 // SetStartAt sets the "start_at" field.
@@ -1548,14 +1595,10 @@ func (m *RecordingMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// SetCameraID sets the "camera" edge to the Camera entity by id.
-func (m *RecordingMutation) SetCameraID(id int) {
-	m.camera = &id
-}
-
 // ClearCamera clears the "camera" edge to the Camera entity.
 func (m *RecordingMutation) ClearCamera() {
 	m.clearedcamera = true
+	m.clearedFields[recording.FieldCameraID] = struct{}{}
 }
 
 // CameraCleared reports if the "camera" edge to the Camera entity was cleared.
@@ -1563,18 +1606,10 @@ func (m *RecordingMutation) CameraCleared() bool {
 	return m.clearedcamera
 }
 
-// CameraID returns the "camera" edge ID in the mutation.
-func (m *RecordingMutation) CameraID() (id int, exists bool) {
-	if m.camera != nil {
-		return *m.camera, true
-	}
-	return
-}
-
 // CameraIDs returns the "camera" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // CameraID instead. It exists only for internal usage by the builders.
-func (m *RecordingMutation) CameraIDs() (ids []int) {
+func (m *RecordingMutation) CameraIDs() (ids []string) {
 	if id := m.camera; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1621,7 +1656,10 @@ func (m *RecordingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecordingMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
+	if m.camera != nil {
+		fields = append(fields, recording.FieldCameraID)
+	}
 	if m.start_at != nil {
 		fields = append(fields, recording.FieldStartAt)
 	}
@@ -1648,6 +1686,8 @@ func (m *RecordingMutation) Fields() []string {
 // schema.
 func (m *RecordingMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case recording.FieldCameraID:
+		return m.CameraID()
 	case recording.FieldStartAt:
 		return m.StartAt()
 	case recording.FieldEndAt:
@@ -1669,6 +1709,8 @@ func (m *RecordingMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *RecordingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case recording.FieldCameraID:
+		return m.OldCameraID(ctx)
 	case recording.FieldStartAt:
 		return m.OldStartAt(ctx)
 	case recording.FieldEndAt:
@@ -1690,6 +1732,13 @@ func (m *RecordingMutation) OldField(ctx context.Context, name string) (ent.Valu
 // type.
 func (m *RecordingMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case recording.FieldCameraID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCameraID(v)
+		return nil
 	case recording.FieldStartAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -1808,6 +1857,9 @@ func (m *RecordingMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *RecordingMutation) ResetField(name string) error {
 	switch name {
+	case recording.FieldCameraID:
+		m.ResetCameraID()
+		return nil
 	case recording.FieldStartAt:
 		m.ResetStartAt()
 		return nil
@@ -1909,7 +1961,7 @@ type SessionMutation struct {
 	config
 	op                 Op
 	typ                string
-	id                 *uuid.UUID
+	id                 *string
 	token_hash         *[]byte
 	refresh_token_hash *[]byte
 	is_pwa             *bool
@@ -1917,7 +1969,7 @@ type SessionMutation struct {
 	created_at         *time.Time
 	last_seen_at       *time.Time
 	clearedFields      map[string]struct{}
-	user               *int
+	user               *string
 	cleareduser        bool
 	done               bool
 	oldValue           func(context.Context) (*Session, error)
@@ -1944,7 +1996,7 @@ func newSessionMutation(c config, op Op, opts ...sessionOption) *SessionMutation
 }
 
 // withSessionID sets the ID field of the mutation.
-func withSessionID(id uuid.UUID) sessionOption {
+func withSessionID(id string) sessionOption {
 	return func(m *SessionMutation) {
 		var (
 			err   error
@@ -1996,13 +2048,13 @@ func (m SessionMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Session entities.
-func (m *SessionMutation) SetID(id uuid.UUID) {
+func (m *SessionMutation) SetID(id string) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *SessionMutation) ID() (id uuid.UUID, exists bool) {
+func (m *SessionMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2013,12 +2065,12 @@ func (m *SessionMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *SessionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *SessionMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []string{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2026,6 +2078,42 @@ func (m *SessionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetUserID sets the "user_id" field.
+func (m *SessionMutation) SetUserID(s string) {
+	m.user = &s
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *SessionMutation) UserID() (r string, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *SessionMutation) ResetUserID() {
+	m.user = nil
 }
 
 // SetTokenHash sets the "token_hash" field.
@@ -2270,14 +2358,10 @@ func (m *SessionMutation) ResetLastSeenAt() {
 	delete(m.clearedFields, session.FieldLastSeenAt)
 }
 
-// SetUserID sets the "user" edge to the User entity by id.
-func (m *SessionMutation) SetUserID(id int) {
-	m.user = &id
-}
-
 // ClearUser clears the "user" edge to the User entity.
 func (m *SessionMutation) ClearUser() {
 	m.cleareduser = true
+	m.clearedFields[session.FieldUserID] = struct{}{}
 }
 
 // UserCleared reports if the "user" edge to the User entity was cleared.
@@ -2285,18 +2369,10 @@ func (m *SessionMutation) UserCleared() bool {
 	return m.cleareduser
 }
 
-// UserID returns the "user" edge ID in the mutation.
-func (m *SessionMutation) UserID() (id int, exists bool) {
-	if m.user != nil {
-		return *m.user, true
-	}
-	return
-}
-
 // UserIDs returns the "user" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // UserID instead. It exists only for internal usage by the builders.
-func (m *SessionMutation) UserIDs() (ids []int) {
+func (m *SessionMutation) UserIDs() (ids []string) {
 	if id := m.user; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2343,7 +2419,10 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
+	if m.user != nil {
+		fields = append(fields, session.FieldUserID)
+	}
 	if m.token_hash != nil {
 		fields = append(fields, session.FieldTokenHash)
 	}
@@ -2370,6 +2449,8 @@ func (m *SessionMutation) Fields() []string {
 // schema.
 func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case session.FieldUserID:
+		return m.UserID()
 	case session.FieldTokenHash:
 		return m.TokenHash()
 	case session.FieldRefreshTokenHash:
@@ -2391,6 +2472,8 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case session.FieldUserID:
+		return m.OldUserID(ctx)
 	case session.FieldTokenHash:
 		return m.OldTokenHash(ctx)
 	case session.FieldRefreshTokenHash:
@@ -2412,6 +2495,13 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type.
 func (m *SessionMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case session.FieldUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
 	case session.FieldTokenHash:
 		v, ok := value.([]byte)
 		if !ok {
@@ -2518,6 +2608,9 @@ func (m *SessionMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *SessionMutation) ResetField(name string) error {
 	switch name {
+	case session.FieldUserID:
+		m.ResetUserID()
+		return nil
 	case session.FieldTokenHash:
 		m.ResetTokenHash()
 		return nil
@@ -3128,7 +3221,7 @@ type UserMutation struct {
 	config
 	op              Op
 	typ             string
-	id              *int
+	id              *string
 	username        *string
 	full_name       *string
 	password_hash   *string
@@ -3139,8 +3232,8 @@ type UserMutation struct {
 	updated_at      *time.Time
 	last_login_at   *time.Time
 	clearedFields   map[string]struct{}
-	sessions        map[uuid.UUID]struct{}
-	removedsessions map[uuid.UUID]struct{}
+	sessions        map[string]struct{}
+	removedsessions map[string]struct{}
 	clearedsessions bool
 	done            bool
 	oldValue        func(context.Context) (*User, error)
@@ -3167,7 +3260,7 @@ func newUserMutation(c config, op Op, opts ...userOption) *UserMutation {
 }
 
 // withUserID sets the ID field of the mutation.
-func withUserID(id int) userOption {
+func withUserID(id string) userOption {
 	return func(m *UserMutation) {
 		var (
 			err   error
@@ -3217,9 +3310,15 @@ func (m UserMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of User entities.
+func (m *UserMutation) SetID(id string) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *UserMutation) ID() (id int, exists bool) {
+func (m *UserMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -3230,12 +3329,12 @@ func (m *UserMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *UserMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *UserMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []string{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -3583,9 +3682,9 @@ func (m *UserMutation) ResetLastLoginAt() {
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by ids.
-func (m *UserMutation) AddSessionIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddSessionIDs(ids ...string) {
 	if m.sessions == nil {
-		m.sessions = make(map[uuid.UUID]struct{})
+		m.sessions = make(map[string]struct{})
 	}
 	for i := range ids {
 		m.sessions[ids[i]] = struct{}{}
@@ -3603,9 +3702,9 @@ func (m *UserMutation) SessionsCleared() bool {
 }
 
 // RemoveSessionIDs removes the "sessions" edge to the Session entity by IDs.
-func (m *UserMutation) RemoveSessionIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveSessionIDs(ids ...string) {
 	if m.removedsessions == nil {
-		m.removedsessions = make(map[uuid.UUID]struct{})
+		m.removedsessions = make(map[string]struct{})
 	}
 	for i := range ids {
 		delete(m.sessions, ids[i])
@@ -3614,7 +3713,7 @@ func (m *UserMutation) RemoveSessionIDs(ids ...uuid.UUID) {
 }
 
 // RemovedSessions returns the removed IDs of the "sessions" edge to the Session entity.
-func (m *UserMutation) RemovedSessionsIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedSessionsIDs() (ids []string) {
 	for id := range m.removedsessions {
 		ids = append(ids, id)
 	}
@@ -3622,7 +3721,7 @@ func (m *UserMutation) RemovedSessionsIDs() (ids []uuid.UUID) {
 }
 
 // SessionsIDs returns the "sessions" edge IDs in the mutation.
-func (m *UserMutation) SessionsIDs() (ids []uuid.UUID) {
+func (m *UserMutation) SessionsIDs() (ids []string) {
 	for id := range m.sessions {
 		ids = append(ids, id)
 	}

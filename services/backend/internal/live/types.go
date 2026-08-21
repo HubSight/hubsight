@@ -10,7 +10,7 @@ import (
 
 // Session represents an active in-memory RTSP-to-HLS streaming pipeline for a single camera
 type Session struct {
-	CameraID     int
+	CameraID     string
 	Host         string
 	Transport    string
 	Muxer        *gohlslib.Muxer

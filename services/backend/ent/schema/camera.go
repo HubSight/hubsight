@@ -2,9 +2,12 @@ package schema
 
 import (
 	"time"
+
+	"cctv/internal/nanoid"
+
 	"entgo.io/ent"
-	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
 )
 
 // Camera holds the schema definition for the Camera entity.
@@ -15,6 +18,9 @@ type Camera struct {
 // Fields of the Camera.
 func (Camera) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").
+			Immutable().
+			DefaultFunc(nanoid.New),
 		field.String("name").NotEmpty(),
 		field.String("host").NotEmpty(),
 		field.String("brand").Default("generic"),

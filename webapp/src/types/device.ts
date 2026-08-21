@@ -1,5 +1,5 @@
 export interface DeviceType {
-  id: number;
+  id: string;
   name: string;
   host: string;
   brand: string;

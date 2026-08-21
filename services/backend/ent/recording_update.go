@@ -3,7 +3,6 @@
 package ent
 
 import (
-	"cctv/ent/camera"
 	"cctv/ent/predicate"
 	"cctv/ent/recording"
 	"context"
@@ -127,26 +126,9 @@ func (_u *RecordingUpdate) SetNillableCreatedAt(v *time.Time) *RecordingUpdate {
 	return _u
 }
 
-// SetCameraID sets the "camera" edge to the Camera entity by ID.
-func (_u *RecordingUpdate) SetCameraID(id int) *RecordingUpdate {
-	_u.mutation.SetCameraID(id)
-	return _u
-}
-
-// SetCamera sets the "camera" edge to the Camera entity.
-func (_u *RecordingUpdate) SetCamera(v *Camera) *RecordingUpdate {
-	return _u.SetCameraID(v.ID)
-}
-
 // Mutation returns the RecordingMutation object of the builder.
 func (_u *RecordingUpdate) Mutation() *RecordingMutation {
 	return _u.mutation
-}
-
-// ClearCamera clears the "camera" edge to the Camera entity.
-func (_u *RecordingUpdate) ClearCamera() *RecordingUpdate {
-	_u.mutation.ClearCamera()
-	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -188,7 +170,7 @@ func (_u *RecordingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(recording.Table, recording.Columns, sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(recording.Table, recording.Columns, sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -219,35 +201,6 @@ func (_u *RecordingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(recording.FieldCreatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.CameraCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   recording.CameraTable,
-			Columns: []string{recording.CameraColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.CameraIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   recording.CameraTable,
-			Columns: []string{recording.CameraColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -367,26 +320,9 @@ func (_u *RecordingUpdateOne) SetNillableCreatedAt(v *time.Time) *RecordingUpdat
 	return _u
 }
 
-// SetCameraID sets the "camera" edge to the Camera entity by ID.
-func (_u *RecordingUpdateOne) SetCameraID(id int) *RecordingUpdateOne {
-	_u.mutation.SetCameraID(id)
-	return _u
-}
-
-// SetCamera sets the "camera" edge to the Camera entity.
-func (_u *RecordingUpdateOne) SetCamera(v *Camera) *RecordingUpdateOne {
-	return _u.SetCameraID(v.ID)
-}
-
 // Mutation returns the RecordingMutation object of the builder.
 func (_u *RecordingUpdateOne) Mutation() *RecordingMutation {
 	return _u.mutation
-}
-
-// ClearCamera clears the "camera" edge to the Camera entity.
-func (_u *RecordingUpdateOne) ClearCamera() *RecordingUpdateOne {
-	_u.mutation.ClearCamera()
-	return _u
 }
 
 // Where appends a list predicates to the RecordingUpdate builder.
@@ -441,7 +377,7 @@ func (_u *RecordingUpdateOne) sqlSave(ctx context.Context) (_node *Recording, er
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(recording.Table, recording.Columns, sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(recording.Table, recording.Columns, sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Recording.id" for update`)}
@@ -489,35 +425,6 @@ func (_u *RecordingUpdateOne) sqlSave(ctx context.Context) (_node *Recording, er
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(recording.FieldCreatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.CameraCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   recording.CameraTable,
-			Columns: []string{recording.CameraColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.CameraIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   recording.CameraTable,
-			Columns: []string{recording.CameraColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Recording{config: _u.config}
 	_spec.Assign = _node.assignValues

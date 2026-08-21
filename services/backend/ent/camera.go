@@ -16,7 +16,7 @@ import (
 type Camera struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Host holds the value of the "host" field.
@@ -74,9 +74,9 @@ func (*Camera) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case camera.FieldIsActive, camera.FieldEnableAi:
 			values[i] = new(sql.NullBool)
-		case camera.FieldID, camera.FieldRtspPort, camera.FieldSegmentDuration:
+		case camera.FieldRtspPort, camera.FieldSegmentDuration:
 			values[i] = new(sql.NullInt64)
-		case camera.FieldName, camera.FieldHost, camera.FieldBrand, camera.FieldRtspTransport, camera.FieldVideoCodec, camera.FieldAudioMode, camera.FieldExtraArgs:
+		case camera.FieldID, camera.FieldName, camera.FieldHost, camera.FieldBrand, camera.FieldRtspTransport, camera.FieldVideoCodec, camera.FieldAudioMode, camera.FieldExtraArgs:
 			values[i] = new(sql.NullString)
 		case camera.FieldCreatedAt, camera.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -96,11 +96,11 @@ func (_m *Camera) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case camera.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value.Valid {
+				_m.ID = value.String
 			}
-			_m.ID = int(value.Int64)
 		case camera.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])

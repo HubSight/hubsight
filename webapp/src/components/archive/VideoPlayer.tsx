@@ -19,7 +19,7 @@ import { useOrientation } from '../../hooks/useOrientation';
 
 interface VideoPlayerProps {
   mode: 'live' | 'archive';
-  cameraId: number | null;
+  cameraId: string | null;
   activeRecording: Recording | null;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   containerRef?: React.RefObject<HTMLDivElement | null>;

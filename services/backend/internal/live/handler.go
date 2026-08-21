@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"cctv/internal/database"
@@ -23,11 +22,11 @@ func init() {
 // WebRTCHandler acts as a signaling proxy for go2rtc.
 func WebRTCHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	camID, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
 		return
 	}
+	camID := idStr
 
 	cam, err := database.Client.Camera.Get(c.Request.Context(), camID)
 	if err != nil {
@@ -47,7 +46,7 @@ func WebRTCHandler(c *gin.Context) {
 		return
 	}
 
-	camName := fmt.Sprintf("cam_%d", camID)
+	camName := fmt.Sprintf("cam_%s", camID)
 
 	webrtcURL := os.Getenv("WEBRTC_SERVICE_URL")
 	if webrtcURL == "" {
@@ -84,7 +83,7 @@ func WebRTCHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create proxy request"})
 		return
 	}
-	
+
 	// go2rtc expects raw SDP in body, or JSON if formatted. We just pass what we got.
 	req.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
 
@@ -118,11 +117,11 @@ func WebRTCHandler(c *gin.Context) {
 // LiveStatusHandler returns real-time streaming health of a camera
 func LiveStatusHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	camID, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
 		return
 	}
+	camID := idStr
 
 	cam, err := database.Client.Camera.Get(c.Request.Context(), camID)
 	if err != nil {
@@ -144,11 +143,11 @@ func LiveStatusHandler(c *gin.Context) {
 // pick it up on its next poll cycle and begin AI detection.
 func AIHeartbeatHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	camID, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
 		return
 	}
+	camID := idStr
 
 	viewerID := c.Query("viewer_id")
 	if viewerID == "" {
@@ -168,11 +167,11 @@ func AIHeartbeatHandler(c *gin.Context) {
 // instead of waiting for the heartbeat TTL to expire.
 func AIStopHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	camID, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
 		return
 	}
+	camID := idStr
 
 	viewerID := c.Query("viewer_id")
 	if viewerID == "" {

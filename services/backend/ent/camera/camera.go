@@ -50,7 +50,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "recording" package.
 	RecordingsInverseTable = "recordings"
 	// RecordingsColumn is the table column denoting the recordings relation/edge.
-	RecordingsColumn = "camera_recordings"
+	RecordingsColumn = "camera_id"
 )
 
 // Columns holds all SQL columns for camera fields.
@@ -110,6 +110,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() string
 )
 
 // OrderOption defines the ordering options for the Camera queries.

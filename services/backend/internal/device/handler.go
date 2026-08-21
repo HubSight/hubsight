@@ -3,8 +3,7 @@ package device
 import (
 	"net/http"
 	"os"
-	"strconv"
-	
+
 	"cctv/ent"
 	"cctv/ent/camera"
 	"cctv/internal/database"
@@ -18,11 +17,11 @@ func ListDevicesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch devices"})
 		return
 	}
-	
+
 	if devices == nil {
 		devices = []*ent.Camera{}
 	}
-	
+
 	c.JSON(http.StatusOK, devices)
 }
 
@@ -49,7 +48,7 @@ func ListAICamerasHandler(c *gin.Context) {
 	// Filter to only cameras that currently have at least one active viewer.
 	// This enables on-demand CV processing: vision-service only spins up threads
 	// when a real user is watching, saving significant server resources.
-	activeSet := make(map[int]struct{})
+	activeSet := make(map[string]struct{})
 	for _, id := range live.Tracker.ActiveCameraIDs() {
 		activeSet[id] = struct{}{}
 	}
@@ -87,13 +86,12 @@ func AddDeviceHandler(c *gin.Context) {
 
 func DeleteDeviceHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
 		return
 	}
 
-	if err := Delete(c.Request.Context(), id); err != nil {
+	if err := Delete(c.Request.Context(), idStr); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete device"})
 		return
 	}
@@ -103,8 +101,7 @@ func DeleteDeviceHandler(c *gin.Context) {
 
 func UpdateDeviceHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
 		return
 	}
@@ -116,7 +113,7 @@ func UpdateDeviceHandler(c *gin.Context) {
 		return
 	}
 
-	dev, err := Update(c.Request.Context(), id, req)
+	dev, err := Update(c.Request.Context(), idStr, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device"})
 		return
@@ -127,8 +124,8 @@ func UpdateDeviceHandler(c *gin.Context) {
 
 // Backward compatibility aliases
 var (
-	ListCamerasHandler   = ListDevicesHandler
-	AddCameraHandler     = AddDeviceHandler
-	DeleteCameraHandler  = DeleteDeviceHandler
-	UpdateCameraHandler  = UpdateDeviceHandler
+	ListCamerasHandler  = ListDevicesHandler
+	AddCameraHandler    = AddDeviceHandler
+	DeleteCameraHandler = DeleteDeviceHandler
+	UpdateCameraHandler = UpdateDeviceHandler
 )

@@ -11,48 +11,63 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.Recording {
+func ID(id string) predicate.Recording {
 	return predicate.Recording(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.Recording {
+func IDEQ(id string) predicate.Recording {
 	return predicate.Recording(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.Recording {
+func IDNEQ(id string) predicate.Recording {
 	return predicate.Recording(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.Recording {
+func IDIn(ids ...string) predicate.Recording {
 	return predicate.Recording(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.Recording {
+func IDNotIn(ids ...string) predicate.Recording {
 	return predicate.Recording(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.Recording {
+func IDGT(id string) predicate.Recording {
 	return predicate.Recording(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.Recording {
+func IDGTE(id string) predicate.Recording {
 	return predicate.Recording(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.Recording {
+func IDLT(id string) predicate.Recording {
 	return predicate.Recording(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.Recording {
+func IDLTE(id string) predicate.Recording {
 	return predicate.Recording(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.Recording {
+	return predicate.Recording(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.Recording {
+	return predicate.Recording(sql.FieldContainsFold(FieldID, id))
+}
+
+// CameraID applies equality check predicate on the "camera_id" field. It's identical to CameraIDEQ.
+func CameraID(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldEQ(FieldCameraID, v))
 }
 
 // StartAt applies equality check predicate on the "start_at" field. It's identical to StartAtEQ.
@@ -83,6 +98,71 @@ func SizeBytes(v int64) predicate.Recording {
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Recording {
 	return predicate.Recording(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// CameraIDEQ applies the EQ predicate on the "camera_id" field.
+func CameraIDEQ(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldEQ(FieldCameraID, v))
+}
+
+// CameraIDNEQ applies the NEQ predicate on the "camera_id" field.
+func CameraIDNEQ(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldNEQ(FieldCameraID, v))
+}
+
+// CameraIDIn applies the In predicate on the "camera_id" field.
+func CameraIDIn(vs ...string) predicate.Recording {
+	return predicate.Recording(sql.FieldIn(FieldCameraID, vs...))
+}
+
+// CameraIDNotIn applies the NotIn predicate on the "camera_id" field.
+func CameraIDNotIn(vs ...string) predicate.Recording {
+	return predicate.Recording(sql.FieldNotIn(FieldCameraID, vs...))
+}
+
+// CameraIDGT applies the GT predicate on the "camera_id" field.
+func CameraIDGT(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldGT(FieldCameraID, v))
+}
+
+// CameraIDGTE applies the GTE predicate on the "camera_id" field.
+func CameraIDGTE(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldGTE(FieldCameraID, v))
+}
+
+// CameraIDLT applies the LT predicate on the "camera_id" field.
+func CameraIDLT(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldLT(FieldCameraID, v))
+}
+
+// CameraIDLTE applies the LTE predicate on the "camera_id" field.
+func CameraIDLTE(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldLTE(FieldCameraID, v))
+}
+
+// CameraIDContains applies the Contains predicate on the "camera_id" field.
+func CameraIDContains(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldContains(FieldCameraID, v))
+}
+
+// CameraIDHasPrefix applies the HasPrefix predicate on the "camera_id" field.
+func CameraIDHasPrefix(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldHasPrefix(FieldCameraID, v))
+}
+
+// CameraIDHasSuffix applies the HasSuffix predicate on the "camera_id" field.
+func CameraIDHasSuffix(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldHasSuffix(FieldCameraID, v))
+}
+
+// CameraIDEqualFold applies the EqualFold predicate on the "camera_id" field.
+func CameraIDEqualFold(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldEqualFold(FieldCameraID, v))
+}
+
+// CameraIDContainsFold applies the ContainsFold predicate on the "camera_id" field.
+func CameraIDContainsFold(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldContainsFold(FieldCameraID, v))
 }
 
 // StartAtEQ applies the EQ predicate on the "start_at" field.

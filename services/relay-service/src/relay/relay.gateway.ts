@@ -15,7 +15,7 @@ import { JoinRoomDto, LeaveRoomDto, RelayMessageDto } from './dto/relay.dto';
 interface ValidateTokenResponse {
   valid: boolean;
   user?: {
-    id: number;
+    id: string;
     username: string;
     full_name?: string;
     role: string;

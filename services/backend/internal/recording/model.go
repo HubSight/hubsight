@@ -5,8 +5,8 @@ import (
 )
 
 type Recording struct {
-	ID              int64     `json:"id"`
-	CameraID        int64     `json:"camera_id"`
+	ID              string    `json:"id"`
+	CameraID        string    `json:"camera_id"`
 	StartAt         time.Time `json:"start_at"`
 	EndAt           time.Time `json:"end_at"`
 	DurationSeconds int       `json:"duration_seconds"`

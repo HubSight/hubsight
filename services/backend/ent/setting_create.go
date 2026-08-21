@@ -67,6 +67,14 @@ func (_c *SettingCreate) SetID(v string) *SettingCreate {
 	return _c
 }
 
+// SetNillableID sets the "id" field if the given value is not nil.
+func (_c *SettingCreate) SetNillableID(v *string) *SettingCreate {
+	if v != nil {
+		_c.SetID(*v)
+	}
+	return _c
+}
+
 // Mutation returns the SettingMutation object of the builder.
 func (_c *SettingCreate) Mutation() *SettingMutation {
 	return _c.mutation
@@ -113,6 +121,10 @@ func (_c *SettingCreate) defaults() {
 	if _, ok := _c.mutation.RetentionDays(); !ok {
 		v := setting.DefaultRetentionDays
 		_c.mutation.SetRetentionDays(v)
+	}
+	if _, ok := _c.mutation.ID(); !ok {
+		v := setting.DefaultID()
+		_c.mutation.SetID(v)
 	}
 }
 

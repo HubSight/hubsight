@@ -107,8 +107,8 @@ func (_q *CameraQuery) FirstX(ctx context.Context) *Camera {
 
 // FirstID returns the first Camera ID from the query.
 // Returns a *NotFoundError when no Camera ID was found.
-func (_q *CameraQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (_q *CameraQuery) FirstID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -120,7 +120,7 @@ func (_q *CameraQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *CameraQuery) FirstIDX(ctx context.Context) int {
+func (_q *CameraQuery) FirstIDX(ctx context.Context) string {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -158,8 +158,8 @@ func (_q *CameraQuery) OnlyX(ctx context.Context) *Camera {
 // OnlyID is like Only, but returns the only Camera ID in the query.
 // Returns a *NotSingularError when more than one Camera ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *CameraQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (_q *CameraQuery) OnlyID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -175,7 +175,7 @@ func (_q *CameraQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *CameraQuery) OnlyIDX(ctx context.Context) int {
+func (_q *CameraQuery) OnlyIDX(ctx context.Context) string {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -203,7 +203,7 @@ func (_q *CameraQuery) AllX(ctx context.Context) []*Camera {
 }
 
 // IDs executes the query and returns a list of Camera IDs.
-func (_q *CameraQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (_q *CameraQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
@@ -215,7 +215,7 @@ func (_q *CameraQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *CameraQuery) IDsX(ctx context.Context) []int {
+func (_q *CameraQuery) IDsX(ctx context.Context) []string {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -405,7 +405,7 @@ func (_q *CameraQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Camer
 
 func (_q *CameraQuery) loadRecordings(ctx context.Context, query *RecordingQuery, nodes []*Camera, init func(*Camera), assign func(*Camera, *Recording)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Camera)
+	nodeids := make(map[string]*Camera)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -413,7 +413,9 @@ func (_q *CameraQuery) loadRecordings(ctx context.Context, query *RecordingQuery
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(recording.FieldCameraID)
+	}
 	query.Where(predicate.Recording(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(camera.RecordingsColumn), fks...))
 	}))
@@ -422,13 +424,10 @@ func (_q *CameraQuery) loadRecordings(ctx context.Context, query *RecordingQuery
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.camera_recordings
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "camera_recordings" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.CameraID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "camera_recordings" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "camera_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -445,7 +444,7 @@ func (_q *CameraQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (_q *CameraQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(camera.Table, camera.Columns, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(camera.Table, camera.Columns, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeString))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -30,11 +30,7 @@ func TimelineHandler(c *gin.Context) {
 		return
 	}
 
-	camIDStr := c.Query("camera_id")
-	var cameraID int
-	if camIDStr != "" {
-		cameraID, _ = strconv.Atoi(camIDStr)
-	}
+	cameraID := c.Query("camera_id")
 
 	recordings, err := GetTimeline(c.Request.Context(), from, to, cameraID)
 	if err != nil {
@@ -51,13 +47,12 @@ func TimelineHandler(c *gin.Context) {
 
 func StreamHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	rec, err := GetByID(c.Request.Context(), id)
+	rec, err := GetByID(c.Request.Context(), idStr)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Recording not found"})
 		return
@@ -69,7 +64,7 @@ func StreamHandler(c *gin.Context) {
 		reqParams = make(url.Values)
 		filename := filepath.Base(rec.FilePath)
 		if filename == "" || filename == "." {
-			filename = fmt.Sprintf("recording_%d_%s.mp4", rec.ID, rec.StartAt.Format("20060102_150405"))
+			filename = fmt.Sprintf("recording_%s_%s.mp4", rec.ID, rec.StartAt.Format("20060102_150405"))
 		}
 		reqParams.Set("response-content-disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	}
@@ -86,8 +81,7 @@ func StreamHandler(c *gin.Context) {
 
 func AvailableDaysHandler(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
@@ -102,7 +96,7 @@ func AvailableDaysHandler(c *gin.Context) {
 		return
 	}
 
-	days, err := GetAvailableDays(c.Request.Context(), id, year, month)
+	days, err := GetAvailableDays(c.Request.Context(), idStr, year, month)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return

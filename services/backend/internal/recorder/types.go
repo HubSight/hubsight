@@ -4,7 +4,7 @@ import "context"
 
 // CameraConfig holds runtime parameters for an individual camera recorder
 type CameraConfig struct {
-	CameraID        int
+	CameraID        string
 	Name            string
 	Host            string
 	RTSPTransport   string

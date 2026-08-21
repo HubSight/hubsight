@@ -14,7 +14,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -155,14 +154,14 @@ func (_u *UserUpdate) ClearLastLoginAt() *UserUpdate {
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
-func (_u *UserUpdate) AddSessionIDs(ids ...uuid.UUID) *UserUpdate {
+func (_u *UserUpdate) AddSessionIDs(ids ...string) *UserUpdate {
 	_u.mutation.AddSessionIDs(ids...)
 	return _u
 }
 
 // AddSessions adds the "sessions" edges to the Session entity.
 func (_u *UserUpdate) AddSessions(v ...*Session) *UserUpdate {
-	ids := make([]uuid.UUID, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -181,14 +180,14 @@ func (_u *UserUpdate) ClearSessions() *UserUpdate {
 }
 
 // RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
-func (_u *UserUpdate) RemoveSessionIDs(ids ...uuid.UUID) *UserUpdate {
+func (_u *UserUpdate) RemoveSessionIDs(ids ...string) *UserUpdate {
 	_u.mutation.RemoveSessionIDs(ids...)
 	return _u
 }
 
 // RemoveSessions removes "sessions" edges to Session entities.
 func (_u *UserUpdate) RemoveSessions(v ...*Session) *UserUpdate {
-	ids := make([]uuid.UUID, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -260,7 +259,7 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -306,7 +305,7 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -319,7 +318,7 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -335,7 +334,7 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -488,14 +487,14 @@ func (_u *UserUpdateOne) ClearLastLoginAt() *UserUpdateOne {
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
-func (_u *UserUpdateOne) AddSessionIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (_u *UserUpdateOne) AddSessionIDs(ids ...string) *UserUpdateOne {
 	_u.mutation.AddSessionIDs(ids...)
 	return _u
 }
 
 // AddSessions adds the "sessions" edges to the Session entity.
 func (_u *UserUpdateOne) AddSessions(v ...*Session) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -514,14 +513,14 @@ func (_u *UserUpdateOne) ClearSessions() *UserUpdateOne {
 }
 
 // RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
-func (_u *UserUpdateOne) RemoveSessionIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (_u *UserUpdateOne) RemoveSessionIDs(ids ...string) *UserUpdateOne {
 	_u.mutation.RemoveSessionIDs(ids...)
 	return _u
 }
 
 // RemoveSessions removes "sessions" edges to Session entities.
 func (_u *UserUpdateOne) RemoveSessions(v ...*Session) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -606,7 +605,7 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "User.id" for update`)}
@@ -669,7 +668,7 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -682,7 +681,7 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -698,7 +697,7 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

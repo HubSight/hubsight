@@ -34,7 +34,7 @@ const Playback = () => {
       .then((res) => {
         setCameras(res.data || []);
         if (res.data && res.data.length > 0) {
-          setSelectedCam(res.data[0].id.toString());
+          setSelectedCam(res.data[0].id);
         }
       })
       .catch(console.error);
@@ -113,7 +113,7 @@ const Playback = () => {
     setMode('live');
   };
 
-  const currentCamId = selectedCam ? parseInt(selectedCam, 10) : null;
+  const currentCamId = selectedCam || null;
 
   const sidebarProps = {
     cameras,

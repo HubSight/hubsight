@@ -1,10 +1,10 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	"cctv/ent"
-	"cctv/ent/setting"
 	"cctv/internal/database"
 	"cctv/internal/storage"
 	"github.com/gin-gonic/gin"
@@ -16,31 +16,30 @@ type SettingsRequest struct {
 	RetentionDays  *int  `json:"retention_days"`
 }
 
+func getOrCreateSettings(ctx context.Context) (*ent.Setting, error) {
+	set, err := database.Client.Setting.Query().Only(ctx)
+	if err == nil {
+		return set, nil
+	}
+	if !ent.IsNotFound(err) {
+		return nil, err
+	}
+
+	return database.Client.Setting.Create().
+		SetNvrStatus(true).
+		SetStorageQuotaGB(50).
+		SetRetentionDays(4).
+		Save(ctx)
+}
+
 // GetSettings handles GET /api/settings
 func GetSettings(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Get or create default settings
-	set, err := database.Client.Setting.Query().
-		Where(setting.ID("global")).
-		Only(ctx)
-
+	set, err := getOrCreateSettings(ctx)
 	if err != nil {
-		if ent.IsNotFound(err) {
-			set, err = database.Client.Setting.Create().
-				SetID("global").
-				SetNvrStatus(true).
-				SetStorageQuotaGB(50).
-				SetRetentionDays(4).
-				Save(ctx)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create default settings"})
-				return
-			}
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query settings"})
-			return
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query settings"})
+		return
 	}
 
 	c.JSON(http.StatusOK, set)
@@ -56,7 +55,13 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	update := database.Client.Setting.UpdateOneID("global")
+	current, err := getOrCreateSettings(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query settings"})
+		return
+	}
+
+	update := database.Client.Setting.UpdateOne(current)
 	if req.NvrStatus != nil {
 		update = update.SetNvrStatus(*req.NvrStatus)
 	}
@@ -69,33 +74,8 @@ func UpdateSettings(c *gin.Context) {
 
 	set, err := update.Save(ctx)
 	if err != nil {
-		if ent.IsNotFound(err) {
-			// If not found, create first then update
-			creator := database.Client.Setting.Create().SetID("global")
-			if req.NvrStatus != nil {
-				creator = creator.SetNvrStatus(*req.NvrStatus)
-			} else {
-				creator = creator.SetNvrStatus(true)
-			}
-			if req.StorageQuotaGb != nil {
-				creator = creator.SetStorageQuotaGB(*req.StorageQuotaGb)
-			} else {
-				creator = creator.SetStorageQuotaGB(50)
-			}
-			if req.RetentionDays != nil {
-				creator = creator.SetRetentionDays(*req.RetentionDays)
-			} else {
-				creator = creator.SetRetentionDays(4)
-			}
-			set, err = creator.Save(ctx)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create and save settings"})
-				return
-			}
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update settings"})
-			return
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update settings"})
+		return
 	}
 
 	c.JSON(http.StatusOK, set)
@@ -109,10 +89,10 @@ func CleanupStorage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clean up storage"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Storage cleaned successfully",
+		"message":       "Storage cleaned successfully",
 		"deleted_count": deletedCount,
-		"freed_bytes": freedBytes,
+		"freed_bytes":   freedBytes,
 	})
 }

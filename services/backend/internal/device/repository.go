@@ -2,7 +2,7 @@ package device
 
 import (
 	"context"
-	
+
 	"cctv/ent"
 	"cctv/internal/database"
 )
@@ -64,7 +64,7 @@ func Create(ctx context.Context, input DeviceInput) (*ent.Camera, error) {
 	return query.Save(ctx)
 }
 
-func Update(ctx context.Context, id int, input DeviceInput) (*ent.Camera, error) {
+func Update(ctx context.Context, id string, input DeviceInput) (*ent.Camera, error) {
 	query := database.Client.Camera.UpdateOneID(id).
 		SetName(input.Name).
 		SetHost(input.Host)
@@ -98,6 +98,6 @@ func Update(ctx context.Context, id int, input DeviceInput) (*ent.Camera, error)
 	return query.Save(ctx)
 }
 
-func Delete(ctx context.Context, id int) error {
+func Delete(ctx context.Context, id string) error {
 	return database.Client.Camera.DeleteOneID(id).Exec(ctx)
 }

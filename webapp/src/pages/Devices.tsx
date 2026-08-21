@@ -33,7 +33,7 @@ const Devices = () => {
   const [devices, setDevices] = useState<DeviceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingDeviceId, setEditingDeviceId] = useState<number | null>(null);
+  const [editingDeviceId, setEditingDeviceId] = useState<string | null>(null);
   const [formData, setFormData] = useState<DeviceFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -168,7 +168,7 @@ const Devices = () => {
     }
   };
 
-  const handleDeleteDevice = async (id: number) => {
+  const handleDeleteDevice = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this device? Recording will be stopped.')) {
       return;
     }

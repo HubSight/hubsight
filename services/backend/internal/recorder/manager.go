@@ -5,21 +5,20 @@ import (
 	"log"
 	"time"
 
-	"cctv/ent/setting"
 	"cctv/internal/database"
 )
 
 // RecorderManager coordinates dynamic recording processes across multiple cameras
 type RecorderManager struct {
 	OutDir          string
-	activeRecorders map[int]ActiveRecorder
+	activeRecorders map[string]ActiveRecorder
 }
 
 // NewManager creates a new RecorderManager instance
 func NewManager(outDir string) *RecorderManager {
 	return &RecorderManager{
 		OutDir:          outDir,
-		activeRecorders: make(map[int]ActiveRecorder),
+		activeRecorders: make(map[string]ActiveRecorder),
 	}
 }
 
@@ -52,7 +51,7 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 		return
 	}
 
-	globalSettings, err := database.Client.Setting.Query().Where(setting.ID("global")).Only(parentCtx)
+	globalSettings, err := database.Client.Setting.Query().Only(parentCtx)
 	if err != nil {
 		// Assume enabled if setting is missing
 		globalSettings = nil
@@ -63,7 +62,7 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 		isNvrEnabled = globalSettings.NvrStatus
 	}
 
-	currentCameraIDs := make(map[int]bool)
+	currentCameraIDs := make(map[string]bool)
 
 	for _, cam := range cameras {
 		// If NVR is globally disabled, treat all cameras as inactive
@@ -89,14 +88,14 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 
 		// Check if any configuration parameter has changed
 		if exists && (activeCam.Config != camConfig) {
-			log.Printf("Camera %s (ID: %d) configuration changed. Restarting FFmpeg...", cam.Name, cam.ID)
+			log.Printf("Camera %s (ID: %s) configuration changed. Restarting FFmpeg...", cam.Name, cam.ID)
 			activeCam.Cancel()
 			needsRestart = true
 		}
 
 		if !exists || needsRestart {
 			if !exists {
-				log.Printf("Found new active camera: %s (ID: %d). Starting FFmpeg...", cam.Name, cam.ID)
+				log.Printf("Found new active camera: %s (ID: %s). Starting FFmpeg...", cam.Name, cam.ID)
 			}
 
 			camCtx, cancel := context.WithCancel(parentCtx)
@@ -112,7 +111,7 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 	// Terminate recorders for cameras that are deleted or deactivated
 	for id, activeCam := range m.activeRecorders {
 		if !currentCameraIDs[id] {
-			log.Printf("Camera %d is no longer active. Stopping recorder...", id)
+			log.Printf("Camera %s is no longer active. Stopping recorder...", id)
 			activeCam.Cancel()
 			delete(m.activeRecorders, id)
 		}
@@ -123,18 +122,18 @@ func (m *RecorderManager) runCameraLoop(ctx context.Context, cfg CameraConfig) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("Camera %d recorder stopped.", cfg.CameraID)
+			log.Printf("Camera %s recorder stopped.", cfg.CameraID)
 			return
 		default:
 			err := RunFFmpegProcess(ctx, cfg)
 			if err != nil && ctx.Err() == nil {
-				log.Printf("Camera %d FFmpeg exited with error: %v. Restarting in 5s...", cfg.CameraID, err)
+				log.Printf("Camera %s FFmpeg exited with error: %v. Restarting in 5s...", cfg.CameraID, err)
 				time.Sleep(5 * time.Second)
 			} else if ctx.Err() != nil {
-				log.Printf("Camera %d recorder stopped.", cfg.CameraID)
+				log.Printf("Camera %s recorder stopped.", cfg.CameraID)
 				return
 			} else {
-				log.Printf("Camera %d FFmpeg exited cleanly. Restarting in 5s...", cfg.CameraID)
+				log.Printf("Camera %s FFmpeg exited cleanly. Restarting in 5s...", cfg.CameraID)
 				time.Sleep(5 * time.Second)
 			}
 		}

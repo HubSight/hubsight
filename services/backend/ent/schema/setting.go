@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"cctv/internal/nanoid"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
 )
@@ -14,7 +16,9 @@ type Setting struct {
 func (Setting) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").
-			Comment("The ID of the setting, always 'global'"),
+			Immutable().
+			DefaultFunc(nanoid.New).
+			Comment("Nano ID for the singleton settings record"),
 		field.Bool("nvr_status").
 			Default(true).
 			Comment("Global status of the NVR Recorder Service"),

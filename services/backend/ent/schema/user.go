@@ -2,9 +2,12 @@ package schema
 
 import (
 	"time"
+
+	"cctv/internal/nanoid"
+
 	"entgo.io/ent"
-	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
 )
 
 // User holds the schema definition for the User entity.
@@ -15,6 +18,9 @@ type User struct {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").
+			Immutable().
+			DefaultFunc(nanoid.New),
 		field.String("username").Unique().NotEmpty(),
 		field.String("full_name").Default(""),
 		field.String("password_hash").NotEmpty(),

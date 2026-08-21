@@ -8,7 +8,6 @@ import (
 	"cctv/ent"
 	"cctv/ent/camera"
 	"cctv/ent/recording"
-	"cctv/ent/setting"
 	"cctv/internal/database"
 	"cctv/internal/storage"
 	"github.com/gin-gonic/gin"
@@ -59,7 +58,7 @@ func NvrStatusHandler(c *gin.Context) {
 	}
 
 	// Get global settings
-	globalSettings, err := database.Client.Setting.Query().Where(setting.ID("global")).Only(ctx)
+	globalSettings, err := database.Client.Setting.Query().Only(ctx)
 	if err != nil {
 		globalSettings = &ent.Setting{
 			NvrStatus:      true,

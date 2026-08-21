@@ -46,6 +46,8 @@ var (
 	DefaultStorageQuotaGB int
 	// DefaultRetentionDays holds the default value on creation for the "retention_days" field.
 	DefaultRetentionDays int
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() string
 )
 
 // OrderOption defines the ordering options for the Setting queries.

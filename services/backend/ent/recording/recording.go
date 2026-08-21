@@ -14,6 +14,8 @@ const (
 	Label = "recording"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCameraID holds the string denoting the camera_id field in the database.
+	FieldCameraID = "camera_id"
 	// FieldStartAt holds the string denoting the start_at field in the database.
 	FieldStartAt = "start_at"
 	// FieldEndAt holds the string denoting the end_at field in the database.
@@ -36,24 +38,19 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "camera" package.
 	CameraInverseTable = "cameras"
 	// CameraColumn is the table column denoting the camera relation/edge.
-	CameraColumn = "camera_recordings"
+	CameraColumn = "camera_id"
 )
 
 // Columns holds all SQL columns for recording fields.
 var Columns = []string{
 	FieldID,
+	FieldCameraID,
 	FieldStartAt,
 	FieldEndAt,
 	FieldDurationSeconds,
 	FieldFilePath,
 	FieldSizeBytes,
 	FieldCreatedAt,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "recordings"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"camera_recordings",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -63,17 +60,14 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
-			return true
-		}
-	}
 	return false
 }
 
 var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() string
 )
 
 // OrderOption defines the ordering options for the Recording queries.
@@ -82,6 +76,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCameraID orders the results by the camera_id field.
+func ByCameraID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCameraID, opts...).ToFunc()
 }
 
 // ByStartAt orders the results by the start_at field.

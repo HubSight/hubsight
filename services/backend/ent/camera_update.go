@@ -218,14 +218,14 @@ func (_u *CameraUpdate) SetUpdatedAt(v time.Time) *CameraUpdate {
 }
 
 // AddRecordingIDs adds the "recordings" edge to the Recording entity by IDs.
-func (_u *CameraUpdate) AddRecordingIDs(ids ...int) *CameraUpdate {
+func (_u *CameraUpdate) AddRecordingIDs(ids ...string) *CameraUpdate {
 	_u.mutation.AddRecordingIDs(ids...)
 	return _u
 }
 
 // AddRecordings adds the "recordings" edges to the Recording entity.
 func (_u *CameraUpdate) AddRecordings(v ...*Recording) *CameraUpdate {
-	ids := make([]int, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -244,14 +244,14 @@ func (_u *CameraUpdate) ClearRecordings() *CameraUpdate {
 }
 
 // RemoveRecordingIDs removes the "recordings" edge to Recording entities by IDs.
-func (_u *CameraUpdate) RemoveRecordingIDs(ids ...int) *CameraUpdate {
+func (_u *CameraUpdate) RemoveRecordingIDs(ids ...string) *CameraUpdate {
 	_u.mutation.RemoveRecordingIDs(ids...)
 	return _u
 }
 
 // RemoveRecordings removes "recordings" edges to Recording entities.
 func (_u *CameraUpdate) RemoveRecordings(v ...*Recording) *CameraUpdate {
-	ids := make([]int, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -313,7 +313,7 @@ func (_u *CameraUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(camera.Table, camera.Columns, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(camera.Table, camera.Columns, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -374,7 +374,7 @@ func (_u *CameraUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Columns: []string{camera.RecordingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -387,7 +387,7 @@ func (_u *CameraUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Columns: []string{camera.RecordingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -403,7 +403,7 @@ func (_u *CameraUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Columns: []string{camera.RecordingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -620,14 +620,14 @@ func (_u *CameraUpdateOne) SetUpdatedAt(v time.Time) *CameraUpdateOne {
 }
 
 // AddRecordingIDs adds the "recordings" edge to the Recording entity by IDs.
-func (_u *CameraUpdateOne) AddRecordingIDs(ids ...int) *CameraUpdateOne {
+func (_u *CameraUpdateOne) AddRecordingIDs(ids ...string) *CameraUpdateOne {
 	_u.mutation.AddRecordingIDs(ids...)
 	return _u
 }
 
 // AddRecordings adds the "recordings" edges to the Recording entity.
 func (_u *CameraUpdateOne) AddRecordings(v ...*Recording) *CameraUpdateOne {
-	ids := make([]int, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -646,14 +646,14 @@ func (_u *CameraUpdateOne) ClearRecordings() *CameraUpdateOne {
 }
 
 // RemoveRecordingIDs removes the "recordings" edge to Recording entities by IDs.
-func (_u *CameraUpdateOne) RemoveRecordingIDs(ids ...int) *CameraUpdateOne {
+func (_u *CameraUpdateOne) RemoveRecordingIDs(ids ...string) *CameraUpdateOne {
 	_u.mutation.RemoveRecordingIDs(ids...)
 	return _u
 }
 
 // RemoveRecordings removes "recordings" edges to Recording entities.
 func (_u *CameraUpdateOne) RemoveRecordings(v ...*Recording) *CameraUpdateOne {
-	ids := make([]int, len(v))
+	ids := make([]string, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
@@ -728,7 +728,7 @@ func (_u *CameraUpdateOne) sqlSave(ctx context.Context) (_node *Camera, err erro
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(camera.Table, camera.Columns, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(camera.Table, camera.Columns, sqlgraph.NewFieldSpec(camera.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Camera.id" for update`)}
@@ -806,7 +806,7 @@ func (_u *CameraUpdateOne) sqlSave(ctx context.Context) (_node *Camera, err erro
 			Columns: []string{camera.RecordingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -819,7 +819,7 @@ func (_u *CameraUpdateOne) sqlSave(ctx context.Context) (_node *Camera, err erro
 			Columns: []string{camera.RecordingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -835,7 +835,7 @@ func (_u *CameraUpdateOne) sqlSave(ctx context.Context) (_node *Camera, err erro
 			Columns: []string{camera.RecordingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(recording.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

@@ -12,7 +12,6 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 )
 
 // SessionCreate is the builder for creating a Session entity.
@@ -20,6 +19,12 @@ type SessionCreate struct {
 	config
 	mutation *SessionMutation
 	hooks    []Hook
+}
+
+// SetUserID sets the "user_id" field.
+func (_c *SessionCreate) SetUserID(v string) *SessionCreate {
+	_c.mutation.SetUserID(v)
+	return _c
 }
 
 // SetTokenHash sets the "token_hash" field.
@@ -83,22 +88,16 @@ func (_c *SessionCreate) SetNillableLastSeenAt(v *time.Time) *SessionCreate {
 }
 
 // SetID sets the "id" field.
-func (_c *SessionCreate) SetID(v uuid.UUID) *SessionCreate {
+func (_c *SessionCreate) SetID(v string) *SessionCreate {
 	_c.mutation.SetID(v)
 	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *SessionCreate) SetNillableID(v *uuid.UUID) *SessionCreate {
+func (_c *SessionCreate) SetNillableID(v *string) *SessionCreate {
 	if v != nil {
 		_c.SetID(*v)
 	}
-	return _c
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_c *SessionCreate) SetUserID(id int) *SessionCreate {
-	_c.mutation.SetUserID(id)
 	return _c
 }
 
@@ -158,6 +157,9 @@ func (_c *SessionCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *SessionCreate) check() error {
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Session.user_id"`)}
+	}
 	if _, ok := _c.mutation.TokenHash(); !ok {
 		return &ValidationError{Name: "token_hash", err: errors.New(`ent: missing required field "Session.token_hash"`)}
 	}
@@ -188,10 +190,10 @@ func (_c *SessionCreate) sqlSave(ctx context.Context) (*Session, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
-			_node.ID = *id
-		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
-			return nil, err
+		if id, ok := _spec.ID.Value.(string); ok {
+			_node.ID = id
+		} else {
+			return nil, fmt.Errorf("unexpected Session.ID type: %T", _spec.ID.Value)
 		}
 	}
 	_c.mutation.id = &_node.ID
@@ -202,11 +204,11 @@ func (_c *SessionCreate) sqlSave(ctx context.Context) (*Session, error) {
 func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Session{config: _c.config}
-		_spec = sqlgraph.NewCreateSpec(session.Table, sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(session.Table, sqlgraph.NewFieldSpec(session.FieldID, field.TypeString))
 	)
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
-		_spec.ID.Value = &id
+		_spec.ID.Value = id
 	}
 	if value, ok := _c.mutation.TokenHash(); ok {
 		_spec.SetField(session.FieldTokenHash, field.TypeBytes, value)
@@ -240,13 +242,13 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 			Columns: []string{session.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_sessions = &nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

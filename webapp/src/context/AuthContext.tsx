@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 
 interface User {
-  id: number;
+  id: string;
   username: string;
   full_name?: string;
   role: 'admin' | 'viewer';

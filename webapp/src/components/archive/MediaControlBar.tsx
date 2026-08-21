@@ -6,7 +6,7 @@ import { useTranslation } from '../../i18n';
 
 interface MediaControlBarProps {
   mode: 'live' | 'archive';
-  cameraId: number | null;
+  cameraId: string | null;
   isLive: boolean;
   activeRecording: Recording | null;
   onPlay: () => void;

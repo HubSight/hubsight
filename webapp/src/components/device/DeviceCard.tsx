@@ -7,7 +7,7 @@ import { useTranslation } from '../../i18n';
 export interface DeviceCardProps {
   device: DeviceType;
   onEdit: (device: DeviceType) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete }) => {
@@ -87,7 +87,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
       </div>
 
       <div className="pt-3 border-t border-slate-100 text-xs text-slate-400 flex justify-between">
-        <span>ID: #{device.id}</span>
+        <span>ID: {device.id}</span>
         <span>{new Date(device.created_at).toLocaleDateString()}</span>
       </div>
     </div>
