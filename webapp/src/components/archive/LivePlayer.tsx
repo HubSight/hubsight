@@ -508,35 +508,35 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
       {showTrace && (
         <div className="absolute top-14 right-4 bg-black/70 text-white font-mono text-[11px] p-2 rounded border border-white/20 z-50 backdrop-blur-sm shadow-xl pointer-events-none select-none">
           <div className="text-orange-400 font-bold mb-1 uppercase tracking-wider flex items-center gap-1.5">
-            <Activity size={12} /> Live Trace
+            <Activity size={12} /> {t('playback.traceTitle')}
           </div>
           <table className="mt-1">
             <tbody>
-              <tr><td className="pr-3 text-slate-300">Resolution</td><td className="font-semibold">{stats.resolution}</td></tr>
-              <tr><td className="pr-3 text-slate-300">Codec/Proto</td><td className="font-semibold text-sky-400">{stats.codec} / {stats.protocol}</td></tr>
-              <tr><td className="pr-3 text-slate-300">Audio Track</td><td className={`font-semibold ${hasAudioTrack ? 'text-emerald-400' : 'text-slate-400'}`}>{hasAudioTrack ? 'Detected' : 'None'}</td></tr>
-              <tr><td className="pr-3 text-slate-300">Render FPS</td><td className="font-semibold text-emerald-400">{stats.renderFps}</td></tr>
-              <tr><td className="pr-3 text-slate-300">Decode FPS</td><td className="font-semibold text-emerald-400">{stats.decodeFps}</td></tr>
+              <tr><td className="pr-3 text-slate-300">{t('playback.traceResolution')}</td><td className="font-semibold">{stats.resolution}</td></tr>
+              <tr><td className="pr-3 text-slate-300">{t('playback.traceCodecProto')}</td><td className="font-semibold text-sky-400">{stats.codec} / {stats.protocol}</td></tr>
+              <tr><td className="pr-3 text-slate-300">{t('playback.traceAudioTrack')}</td><td className={`font-semibold ${hasAudioTrack ? 'text-emerald-400' : 'text-slate-400'}`}>{hasAudioTrack ? t('playback.traceDetected') : t('playback.traceNone')}</td></tr>
+              <tr><td className="pr-3 text-slate-300">{t('playback.traceRenderFps')}</td><td className="font-semibold text-emerald-400">{stats.renderFps}</td></tr>
+              <tr><td className="pr-3 text-slate-300">{t('playback.traceDecodeFps')}</td><td className="font-semibold text-emerald-400">{stats.decodeFps}</td></tr>
               <tr>
-                <td className="pr-3 text-slate-300">Frames Drop</td>
+                <td className="pr-3 text-slate-300">{t('playback.traceDroppedFrames')}</td>
                 <td className={`font-semibold ${stats.droppedFrames > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                   {stats.droppedFrames}
                 </td>
               </tr>
               <tr>
-                <td className="pr-3 text-slate-300">Pkt Lost</td>
+                <td className="pr-3 text-slate-300">{t('playback.tracePktLost')}</td>
                 <td className={`font-semibold ${stats.packetsLost > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                   {stats.packetsLost}
                 </td>
               </tr>
               <tr>
-                <td className="pr-3 text-slate-300">Jitter</td>
+                <td className="pr-3 text-slate-300">{t('playback.traceJitter')}</td>
                 <td className={`font-semibold ${stats.jitter > 200 ? 'text-red-400' : stats.jitter > 100 ? 'text-orange-400' : 'text-emerald-400'}`}>
                   {stats.jitter} ms
                 </td>
               </tr>
               <tr>
-                <td className="pr-3 text-slate-300">Buffer Lag</td>
+                <td className="pr-3 text-slate-300">{t('playback.traceBufferLag')}</td>
                 <td className={`font-semibold ${stats.latencyMs > 500 ? 'text-orange-400' : 'text-emerald-400'}`}>
                   {stats.latencyMs} ms
                 </td>
@@ -559,73 +559,66 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
               ? 'bg-orange-500/80 text-white border-orange-400' 
               : 'bg-black/40 text-white/90 hover:bg-black/60 border-white/20 hover:border-white/40'
           }`}
-          title="Toggle Debug Trace"
+          title={t('playback.toggleTrace')}
         >
           <Activity size={14} className="inline-block mr-1.5 -mt-0.5" />
           Trace
         </button>
       </div>
 
-      {/* YouTube-style Bottom Control Bar */}
-      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pt-8 pb-3 px-4 z-40 flex items-center justify-between pointer-events-auto">
-        <div className="flex items-center gap-3">
-          {/* Live Indicator Badge */}
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-red-600/90 text-white text-[11px] font-bold tracking-wider uppercase shadow-sm select-none">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            <span>LIVE</span>
-          </div>
-
-          {/* YouTube-style Expandable Volume Control */}
-          <div 
-            className="group/vol flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-black/50 hover:bg-black/75 backdrop-blur-md border border-white/10 hover:border-white/25 transition-all shadow-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="text-white/90 hover:text-white transition-colors cursor-pointer flex items-center justify-center p-0.5 focus:outline-none"
-              title={isMuted ? 'Bật âm thanh (100%)' : 'Tắt âm thanh'}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX size={18} className="text-red-400" />
-              ) : volume < 0.5 ? (
-                <Volume1 size={18} className="text-white" />
-              ) : (
-                <Volume2 size={18} className="text-emerald-400" />
-              )}
-            </button>
-
-            {/* Slider bar */}
-            <div className="w-16 sm:w-24 overflow-hidden transition-all duration-300 flex items-center">
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={isMuted ? 0 : volume}
-                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400"
-                title={`Âm lượng: ${Math.round((isMuted ? 0 : volume) * 100)}%`}
-              />
-            </div>
-            
-            <span className="text-[11px] font-mono text-white/80 min-w-[32px] text-right select-none">
-              {isMuted ? 'Mute' : `${Math.round(volume * 100)}%`}
-            </span>
-          </div>
-        </div>
-
+      {/* Pure White Volume Control - Positioned on the Bottom Right */}
+      <div 
+        className="absolute bottom-2.5 right-14 sm:right-16 z-30 flex items-center gap-2 pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Unmute hint button if browser blocked unmuted autoplay */}
         {isMuted && (
           <button
             type="button"
             onClick={toggleMute}
-            className="text-xs px-3 py-1.5 bg-orange-600/90 hover:bg-orange-500 text-white font-medium rounded-lg backdrop-blur shadow-lg flex items-center gap-1.5 transition-all cursor-pointer animate-pulse"
+            className="text-xs px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white font-medium rounded-lg border border-white/30 backdrop-blur-md shadow-lg flex items-center gap-1.5 transition-all cursor-pointer animate-pulse whitespace-nowrap"
+            title={t('playback.unmute')}
           >
-            <Volume2 size={14} />
-            <span>Bấm bật tiếng (100%)</span>
+            <Volume2 size={13} className="text-white" />
+            <span className="hidden sm:inline">{t('playback.unmuteBtn')}</span>
           </button>
         )}
+
+        {/* Clean White Volume Slider Widget */}
+        <div className="group/vol flex items-center gap-2 px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 hover:border-white/40 transition-all shadow-lg">
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="text-white hover:text-white/80 transition-colors cursor-pointer flex items-center justify-center p-0.5 focus:outline-none"
+            title={isMuted ? t('playback.unmute') : t('playback.mute')}
+          >
+            {isMuted || volume === 0 ? (
+              <VolumeX size={17} className="text-white/60 hover:text-white" />
+            ) : volume < 0.5 ? (
+              <Volume1 size={17} className="text-white" />
+            ) : (
+              <Volume2 size={17} className="text-white" />
+            )}
+          </button>
+
+          {/* Interactive pure white volume slider */}
+          <div className="w-16 sm:w-20 flex items-center">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              className="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-white hover:accent-white"
+              title={t('playback.volumePercent', { percent: Math.round((isMuted ? 0 : volume) * 100) })}
+            />
+          </div>
+          
+          <span className="text-[11px] font-mono text-white min-w-[32px] text-right select-none">
+            {isMuted ? 'Mute' : `${Math.round(volume * 100)}%`}
+          </span>
+        </div>
       </div>
     </div>
   );
