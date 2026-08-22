@@ -120,15 +120,17 @@ func NvrStatusHandler(c *gin.Context) {
 			latestDur = latestRec.DurationSeconds
 		}
 
-		if cam.IsActive {
+		if !globalSettings.NvrStatus || !cam.IsActive {
+			status = "disabled"
+		} else {
 			segDuration := cam.SegmentDuration
 			if segDuration <= 0 {
 				segDuration = 300
 			}
 
-			// If the camera is active and we received a segment within (2 * segment_duration + 90s)
+			// If the camera is active and NVR engine is ON
 			maxExpectedAge := time.Duration(segDuration*2+90) * time.Second
-			if latestRec != nil && now.Sub(latestRec.EndAt) <= maxExpectedAge {
+			if latestRec == nil || now.Sub(latestRec.EndAt) <= maxExpectedAge {
 				status = "recording"
 			} else {
 				status = "stalled"

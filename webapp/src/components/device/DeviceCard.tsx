@@ -61,10 +61,10 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
 
         <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
           <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
-            Segment: {(device.segment_duration || 1800) / 60}m
+            {t('device.segmentLabel', { min: (device.segment_duration || 1800) / 60 })}
           </span>
           <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
-            Codec: {device.video_codec === 'copy' ? t('devices.copyCpu') : device.video_codec}
+            {t('device.codecLabel', { codec: device.video_codec === 'copy' ? t('devices.copyCpu') : device.video_codec })}
           </span>
           {device.audio_mode === 'disabled' ? (
             <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-200">
@@ -72,7 +72,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onEdit, onDelete
             </span>
           ) : (
             <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
-              Audio: {device.audio_mode === 'auto' ? t('devices.autoDetect') : device.audio_mode}
+              {t('device.audioLabel', { audio: device.audio_mode === 'auto' ? t('devices.autoDetect') : device.audio_mode })}
             </span>
           )}
           {device.extra_args && (

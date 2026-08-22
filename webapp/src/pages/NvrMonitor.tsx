@@ -323,8 +323,8 @@ const NvrMonitor = () => {
         {/* Card 3: Storage Quota & Retention Policy */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3 gap-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
-              {t('nvr.storageQuota')}
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {t('nvr.storageTitle')}
             </span>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
@@ -390,8 +390,8 @@ const NvrMonitor = () => {
             <span className="text-xs text-slate-400">{t('nvr.memoryUsage')}</span>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">
-            <span>Goroutines: {data?.system.goroutines || 0}</span>
-            <span>{data?.system.num_cpu || 1} CPU Cores</span>
+            <span>{t('nvr.goroutines', { count: data?.system.goroutines || 0 })}</span>
+            <span>{t('nvr.cpuCores', { count: data?.system.num_cpu || 1 })}</span>
           </p>
         </div>
       </div>
@@ -405,11 +405,11 @@ const NvrMonitor = () => {
               {t('nvr.cameraDetails')}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Live ingest health, latest video segment saved to S3, and stream parameters.
+              {t('nvr.cameraDetailsSubtitle')}
             </p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
-            Total Pipelines: {totalCamsCount}
+            {t('nvr.totalPipelines', { count: totalCamsCount })}
           </span>
         </div>
 
@@ -424,8 +424,8 @@ const NvrMonitor = () => {
                 <tr className="border-b border-slate-100 bg-slate-50/30 text-xs font-semibold text-slate-500">
                   <th className="py-3.5 px-5">{t('nvr.camera')}</th>
                   <th className="py-3.5 px-4">{t('nvr.status')}</th>
-                  <th className="py-3.5 px-4">Stream Pipeline</th>
-                  <th className="py-3.5 px-4">Segment Length</th>
+                  <th className="py-3.5 px-4">{t('nvr.streamPipeline')}</th>
+                  <th className="py-3.5 px-4">{t('nvr.segmentLength')}</th>
                   <th className="py-3.5 px-4">{t('nvr.latestSegment')}</th>
                   <th className="py-3.5 px-4">{t('nvr.totalSegments')}</th>
                 </tr>
@@ -452,12 +452,12 @@ const NvrMonitor = () => {
                       ) : cam.status === 'stalled' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                           <span className="w-2 h-2 rounded-full bg-amber-500" />
-                          NO SIGNAL / STALLED
+                          {t('nvr.noSignal')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                           <span className="w-2 h-2 rounded-full bg-slate-400" />
-                          {t('nvr.disabled')}
+                          {t('nvr.disabled').toUpperCase()}
                         </span>
                       )}
                     </td>
@@ -466,17 +466,25 @@ const NvrMonitor = () => {
                     <td className="py-4 px-4 text-xs">
                       <div className="flex flex-wrap gap-1">
                         <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-                          {cam.video_codec === 'copy' ? '0% CPU Copy' : cam.video_codec}
+                          {cam.video_codec === 'copy' ? t('devices.copyCpu') : cam.video_codec}
                         </span>
                         <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-                          Audio: {cam.audio_mode}
+                          {cam.audio_mode === 'disabled' || cam.audio_mode === 'mute'
+                            ? t('nvr.audioDisabled')
+                            : cam.audio_mode === 'auto'
+                              ? t('nvr.audioAuto')
+                              : cam.audio_mode === 'copy'
+                                ? t('nvr.audioCopy')
+                                : cam.audio_mode === 'aac'
+                                  ? t('nvr.audioAac')
+                                  : t('nvr.audioOther', { mode: cam.audio_mode })}
                         </span>
                       </div>
                     </td>
 
                     {/* Segment Length */}
                     <td className="py-4 px-4 text-xs font-medium text-slate-700">
-                      {cam.segment_duration / 60} mins ({cam.segment_duration}s)
+                      {t('nvr.mins', { minutes: Math.round(cam.segment_duration / 60), seconds: cam.segment_duration })}
                     </td>
 
                     {/* Latest S3 Segment */}
