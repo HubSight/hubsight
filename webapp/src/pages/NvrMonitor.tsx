@@ -321,28 +321,28 @@ const NvrMonitor = () => {
         </div>
 
         {/* Card 3: Storage Quota & Retention Policy */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
               {t('nvr.storageQuota')}
             </span>
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={handleCleanupStorage}
                 disabled={isUpdatingSettings || !data}
-                className="text-xs px-3 py-1.5 font-semibold bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors cursor-pointer"
+                className="text-xs px-2.5 py-1 font-semibold bg-red-50 text-red-600 rounded-lg hover:bg-red-100 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
               >
                 {t('nvr.format')}
               </button>
               <button
                 onClick={() => promptUpdateQuota(data?.storage.quota_bytes || 0)}
                 disabled={isUpdatingSettings || !data}
-                className="text-xs px-3 py-1.5 font-semibold bg-orange-50 text-orange-600 rounded-md hover:bg-orange-100 transition-colors cursor-pointer"
+                className="text-xs px-2.5 py-1 font-semibold bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
               >
                 {t('nvr.editLimit')}
               </button>
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                <HardDrive size={20} />
+              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg shrink-0">
+                <HardDrive size={18} />
               </div>
             </div>
           </div>
