@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Upload, Trash2, ShieldCheck, HeartHandshake, Sparkles, CheckCircle2 } from 'lucide-react';
 import type { MemberItem, MemberFormData, FaceItem } from '../../types/member';
 import { useTranslation } from '../../i18n';
@@ -21,16 +21,39 @@ export const MemberModal: React.FC<MemberModalProps> = ({
   const isEditing = !!member;
 
   const [formData, setFormData] = useState<MemberFormData>({
-    name: member?.name || '',
-    role: member?.role || 'family',
-    avatar_url: member?.avatar_url || '',
+    name: '',
+    role: 'family',
+    avatar_url: '',
   });
 
-  const [faces, setFaces] = useState<FaceItem[]>(member?.faces || []);
+  const [faces, setFaces] = useState<FaceItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'faces'>('info');
   const [uploadingFace, setUploadingFace] = useState(false);
+
+  // Reset form whenever modal opens or selected member changes
+  useEffect(() => {
+    if (isOpen) {
+      if (member) {
+        setFormData({
+          name: member.name || '',
+          role: member.role || 'family',
+          avatar_url: member.avatar_url || '',
+        });
+        setFaces(member.faces || []);
+      } else {
+        setFormData({
+          name: '',
+          role: 'family',
+          avatar_url: '',
+        });
+        setFaces([]);
+      }
+      setError('');
+      setActiveTab('info');
+    }
+  }, [member, isOpen]);
 
   if (!isOpen) return null;
 

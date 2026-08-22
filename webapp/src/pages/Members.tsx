@@ -223,7 +223,10 @@ const Members: React.FC = () => {
         <MemberModal
           isOpen={isModalOpen}
           member={selectedMember}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedMember(null);
+          }}
           onSuccess={fetchMembers}
         />
       </div>
