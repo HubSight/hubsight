@@ -3,7 +3,7 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: ./backend/gateway.Dockerfile
+      dockerfile: ./services/backend/gateway.Dockerfile
     restart: unless-stopped
     ports:
       - "8088:8080"
@@ -22,7 +22,7 @@ services:
   # ⚙️ Core CCTV Business Logic Service (Private Internal Microservice)
   core-service:
     build:
-      context: ./backend
+      context: ./services/backend
       dockerfile: core.Dockerfile
     restart: unless-stopped
     environment:
@@ -39,7 +39,7 @@ services:
   # 🔐 Internal Auth Microservice (Private, not exposed to host)
   auth-service:
     build:
-      context: ./backend
+      context: ./services/backend
       dockerfile: auth.Dockerfile
     restart: unless-stopped
     environment:
@@ -51,7 +51,7 @@ services:
   # ⚡ Dedicated Socket.IO Relay Microservice (Private, routed via API Gateway :8088/socket.io)
   relay-service:
     build:
-      context: ./relay-service
+      context: ./services/relay-service
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
@@ -66,7 +66,7 @@ services:
   # 📼 Internal NVR Recording Engine (Private, not exposed to host)
   nvr-service:
     build:
-      context: ./backend
+      context: ./services/backend
       dockerfile: recorder.Dockerfile
     restart: unless-stopped
     volumes:
@@ -80,15 +80,21 @@ services:
   # 👁️ Vision Service (Person Detection via YOLO)
   vision-service:
     build:
-      context: ./vision-service
+      context: ./services/vision-service
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      RTSP_URL: rtsp://host.docker.internal:8554/cam
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
-      PROCESS_FPS: "0"
+      CORE_SERVICE_URL: "http://core-service:8080"
+      M2M_SECRET: "cctv-internal-m2m-secret"
+      # Read from go2rtc's internal RTSP server (same buffer as WebRTC stream)
+      # so that bounding box timestamps align with the video shown in the browser.
+      GO2RTC_RTSP_BASE: "rtsp://webrtc-service:8554"
+      PROCESS_FPS: "5"
     depends_on:
       - mq-service
+      - webrtc-service
+      - core-service
 
   # 📹 WebRTC Media Server (Media RTP port 8555; Signaling routed via API Gateway :8088/webrtc)
   webrtc-service:
@@ -97,8 +103,10 @@ services:
     ports:
       - "8555:8555/tcp" # WebRTC TCP media
       - "8555:8555/udp" # WebRTC UDP media
+      # RTSP port 8554 is NOT exposed to host; only accessible within Docker network
+      # Vision-service uses it internally to read the same buffered stream as WebRTC.
     volumes:
-      - ./go2rtc:/config
+      - ./services/go2rtc:/config
 
   # 🐇 RabbitMQ Message Broker for internal events
   mq-service:
@@ -116,7 +124,7 @@ services:
   # 🕒 Background Cron & Job Worker Service (Retention, etc.)
   bgrd-service:
     build:
-      context: ./backend
+      context: ./services/backend
       dockerfile: bgrd.Dockerfile
     restart: unless-stopped
     environment:

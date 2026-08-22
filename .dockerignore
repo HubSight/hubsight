@@ -7,6 +7,6 @@ dist
 .vscode
 *.log
 data
-frontend/node_modules
-frontend/dist
-backend/dist
+webapp/node_modules
+webapp/dist
+services/backend/dist

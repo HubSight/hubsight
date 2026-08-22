@@ -91,11 +91,23 @@ Access points:
 ### 2. Seeding Accounts & RBAC Setup
 
 ```bash
-cd backend
+cd services/backend
 go run cmd/seed/main.go
 ```
 
 Generates `users_credentials.csv` with credentials for configured accounts.
+
+### 3. Existing database migration
+
+Before deploying this refactor to an existing database, run the versioned
+migrations with `DATABASE_URL` set. Migration `000002` preserves rows while
+replacing every primary key and the `sessions.user_id` / `recordings.camera_id`
+foreign keys with 21-character Nano IDs. It has no rollback path, so take a
+database backup first.
+
+```bash
+DATABASE_URL='postgres://…' ./scripts/migrate.sh
+```
 
 ---
 
