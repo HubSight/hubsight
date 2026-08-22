@@ -118,7 +118,7 @@ services:
     image: valkey/valkey:8-alpine
     restart: unless-stopped
     volumes:
-      - cctv_redis:/data
+      - cctv_valkey:/data
     command: valkey-server --appendonly yes
 
   # 🕒 Background Cron & Job Worker Service (Retention, etc.)
@@ -135,4 +135,4 @@ services:
 
 volumes:
   cctv_data:
-  cctv_redis:
+  cctv_valkey:
