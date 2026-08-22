@@ -255,6 +255,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
   useEffect(() => {
     if (!socket) return;
     const handleUpdate = (data: any) => {
+      if (data?.camera_id && String(data.camera_id) !== String(cameraId)) return;
       const ts = data.timestamp ?? Date.now();
       boxQueueRef.current.push({ ts, boxes: data.boxes || [], personDetected: true });
       // Trim queue: keep only last 3 seconds worth of entries
@@ -264,6 +265,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
     socket.on('vision.person.entered', handleUpdate);
     socket.on('vision.person.update', handleUpdate);
     socket.on('vision.person.left', (data: any) => {
+      if (data?.camera_id && String(data.camera_id) !== String(cameraId)) return;
       const ts = data?.timestamp ?? Date.now();
       boxQueueRef.current.push({ ts, boxes: [], personDetected: false });
     });

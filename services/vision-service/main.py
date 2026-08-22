@@ -20,9 +20,27 @@ PROCESS_FPS = int(os.getenv("PROCESS_FPS", "0"))
 # Internal go2rtc RTSP server – vision-service reads from the same buffered
 # source that WebRTC uses, ensuring temporal alignment with the live stream.
 GO2RTC_RTSP_BASE = os.getenv("GO2RTC_RTSP_BASE", "rtsp://webrtc-service:8554")
+WEBRTC_API_URL = os.getenv("WEBRTC_API_URL", "http://webrtc-service:1984")
 
 active_streams = {} # cam_id -> {'thread': t, 'stop_event': e, 'host': url}
 detector = None
+
+def ensure_go2rtc_stream(cam_id, rtsp_url):
+    try:
+        src_direct = rtsp_url
+        if "#" not in src_direct:
+            src_direct = f"{src_direct}#backchannel=0#transport=tcp"
+        elif "transport=" not in src_direct:
+            src_direct = f"{src_direct}#transport=tcp"
+        src_ffmpeg = f"ffmpeg:{rtsp_url}#audio=opus"
+        
+        url = f"{WEBRTC_API_URL}/api/streams"
+        params = [("name", f"cam_{cam_id}"), ("src", src_direct), ("src", src_ffmpeg)]
+        resp = requests.put(url, params=params, timeout=3)
+        if resp.status_code in (200, 201):
+            logger.debug(f"[{cam_id}] Registered stream in go2rtc successfully")
+    except Exception as e:
+        logger.warning(f"[{cam_id}] Could not register stream in go2rtc: {e}")
 
 def get_ai_cameras():
     try:
@@ -36,23 +54,27 @@ def get_ai_cameras():
     return []
 
 def stream_worker(cam_id, rtsp_url, stop_event):
-    # Read from go2rtc's internal RTSP server so that vision-service and the
-    # WebRTC stream consume the same buffer, keeping detections temporally
-    # aligned with the video displayed in the browser.
+    ensure_go2rtc_stream(cam_id, rtsp_url)
     go2rtc_url = f"{GO2RTC_RTSP_BASE}/cam_{cam_id}"
-    logger.info(f"[{cam_id}] Starting AI processing thread. Source: {go2rtc_url}")
+    logger.info(f"[{cam_id}] Starting AI processing thread. Primary: {go2rtc_url}")
     
     frame_interval = 1.0 / PROCESS_FPS if PROCESS_FPS > 0 else 0
+    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
     
     while not stop_event.is_set():
-        os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+        # Try internal go2rtc stream first
         cap = cv2.VideoCapture(go2rtc_url)
-        # Keep OpenCV buffer at 1 frame to stay as close to live edge as possible.
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
         if not cap.isOpened():
-            logger.warning(f"[{cam_id}] go2rtc stream not ready yet. Retrying in 5s...")
-            time.sleep(5)
+            ensure_go2rtc_stream(cam_id, rtsp_url)
+            logger.warning(f"[{cam_id}] go2rtc stream not ready, trying direct RTSP source...")
+            cap = cv2.VideoCapture(rtsp_url)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            
+        if not cap.isOpened():
+            logger.warning(f"[{cam_id}] Stream sources unreachable. Retrying in 3s...")
+            time.sleep(3)
             continue
         
         # Drain any frames that accumulated during connection setup so that the
