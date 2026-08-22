@@ -166,17 +166,19 @@ export const NvrMonitorSkeleton: React.FC = () => {
 
 export const AppLoadingSkeleton: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 p-4">
-      <div className="flex flex-col items-center gap-4 animate-fade-in">
-        <div className="w-16 h-16 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-xl shadow-orange-600/30 animate-pulse">
-          <Camera size={32} />
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 p-4 select-none">
+      <div className="flex flex-col items-center text-center animate-fade-in">
+        <div className="w-20 h-20 rounded-[22px] bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-5">
+          <Camera size={40} />
         </div>
-        <div className="text-center space-y-1.5">
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">HubSight</h1>
-          <p className="text-xs text-slate-400 font-medium">Smart CCTV & NVR Management</p>
-        </div>
-        <div className="w-40 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-3">
-          <div className="h-full bg-orange-600 rounded-full animate-[shimmer_1.5s_infinite_linear] w-1/2" />
+        <h1 className="text-2xl sm:text-[26px] font-extrabold text-slate-900 tracking-tight mb-1.5">
+          HubSight
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 font-medium mb-6">
+          Smart CCTV & NVR Management
+        </p>
+        <div className="w-36 h-1 bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-full bg-orange-600 rounded-full animate-[shimmer_1.3s_infinite_linear] w-1/2" />
         </div>
       </div>
     </div>
