@@ -1,7 +1,7 @@
 # Kế hoạch Triển khai Tính năng Nhận diện Khuôn mặt (Family Face Recognition) dùng InsightFace & YOLO26
 
-> **Tài liệu Kế hoạch Kỹ thuật (Technical Implementation Plan)**  
-> **Dự án**: CCTV AI Monitoring System  
+> **Tài liệu Kế hoạch Kỹ thuật (Technical Implementation Plan)**
+> **Dự án**: CCTV AI Monitoring System
 > **Mục tiêu**: Nhận diện thành viên gia đình và người lạ trong luồng camera, tạo metadata/event phục vụ Event-driven NVR, với chi phí tính toán thấp và **không cần train lại model** cho từng thành viên.
 
 ---
@@ -112,13 +112,13 @@ Nam / thành viên khác / Unknown
 
 ## 2.2 Không nên quảng cáo độ chính xác bằng một con số cố định
 
-Các benchmark của model zoo không thể được xem là độ chính xác thực tế trên camera nhà của hệ thống. Ví dụ, model zoo của InsightFace công bố kết quả benchmark riêng cho từng model pack và dataset; `buffalo_s` và `buffalo_l` có hiệu năng khác nhau đáng kể. Do đó, hệ thống này phải benchmark bằng dữ liệu thật của camera, đặc biệt trong điều kiện thiếu sáng, nghiêng mặt, khoảng cách xa và camera góc cao. 
+Các benchmark của model zoo không thể được xem là độ chính xác thực tế trên camera nhà của hệ thống. Ví dụ, model zoo của InsightFace công bố kết quả benchmark riêng cho từng model pack và dataset; `buffalo_s` và `buffalo_l` có hiệu năng khác nhau đáng kể. Do đó, hệ thống này phải benchmark bằng dữ liệu thật của camera, đặc biệt trong điều kiện thiếu sáng, nghiêng mặt, khoảng cách xa và camera góc cao.
 
 **Không dùng các claim kiểu `99.8% accuracy` hoặc `<8ms/face` như SLA mặc định trong tài liệu.** Đây là các chỉ số cần đo trên hardware + camera + resolution thực tế.
 
 ## 2.3 Vấn đề license
 
-Model zoo của InsightFace hiện ghi rõ các model pretrained được cung cấp cho **non-commercial research purposes only**. Nếu sản phẩm được thương mại hóa, cần kiểm tra license của model/model pack được chọn và thay bằng model đã được cấp phép phù hợp nếu cần. 
+Model zoo của InsightFace hiện ghi rõ các model pretrained được cung cấp cho **non-commercial research purposes only**. Nếu sản phẩm được thương mại hóa, cần kiểm tra license của model/model pack được chọn và thay bằng model đã được cấp phép phù hợp nếu cần.
 
 ---
 
@@ -135,7 +135,7 @@ InsightFace
     └── MBF recognition
 ```
 
-`buffalo_s` là model pack nhỏ hơn `buffalo_l`, nhưng vẫn cần benchmark thực tế trên thiết bị triển khai. Kích thước model và benchmark được công bố trong model zoo của InsightFace. 
+`buffalo_s` là model pack nhỏ hơn `buffalo_l`, nhưng vẫn cần benchmark thực tế trên thiết bị triển khai. Kích thước model và benchmark được công bố trong model zoo của InsightFace.
 
 Nếu accuracy không đủ cho camera thực tế:
 
@@ -1010,10 +1010,10 @@ Kiến trúc đề xuất cuối cùng là:
 
 **Triết lý chính của hệ thống:**
 
-> YOLO trả lời **“có người không?”**  
-> Tracking trả lời **“đó có phải cùng một người không?”**  
-> InsightFace trả lời **“người đó là ai?”**  
-> Event Engine trả lời **“khoảnh khắc này có đáng lưu không?”**  
+> YOLO trả lời **“có người không?”**
+> Tracking trả lời **“đó có phải cùng một người không?”**
+> InsightFace trả lời **“người đó là ai?”**
+> Event Engine trả lời **“khoảnh khắc này có đáng lưu không?”**
 > NVR chỉ cần giữ **những khoảnh khắc đáng xem**.
 
 ---

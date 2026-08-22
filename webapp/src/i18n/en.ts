@@ -359,6 +359,16 @@ const en: Record<TranslationKey, string> = {
   'common.edit': 'Edit',
   'common.errorOccurred': 'An error occurred',
 
+  // === Notifications ===
+  'notifications.title': 'Notifications',
+  'notifications.subtitle': 'Person recognition and security alerts history',
+  'notifications.unread': 'Unread',
+  'notifications.markAllRead': 'Mark all as read',
+  'notifications.noNotifications': 'No notifications yet',
+  'notifications.enablePushTitle': 'Enable PWA Push Notifications',
+  'notifications.enablePushDesc': 'Receive instant device alerts even when the app is closed.',
+  'notifications.enablePushBtn': 'Enable Push Alerts',
+
   // === Footer ===
   'footer.copyright': '© {year} by Anh Quoc Tran',
 

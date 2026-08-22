@@ -357,6 +357,16 @@ const vi = {
   'common.edit': 'Sửa',
   'common.errorOccurred': 'Đã xảy ra lỗi',
 
+  // === Notifications ===
+  'notifications.title': 'Thông báo',
+  'notifications.subtitle': 'Lịch sử nhận diện người và cảnh báo',
+  'notifications.unread': 'Chưa đọc',
+  'notifications.markAllRead': 'Đã đọc tất cả',
+  'notifications.noNotifications': 'Chưa có thông báo nào',
+  'notifications.enablePushTitle': 'Bật thông báo đẩy PWA',
+  'notifications.enablePushDesc': 'Nhận cảnh báo ngay lập tức trên thiết bị ngay cả khi đã đóng ứng dụng.',
+  'notifications.enablePushBtn': 'Bật thông báo ngay',
+
   // === Footer ===
   'footer.copyright': '© {year} bởi Anh Quoc Tran',
 

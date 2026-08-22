@@ -56,4 +56,12 @@ export class RelayConsumer {
       data,
     });
   }
+
+  @EventPattern('notification.new')
+  handleNotificationNew(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'notification.new',
+      data,
+    });
+  }
 }

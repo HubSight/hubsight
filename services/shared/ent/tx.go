@@ -18,6 +18,10 @@ type Tx struct {
 	Member *MemberClient
 	// MemberFace is the client for interacting with the MemberFace builders.
 	MemberFace *MemberFaceClient
+	// Notification is the client for interacting with the Notification builders.
+	Notification *NotificationClient
+	// PushSubscription is the client for interacting with the PushSubscription builders.
+	PushSubscription *PushSubscriptionClient
 	// Recording is the client for interacting with the Recording builders.
 	Recording *RecordingClient
 	// Session is the client for interacting with the Session builders.
@@ -160,6 +164,8 @@ func (tx *Tx) init() {
 	tx.Camera = NewCameraClient(tx.config)
 	tx.Member = NewMemberClient(tx.config)
 	tx.MemberFace = NewMemberFaceClient(tx.config)
+	tx.Notification = NewNotificationClient(tx.config)
+	tx.PushSubscription = NewPushSubscriptionClient(tx.config)
 	tx.Recording = NewRecordingClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)

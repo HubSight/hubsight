@@ -6,6 +6,8 @@ import (
 	"cctv/shared/ent/camera"
 	"cctv/shared/ent/member"
 	"cctv/shared/ent/memberface"
+	"cctv/shared/ent/notification"
+	"cctv/shared/ent/pushsubscription"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/schema"
 	"cctv/shared/ent/session"
@@ -140,6 +142,78 @@ func init() {
 	memberfaceDescID := memberfaceFields[0].Descriptor()
 	// memberface.DefaultID holds the default value on creation for the id field.
 	memberface.DefaultID = memberfaceDescID.Default.(func() string)
+	notificationFields := schema.Notification{}.Fields()
+	_ = notificationFields
+	// notificationDescCameraID is the schema descriptor for camera_id field.
+	notificationDescCameraID := notificationFields[1].Descriptor()
+	// notification.DefaultCameraID holds the default value on creation for the camera_id field.
+	notification.DefaultCameraID = notificationDescCameraID.Default.(string)
+	// notificationDescType is the schema descriptor for type field.
+	notificationDescType := notificationFields[2].Descriptor()
+	// notification.DefaultType holds the default value on creation for the type field.
+	notification.DefaultType = notificationDescType.Default.(string)
+	// notificationDescTitle is the schema descriptor for title field.
+	notificationDescTitle := notificationFields[3].Descriptor()
+	// notification.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	notification.TitleValidator = notificationDescTitle.Validators[0].(func(string) error)
+	// notificationDescBody is the schema descriptor for body field.
+	notificationDescBody := notificationFields[4].Descriptor()
+	// notification.DefaultBody holds the default value on creation for the body field.
+	notification.DefaultBody = notificationDescBody.Default.(string)
+	// notificationDescCategory is the schema descriptor for category field.
+	notificationDescCategory := notificationFields[5].Descriptor()
+	// notification.DefaultCategory holds the default value on creation for the category field.
+	notification.DefaultCategory = notificationDescCategory.Default.(string)
+	// notificationDescMemberID is the schema descriptor for member_id field.
+	notificationDescMemberID := notificationFields[6].Descriptor()
+	// notification.DefaultMemberID holds the default value on creation for the member_id field.
+	notification.DefaultMemberID = notificationDescMemberID.Default.(string)
+	// notificationDescThumbnailURL is the schema descriptor for thumbnail_url field.
+	notificationDescThumbnailURL := notificationFields[7].Descriptor()
+	// notification.DefaultThumbnailURL holds the default value on creation for the thumbnail_url field.
+	notification.DefaultThumbnailURL = notificationDescThumbnailURL.Default.(string)
+	// notificationDescIsRead is the schema descriptor for is_read field.
+	notificationDescIsRead := notificationFields[8].Descriptor()
+	// notification.DefaultIsRead holds the default value on creation for the is_read field.
+	notification.DefaultIsRead = notificationDescIsRead.Default.(bool)
+	// notificationDescCreatedAt is the schema descriptor for created_at field.
+	notificationDescCreatedAt := notificationFields[9].Descriptor()
+	// notification.DefaultCreatedAt holds the default value on creation for the created_at field.
+	notification.DefaultCreatedAt = notificationDescCreatedAt.Default.(func() time.Time)
+	// notificationDescID is the schema descriptor for id field.
+	notificationDescID := notificationFields[0].Descriptor()
+	// notification.DefaultID holds the default value on creation for the id field.
+	notification.DefaultID = notificationDescID.Default.(func() string)
+	pushsubscriptionFields := schema.PushSubscription{}.Fields()
+	_ = pushsubscriptionFields
+	// pushsubscriptionDescUserID is the schema descriptor for user_id field.
+	pushsubscriptionDescUserID := pushsubscriptionFields[1].Descriptor()
+	// pushsubscription.DefaultUserID holds the default value on creation for the user_id field.
+	pushsubscription.DefaultUserID = pushsubscriptionDescUserID.Default.(string)
+	// pushsubscriptionDescEndpoint is the schema descriptor for endpoint field.
+	pushsubscriptionDescEndpoint := pushsubscriptionFields[2].Descriptor()
+	// pushsubscription.EndpointValidator is a validator for the "endpoint" field. It is called by the builders before save.
+	pushsubscription.EndpointValidator = pushsubscriptionDescEndpoint.Validators[0].(func(string) error)
+	// pushsubscriptionDescP256dh is the schema descriptor for p256dh field.
+	pushsubscriptionDescP256dh := pushsubscriptionFields[3].Descriptor()
+	// pushsubscription.P256dhValidator is a validator for the "p256dh" field. It is called by the builders before save.
+	pushsubscription.P256dhValidator = pushsubscriptionDescP256dh.Validators[0].(func(string) error)
+	// pushsubscriptionDescAuth is the schema descriptor for auth field.
+	pushsubscriptionDescAuth := pushsubscriptionFields[4].Descriptor()
+	// pushsubscription.AuthValidator is a validator for the "auth" field. It is called by the builders before save.
+	pushsubscription.AuthValidator = pushsubscriptionDescAuth.Validators[0].(func(string) error)
+	// pushsubscriptionDescUserAgent is the schema descriptor for user_agent field.
+	pushsubscriptionDescUserAgent := pushsubscriptionFields[5].Descriptor()
+	// pushsubscription.DefaultUserAgent holds the default value on creation for the user_agent field.
+	pushsubscription.DefaultUserAgent = pushsubscriptionDescUserAgent.Default.(string)
+	// pushsubscriptionDescCreatedAt is the schema descriptor for created_at field.
+	pushsubscriptionDescCreatedAt := pushsubscriptionFields[6].Descriptor()
+	// pushsubscription.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pushsubscription.DefaultCreatedAt = pushsubscriptionDescCreatedAt.Default.(func() time.Time)
+	// pushsubscriptionDescID is the schema descriptor for id field.
+	pushsubscriptionDescID := pushsubscriptionFields[0].Descriptor()
+	// pushsubscription.DefaultID holds the default value on creation for the id field.
+	pushsubscription.DefaultID = pushsubscriptionDescID.Default.(func() string)
 	recordingFields := schema.Recording{}.Fields()
 	_ = recordingFields
 	// recordingDescCreatedAt is the schema descriptor for created_at field.

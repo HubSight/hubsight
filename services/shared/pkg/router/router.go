@@ -9,6 +9,7 @@ import (
 	"cctv/shared/pkg/device"
 	"cctv/shared/pkg/live"
 	"cctv/shared/pkg/member"
+	"cctv/shared/pkg/notification"
 	"cctv/shared/pkg/nvr"
 	"cctv/shared/pkg/recording"
 	"github.com/gin-contrib/cors"
@@ -85,6 +86,14 @@ func New() *gin.Engine {
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)
 			protected.GET("/archive/:id/stream", recording.StreamHandler)
+
+			// Notification endpoints
+			protected.GET("/notifications", notification.ListNotificationsHandler)
+			protected.PATCH("/notifications/:id/read", notification.MarkReadHandler)
+			protected.POST("/notifications/read-all", notification.MarkAllReadHandler)
+			protected.DELETE("/notifications/:id", notification.DeleteNotificationHandler)
+			protected.POST("/notifications/subscribe-push", notification.SubscribePushHandler)
+			protected.GET("/notifications/vapid-key", notification.GetVapidPublicKeyHandler)
 
 			// Live streaming endpoints (WebRTC signaling + on-demand AI viewer tracking)
 			protected.POST("/live/:id/webrtc", live.WebRTCHandler)

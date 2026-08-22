@@ -3,25 +3,52 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users } from 'lucide-react';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
 import { AppLockScreen } from '../components/lock/AppLockScreen';
 import { AppFooter } from '../components/AppFooter';
+import { NotificationToast } from '../components/notifications/NotificationToast';
+import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
+import { useSocket } from '../context/SocketContext';
 import axiosClient from '../api/axiosClient';
 import { clearPwaRefreshToken } from '../utils/pwa';
 
 const MainLayout = () => {
   const { user, checkAuth } = useAuth();
+  const { socket } = useSocket();
   const { t, locale, setLocale } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Fetch initial unread count
+  useEffect(() => {
+    axiosClient.get('/notifications')
+      .then((res) => {
+        setUnreadNotifCount(res.data?.unread_count || 0);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Listen for new notifications via socket
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewNotif = () => {
+      setUnreadNotifCount((prev) => prev + 1);
+    };
+    socket.on('notification.new', handleNewNotif);
+    return () => {
+      socket.off('notification.new', handleNewNotif);
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (location.pathname === '/playback') {
@@ -65,6 +92,16 @@ const MainLayout = () => {
       {/* App Lock Screen Overlay */}
       <AppLockScreen />
 
+      {/* Floating Realtime Notification Toast */}
+      <NotificationToast />
+
+      {/* Notification Drawer */}
+      <NotificationDrawer
+        isOpen={showNotificationDrawer}
+        onClose={() => setShowNotificationDrawer(false)}
+        onUnreadCountChange={setUnreadNotifCount}
+      />
+
       {/* Mobile Header (Includes safe-area-inset-top) */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4 shadow-xs">
         <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
@@ -73,13 +110,28 @@ const MainLayout = () => {
           </div>
           <h2 className="text-base font-bold m-0 text-slate-800 tracking-tight">HubSight</h2>
         </NavLink>
-        <button
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation"
-          onClick={() => setIsMobileMenuOpen(true)}
-          aria-label="Open navigation menu"
-        >
-          <Menu size={22} />
-        </button>
+
+        <div className="flex items-center gap-1">
+          {/* Notification Bell on Mobile */}
+          <button
+            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation relative cursor-pointer"
+            onClick={() => setShowNotificationDrawer(true)}
+            aria-label="Notifications"
+          >
+            <Bell size={20} />
+            {unreadNotifCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
+            )}
+          </button>
+
+          <button
+            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation cursor-pointer"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open navigation menu"
+          >
+            <Menu size={22} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Backdrop */}
@@ -138,6 +190,23 @@ const MainLayout = () => {
               {t('nav.nvrMonitor')}
             </NavLink>
           )}
+
+          {/* Notifications Button */}
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setShowNotificationDrawer(true);
+            }}
+            className="nav-link w-full text-left cursor-pointer relative"
+          >
+            <Bell size={20} />
+            <span className="flex-1">{t('notifications.title')}</span>
+            {unreadNotifCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500 text-white leading-none">
+                {unreadNotifCount}
+              </span>
+            )}
+          </button>
         </nav>
 
         {/* Language Switch */}

@@ -15,6 +15,12 @@ type Member func(*sql.Selector)
 // MemberFace is the predicate function for memberface builders.
 type MemberFace func(*sql.Selector)
 
+// Notification is the predicate function for notification builders.
+type Notification func(*sql.Selector)
+
+// PushSubscription is the predicate function for pushsubscription builders.
+type PushSubscription func(*sql.Selector)
+
 // Recording is the predicate function for recording builders.
 type Recording func(*sql.Selector)
 

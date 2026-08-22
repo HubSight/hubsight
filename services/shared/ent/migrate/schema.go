@@ -74,6 +74,41 @@ var (
 			},
 		},
 	}
+	// NotificationsColumns holds the columns for the "notifications" table.
+	NotificationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "camera_id", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "type", Type: field.TypeString, Default: "person_identified"},
+		{Name: "title", Type: field.TypeString},
+		{Name: "body", Type: field.TypeString, Default: ""},
+		{Name: "category", Type: field.TypeString, Default: "family"},
+		{Name: "member_id", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "thumbnail_url", Type: field.TypeString, Default: ""},
+		{Name: "is_read", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// NotificationsTable holds the schema information for the "notifications" table.
+	NotificationsTable = &schema.Table{
+		Name:       "notifications",
+		Columns:    NotificationsColumns,
+		PrimaryKey: []*schema.Column{NotificationsColumns[0]},
+	}
+	// PushSubscriptionsColumns holds the columns for the "push_subscriptions" table.
+	PushSubscriptionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "user_id", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "endpoint", Type: field.TypeString, Unique: true},
+		{Name: "p256dh", Type: field.TypeString},
+		{Name: "auth", Type: field.TypeString},
+		{Name: "user_agent", Type: field.TypeString, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// PushSubscriptionsTable holds the schema information for the "push_subscriptions" table.
+	PushSubscriptionsTable = &schema.Table{
+		Name:       "push_subscriptions",
+		Columns:    PushSubscriptionsColumns,
+		PrimaryKey: []*schema.Column{PushSubscriptionsColumns[0]},
+	}
 	// RecordingsColumns holds the columns for the "recordings" table.
 	RecordingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -161,6 +196,8 @@ var (
 		CamerasTable,
 		MembersTable,
 		MemberFacesTable,
+		NotificationsTable,
+		PushSubscriptionsTable,
 		RecordingsTable,
 		SessionsTable,
 		SettingsTable,
