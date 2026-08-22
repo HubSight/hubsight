@@ -1,3 +1,5 @@
+import os
+import requests
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -179,31 +181,25 @@ class PersonDetector:
                                         was_locked = track_state_obj.is_locked
                                         track_state_obj.update_match(mid, name, role, sim, best_face.get("is_good", False))
                                         
-                                        # When identity is freshly locked, trigger notification.new event
+                                        # When identity is freshly locked, ingest notification via core-service to persist in DB & broadcast
                                         if not was_locked and track_state_obj.is_locked:
-                                            if track_state_obj.state == "stranger":
-                                                self.mq_client.publish_event("notification.new", {
-                                                    "camera_id": camera_id,
-                                                    "type": "stranger_detected",
-                                                    "title": "⚠️ Cảnh báo: Phát hiện người lạ",
-                                                    "body": f"Phát hiện người chưa xác định tại camera",
-                                                    "category": "stranger",
-                                                    "member_id": "",
-                                                    "is_read": False,
-                                                    "timestamp": int(time.time() * 1000)
-                                                })
-                                            else:
-                                                title_text = f"👤 {track_state_obj.name} đã về nhà" if track_state_obj.role == "family" else f"👤 {track_state_obj.name} vừa đến"
-                                                self.mq_client.publish_event("notification.new", {
-                                                    "camera_id": camera_id,
-                                                    "type": "person_identified",
-                                                    "title": title_text,
-                                                    "body": f"Nhận diện {track_state_obj.name} ({track_state_obj.role})",
-                                                    "category": "family" if track_state_obj.role == "family" else "guest",
-                                                    "member_id": track_state_obj.member_id or "",
-                                                    "is_read": False,
-                                                    "timestamp": int(time.time() * 1000)
-                                                })
+                                            try:
+                                                payload = {
+                                                    "camera_id": str(camera_id),
+                                                    "type": "stranger_detected" if track_state_obj.state == "stranger" else "person_identified",
+                                                    "name": track_state_obj.name or "Người lạ",
+                                                    "role": track_state_obj.role or "stranger",
+                                                    "member_id": str(track_state_obj.member_id) if track_state_obj.member_id else "",
+                                                    "thumbnail_url": ""
+                                                }
+                                                core_url = os.getenv("CORE_SERVICE_URL", "http://core-service:8080")
+                                                requests.post(
+                                                    f"{core_url}/api/internal/notifications/ingest",
+                                                    json=payload,
+                                                    timeout=1.5
+                                                )
+                                            except Exception as e:
+                                                logger.error(f"Failed to ingest notification: {e}")
 
                     # Format box metadata
                     state_cat = track_state_obj.state if track_state_obj else "verifying"

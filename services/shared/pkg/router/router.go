@@ -41,6 +41,7 @@ func New() *gin.Engine {
 		{
 			internal.GET("/ai-cameras", device.ListAICamerasHandler)
 			internal.GET("/face-embeddings", member.ListAllEmbeddingsInternalHandler)
+			internal.POST("/notifications/ingest", notification.IngestVisionEventHandler)
 		}
 
 		// Protected domain routes (Validated via auth-service)

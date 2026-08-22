@@ -18,6 +18,7 @@ import { useTranslation } from '../../i18n';
 import axiosClient from '../../api/axiosClient';
 import { subscribeToWebPush, isPushNotificationSupported, getPushNotificationPermission } from '../../utils/push';
 import { useNavigate } from 'react-router-dom';
+import { useSocket } from '../../context/SocketContext';
 
 dayjs.extend(relativeTime);
 
@@ -33,6 +34,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   onUnreadCountChange,
 }) => {
   const { t } = useTranslation();
+  const { socket } = useSocket();
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -52,8 +54,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       const res = await axiosClient.get('/notifications');
       const data = res.data;
       setNotifications(data?.notifications || []);
-      setUnreadCount(data?.unread_count || 0);
-      onUnreadCountChange?.(data?.unread_count || 0);
+      const count = data?.unread_count || 0;
+      setUnreadCount(count);
+      onUnreadCountChange?.(count);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
     } finally {
@@ -66,6 +69,19 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       fetchNotifications();
     }
   }, [isOpen, fetchNotifications]);
+
+  // Real-time dynamic append when socket receives new notification
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewNotif = (notif: NotificationItem) => {
+      setNotifications((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)]);
+      setUnreadCount((prev) => prev + 1);
+    };
+    socket.on('notification.new', handleNewNotif);
+    return () => {
+      socket.off('notification.new', handleNewNotif);
+    };
+  }, [socket]);
 
   const handleMarkAllRead = async () => {
     try {

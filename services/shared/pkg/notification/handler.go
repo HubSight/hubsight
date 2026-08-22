@@ -224,7 +224,42 @@ func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, 
 
 	// 1. Broadcast online notification via Socket.IO
 	_ = mq.PublishEvent("notification.new", dto)
-	log.Printf("[Notification] Created & broadcasted: %s (%s)", title, category)
+	log.Printf("[Notification] Created in DB (ID: %s) & broadcasted: %s (%s)", n.ID, title, category)
 
 	return n, nil
 }
+
+type IngestVisionEventInput struct {
+	CameraID string `json:"camera_id" binding:"required"`
+	Type     string `json:"type"`
+	Name     string `json:"name"`
+	Role     string `json:"role"`
+	MemberID string `json:"member_id"`
+	ThumbURL string `json:"thumbnail_url"`
+}
+
+// IngestVisionEventHandler handles vision service notification ingestion
+func IngestVisionEventHandler(c *gin.Context) {
+	var input IngestVisionEventInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := IngestVisionEvent(
+		c.Request.Context(),
+		input.CameraID,
+		input.Type,
+		input.Name,
+		input.Role,
+		input.MemberID,
+		input.ThumbURL,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to ingest notification: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
