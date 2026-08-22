@@ -6,6 +6,7 @@ import (
 	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/mq"
+	"cctv/shared/pkg/nvr"
 	"cctv/shared/pkg/router"
 	"cctv/shared/pkg/storage"
 )
@@ -29,6 +30,9 @@ func main() {
 	} else {
 		defer mq.Close()
 	}
+
+	// Start Real-time NVR status broadcaster
+	nvr.StartNvrStatusBroadcaster()
 
 	r := router.New()
 

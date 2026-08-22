@@ -114,7 +114,8 @@ const en: Record<TranslationKey, string> = {
   // === NVR Monitor ===
   'nvr.title': 'NVR Monitor',
   'nvr.subtitle': 'Real-time NVR recording system monitoring',
-  'nvr.autoRefresh': 'Auto-refresh (5s)',
+  'nvr.autoRefresh': 'Auto-refresh',
+  'nvr.realtimeLive': 'Online',
   'nvr.engineStatus': 'NVR Engine Status',
   'nvr.stopEngine': 'Stop Engine',
   'nvr.startEngine': 'Start Engine',
@@ -326,9 +327,9 @@ const en: Record<TranslationKey, string> = {
   'members.editMember': 'Edit Member',
   'members.modalSubtitle': 'Update member info and manage face recognition sample photos',
   'members.roleFamily': 'Family',
-  'members.roleFamilyDesc': 'Direct family member (Green bounding box)',
+  'members.roleFamilyDesc': 'Direct family member',
   'members.roleNeighbor': 'Known Guest / Neighbor',
-  'members.roleNeighborDesc': 'Friends, neighbors, frequent visitors (Blue bounding box)',
+  'members.roleNeighborDesc': 'Friends, neighbors, frequent visitors',
   'members.roleGuest': 'Known Guest',
   'members.faceSamplesCount': 'face samples',
   'members.manageFaces': 'Manage Face Samples',
@@ -347,7 +348,7 @@ const en: Record<TranslationKey, string> = {
   'members.confirmDelete': 'Are you sure you want to delete this member and all associated face vectors?',
   'members.searchPlaceholder': 'Search member by name...',
   'members.noMembersFound': 'No members found',
-  'members.noMembersHint': 'Add family members to enable AI recognition and automatic green bounding box overlay.',
+  'members.noMembersHint': 'Add family members to enable AI recognition and automatic smart notification alerts.',
   'members.addFirstMember': 'Add First Member',
 
   // === Common Actions ===

@@ -1,7 +1,9 @@
 package nvr
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -12,15 +14,15 @@ import (
 	"cctv/shared/ent/recording"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/live"
+	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/storage"
 	"github.com/gin-gonic/gin"
 )
 
 var startTime = time.Now()
 
-func NvrStatusHandler(c *gin.Context) {
-	ctx := c.Request.Context()
-
+// GetNvrStatusSnapshot computes full statistics of the NVR engine
+func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 	// 1. Collect System / Runtime statistics
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -91,8 +93,7 @@ func NvrStatusHandler(c *gin.Context) {
 	// 3. Per-Camera Recorder Status
 	cameras, err := database.Client.Camera.Query().All(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cameras: " + err.Error()})
-		return
+		return nil, err
 	}
 
 	cameraStatuses := make([]CameraRecorderStatus, 0, len(cameras))
@@ -180,11 +181,10 @@ func NvrStatusHandler(c *gin.Context) {
 			}
 		}
 	} else {
-		// Fallback: check how many cameras have active viewers registered in live tracker
 		activeLiveCount = len(live.Tracker.ActiveCameraIDs())
 	}
 
-	res := NvrStatusResponse{
+	res := &NvrStatusResponse{
 		ServiceName:            "HubSight NVR Engine",
 		Status:                 "healthy",
 		IsGlobalEnabled:        globalSettings.NvrStatus,
@@ -195,5 +195,45 @@ func NvrStatusHandler(c *gin.Context) {
 		ActiveLiveStreamsCount: activeLiveCount,
 	}
 
+	return res, nil
+}
+
+// NvrStatusHandler handles HTTP GET requests for initial load
+func NvrStatusHandler(c *gin.Context) {
+	res, err := GetNvrStatusSnapshot(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch NVR status: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, res)
+}
+
+// BroadcastNvrStatus computes snapshot and publishes nvr.status.update to RabbitMQ
+func BroadcastNvrStatus(ctx context.Context) error {
+	res, err := GetNvrStatusSnapshot(ctx)
+	if err != nil {
+		return err
+	}
+	return mq.PublishEvent("nvr.status.update", res)
+}
+
+// StartNvrStatusBroadcaster starts a background ticker to publish real-time NVR status
+func StartNvrStatusBroadcaster() {
+	go func() {
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if database.Client == nil {
+				continue
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			if err := BroadcastNvrStatus(ctx); err != nil {
+				// Silently skip if MQ or DB is temporarily busy
+			}
+			cancel()
+		}
+		log.Println("[NVR] Real-time Status Broadcaster stopped")
+	}()
+	log.Println("[NVR] Real-time Status Broadcaster started (3s interval over RabbitMQ -> Socket.IO)")
 }

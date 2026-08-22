@@ -112,7 +112,8 @@ const vi = {
   // === NVR Monitor ===
   'nvr.title': 'Giám sát NVR',
   'nvr.subtitle': 'Giám sát hệ thống ghi hình trực tiếp',
-  'nvr.autoRefresh': 'Tự động làm mới (5s)',
+  'nvr.autoRefresh': 'Tự động làm mới',
+  'nvr.realtimeLive': 'Trực tuyến',
   'nvr.engineStatus': 'Trạng thái NVR Engine',
   'nvr.stopEngine': 'Tắt Engine',
   'nvr.startEngine': 'Bật Engine',
@@ -324,9 +325,9 @@ const vi = {
   'members.editMember': 'Chỉnh sửa thành viên',
   'members.modalSubtitle': 'Cập nhật thông tin và quản lý các ảnh mẫu khuôn mặt',
   'members.roleFamily': 'Gia đình',
-  'members.roleFamilyDesc': 'Thành viên ruột thịt trong nhà (Khung Xanh lá)',
+  'members.roleFamilyDesc': 'Thành viên ruột thịt trong nhà (Thông báo Xanh lá)',
   'members.roleNeighbor': 'Khách quen / Hàng xóm',
-  'members.roleNeighborDesc': 'Bạn bè, hàng xóm quen biết (Khung Xanh dương)',
+  'members.roleNeighborDesc': 'Bạn bè, hàng xóm quen biết (Thông báo Xanh dương)',
   'members.roleGuest': 'Khách quen',
   'members.faceSamplesCount': 'ảnh mẫu',
   'members.manageFaces': 'Quản lý ảnh mẫu',
@@ -345,7 +346,7 @@ const vi = {
   'members.confirmDelete': 'Bạn có chắc chắn muốn xoá thành viên này cùng toàn bộ dữ liệu khuôn mặt?',
   'members.searchPlaceholder': 'Tìm kiếm theo tên thành viên...',
   'members.noMembersFound': 'Chưa có thành viên nào',
-  'members.noMembersHint': 'Thêm thành viên gia đình để camera tự động nhận diện và gán khung xanh lá.',
+  'members.noMembersHint': 'Thêm thành viên gia đình để camera tự động nhận diện và gửi thông báo khi về nhà.',
   'members.addFirstMember': 'Thêm thành viên đầu tiên',
 
   // === Common Actions ===

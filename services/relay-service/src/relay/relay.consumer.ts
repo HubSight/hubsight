@@ -64,4 +64,12 @@ export class RelayConsumer {
       data,
     });
   }
+
+  @EventPattern('nvr.status.update')
+  handleNvrStatusUpdate(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'nvr.status.update',
+      data,
+    });
+  }
 }

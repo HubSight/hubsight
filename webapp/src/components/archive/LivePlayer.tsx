@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX, Sparkles } from 'lucide-react';
 import { useTranslation } from '../../i18n';
-import { useSocket } from '../../context/SocketContext';
 import axiosClient from '../../api/axiosClient';
 
 interface LivePlayerProps {
@@ -12,9 +11,7 @@ interface LivePlayerProps {
 
 export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLiveStatusChange }) => {
   const { t } = useTranslation();
-  const { socket } = useSocket();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [streamError, setStreamError] = useState<string | null>(null);
   const [hasAudioTrack, setHasAudioTrack] = useState(false);
@@ -52,20 +49,6 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
     }
   };
 
-  // ── Bounding box timestamp queue ──────────────────────────────────────────
-  // Each entry: { ts: ms wall-clock when server processed the frame, boxes[] }
-  // We buffer the last 3 seconds of events and pick the entry whose timestamp
-  // is closest to (Date.now() - BOX_LAG_MS) so that boxes line up with the
-  // video frame currently on screen despite YOLO inference delay.
-  // BOX_LAG_MS ≈ total CV pipeline latency (YOLO + MQ + Socket.IO).
-  // At source parity (go2rtc→CV == go2rtc→WebRTC) this is mostly inference
-  // time: set to 0 initially; raise if boxes still lead the video.
-  const BOX_LAG_MS = 0;
-  type BoxEntry = { ts: number; boxes: any[]; personDetected: boolean };
-  const boxQueueRef = useRef<BoxEntry[]>([]);
-  const currentBoxesRef = useRef<{ personDetected: boolean; boxes: any[] }>(
-    { personDetected: false, boxes: [] }
-  );
   // ── Stable viewer ID for AI heartbeat ────────────────────────────────────
   // One UUID per LivePlayer mount; reused across heartbeats so the backend
   // counts this as a single viewer regardless of how many pings are sent.
@@ -251,164 +234,17 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
   }, [cameraId]);
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Vision overlay event listeners
+  // Lightweight render FPS tracker for Trace monitor
   // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!socket) return;
-    const handleUpdate = (data: any) => {
-      if (data?.camera_id && String(data.camera_id) !== String(cameraId)) return;
-      const ts = data.timestamp ?? Date.now();
-      boxQueueRef.current.push({ ts, boxes: data.boxes || [], personDetected: true });
-      // Trim queue: keep only last 3 seconds worth of entries
-      const cutoff = Date.now() - 3000;
-      boxQueueRef.current = boxQueueRef.current.filter(e => e.ts >= cutoff);
-    };
-    socket.on('vision.person.entered', handleUpdate);
-    socket.on('vision.person.update', handleUpdate);
-    socket.on('vision.person.left', (data: any) => {
-      if (data?.camera_id && String(data.camera_id) !== String(cameraId)) return;
-      const ts = data?.timestamp ?? Date.now();
-      boxQueueRef.current.push({ ts, boxes: [], personDetected: false });
-    });
-    return () => {
-      socket.off('vision.person.entered');
-      socket.off('vision.person.update');
-      socket.off('vision.person.left');
-    };
-  }, [socket, cameraId]);
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Canvas overlay render loop (Optimized with ResizeObserver)
-  // ──────────────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Use ResizeObserver instead of polling clientWidth/clientHeight on every animation frame
-    const resizeObserver = new ResizeObserver(() => {
-      if (canvas) {
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-      }
-    });
-    resizeObserver.observe(canvas);
-
     let animationFrameId: number;
     const renderLoop = () => {
       traceStateRef.current.frames++; // Track render FPS
-      if (video.videoWidth === 0 || video.videoHeight === 0 || canvas.width === 0 || canvas.height === 0) {
-        animationFrameId = requestAnimationFrame(renderLoop);
-        return;
-      }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // ── Pick the box entry closest to (now - BOX_LAG_MS) ──────────────────
-      // This compensates for YOLO inference + MQ + network delay:
-      // boxes that just arrived likely correspond to a frame that was shown
-      // BOX_LAG_MS milliseconds ago, so we render them now.
-      const targetTs = Date.now() - BOX_LAG_MS;
-      const queue = boxQueueRef.current;
-      let best: BoxEntry | null = null;
-      for (const entry of queue) {
-        if (entry.ts <= targetTs) {
-          if (!best || entry.ts > best.ts) best = entry;
-        }
-      }
-      if (best) currentBoxesRef.current = { personDetected: best.personDetected, boxes: best.boxes };
-
-      const { personDetected, boxes } = currentBoxesRef.current;
-
-      if (personDetected && boxes.length > 0) {
-        const videoRatio = video.videoWidth / video.videoHeight;
-        const containerRatio = canvas.width / canvas.height;
-        let drawWidth = canvas.width, drawHeight = canvas.height;
-        let offsetX = 0, offsetY = 0;
-        if (containerRatio > videoRatio) {
-          drawWidth = canvas.height * videoRatio;
-          offsetX = (canvas.width - drawWidth) / 2;
-        } else {
-          drawHeight = canvas.width / videoRatio;
-          offsetY = (canvas.height - drawHeight) / 2;
-        }
-
-        boxes.forEach(box => {
-          const x = offsetX + box.x1 * drawWidth;
-          const y = offsetY + box.y1 * drawHeight;
-          const w = (box.x2 - box.x1) * drawWidth;
-          const h = (box.y2 - box.y1) * drawHeight;
-
-          // ── 4-Color Category Mapping ──────────────────────────────────────────
-          // State: 'family' (green), 'guest' (blue), 'verifying' (gray), 'stranger' (red)
-          const stateCat = box.state || (box.role === 'family' ? 'family' : box.role ? 'guest' : 'verifying');
-          
-          let strokeColor = '#10b981'; // Green
-          let fillColor = 'rgba(16, 185, 129, 0.14)';
-          let badgeBg = 'rgba(5, 150, 105, 0.95)';
-          let labelText = box.name ? `👤 ${box.name} • Gia đình` : (box.track_id ? `#${box.track_id} Gia đình` : 'Gia đình');
-
-          if (stateCat === 'guest' || box.role === 'neighbor' || box.role === 'guest' || box.role === 'staff') {
-            // Blue
-            strokeColor = '#3b82f6';
-            fillColor = 'rgba(59, 130, 246, 0.14)';
-            badgeBg = 'rgba(29, 78, 216, 0.95)';
-            labelText = box.name ? `👤 ${box.name} • Khách quen` : (box.track_id ? `#${box.track_id} Khách quen` : 'Khách quen');
-          } else if (stateCat === 'verifying') {
-            // Gray
-            strokeColor = '#94a3b8';
-            fillColor = 'rgba(148, 163, 184, 0.12)';
-            badgeBg = 'rgba(71, 85, 105, 0.95)';
-            labelText = box.track_id ? `#${box.track_id} ⏳ Đang xác thực...` : '⏳ Đang xác thực...';
-          } else if (stateCat === 'stranger') {
-            // Red
-            strokeColor = '#ef4444';
-            fillColor = 'rgba(239, 68, 68, 0.16)';
-            badgeBg = 'rgba(185, 28, 28, 0.95)';
-            labelText = '⚠️ Người lạ';
-          } else if (!box.state && !box.name) {
-            labelText = box.track_id 
-              ? `#${box.track_id} Person ${Math.round((box.confidence || 0.9) * 100)}%` 
-              : `Person ${Math.round((box.confidence || 0.9) * 100)}%`;
-          }
-
-          ctx.strokeStyle = strokeColor;
-          ctx.lineWidth = 2.5;
-          ctx.shadowColor = strokeColor;
-          ctx.shadowBlur = 6;
-
-          // Draw bounding box
-          ctx.strokeRect(x, y, w, h);
-          ctx.fillStyle = fillColor;
-          ctx.fillRect(x, y, w, h);
-
-          // Draw badge label
-          ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-          const textWidth = ctx.measureText(labelText).width;
-          const badgeHeight = 19;
-          const badgeY = Math.max(offsetY, y - badgeHeight - 2);
-
-          // Badge background
-          ctx.fillStyle = badgeBg;
-          ctx.beginPath();
-          ctx.roundRect ? ctx.roundRect(x, badgeY, textWidth + 14, badgeHeight, 5) : ctx.rect(x, badgeY, textWidth + 14, badgeHeight);
-          ctx.fill();
-
-          // Badge text
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowBlur = 0;
-          ctx.fillText(labelText, x + 7, badgeY + 13.5);
-          ctx.shadowBlur = 6;
-        });
-        ctx.shadowBlur = 0;
-      }
       animationFrameId = requestAnimationFrame(renderLoop);
     };
     renderLoop();
     return () => {
       cancelAnimationFrame(animationFrameId);
-      resizeObserver.disconnect();
     };
   }, []);
 
@@ -543,10 +379,6 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
         playsInline
         muted
         className="w-full h-full object-contain pointer-events-none"
-      />
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
       />
       {isInitializing && !streamError && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-3 text-white z-10">

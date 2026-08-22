@@ -9,11 +9,13 @@ import {
   Video,
   Database,
   Radio,
-  Trash2
+  Trash2,
+  Zap
 } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import type { NvrStatusResponse } from '../types/nvr';
 import { useTranslation } from '../i18n';
+import { useSocket } from '../context/SocketContext';
 import { NvrMonitorSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import dayjs from 'dayjs';
@@ -45,9 +47,9 @@ const formatUptime = (seconds: number) => {
 
 const NvrMonitor = () => {
   const { t } = useTranslation();
+  const { socket } = useSocket();
   const [data, setData] = useState<NvrStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -202,17 +204,25 @@ const NvrMonitor = () => {
     }
   };
 
+  // Initial fetch on mount
   useEffect(() => {
     fetchStatus(true);
   }, []);
 
+  // Real-time Event-Driven updates via RabbitMQ -> Socket.IO (0 HTTP requests)
   useEffect(() => {
-    if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      fetchStatus(false);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
+    if (!socket) return;
+    const handleStatusUpdate = (newStatus: NvrStatusResponse) => {
+      setData(newStatus);
+      setLoading(false);
+      setIsRefreshing(false);
+    };
+
+    socket.on('nvr.status.update', handleStatusUpdate);
+    return () => {
+      socket.off('nvr.status.update', handleStatusUpdate);
+    };
+  }, [socket]);
 
   if (loading && !data) {
     return (
@@ -239,24 +249,24 @@ const NvrMonitor = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer select-none bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs">
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="accent-orange-600 rounded"
-            />
-            {t('nvr.autoRefresh')}
-          </label>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          {/* Real-time WebSocket Live Status Badge */}
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200/80 select-none">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="flex items-center gap-1">
+              <Zap size={13} className="text-emerald-600" />
+              {t('nvr.realtimeLive')}
+            </span>
+          </div>
+
           <button
             onClick={() => fetchStatus(false)}
             disabled={isRefreshing}
-            className="btn btn-secondary flex items-center gap-2 text-sm shadow-2xs cursor-pointer"
+            className="btn btn-secondary flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer"
             title={t('refresh')}
           >
-            <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-orange-600' : ''} />
-            {t('refresh')}
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-orange-600' : ''} />
+            <span>{t('refresh')}</span>
           </button>
         </div>
       </div>

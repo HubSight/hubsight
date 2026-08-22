@@ -100,7 +100,7 @@ const Members: React.FC = () => {
             <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Nhóm 1: Gia đình</div>
-              <div className="text-[11px] text-emerald-700 font-medium truncate">Khung Xanh lá • {familyCount} người</div>
+              <div className="text-[11px] text-emerald-700 font-medium truncate">Thông báo Xanh lá • {familyCount} người</div>
             </div>
           </div>
 
@@ -108,7 +108,7 @@ const Members: React.FC = () => {
             <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Nhóm 2: Khách quen / Hàng xóm</div>
-              <div className="text-[11px] text-blue-700 font-medium truncate">Khung Xanh dương • {guestCount} người</div>
+              <div className="text-[11px] text-blue-700 font-medium truncate">Thông báo Xanh dương • {guestCount} người</div>
             </div>
           </div>
 
@@ -116,7 +116,7 @@ const Members: React.FC = () => {
             <span className="w-3.5 h-3.5 rounded-full bg-slate-400 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Đang theo dõi</div>
-              <div className="text-[11px] text-slate-500 font-medium truncate">Khung Xám • Chưa đủ frame</div>
+              <div className="text-[11px] text-slate-500 font-medium truncate">Chờ xác thực • Chưa đủ frame</div>
             </div>
           </div>
 
@@ -124,7 +124,7 @@ const Members: React.FC = () => {
             <span className="w-3.5 h-3.5 rounded-full bg-red-500 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Người lạ</div>
-              <div className="text-[11px] text-red-600 font-medium truncate">Khung Đỏ • Kích hoạt NVR clip</div>
+              <div className="text-[11px] text-red-600 font-medium truncate">Cảnh báo Đỏ • Kích hoạt NVR clip</div>
             </div>
           </div>
         </div>
