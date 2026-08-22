@@ -3,6 +3,7 @@ torch
 torchvision
 opencv-python-headless
 ultralytics
+lap
 pika
 python-dotenv
 requests
