@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { ArrowDown, RefreshCw } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 

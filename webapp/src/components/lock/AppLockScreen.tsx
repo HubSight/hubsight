@@ -67,16 +67,18 @@ export const AppLockScreen: React.FC = () => {
   };
 
   // Trigger biometric prompt on mount if biometrics is enabled
-  const triggerBiometricUnlock = async () => {
+  const triggerBiometricUnlock = async (showErrorOnCancel = false) => {
     setError('');
     setIsPromptingBio(true);
     try {
       const success = await unlockWithBiometrics();
-      if (!success) {
+      if (!success && showErrorOnCancel) {
         setError(t('lock.errBioFailed'));
       }
     } catch {
-      setError(t('lock.errBioUnavailable'));
+      if (showErrorOnCancel) {
+        setError(t('lock.errBioUnavailable'));
+      }
     } finally {
       setIsPromptingBio(false);
     }
@@ -84,7 +86,11 @@ export const AppLockScreen: React.FC = () => {
 
   useEffect(() => {
     if (isLocked && biometricEnabled && !usePasswordMode) {
-      triggerBiometricUnlock();
+      // Small timeout to allow mobile browser to regain active window focus before triggering WebAuthn
+      const timer = setTimeout(() => {
+        triggerBiometricUnlock(false);
+      }, 250);
+      return () => clearTimeout(timer);
     }
   }, [isLocked, biometricEnabled]);
 
@@ -182,7 +188,7 @@ export const AppLockScreen: React.FC = () => {
           <div className="w-full flex flex-col items-center gap-3">
             <button
               type="button"
-              onClick={triggerBiometricUnlock}
+              onClick={() => triggerBiometricUnlock(true)}
               disabled={isPromptingBio}
               className="btn btn-primary w-full py-3 px-4 text-sm font-semibold rounded-xl flex items-center justify-center gap-2.5 shadow-md active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60"
             >
@@ -262,7 +268,7 @@ export const AppLockScreen: React.FC = () => {
                 onClick={() => {
                   setError('');
                   setUsePasswordMode(false);
-                  triggerBiometricUnlock();
+                  triggerBiometricUnlock(true);
                 }}
                 className="w-full text-xs text-orange-600 hover:text-orange-700 font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 pt-1"
               >
