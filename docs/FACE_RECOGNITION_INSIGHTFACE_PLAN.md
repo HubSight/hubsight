@@ -1,7 +1,7 @@
 # Kế hoạch Triển khai Tính năng Nhận diện Khuôn mặt (Family Face Recognition) dùng InsightFace & YOLO11
 
-> **Tài liệu Kế hoạch Kỹ thuật (Technical Implementation Plan)**  
-> **Dự án**: CCTV AI Monitoring System  
+> **Tài liệu Kế hoạch Kỹ thuật (Technical Implementation Plan)**
+> **Dự án**: CCTV AI Monitoring System
 > **Mục tiêu**: Nhận diện thành viên gia đình (vẽ bounding box + tên người nhà) và cảnh báo người lạ trong luồng camera thời gian thực với độ chính xác cao, chi phí tính toán thấp, không cần train lại model.
 
 ---
@@ -36,6 +36,7 @@ flowchart TD
 ```
 
 ### Tại sao sử dụng InsightFace (ArcFace) thay vì Fine-tune YOLO hay Facenet?
+
 1. **Zero Retraining (Thêm người nhà trong 1 giây)**: Không cần fine-tune hay train lại mô hình. Người dùng chỉ cần tải lên 1–3 tấm ảnh khuôn mặt trên giao diện Web.
 2. **Độ chính xác góc nhìn CCTV vượt trội (99.8%)**: ArcFace tối ưu hoá góc quay từ trên trần xuống, mặt nghiêng 30°–45°, đi ngang hoặc cúi đầu.
 3. **Siêu nhẹ & Tốc độ cao**: Sử dụng mô hình `buffalo_s` (ONNX Runtime, dung lượng ~30MB), thời gian xử lý chỉ mất **~5ms – 8ms/khuôn mặt** ngay trên CPU thông thường.
@@ -46,14 +47,16 @@ flowchart TD
 
 Tạo bảng `members` và `member_faces` trong Ent / PostgreSQL để quản lý danh tính người nhà:
 
-### Bảng `members`:
+### Bảng `members`
+
 - `id` (UUID): Khoá chính
 - `name` (String): Tên hiển thị (*"Bố"*, *"Mẹ"*, *"Anh Quốc"*, *"Bé Bi"*)
 - `role` (Enum): `family`, `guest`, `staff`
 - `avatar_url` (String): URL ảnh đại diện lưu trên MinIO/S3
 - `created_at`, `updated_at` (Timestamp)
 
-### Bảng `member_faces`:
+### Bảng `member_faces`
+
 - `id` (UUID): Khoá chính
 - `member_id` (UUID): Liên kết với bảng `members`
 - `embedding` (JSON / Float Array): Vector đặc trưng 512 chiều trích xuất từ ArcFace
@@ -64,7 +67,8 @@ Tạo bảng `members` và `member_faces` trong Ent / PostgreSQL để quản l�
 
 ## 3. Thiết kế Backend & Vision Service (`services/vision-service`)
 
-### 3.1 Cập nhật `requirements.txt`:
+### 3.1 Cập nhật `requirements.txt`
+
 ```txt
 ultralytics>=8.3.0
 insightface>=0.7.3
@@ -74,7 +78,8 @@ numpy>=1.26.0
 pika>=1.3.2
 ```
 
-### 3.2 Module `face_engine.py` (InsightFace ArcFace Extractor):
+### 3.2 Module `face_engine.py` (InsightFace ArcFace Extractor)
+
 ```python
 import insightface
 from insightface.app import FaceAnalysis
@@ -116,7 +121,8 @@ class FaceEngine:
             return "Người lạ", False, float(max(0.0, best_sim))
 ```
 
-### 3.3 Tối ưu hoá Hiệu năng (Face Tracking & Skip-Frames):
+### 3.3 Tối ưu hoá Hiệu năng (Face Tracking & Skip-Frames)
+
 - Không trích xuất embedding trên mọi frame (tránh quá tải CPU).
 - Sử dụng thuật toán tracking (IoU / ByteTrack): Khi một người xuất hiện, hệ thống nhận diện khuôn mặt ở 1-2 frame đầu tiên, sau đó **khoá định danh (ID lock)** và duy trì tên người đó xuyên suốt quá trình di chuyển trong khung hình.
 - Tiết kiệm 80% CPU so với việc tính toán liên tục.
@@ -125,7 +131,8 @@ class FaceEngine:
 
 ## 4. Thiết kế API & Core Service (`services/core` & `services/gateway`)
 
-### Các Endpoint mới:
+### Các Endpoint mới
+
 1. `GET /api/members`: Lấy danh sách thành viên gia đình và số lượng ảnh mẫu.
 2. `POST /api/members`: Tạo thành viên mới (kèm ảnh chân dung để trích xuất vector).
 3. `POST /api/members/:id/faces`: Thêm ảnh mẫu bổ sung cho thành viên (để tăng độ chính xác ở nhiều góc mặt/ánh sáng khác nhau).
@@ -136,13 +143,15 @@ class FaceEngine:
 
 ## 5. Thiết kế Giao diện Web (`webapp/`)
 
-### 5.1 Trang "Quản lý Thành viên" (Family Management):
+### 5.1 Trang "Quản lý Thành viên" (Family Management)
+
 - Danh sách thẻ thành viên với ảnh đại diện, tên, vai trò và trạng thái nhận diện.
 - Modal thêm thành viên:
   - Cho phép **tải ảnh chân dung từ máy tính/điện thoại**.
   - Hoặc **Chụp ảnh trực tiếp từ camera CCTV (One-Click Enrollment)**: Khi đang xem Live, bấm vào người trong video để lưu ngay làm thành viên gia đình.
 
-### 5.2 Nâng cấp Canvas Overlay trên Trình phát Trực tiếp (LivePlayer):
+### 5.2 Nâng cấp Canvas Overlay trên Trình phát Trực tiếp (LivePlayer)
+
 - Nhận diện người nhà:
   - Bounding Box màu **Xanh ngọc / Xanh lá (Emerald Green)**: `#10b981`.
   - Badge tên nổi bật: `👤 Anh Quốc (94%)`.
@@ -184,12 +193,13 @@ Hệ thống được thiết kế theo nguyên tắc **Tách biệt Hoàn toàn
 flowchart LR
     CAM["Camera RTSP"] -->|Luồng Chính H.264/H.265| GO2RTC["go2rtc (webrtc-service)\nDirect Passthrough (0% CPU)"]
     CAM -.->|Luồng Phụ Sub-Stream (5-10 FPS)| AI["vision-service\n(YOLO11 + InsightFace)"]
-    
+
     GO2RTC ==>|WebRTC Video + Opus Audio| BROWSER_VIDEO["<video> Thẻ Video gốc\n(Độ trễ < 50ms, 60 FPS, 0 Drop Frame)"]
     AI -.->|Toạ độ Box JSON qua WebSocket| BROWSER_CANVAS["<canvas> Overlay trong suốt\n(Vẽ khung tên người nhà / người lạ)"]
 ```
 
-### Các cơ chế đảm bảo hiệu năng tối đa:
+### Các cơ chế đảm bảo hiệu năng tối đa
+
 1. **Luồng Livestream WebRTC độc lập tuyệt đối (`webrtc-service`)**:
    - Video và Audio truyền trực tiếp từ Camera tới trình duyệt Web qua WebRTC bằng cơ chế **Bitstream Copy (0% CPU)**.
    - Luồng livestream **KHÔNG bao giờ đi qua Python hay bất kỳ khâu xử lý AI nào**. Do đó, dù AI có bận xử lý hay bị tắt, luồng livestream vẫn đạt 100% tốc độ gốc (60 FPS/30 FPS), độ trễ cực thấp (< 50ms) và âm thanh trong trẻo.
@@ -200,4 +210,3 @@ flowchart LR
    - Thẻ `<canvas>` trong suốt nằm đè lên trên chỉ nhận toạ độ JSON (vài byte qua WebSocket) để vẽ khung tên mượt mà 60 FPS bằng phần cứng GPU máy khách (Client-side rendering).
 4. **Không can thiệp vào NVR Recorder**:
    - Quá trình ghi hình MP4 lưu trữ 24/7 của NVR Service chạy độc lập hoàn toàn, không bị ảnh hưởng bởi quá trình nhận diện AI.
-
