@@ -60,12 +60,16 @@ func init() {
 	cameraDescIsActive := cameraFields[9].Descriptor()
 	// camera.DefaultIsActive holds the default value on creation for the is_active field.
 	camera.DefaultIsActive = cameraDescIsActive.Default.(bool)
+	// cameraDescEnableAi is the schema descriptor for enable_ai field.
+	cameraDescEnableAi := cameraFields[10].Descriptor()
+	// camera.DefaultEnableAi holds the default value on creation for the enable_ai field.
+	camera.DefaultEnableAi = cameraDescEnableAi.Default.(bool)
 	// cameraDescCreatedAt is the schema descriptor for created_at field.
-	cameraDescCreatedAt := cameraFields[10].Descriptor()
+	cameraDescCreatedAt := cameraFields[11].Descriptor()
 	// camera.DefaultCreatedAt holds the default value on creation for the created_at field.
 	camera.DefaultCreatedAt = cameraDescCreatedAt.Default.(func() time.Time)
 	// cameraDescUpdatedAt is the schema descriptor for updated_at field.
-	cameraDescUpdatedAt := cameraFields[11].Descriptor()
+	cameraDescUpdatedAt := cameraFields[12].Descriptor()
 	// camera.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	camera.DefaultUpdatedAt = cameraDescUpdatedAt.Default.(func() time.Time)
 	// camera.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

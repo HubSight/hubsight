@@ -34,6 +34,8 @@ const (
 	FieldExtraArgs = "extra_args"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldEnableAi holds the string denoting the enable_ai field in the database.
+	FieldEnableAi = "enable_ai"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -64,6 +66,7 @@ var Columns = []string{
 	FieldAudioMode,
 	FieldExtraArgs,
 	FieldIsActive,
+	FieldEnableAi,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -99,6 +102,8 @@ var (
 	DefaultExtraArgs string
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// DefaultEnableAi holds the default value on creation for the "enable_ai" field.
+	DefaultEnableAi bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -163,6 +168,11 @@ func ByExtraArgs(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByEnableAi orders the results by the enable_ai field.
+func ByEnableAi(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnableAi, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
