@@ -49,8 +49,10 @@ export default defineConfig({
         theme_color: '#ea580c',
         background_color: '#0f172a',
         display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone', 'minimal-ui'],
         orientation: 'any',
         start_url: '/',
+        categories: ['utilities', 'security', 'video', 'productivity'],
         icons: [
           {
             src: '/pwa-192x192.png',
@@ -73,6 +75,23 @@ export default defineConfig({
             sizes: '192x192 512x512',
             type: 'image/svg+xml',
             purpose: 'any',
+          },
+        ],
+        shortcuts: [
+          {
+            name: 'Devices',
+            url: '/',
+            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+          },
+          {
+            name: 'Playback',
+            url: '/playback',
+            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+          },
+          {
+            name: 'NVR Monitor',
+            url: '/nvr',
+            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
           },
         ],
       },

@@ -14,7 +14,13 @@
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
     <title>HubSight</title>
     <style>
-      /* Instant Native Splash Screen Styles (0ms cold start) */
+      /* ─────────────────────────────────────────────────────────────
+         Responsive Instant Native Splash Screen (Mobile & Desktop PWA)
+         ───────────────────────────────────────────────────────────── */
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         padding: 0;
@@ -31,23 +37,24 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(circle at 50% 40%, #1e293b 0%, #0f172a 100%);
+        background: radial-gradient(circle at 50% 42%, #1e293b 0%, #0f172a 100%);
         color: #f8fafc;
         z-index: 99999;
         user-select: none;
         -webkit-user-select: none;
       }
 
+      /* High-tech ambient background lighting */
       .splash-ambient-glow {
         position: absolute;
-        top: 35%;
+        top: 40%;
         left: 50%;
         transform: translate(-50%, -50%);
         width: 320px;
         height: 320px;
-        background: rgba(234, 88, 12, 0.15);
+        background: radial-gradient(circle, rgba(234, 88, 12, 0.22) 0%, rgba(234, 88, 12, 0.05) 55%, transparent 75%);
         border-radius: 50%;
-        filter: blur(80px);
+        filter: blur(60px);
         pointer-events: none;
       }
 
@@ -57,43 +64,44 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 20px;
+        padding: 24px;
       }
 
+      /* Logo Box */
       .splash-logo-box {
-        width: 88px;
-        height: 88px;
-        border-radius: 26px;
+        width: 84px;
+        height: 84px;
+        border-radius: 24px;
         background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 16px 36px rgba(234, 88, 12, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+        box-shadow: 0 16px 40px rgba(234, 88, 12, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
         margin-bottom: 22px;
         animation: splashPulse 2.4s ease-in-out infinite alternate;
       }
 
       .splash-logo-icon {
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
         color: #ffffff;
       }
 
       .splash-title {
-        font-size: 24px;
+        font-size: 26px;
         font-weight: 800;
-        letter-spacing: -0.025em;
+        letter-spacing: -0.03em;
         color: #ffffff;
         margin: 0 0 6px 0;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
       }
 
       .splash-subtitle {
-        font-size: 12px;
-        font-weight: 500;
+        font-size: 11px;
+        font-weight: 600;
         color: #94a3b8;
-        letter-spacing: 0.04em;
-        margin: 0 0 28px 0;
+        letter-spacing: 0.08em;
+        margin: 0 0 26px 0;
         text-transform: uppercase;
       }
 
@@ -114,17 +122,73 @@
         width: 45%;
         background: linear-gradient(90deg, #ea580c, #fb923c);
         border-radius: 999px;
+        box-shadow: 0 0 12px rgba(234, 88, 12, 0.6);
         animation: splashProgress 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+
+      .splash-status-text {
+        font-size: 11px;
+        font-weight: 500;
+        color: #64748b;
+        margin-top: 16px;
+        letter-spacing: 0.02em;
+        opacity: 0.85;
+      }
+
+      /* ─────────────────────────────────────────────────────────────
+         Desktop PWA Specific Enhancements (macOS, Windows, Linux)
+         ───────────────────────────────────────────────────────────── */
+      @media (min-width: 768px) {
+        .splash-ambient-glow {
+          width: 520px;
+          height: 520px;
+          filter: blur(90px);
+        }
+
+        .splash-logo-box {
+          width: 96px;
+          height: 96px;
+          border-radius: 28px;
+          box-shadow: 0 24px 50px rgba(234, 88, 12, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+          margin-bottom: 24px;
+        }
+
+        .splash-logo-icon {
+          width: 48px;
+          height: 48px;
+        }
+
+        .splash-title {
+          font-size: 32px;
+          letter-spacing: -0.035em;
+          margin-bottom: 8px;
+        }
+
+        .splash-subtitle {
+          font-size: 12px;
+          letter-spacing: 0.12em;
+          margin-bottom: 30px;
+        }
+
+        .splash-loader-bar {
+          width: 200px;
+          height: 4px;
+        }
+
+        .splash-status-text {
+          font-size: 12px;
+          margin-top: 18px;
+        }
       }
 
       @keyframes splashPulse {
         0% {
           transform: scale(1);
-          box-shadow: 0 16px 36px rgba(234, 88, 12, 0.35);
+          box-shadow: 0 16px 40px rgba(234, 88, 12, 0.4);
         }
         100% {
-          transform: scale(1.04);
-          box-shadow: 0 20px 48px rgba(234, 88, 12, 0.55);
+          transform: scale(1.05);
+          box-shadow: 0 24px 56px rgba(234, 88, 12, 0.6);
         }
       }
 
@@ -140,7 +204,7 @@
   </head>
   <body>
     <div id="root">
-      <!-- Native PWA Splash Screen (Replaced automatically as soon as React mounts) -->
+      <!-- Responsive Native PWA Splash Screen (Replaced automatically as soon as React mounts) -->
       <div id="pwa-splash">
         <div class="splash-ambient-glow"></div>
         <div class="splash-content">
@@ -151,10 +215,11 @@
             </svg>
           </div>
           <h1 class="splash-title">HubSight</h1>
-          <p class="splash-subtitle">Smart CCTV & NVR</p>
+          <p class="splash-subtitle">Smart CCTV & NVR Management</p>
           <div class="splash-loader-bar">
             <div class="splash-loader-indicator"></div>
           </div>
+          <div class="splash-status-text">Initializing Surveillance Engine...</div>
         </div>
       </div>
     </div>
