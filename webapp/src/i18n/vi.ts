@@ -15,6 +15,8 @@ const vi = {
   submit: 'Gửi',
   back: 'Quay lại',
   refresh: 'Làm mới',
+  pullToRefresh: 'Kéo để làm mới',
+  releaseToRefresh: 'Thả để làm mới',
   noData: 'Không có dữ liệu',
   admin: 'Quản trị',
   viewer: 'Xem',

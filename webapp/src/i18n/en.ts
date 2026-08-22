@@ -17,6 +17,8 @@ const en: Record<TranslationKey, string> = {
   submit: 'Submit',
   back: 'Back',
   refresh: 'Refresh',
+  pullToRefresh: 'Pull to refresh',
+  releaseToRefresh: 'Release to refresh',
   noData: 'No data',
   admin: 'Admin',
   viewer: 'Viewer',

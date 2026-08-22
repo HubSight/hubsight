@@ -258,7 +258,7 @@ const MainLayout = () => {
       </button>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-y-auto relative pt-14 md:pt-0">
+      <div className="flex-1 flex flex-col overflow-hidden relative pt-14 md:pt-0">
         <Outlet />
       </div>
 

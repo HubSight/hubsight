@@ -10,16 +10,13 @@ import Login from './pages/Login';
 import Playback from './pages/Playback';
 import Devices from './pages/Devices';
 import NvrMonitor from './pages/NvrMonitor';
+import { AppLoadingSkeleton } from './components/common/Skeleton';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
-      </div>
-    );
+    return <AppLoadingSkeleton />;
   }
   if (!user) return <Navigate to="/login" replace />;
 
@@ -30,11 +27,7 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
-      </div>
-    );
+    return <AppLoadingSkeleton />;
   }
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== 'admin') return <Navigate to="/playback" replace />;

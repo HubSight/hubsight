@@ -1,7 +1,9 @@
 package nvr
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"cctv/shared/ent/camera"
 	"cctv/shared/ent/recording"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/live"
 	"cctv/shared/pkg/storage"
 	"github.com/gin-gonic/gin"
 )
@@ -151,14 +154,32 @@ func NvrStatusHandler(c *gin.Context) {
 		})
 	}
 
-	// 4. Active Live Streams
+	// 4. Active Live Streams (Query go2rtc for streams with active consumers, or fallback to live.Tracker)
 	activeLiveCount := 0
-	// go2rtc manages live streams on the fly, so we don't track active sessions here natively anymore.
-	// For NVR status, we can just report the number of active cameras as a proxy.
-	for _, s := range cameraStatuses {
-		if s.IsActive {
-			activeLiveCount++
+	webrtcURL := os.Getenv("WEBRTC_SERVICE_URL")
+	if webrtcURL == "" {
+		webrtcURL = os.Getenv("GO2RTC_URL")
+		if webrtcURL == "" {
+			webrtcURL = "http://webrtc-service:1984"
 		}
+	}
+
+	httpClient := &http.Client{Timeout: 800 * time.Millisecond}
+	if resp, err := httpClient.Get(webrtcURL + "/api/streams"); err == nil {
+		defer resp.Body.Close()
+		var streamsMap map[string]struct {
+			Consumers []any `json:"consumers"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&streamsMap); err == nil {
+			for _, stream := range streamsMap {
+				if len(stream.Consumers) > 0 {
+					activeLiveCount++
+				}
+			}
+		}
+	} else {
+		// Fallback: check how many cameras have active viewers registered in live tracker
+		activeLiveCount = len(live.Tracker.ActiveCameraIDs())
 	}
 
 	res := NvrStatusResponse{

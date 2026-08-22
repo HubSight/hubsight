@@ -6,6 +6,8 @@ import { DeviceCard } from '../components/device/DeviceCard';
 import { DeviceModal } from '../components/device/DeviceModal';
 import { BRAND_PRESETS, parseRtspUrl } from '../constants/devicePresets';
 import { useTranslation } from '../i18n';
+import { DevicesSkeleton } from '../components/common/Skeleton';
+import { PullToRefresh } from '../components/common/PullToRefresh';
 
 const initialFormData: DeviceFormData = {
   name: '',
@@ -182,7 +184,7 @@ const Devices = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 h-full flex flex-col overflow-y-auto">
+    <PullToRefresh onRefresh={fetchDevices} className="p-4 sm:p-6 md:p-8 h-full flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-5 sm:mb-6 md:mb-8 gap-3 max-w-7xl w-full mx-auto">
         <div className="flex items-center gap-3">
@@ -229,9 +231,7 @@ const Devices = () => {
       {/* Device Content Area */}
       <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto">
         {isLoading ? (
-          <div className="flex justify-center items-center h-48 text-slate-400 text-sm">
-            {t('devices.loading')}
-          </div>
+          <DevicesSkeleton />
         ) : devices.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-6 sm:py-10 w-full">
             <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-12 text-center shadow-sm w-full max-w-xl flex flex-col items-center">
@@ -313,7 +313,7 @@ const Devices = () => {
           onAddFfmpegTag={handleAddFfmpegTag}
         />
       )}
-    </div>
+    </PullToRefresh>
   );
 };
 

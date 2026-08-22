@@ -14,6 +14,8 @@ import {
 import axiosClient from '../api/axiosClient';
 import type { NvrStatusResponse } from '../types/nvr';
 import { useTranslation } from '../i18n';
+import { NvrMonitorSkeleton } from '../components/common/Skeleton';
+import { PullToRefresh } from '../components/common/PullToRefresh';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -214,9 +216,8 @@ const NvrMonitor = () => {
 
   if (loading && !data) {
     return (
-      <div className="p-8 flex items-center justify-center h-full text-slate-400">
-        <RefreshCw className="animate-spin text-orange-500 mr-2" size={24} />
-        {t('loading')}
+      <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto">
+        <NvrMonitorSkeleton />
       </div>
     );
   }
@@ -225,7 +226,7 @@ const NvrMonitor = () => {
   const totalCamsCount = data?.cameras.length || 0;
 
   return (
-    <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto">
+    <PullToRefresh onRefresh={() => fetchStatus(false)} className="p-4 md:p-8 h-full flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
         <div>
@@ -558,7 +559,7 @@ const NvrMonitor = () => {
           </div>
         </div>
       )}
-    </div>
+    </PullToRefresh>
   );
 };
 
