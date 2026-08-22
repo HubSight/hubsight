@@ -61,12 +61,12 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex h-[100dvh] w-screen overflow-hidden bg-slate-50">
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
       {/* App Lock Screen Overlay */}
       <AppLockScreen />
 
-      {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4">
+      {/* Mobile Header (Includes safe-area-inset-top) */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4 shadow-xs">
         <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
           <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-sm shadow-orange-600/20 group-active:scale-95 transition-transform">
             <Camera size={18} />
@@ -92,8 +92,8 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col py-6 overflow-hidden
-        transition-all duration-300 ease-in-out md:relative
+        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] overflow-hidden
+        transition-all duration-300 ease-in-out md:relative md:py-6
         ${isMobileMenuOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full w-[260px] md:translate-x-0'}
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
       `}>
@@ -257,8 +257,8 @@ const MainLayout = () => {
         {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden relative pt-14 md:pt-0">
+      {/* Main Content (Offset below Mobile Header with safe-area-inset-top) */}
+      <div className="flex-1 flex flex-col overflow-hidden relative pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[env(safe-area-inset-bottom,0px)] md:pt-0 md:pb-0">
         <Outlet />
       </div>
 
