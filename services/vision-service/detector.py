@@ -33,7 +33,7 @@ class MotionGate:
 
 class PersonDetector:
     def __init__(self, mq_client, conf_threshold=0.45, iou_threshold=0.5, no_person_timeout=5.0):
-        self.model = YOLO('yolo11n.pt')
+        self.model = YOLO('yolo26n.pt')
         self.mq_client = mq_client
         self.conf_threshold = conf_threshold
         self.iou_threshold = iou_threshold
