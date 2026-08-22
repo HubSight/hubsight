@@ -47,11 +47,11 @@
   }
   
   .btn {
-    @apply bg-orange-600 text-white border-none px-6 py-3 rounded-xl text-base font-semibold cursor-pointer transition-all duration-200 inline-flex items-center justify-center gap-2 hover:bg-orange-700 hover:-translate-y-[1px] hover:shadow-[0_0_20px_rgba(234,88,12,0.3)] active:translate-y-[1px];
+    @apply bg-orange-600 text-white border-none px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-150 inline-flex items-center justify-center gap-2 hover:bg-orange-700 active:scale-95;
   }
   
   .btn-secondary {
-    @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:shadow-sm hover:border-slate-400;
+    @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95;
   }
   
   .nav-link {

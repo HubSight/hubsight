@@ -169,7 +169,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
           {/* Web Push Banner (If not yet enabled) */}
           {isPushNotificationSupported() && pushStatus !== 'granted' && (
             <div className="m-3 p-3.5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/80 flex items-start gap-3 shadow-xs">
-              <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-orange-600/30">
+              <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0">
                 <Smartphone size={16} />
               </div>
               <div className="flex-1 min-w-0">

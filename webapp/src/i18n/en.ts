@@ -333,7 +333,7 @@ const en: Record<TranslationKey, string> = {
   'members.faceSamplesCount': 'face samples',
   'members.manageFaces': 'Manage Face Samples',
   'members.fullName': 'Full Name',
-  'members.namePlaceholder': 'e.g. Dad, Mom, Quoc Tran, Baby...',
+  'members.namePlaceholder': 'e.g. Dad, Mom, Baby...',
   'members.role': 'Role Group',
   'members.avatarUrl': 'Avatar Image URL',
   'members.tabInfo': 'General Info',

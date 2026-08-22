@@ -87,7 +87,7 @@ const Members: React.FC = () => {
 
           <button
             onClick={handleOpenAdd}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold rounded-2xl shadow-md shadow-orange-600/25 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold rounded-2xl transition-all cursor-pointer"
           >
             <Plus size={16} />
             {t('members.addMemberBtn')}
@@ -96,23 +96,23 @@ const Members: React.FC = () => {
 
         {/* 4-Color Category Legend Banner */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white border border-emerald-200/80 rounded-2xl p-3.5 flex items-center gap-3 shadow-xs">
-            <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0 shadow-xs shadow-emerald-500/50" />
+          <div className="bg-white border border-emerald-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+            <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Nhóm 1: Gia đình</div>
               <div className="text-[11px] text-emerald-700 font-medium truncate">Khung Xanh lá • {familyCount} người</div>
             </div>
           </div>
 
-          <div className="bg-white border border-blue-200/80 rounded-2xl p-3.5 flex items-center gap-3 shadow-xs">
-            <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0 shadow-xs shadow-blue-500/50" />
+          <div className="bg-white border border-blue-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+            <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Nhóm 2: Khách quen / Hàng xóm</div>
               <div className="text-[11px] text-blue-700 font-medium truncate">Khung Xanh dương • {guestCount} người</div>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center gap-3 shadow-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center gap-3">
             <span className="w-3.5 h-3.5 rounded-full bg-slate-400 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Đang theo dõi</div>
@@ -120,8 +120,8 @@ const Members: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white border border-red-200/80 rounded-2xl p-3.5 flex items-center gap-3 shadow-xs">
-            <span className="w-3.5 h-3.5 rounded-full bg-red-500 shrink-0 shadow-xs shadow-red-500/50" />
+          <div className="bg-white border border-red-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+            <span className="w-3.5 h-3.5 rounded-full bg-red-500 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-800">Người lạ</div>
               <div className="text-[11px] text-red-600 font-medium truncate">Khung Đỏ • Kích hoạt NVR clip</div>
@@ -132,14 +132,14 @@ const Members: React.FC = () => {
         {/* Toolbar: Search + Role Filter */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative w-full sm:w-80">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative w-full sm:w-80 flex items-center">
+            <Search size={16} className="absolute left-3.5 text-slate-400 pointer-events-none z-10" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('members.searchPlaceholder')}
-              className="input-field w-full pl-10 text-xs py-2 rounded-2xl bg-white border-slate-200"
+              className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl bg-white border border-slate-200 text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-slate-400"
             />
           </div>
 

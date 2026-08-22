@@ -250,7 +250,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-600/20 transition-all cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-orange-600 hover:bg-orange-700 active:scale-95 text-white transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? t('common.saving') : t('common.save')}
                 </button>

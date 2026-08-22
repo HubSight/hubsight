@@ -331,7 +331,7 @@ const vi = {
   'members.faceSamplesCount': 'ảnh mẫu',
   'members.manageFaces': 'Quản lý ảnh mẫu',
   'members.fullName': 'Họ và tên',
-  'members.namePlaceholder': 'VD: Bố, Mẹ, Anh Quốc, Bé Bi...',
+  'members.namePlaceholder': 'VD: Bố, Mẹ, Chị...',
   'members.role': 'Phân nhóm vai trò',
   'members.avatarUrl': 'Đường dẫn ảnh đại diện (URL)',
   'members.tabInfo': 'Thông tin chung',

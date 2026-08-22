@@ -85,7 +85,7 @@ const Login = () => {
         <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-9 shadow-xl sm:shadow-2xl transition-all">
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-orange-600 flex items-center justify-center text-white mb-3.5 shadow-md shadow-orange-600/20">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-orange-600 flex items-center justify-center text-white mb-3.5 shadow-sm">
               <Camera className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">{t('login.title')}</h1>
@@ -158,7 +158,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full min-h-[46px] sm:min-h-[44px] mt-6 py-3 sm:py-2.5 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 active:scale-[0.99] text-white font-semibold rounded-xl shadow-sm hover:shadow-md hover:shadow-orange-600/20 transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed touch-manipulation"
+              className="w-full min-h-[46px] sm:min-h-[44px] mt-6 py-3 sm:py-2.5 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 active:scale-[0.99] text-white font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed touch-manipulation"
             >
               {loading ? (
                 <span>{t('login.signingIn')}</span>

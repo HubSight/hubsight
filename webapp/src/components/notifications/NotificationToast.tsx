@@ -83,14 +83,14 @@ export const NotificationToast: React.FC = () => {
     <div className="fixed top-4 right-4 z-50 max-w-sm w-full animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto">
       <div
         onClick={handleClick}
-        className={`p-4 rounded-2xl shadow-2xl border backdrop-blur-md cursor-pointer transition-all duration-200 group relative overflow-hidden ${
+        className={`p-4 rounded-2xl shadow-xl border backdrop-blur-md cursor-pointer transition-all duration-200 group relative overflow-hidden ${
           isFamily
-            ? 'bg-slate-900/95 text-white border-emerald-500/50 shadow-emerald-950/40'
+            ? 'bg-slate-900/95 text-white border-emerald-500/50'
             : isGuest
-            ? 'bg-slate-900/95 text-white border-blue-500/50 shadow-blue-950/40'
+            ? 'bg-slate-900/95 text-white border-blue-500/50'
             : isStranger
-            ? 'bg-red-950/95 text-white border-red-500 shadow-red-950/60 animate-pulse'
-            : 'bg-slate-900/95 text-white border-slate-700 shadow-slate-950/40'
+            ? 'bg-red-950/95 text-white border-red-500/80'
+            : 'bg-slate-900/95 text-white border-slate-700'
         }`}
       >
         {/* Left accent bar */}

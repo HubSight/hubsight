@@ -105,7 +105,7 @@ const MainLayout = () => {
       {/* Mobile Header (Includes safe-area-inset-top) */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4 shadow-xs">
         <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
-          <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-sm shadow-orange-600/20 group-active:scale-95 transition-transform">
+          <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
             <Camera size={18} />
           </div>
           <h2 className="text-base font-bold m-0 text-slate-800 tracking-tight">HubSight</h2>
@@ -151,7 +151,7 @@ const MainLayout = () => {
       `}>
         <div className="flex items-center justify-between px-6 mb-8">
           <NavLink to="/" className="flex items-center gap-3 no-underline group cursor-pointer">
-            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-600/20 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
               <Camera size={22} />
             </div>
             <div>

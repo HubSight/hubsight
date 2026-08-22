@@ -245,7 +245,7 @@ const Devices = () => {
                 {t('devices.noDevicesSubtitle')}
               </p>
               <button
-                className="btn btn-primary w-full sm:w-auto px-7 py-3 min-h-[46px] rounded-xl flex items-center justify-center gap-2 shadow-md shadow-orange-600/20 text-sm font-semibold active:scale-[0.99] transition-all cursor-pointer touch-manipulation"
+                className="btn btn-primary w-full sm:w-auto px-7 py-3 min-h-[46px] rounded-xl flex items-center justify-center gap-2 text-sm font-semibold active:scale-[0.99] transition-all cursor-pointer touch-manipulation"
                 onClick={() => handleOpenModal()}
               >
                 <Plus size={18} />
