@@ -3,7 +3,7 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: ./services/backend/gateway.Dockerfile
+      dockerfile: ./services/gateway/Dockerfile
     restart: unless-stopped
     ports:
       - "8088:8080"
@@ -22,8 +22,8 @@ services:
   # ⚙️ Core CCTV Business Logic Service (Private Internal Microservice)
   core-service:
     build:
-      context: ./services/backend
-      dockerfile: core.Dockerfile
+      context: .
+      dockerfile: ./services/core/Dockerfile
     restart: unless-stopped
     environment:
       PORT: "8080"
@@ -39,8 +39,8 @@ services:
   # 🔐 Internal Auth Microservice (Private, not exposed to host)
   auth-service:
     build:
-      context: ./services/backend
-      dockerfile: auth.Dockerfile
+      context: .
+      dockerfile: ./services/auth/Dockerfile
     restart: unless-stopped
     environment:
       PORT: "8081"
@@ -66,8 +66,8 @@ services:
   # 📼 Internal NVR Recording Engine (Private, not exposed to host)
   nvr-service:
     build:
-      context: ./services/backend
-      dockerfile: recorder.Dockerfile
+      context: .
+      dockerfile: ./services/recorder/Dockerfile
     restart: unless-stopped
     volumes:
       - cctv_data:/data/camera
@@ -124,8 +124,8 @@ services:
   # 🕒 Background Cron & Job Worker Service (Retention, etc.)
   bgrd-service:
     build:
-      context: ./services/backend
-      dockerfile: bgrd.Dockerfile
+      context: .
+      dockerfile: ./services/bgrd/Dockerfile
     restart: unless-stopped
     environment:
       REDIS_URL: "redis://redis-service:6379"

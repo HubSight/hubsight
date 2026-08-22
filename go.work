@@ -1,3 +1,11 @@
-go 1.26.5
+go 1.25.0
 
-use ./services/backend
+use (
+	./services/auth
+	./services/bgrd
+	./services/core
+	./services/gateway
+	./services/recorder
+	./services/seed
+	./services/shared
+)

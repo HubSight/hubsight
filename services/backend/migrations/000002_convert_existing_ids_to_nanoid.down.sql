@@ -1,2 +1,0 @@
--- This migration intentionally has no down path: converting existing primary
--- keys to random Nano IDs is irreversible without an external backup.
