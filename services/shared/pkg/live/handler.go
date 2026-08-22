@@ -57,17 +57,23 @@ func WebRTCHandler(c *gin.Context) {
 	}
 
 	// 1. Ensure the stream is registered in webrtc-service dynamically
-	// #video=copy#audio=copy#audio=opus#audio=pcma#audio=pcmu#audio=aac: auto-negotiate audio formats seamlessly with the camera
-	// #backchannel=0: skip 2-way audio handshake probe
-	// #transport=tcp: force TCP transport to eliminate packet drops and reduce jitter
-	srcURL := cam.Host
-	if !strings.Contains(srcURL, "#") {
-		srcURL = fmt.Sprintf("%s#video=copy#audio=copy#audio=opus#audio=pcma#audio=pcmu#audio=aac#backchannel=0#transport=tcp", srcURL)
-	} else if !strings.Contains(srcURL, "transport=") {
-		srcURL = fmt.Sprintf("%s#transport=tcp", srcURL)
+	// We provide dual sources to go2rtc:
+	// - Primary RTSP: Direct copy for video (0% CPU) + native audio (PCMA/PCMU/Opus)
+	// - Secondary FFmpeg: Auto-transcodes AAC/G.726 to Opus on-demand for WebRTC browsers
+	srcDirect := cam.Host
+	if !strings.Contains(srcDirect, "#") {
+		srcDirect = fmt.Sprintf("%s#backchannel=0#transport=tcp", srcDirect)
+	} else if !strings.Contains(srcDirect, "transport=") {
+		srcDirect = fmt.Sprintf("%s#transport=tcp", srcDirect)
 	}
+	srcFfmpeg := fmt.Sprintf("ffmpeg:%s#audio=opus", cam.Host)
 
-	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s", webrtcURL, url.QueryEscape(camName), url.QueryEscape(srcURL))
+	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s&src=%s",
+		webrtcURL,
+		url.QueryEscape(camName),
+		url.QueryEscape(srcDirect),
+		url.QueryEscape(srcFfmpeg),
+	)
 	putReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPut, putURL, nil)
 	if err == nil {
 		client := &http.Client{}

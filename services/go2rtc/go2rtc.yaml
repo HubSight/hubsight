@@ -16,4 +16,7 @@ webrtc:
     - rtc.quoctran.space:8555
     - stun:8555
     - 127.0.0.1:8555
-streams: {}
+streams:
+  test:
+    - rtsp://localhost:8554/test#backchannel=0#transport=tcp
+    - ffmpeg:rtsp://localhost:8554/test#audio=opus
