@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX } from 'lucide-react';
+import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX, Sparkles } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { useSocket } from '../../context/SocketContext';
 import axiosClient from '../../api/axiosClient';
 
 interface LivePlayerProps {
   cameraId: string;
+  enableAi?: boolean;
   onLiveStatusChange?: (isLive: boolean) => void;
 }
 
-export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusChange }) => {
+export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLiveStatusChange }) => {
   const { t } = useTranslation();
   const { socket } = useSocket();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -332,42 +333,72 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
           drawHeight = canvas.width / videoRatio;
           offsetY = (canvas.height - drawHeight) / 2;
         }
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 2.5;
-        ctx.shadowColor = 'rgba(16, 185, 129, 0.4)';
-        ctx.shadowBlur = 6;
-        
+
         boxes.forEach(box => {
           const x = offsetX + box.x1 * drawWidth;
           const y = offsetY + box.y1 * drawHeight;
           const w = (box.x2 - box.x1) * drawWidth;
           const h = (box.y2 - box.y1) * drawHeight;
 
-          // Draw emerald green bounding box
+          // ── 4-Color Category Mapping ──────────────────────────────────────────
+          // State: 'family' (green), 'guest' (blue), 'verifying' (gray), 'stranger' (red)
+          const stateCat = box.state || (box.role === 'family' ? 'family' : box.role ? 'guest' : 'verifying');
+          
+          let strokeColor = '#10b981'; // Green
+          let fillColor = 'rgba(16, 185, 129, 0.14)';
+          let badgeBg = 'rgba(5, 150, 105, 0.95)';
+          let labelText = box.name ? `👤 ${box.name} • Gia đình` : (box.track_id ? `#${box.track_id} Gia đình` : 'Gia đình');
+
+          if (stateCat === 'guest' || box.role === 'neighbor' || box.role === 'guest' || box.role === 'staff') {
+            // Blue
+            strokeColor = '#3b82f6';
+            fillColor = 'rgba(59, 130, 246, 0.14)';
+            badgeBg = 'rgba(29, 78, 216, 0.95)';
+            labelText = box.name ? `👤 ${box.name} • Khách quen` : (box.track_id ? `#${box.track_id} Khách quen` : 'Khách quen');
+          } else if (stateCat === 'verifying') {
+            // Gray
+            strokeColor = '#94a3b8';
+            fillColor = 'rgba(148, 163, 184, 0.12)';
+            badgeBg = 'rgba(71, 85, 105, 0.95)';
+            labelText = box.track_id ? `#${box.track_id} ⏳ Đang xác thực...` : '⏳ Đang xác thực...';
+          } else if (stateCat === 'stranger') {
+            // Red
+            strokeColor = '#ef4444';
+            fillColor = 'rgba(239, 68, 68, 0.16)';
+            badgeBg = 'rgba(185, 28, 28, 0.95)';
+            labelText = '⚠️ Người lạ';
+          } else if (!box.state && !box.name) {
+            labelText = box.track_id 
+              ? `#${box.track_id} Person ${Math.round((box.confidence || 0.9) * 100)}%` 
+              : `Person ${Math.round((box.confidence || 0.9) * 100)}%`;
+          }
+
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = strokeColor;
+          ctx.shadowBlur = 6;
+
+          // Draw bounding box
           ctx.strokeRect(x, y, w, h);
-          ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+          ctx.fillStyle = fillColor;
           ctx.fillRect(x, y, w, h);
 
-          // Draw emerald badge label
-          const labelText = box.track_id 
-            ? `#${box.track_id} Person ${Math.round(box.confidence * 100)}%` 
-            : `Person ${Math.round(box.confidence * 100)}%`;
-          
+          // Draw badge label
           ctx.font = '600 11px system-ui, -apple-system, sans-serif';
           const textWidth = ctx.measureText(labelText).width;
-          const badgeHeight = 18;
+          const badgeHeight = 19;
           const badgeY = Math.max(offsetY, y - badgeHeight - 2);
 
           // Badge background
-          ctx.fillStyle = 'rgba(5, 150, 105, 0.95)';
+          ctx.fillStyle = badgeBg;
           ctx.beginPath();
-          ctx.roundRect ? ctx.roundRect(x, badgeY, textWidth + 12, badgeHeight, 4) : ctx.rect(x, badgeY, textWidth + 12, badgeHeight);
+          ctx.roundRect ? ctx.roundRect(x, badgeY, textWidth + 14, badgeHeight, 5) : ctx.rect(x, badgeY, textWidth + 14, badgeHeight);
           ctx.fill();
 
           // Badge text
           ctx.fillStyle = '#ffffff';
           ctx.shadowBlur = 0;
-          ctx.fillText(labelText, x + 6, badgeY + 13);
+          ctx.fillText(labelText, x + 7, badgeY + 13.5);
           ctx.shadowBlur = 6;
         });
         ctx.shadowBlur = 0;
@@ -574,6 +605,13 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
 
       {/* Top-Right Control overlay */}
       <div className="absolute top-[max(1rem,env(safe-area-inset-top,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-40 flex items-center gap-2">
+        {enableAi && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-950/70 text-purple-200 border border-purple-500/40 backdrop-blur shadow-lg pointer-events-none select-none animate-in fade-in duration-300">
+            <Sparkles size={13} className="text-purple-400 animate-spin" style={{ animationDuration: '4s' }} />
+            <span>AI Integrated</span>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={(e) => {

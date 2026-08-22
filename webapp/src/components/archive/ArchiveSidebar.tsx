@@ -67,7 +67,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           ) : (
             cameras.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {c.name}{c.enable_ai ? ' [AI Integrated]' : ''}
               </option>
             ))
           )}

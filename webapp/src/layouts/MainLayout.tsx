@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe } from 'lucide-react';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
 import { AppLockScreen } from '../components/lock/AppLockScreen';
@@ -120,6 +120,12 @@ const MainLayout = () => {
             <NavLink to="/devices" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <Camera size={20} />
               {t('nav.devices')}
+            </NavLink>
+          )}
+          {user?.role === 'admin' && (
+            <NavLink to="/members" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <Users size={20} />
+              {t('nav.members')}
             </NavLink>
           )}
           <NavLink to="/playback" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>

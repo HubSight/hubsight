@@ -9,6 +9,12 @@ import (
 // Camera is the predicate function for camera builders.
 type Camera func(*sql.Selector)
 
+// Member is the predicate function for member builders.
+type Member func(*sql.Selector)
+
+// MemberFace is the predicate function for memberface builders.
+type MemberFace func(*sql.Selector)
+
 // Recording is the predicate function for recording builders.
 type Recording func(*sql.Selector)
 

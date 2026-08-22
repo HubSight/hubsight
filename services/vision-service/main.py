@@ -7,6 +7,7 @@ import threading
 from dotenv import load_dotenv
 from rabbitmq_client import RabbitMQClient
 from detector import PersonDetector
+from face_engine import FaceEngine
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ WEBRTC_API_URL = os.getenv("WEBRTC_API_URL", "http://webrtc-service:1984")
 
 active_streams = {} # cam_id -> {'thread': t, 'stop_event': e, 'host': url}
 detector = None
+face_engine = None
 
 def ensure_go2rtc_stream(cam_id, rtsp_url):
     try:
@@ -53,6 +55,22 @@ def get_ai_cameras():
         logger.error(f"Error fetching AI cameras: {e}")
     return []
 
+def sync_face_embeddings():
+    """Fetch all member face vectors from core-service to keep in-memory store updated."""
+    global face_engine
+    if face_engine is None:
+        return
+    try:
+        headers = {"X-Service-Key": M2M_SECRET}
+        resp = requests.get(f"{CORE_SERVICE_URL}/api/internal/face-embeddings", headers=headers, timeout=5)
+        if resp.status_code == 200:
+            items = resp.json()
+            face_engine.load_embeddings(items)
+        else:
+            logger.warning(f"Failed to sync face embeddings: {resp.status_code}")
+    except Exception as e:
+        logger.warning(f"Error syncing face embeddings: {e}")
+
 def stream_worker(cam_id, rtsp_url, stop_event):
     ensure_go2rtc_stream(cam_id, rtsp_url)
     go2rtc_url = f"{GO2RTC_RTSP_BASE}/cam_{cam_id}"
@@ -77,8 +95,7 @@ def stream_worker(cam_id, rtsp_url, stop_event):
             time.sleep(3)
             continue
         
-        # Drain any frames that accumulated during connection setup so that the
-        # first processed frame is current (not stale).
+        # Drain stale buffered frames
         for _ in range(5):
             cap.grab()
             
@@ -108,15 +125,25 @@ def stream_worker(cam_id, rtsp_url, stop_event):
     logger.info(f"[{cam_id}] Thread stopped.")
 
 def main():
-    global detector
-    logger.info("Starting Vision Service (Multi-Camera)...")
+    global detector, face_engine
+    logger.info("Starting Vision Service with InsightFace ArcFace & YOLO Tracking...")
     
     mq_client = RabbitMQClient(RABBITMQ_URL)
     mq_client.connect()
     
-    detector = PersonDetector(mq_client=mq_client)
+    face_engine = FaceEngine()
+    detector = PersonDetector(mq_client=mq_client, face_engine=face_engine)
+    
+    # Initial vector sync
+    sync_face_embeddings()
+    last_sync_time = time.time()
     
     while True:
+        # Periodically refresh vectors every 30s
+        if time.time() - last_sync_time > 30.0:
+            sync_face_embeddings()
+            last_sync_time = time.time()
+
         cameras = get_ai_cameras()
         
         current_cam_ids = set()

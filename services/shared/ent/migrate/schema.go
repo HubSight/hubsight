@@ -31,6 +31,49 @@ var (
 		Columns:    CamerasColumns,
 		PrimaryKey: []*schema.Column{CamerasColumns[0]},
 	}
+	// MembersColumns holds the columns for the "members" table.
+	MembersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "role", Type: field.TypeEnum, Enums: []string{"family", "guest", "neighbor", "staff"}, Default: "family"},
+		{Name: "avatar_url", Type: field.TypeString, Default: ""},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// MembersTable holds the schema information for the "members" table.
+	MembersTable = &schema.Table{
+		Name:       "members",
+		Columns:    MembersColumns,
+		PrimaryKey: []*schema.Column{MembersColumns[0]},
+	}
+	// MemberFacesColumns holds the columns for the "member_faces" table.
+	MemberFacesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "embedding", Type: field.TypeJSON},
+		{Name: "sample_image_url", Type: field.TypeString, Default: ""},
+		{Name: "quality_score", Type: field.TypeFloat64, Default: 0},
+		{Name: "yaw", Type: field.TypeFloat64, Default: 0},
+		{Name: "pitch", Type: field.TypeFloat64, Default: 0},
+		{Name: "blur_score", Type: field.TypeFloat64, Default: 0},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "member_id", Type: field.TypeString},
+	}
+	// MemberFacesTable holds the schema information for the "member_faces" table.
+	MemberFacesTable = &schema.Table{
+		Name:       "member_faces",
+		Columns:    MemberFacesColumns,
+		PrimaryKey: []*schema.Column{MemberFacesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "member_faces_members_faces",
+				Columns:    []*schema.Column{MemberFacesColumns[9]},
+				RefColumns: []*schema.Column{MembersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// RecordingsColumns holds the columns for the "recordings" table.
 	RecordingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -116,6 +159,8 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CamerasTable,
+		MembersTable,
+		MemberFacesTable,
 		RecordingsTable,
 		SessionsTable,
 		SettingsTable,
@@ -124,6 +169,7 @@ var (
 )
 
 func init() {
+	MemberFacesTable.ForeignKeys[0].RefTable = MembersTable
 	RecordingsTable.ForeignKeys[0].RefTable = CamerasTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
 }

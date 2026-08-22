@@ -12,6 +12,8 @@ import (
 	"cctv/shared/ent/migrate"
 
 	"cctv/shared/ent/camera"
+	"cctv/shared/ent/member"
+	"cctv/shared/ent/memberface"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/session"
 	"cctv/shared/ent/setting"
@@ -30,6 +32,10 @@ type Client struct {
 	Schema *migrate.Schema
 	// Camera is the client for interacting with the Camera builders.
 	Camera *CameraClient
+	// Member is the client for interacting with the Member builders.
+	Member *MemberClient
+	// MemberFace is the client for interacting with the MemberFace builders.
+	MemberFace *MemberFaceClient
 	// Recording is the client for interacting with the Recording builders.
 	Recording *RecordingClient
 	// Session is the client for interacting with the Session builders.
@@ -50,6 +56,8 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Camera = NewCameraClient(c.config)
+	c.Member = NewMemberClient(c.config)
+	c.MemberFace = NewMemberFaceClient(c.config)
 	c.Recording = NewRecordingClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Setting = NewSettingClient(c.config)
@@ -144,13 +152,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Camera:    NewCameraClient(cfg),
-		Recording: NewRecordingClient(cfg),
-		Session:   NewSessionClient(cfg),
-		Setting:   NewSettingClient(cfg),
-		User:      NewUserClient(cfg),
+		ctx:        ctx,
+		config:     cfg,
+		Camera:     NewCameraClient(cfg),
+		Member:     NewMemberClient(cfg),
+		MemberFace: NewMemberFaceClient(cfg),
+		Recording:  NewRecordingClient(cfg),
+		Session:    NewSessionClient(cfg),
+		Setting:    NewSettingClient(cfg),
+		User:       NewUserClient(cfg),
 	}, nil
 }
 
@@ -168,13 +178,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Camera:    NewCameraClient(cfg),
-		Recording: NewRecordingClient(cfg),
-		Session:   NewSessionClient(cfg),
-		Setting:   NewSettingClient(cfg),
-		User:      NewUserClient(cfg),
+		ctx:        ctx,
+		config:     cfg,
+		Camera:     NewCameraClient(cfg),
+		Member:     NewMemberClient(cfg),
+		MemberFace: NewMemberFaceClient(cfg),
+		Recording:  NewRecordingClient(cfg),
+		Session:    NewSessionClient(cfg),
+		Setting:    NewSettingClient(cfg),
+		User:       NewUserClient(cfg),
 	}, nil
 }
 
@@ -203,21 +215,21 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Camera.Use(hooks...)
-	c.Recording.Use(hooks...)
-	c.Session.Use(hooks...)
-	c.Setting.Use(hooks...)
-	c.User.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.Camera, c.Member, c.MemberFace, c.Recording, c.Session, c.Setting, c.User,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Camera.Intercept(interceptors...)
-	c.Recording.Intercept(interceptors...)
-	c.Session.Intercept(interceptors...)
-	c.Setting.Intercept(interceptors...)
-	c.User.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.Camera, c.Member, c.MemberFace, c.Recording, c.Session, c.Setting, c.User,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -225,6 +237,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *CameraMutation:
 		return c.Camera.mutate(ctx, m)
+	case *MemberMutation:
+		return c.Member.mutate(ctx, m)
+	case *MemberFaceMutation:
+		return c.MemberFace.mutate(ctx, m)
 	case *RecordingMutation:
 		return c.Recording.mutate(ctx, m)
 	case *SessionMutation:
@@ -384,6 +400,304 @@ func (c *CameraClient) mutate(ctx context.Context, m *CameraMutation) (Value, er
 		return (&CameraDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Camera mutation op: %q", m.Op())
+	}
+}
+
+// MemberClient is a client for the Member schema.
+type MemberClient struct {
+	config
+}
+
+// NewMemberClient returns a client for the Member from the given config.
+func NewMemberClient(c config) *MemberClient {
+	return &MemberClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `member.Hooks(f(g(h())))`.
+func (c *MemberClient) Use(hooks ...Hook) {
+	c.hooks.Member = append(c.hooks.Member, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `member.Intercept(f(g(h())))`.
+func (c *MemberClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Member = append(c.inters.Member, interceptors...)
+}
+
+// Create returns a builder for creating a Member entity.
+func (c *MemberClient) Create() *MemberCreate {
+	mutation := newMemberMutation(c.config, OpCreate)
+	return &MemberCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Member entities.
+func (c *MemberClient) CreateBulk(builders ...*MemberCreate) *MemberCreateBulk {
+	return &MemberCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MemberClient) MapCreateBulk(slice any, setFunc func(*MemberCreate, int)) *MemberCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MemberCreateBulk{err: fmt.Errorf("calling to MemberClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MemberCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MemberCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Member.
+func (c *MemberClient) Update() *MemberUpdate {
+	mutation := newMemberMutation(c.config, OpUpdate)
+	return &MemberUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MemberClient) UpdateOne(_m *Member) *MemberUpdateOne {
+	mutation := newMemberMutation(c.config, OpUpdateOne, withMember(_m))
+	return &MemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MemberClient) UpdateOneID(id string) *MemberUpdateOne {
+	mutation := newMemberMutation(c.config, OpUpdateOne, withMemberID(id))
+	return &MemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Member.
+func (c *MemberClient) Delete() *MemberDelete {
+	mutation := newMemberMutation(c.config, OpDelete)
+	return &MemberDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MemberClient) DeleteOne(_m *Member) *MemberDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MemberClient) DeleteOneID(id string) *MemberDeleteOne {
+	builder := c.Delete().Where(member.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MemberDeleteOne{builder}
+}
+
+// Query returns a query builder for Member.
+func (c *MemberClient) Query() *MemberQuery {
+	return &MemberQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMember},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Member entity by its id.
+func (c *MemberClient) Get(ctx context.Context, id string) (*Member, error) {
+	return c.Query().Where(member.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MemberClient) GetX(ctx context.Context, id string) *Member {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryFaces queries the faces edge of a Member.
+func (c *MemberClient) QueryFaces(_m *Member) *MemberFaceQuery {
+	query := (&MemberFaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(member.Table, member.FieldID, id),
+			sqlgraph.To(memberface.Table, memberface.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, member.FacesTable, member.FacesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MemberClient) Hooks() []Hook {
+	return c.hooks.Member
+}
+
+// Interceptors returns the client interceptors.
+func (c *MemberClient) Interceptors() []Interceptor {
+	return c.inters.Member
+}
+
+func (c *MemberClient) mutate(ctx context.Context, m *MemberMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MemberCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MemberUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Member mutation op: %q", m.Op())
+	}
+}
+
+// MemberFaceClient is a client for the MemberFace schema.
+type MemberFaceClient struct {
+	config
+}
+
+// NewMemberFaceClient returns a client for the MemberFace from the given config.
+func NewMemberFaceClient(c config) *MemberFaceClient {
+	return &MemberFaceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `memberface.Hooks(f(g(h())))`.
+func (c *MemberFaceClient) Use(hooks ...Hook) {
+	c.hooks.MemberFace = append(c.hooks.MemberFace, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `memberface.Intercept(f(g(h())))`.
+func (c *MemberFaceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.MemberFace = append(c.inters.MemberFace, interceptors...)
+}
+
+// Create returns a builder for creating a MemberFace entity.
+func (c *MemberFaceClient) Create() *MemberFaceCreate {
+	mutation := newMemberFaceMutation(c.config, OpCreate)
+	return &MemberFaceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of MemberFace entities.
+func (c *MemberFaceClient) CreateBulk(builders ...*MemberFaceCreate) *MemberFaceCreateBulk {
+	return &MemberFaceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MemberFaceClient) MapCreateBulk(slice any, setFunc func(*MemberFaceCreate, int)) *MemberFaceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MemberFaceCreateBulk{err: fmt.Errorf("calling to MemberFaceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MemberFaceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MemberFaceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for MemberFace.
+func (c *MemberFaceClient) Update() *MemberFaceUpdate {
+	mutation := newMemberFaceMutation(c.config, OpUpdate)
+	return &MemberFaceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MemberFaceClient) UpdateOne(_m *MemberFace) *MemberFaceUpdateOne {
+	mutation := newMemberFaceMutation(c.config, OpUpdateOne, withMemberFace(_m))
+	return &MemberFaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MemberFaceClient) UpdateOneID(id string) *MemberFaceUpdateOne {
+	mutation := newMemberFaceMutation(c.config, OpUpdateOne, withMemberFaceID(id))
+	return &MemberFaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for MemberFace.
+func (c *MemberFaceClient) Delete() *MemberFaceDelete {
+	mutation := newMemberFaceMutation(c.config, OpDelete)
+	return &MemberFaceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MemberFaceClient) DeleteOne(_m *MemberFace) *MemberFaceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MemberFaceClient) DeleteOneID(id string) *MemberFaceDeleteOne {
+	builder := c.Delete().Where(memberface.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MemberFaceDeleteOne{builder}
+}
+
+// Query returns a query builder for MemberFace.
+func (c *MemberFaceClient) Query() *MemberFaceQuery {
+	return &MemberFaceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMemberFace},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a MemberFace entity by its id.
+func (c *MemberFaceClient) Get(ctx context.Context, id string) (*MemberFace, error) {
+	return c.Query().Where(memberface.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MemberFaceClient) GetX(ctx context.Context, id string) *MemberFace {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMember queries the member edge of a MemberFace.
+func (c *MemberFaceClient) QueryMember(_m *MemberFace) *MemberQuery {
+	query := (&MemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(memberface.Table, memberface.FieldID, id),
+			sqlgraph.To(member.Table, member.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, memberface.MemberTable, memberface.MemberColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MemberFaceClient) Hooks() []Hook {
+	return c.hooks.MemberFace
+}
+
+// Interceptors returns the client interceptors.
+func (c *MemberFaceClient) Interceptors() []Interceptor {
+	return c.inters.MemberFace
+}
+
+func (c *MemberFaceClient) mutate(ctx context.Context, m *MemberFaceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MemberFaceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MemberFaceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MemberFaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MemberFaceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown MemberFace mutation op: %q", m.Op())
 	}
 }
 
@@ -970,9 +1284,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Camera, Recording, Session, Setting, User []ent.Hook
+		Camera, Member, MemberFace, Recording, Session, Setting, User []ent.Hook
 	}
 	inters struct {
-		Camera, Recording, Session, Setting, User []ent.Interceptor
+		Camera, Member, MemberFace, Recording, Session, Setting, User []ent.Interceptor
 	}
 )

@@ -4,6 +4,7 @@ export interface CameraItem {
   host: string;
   brand: string;
   is_active: boolean;
+  enable_ai?: boolean;
 }
 
 export interface Recording {

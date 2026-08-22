@@ -20,6 +20,30 @@ func (f CameraFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CameraMutation", m)
 }
 
+// The MemberFunc type is an adapter to allow the use of ordinary
+// function as Member mutator.
+type MemberFunc func(context.Context, *ent.MemberMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MemberMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MemberMutation", m)
+}
+
+// The MemberFaceFunc type is an adapter to allow the use of ordinary
+// function as MemberFace mutator.
+type MemberFaceFunc func(context.Context, *ent.MemberFaceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MemberFaceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MemberFaceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MemberFaceMutation", m)
+}
+
 // The RecordingFunc type is an adapter to allow the use of ordinary
 // function as Recording mutator.
 type RecordingFunc func(context.Context, *ent.RecordingMutation) (ent.Value, error)

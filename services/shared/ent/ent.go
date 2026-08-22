@@ -4,6 +4,8 @@ package ent
 
 import (
 	"cctv/shared/ent/camera"
+	"cctv/shared/ent/member"
+	"cctv/shared/ent/memberface"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/session"
 	"cctv/shared/ent/setting"
@@ -77,11 +79,13 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			camera.Table:    camera.ValidColumn,
-			recording.Table: recording.ValidColumn,
-			session.Table:   session.ValidColumn,
-			setting.Table:   setting.ValidColumn,
-			user.Table:      user.ValidColumn,
+			camera.Table:     camera.ValidColumn,
+			member.Table:     member.ValidColumn,
+			memberface.Table: memberface.ValidColumn,
+			recording.Table:  recording.ValidColumn,
+			session.Table:    session.ValidColumn,
+			setting.Table:    setting.ValidColumn,
+			user.Table:       user.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

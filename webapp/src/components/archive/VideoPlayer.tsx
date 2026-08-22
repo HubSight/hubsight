@@ -20,6 +20,7 @@ import { useOrientation } from '../../hooks/useOrientation';
 interface VideoPlayerProps {
   mode: 'live' | 'archive';
   cameraId: string | null;
+  enableAi?: boolean;
   activeRecording: Recording | null;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   containerRef?: React.RefObject<HTMLDivElement | null>;
@@ -34,6 +35,7 @@ const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   mode,
   cameraId,
+  enableAi,
   activeRecording,
   videoRef,
   containerRef: externalContainerRef,
@@ -436,7 +438,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* ---------------------------------------------------- */}
       {mode === 'live' && cameraId ? (
         <div className="w-full h-full" onClick={toggleFullscreen}>
-          <LivePlayer cameraId={cameraId} onLiveStatusChange={onLiveStatusChange} />
+          <LivePlayer cameraId={cameraId} enableAi={enableAi} onLiveStatusChange={onLiveStatusChange} />
         </div>
       ) : mode === 'archive' && activeRecording ? (
         <video

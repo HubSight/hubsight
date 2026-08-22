@@ -48,4 +48,12 @@ export class RelayConsumer {
       data,
     });
   }
+
+  @EventPattern('member.face.updated')
+  handleMemberFaceUpdated(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'member.face.updated',
+      data,
+    });
+  }
 }

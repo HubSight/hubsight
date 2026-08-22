@@ -3,6 +3,8 @@ import numpy as np
 from ultralytics import YOLO
 import logging
 import time
+from collections import defaultdict
+from face_engine import FaceEngine
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +15,6 @@ class MotionGate:
         self.min_motion_pixels = min_motion_pixels
 
     def has_motion(self, frame):
-        # Downscale to 160x90 for sub-millisecond motion analysis
         small = cv2.resize(frame, (160, 90), interpolation=cv2.INTER_NEAREST)
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
@@ -22,7 +23,6 @@ class MotionGate:
             self.prev_gray = gray
             return True
 
-        # Frame absolute difference
         diff = cv2.absdiff(self.prev_gray, gray)
         _, thresh = cv2.threshold(diff, 20, 255, cv2.THRESH_BINARY)
         motion_count = cv2.countNonZero(thresh)
@@ -31,15 +31,80 @@ class MotionGate:
         return motion_count >= self.min_motion_pixels
 
 
+class TrackIdentity:
+    """Tracks identity state across time using multi-frame consensus."""
+    def __init__(self, track_id):
+        self.track_id = track_id
+        self.created_at = time.time()
+        self.last_seen = time.time()
+        self.last_face_infer = 0.0
+        
+        # State: 'verifying' (gray), 'family' (green), 'guest' (blue), 'stranger' (red)
+        self.state = "verifying"
+        self.name = ""
+        self.role = ""
+        self.member_id = None
+        self.confidence = 0.0
+        self.best_similarity = 0.0
+        
+        # Consensus buffer: list of (member_id, name, role, score, is_good)
+        self.match_history = []
+        self.good_eval_count = 0
+        self.is_locked = False
+
+    def update_match(self, member_id, name, role, similarity, is_good):
+        self.last_seen = time.time()
+        if is_good:
+            self.good_eval_count += 1
+            self.match_history.append((member_id, name, role, similarity))
+
+        if self.is_locked:
+            return
+
+        # Multi-frame consensus algorithm:
+        # 1. Count votes for specific members
+        member_votes = defaultdict(list)
+        for mid, mname, mrole, sim in self.match_history:
+            if mid is not None and sim >= 0.58:
+                member_votes[mid].append((mname, mrole, sim))
+
+        # Check if any member has >= 2 strong matches
+        for mid, votes in member_votes.items():
+            if len(votes) >= 2:
+                best_sim = max(v[2] for v in votes)
+                self.member_id = mid
+                self.name = votes[0][0]
+                self.role = votes[0][1] # 'family', 'guest', 'neighbor', 'staff'
+                self.best_similarity = round(best_sim, 2)
+                
+                # Map role to 4-color visual category
+                if self.role == "family":
+                    self.state = "family" # Green (#10b981)
+                else:
+                    self.state = "guest"  # Blue (#3b82f6)
+                self.is_locked = True
+                logger.info(f"[Track {self.track_id}] LOCKED identity: {self.name} ({self.role}) with score {best_sim:.2f}")
+                return
+
+        # If >= 4 good evaluations with no candidate match above 0.45 -> Stranger
+        if self.good_eval_count >= 4 and len(member_votes) == 0:
+            self.state = "stranger" # Red (#ef4444)
+            self.name = "Người lạ"
+            self.role = "stranger"
+            self.is_locked = True
+            logger.info(f"[Track {self.track_id}] LOCKED identity: STRANGER after {self.good_eval_count} clear frames")
+
+
 class PersonDetector:
-    def __init__(self, mq_client, conf_threshold=0.45, iou_threshold=0.5, no_person_timeout=5.0):
+    def __init__(self, mq_client, face_engine=None, conf_threshold=0.45, iou_threshold=0.5, no_person_timeout=4.0):
         self.model = YOLO('yolo26n.pt')
         self.mq_client = mq_client
+        self.face_engine = face_engine or FaceEngine()
         self.conf_threshold = conf_threshold
         self.iou_threshold = iou_threshold
         self.no_person_timeout = no_person_timeout
         
-        # State machine per camera: cam_id -> {'state', 'last_person_time', 'motion_gate', 'last_boxes'}
+        # State machine per camera: cam_id -> {'state', 'last_person_time', 'motion_gate', 'last_boxes', 'tracks'}
         self.camera_states = {}
 
     def _get_cam_state(self, camera_id):
@@ -48,7 +113,8 @@ class PersonDetector:
                 'state': 'NO_PERSON',
                 'last_person_time': 0,
                 'motion_gate': MotionGate(),
-                'last_boxes': []
+                'last_boxes': [],
+                'tracks': {} # track_id -> TrackIdentity
             }
         return self.camera_states[camera_id]
 
@@ -57,18 +123,13 @@ class PersonDetector:
         current_time = time.time()
         
         # 1. Motion Pre-filter Gate:
-        # If no motion is detected AND no person was recently tracked, skip expensive YOLO inference (saves 70-80% CPU)
         is_moving = cam['motion_gate'].has_motion(frame)
         person_present = cam['state'] == 'PERSON_PRESENT'
         
-        # Only run YOLO if there is motion OR if a person is currently tracked (to maintain tracking continuity)
         if not is_moving and not person_present:
             return False, []
 
-        # 2. Optimized YOLO11 Tracking:
-        # - classes=[0]: Filter only 'person' (drops 79 irrelevant classes, boosting NMS speed and accuracy)
-        # - imgsz=(384, 640): Native 16:9 aspect ratio (eliminates black letterbox padding, increases effective resolution)
-        # - persist=True + tracker="bytetrack.yaml": ByteTrack temporal smoothing across frames
+        # 2. Optimized YOLO Person Tracking with ByteTrack
         results = self.model.track(
             source=frame,
             classes=[0],
@@ -82,6 +143,7 @@ class PersonDetector:
         
         person_detected = False
         boxes = []
+        active_track_ids = set()
         
         for result in results:
             orig_shape = result.orig_shape
@@ -92,16 +154,53 @@ class PersonDetector:
                     person_detected = True
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
                     track_id = int(box.id[0]) if box.id is not None else None
+                    conf = round(float(box.conf[0]), 2)
+                    
+                    person_norm = (x1/w, y1/h, x2/w, y2/h)
+                    
+                    track_state_obj = None
+                    if track_id is not None:
+                        active_track_ids.add(track_id)
+                        if track_id not in cam['tracks']:
+                            cam['tracks'][track_id] = TrackIdentity(track_id)
+                        track_state_obj = cam['tracks'][track_id]
+                        track_state_obj.last_seen = current_time
+
+                        # Run Face Recognition at 3 FPS per track if not yet locked
+                        if (not track_state_obj.is_locked or (current_time - track_state_obj.last_face_infer) > 2.0):
+                            if (current_time - track_state_obj.last_face_infer) >= 0.25:
+                                track_state_obj.last_face_infer = current_time
+                                face_results = self.face_engine.extract_face_embeddings(frame, person_norm)
+                                if face_results:
+                                    # Pick the best face in this person box
+                                    best_face = max(face_results, key=lambda f: f.get("quality_score", 0))
+                                    if best_face.get("embedding") is not None:
+                                        mid, name, role, sim = self.face_engine.match_embedding(best_face["embedding"])
+                                        track_state_obj.update_match(mid, name, role, sim, best_face.get("is_good", False))
+
+                    # Format box metadata
+                    state_cat = track_state_obj.state if track_state_obj else "verifying"
+                    name_label = track_state_obj.name if track_state_obj else ""
+                    role_label = track_state_obj.role if track_state_obj else ""
                     
                     boxes.append({
                         "x1": round(x1 / w, 4),
                         "y1": round(y1 / h, 4),
                         "x2": round(x2 / w, 4),
                         "y2": round(y2 / h, 4),
-                        "confidence": round(float(box.conf[0]), 2),
-                        "track_id": track_id
+                        "confidence": conf,
+                        "track_id": track_id,
+                        "state": state_cat,    # 'family' (green), 'guest' (blue), 'verifying' (gray), 'stranger' (red)
+                        "name": name_label,     # Member display name or 'Người lạ'
+                        "role": role_label,     # 'family', 'guest', 'neighbor', 'staff', 'stranger'
+                        "similarity": track_state_obj.best_similarity if track_state_obj else 0.0
                     })
         
+        # Clean up stale tracks older than 10 seconds
+        stale_tracks = [tid for tid, tobj in cam['tracks'].items() if (current_time - tobj.last_seen) > 10.0]
+        for tid in stale_tracks:
+            del cam['tracks'][tid]
+
         if person_detected:
             cam['last_person_time'] = current_time
             cam['last_boxes'] = boxes
@@ -116,7 +215,6 @@ class PersonDetector:
                 cam['last_boxes'] = []
                 self._publish_state_change('vision.person.left', camera_id, cam['state'], [])
             elif cam['state'] == 'PERSON_PRESENT':
-                # During brief tracking occlusions, keep broadcasting last known state
                 self._publish_state_change('vision.person.update', camera_id, cam['state'], cam['last_boxes'])
                 
         return person_detected, boxes

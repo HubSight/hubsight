@@ -8,6 +8,7 @@ import (
 	"cctv/shared/pkg/auth"
 	"cctv/shared/pkg/device"
 	"cctv/shared/pkg/live"
+	"cctv/shared/pkg/member"
 	"cctv/shared/pkg/nvr"
 	"cctv/shared/pkg/recording"
 	"github.com/gin-contrib/cors"
@@ -38,12 +39,16 @@ func New() *gin.Engine {
 		internal := api.Group("/internal")
 		{
 			internal.GET("/ai-cameras", device.ListAICamerasHandler)
+			internal.GET("/face-embeddings", member.ListAllEmbeddingsInternalHandler)
 		}
 
 		// Protected domain routes (Validated via auth-service)
 		protected := api.Group("/")
 		protected.Use(auth.Middleware())
 		{
+			// Members endpoints
+			protected.GET("/members", member.ListMembersHandler)
+
 			// Devices endpoints (Read is allowed for all authenticated users)
 			protected.GET("/devices", device.ListDevicesHandler)
 			protected.GET("/cameras", device.ListDevicesHandler)
@@ -52,6 +57,13 @@ func New() *gin.Engine {
 			adminOnly := protected.Group("/")
 			adminOnly.Use(auth.RequireRole("admin"))
 			{
+				// Member management
+				adminOnly.POST("/members", member.CreateMemberHandler)
+				adminOnly.PUT("/members/:id", member.UpdateMemberHandler)
+				adminOnly.DELETE("/members/:id", member.DeleteMemberHandler)
+				adminOnly.POST("/members/:id/faces", member.AddMemberFaceHandler)
+				adminOnly.DELETE("/members/:id/faces/:face_id", member.DeleteMemberFaceHandler)
+
 				adminOnly.POST("/devices", device.AddDeviceHandler)
 				adminOnly.PUT("/devices/:id", device.UpdateDeviceHandler)
 				adminOnly.DELETE("/devices/:id", device.DeleteDeviceHandler)

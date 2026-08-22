@@ -4,6 +4,8 @@ package ent
 
 import (
 	"cctv/shared/ent/camera"
+	"cctv/shared/ent/member"
+	"cctv/shared/ent/memberface"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/schema"
 	"cctv/shared/ent/session"
@@ -76,6 +78,68 @@ func init() {
 	cameraDescID := cameraFields[0].Descriptor()
 	// camera.DefaultID holds the default value on creation for the id field.
 	camera.DefaultID = cameraDescID.Default.(func() string)
+	memberFields := schema.Member{}.Fields()
+	_ = memberFields
+	// memberDescName is the schema descriptor for name field.
+	memberDescName := memberFields[1].Descriptor()
+	// member.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	member.NameValidator = memberDescName.Validators[0].(func(string) error)
+	// memberDescAvatarURL is the schema descriptor for avatar_url field.
+	memberDescAvatarURL := memberFields[3].Descriptor()
+	// member.DefaultAvatarURL holds the default value on creation for the avatar_url field.
+	member.DefaultAvatarURL = memberDescAvatarURL.Default.(string)
+	// memberDescIsActive is the schema descriptor for is_active field.
+	memberDescIsActive := memberFields[4].Descriptor()
+	// member.DefaultIsActive holds the default value on creation for the is_active field.
+	member.DefaultIsActive = memberDescIsActive.Default.(bool)
+	// memberDescCreatedAt is the schema descriptor for created_at field.
+	memberDescCreatedAt := memberFields[5].Descriptor()
+	// member.DefaultCreatedAt holds the default value on creation for the created_at field.
+	member.DefaultCreatedAt = memberDescCreatedAt.Default.(func() time.Time)
+	// memberDescUpdatedAt is the schema descriptor for updated_at field.
+	memberDescUpdatedAt := memberFields[6].Descriptor()
+	// member.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	member.DefaultUpdatedAt = memberDescUpdatedAt.Default.(func() time.Time)
+	// member.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	member.UpdateDefaultUpdatedAt = memberDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// memberDescID is the schema descriptor for id field.
+	memberDescID := memberFields[0].Descriptor()
+	// member.DefaultID holds the default value on creation for the id field.
+	member.DefaultID = memberDescID.Default.(func() string)
+	memberfaceFields := schema.MemberFace{}.Fields()
+	_ = memberfaceFields
+	// memberfaceDescSampleImageURL is the schema descriptor for sample_image_url field.
+	memberfaceDescSampleImageURL := memberfaceFields[3].Descriptor()
+	// memberface.DefaultSampleImageURL holds the default value on creation for the sample_image_url field.
+	memberface.DefaultSampleImageURL = memberfaceDescSampleImageURL.Default.(string)
+	// memberfaceDescQualityScore is the schema descriptor for quality_score field.
+	memberfaceDescQualityScore := memberfaceFields[4].Descriptor()
+	// memberface.DefaultQualityScore holds the default value on creation for the quality_score field.
+	memberface.DefaultQualityScore = memberfaceDescQualityScore.Default.(float64)
+	// memberfaceDescYaw is the schema descriptor for yaw field.
+	memberfaceDescYaw := memberfaceFields[5].Descriptor()
+	// memberface.DefaultYaw holds the default value on creation for the yaw field.
+	memberface.DefaultYaw = memberfaceDescYaw.Default.(float64)
+	// memberfaceDescPitch is the schema descriptor for pitch field.
+	memberfaceDescPitch := memberfaceFields[6].Descriptor()
+	// memberface.DefaultPitch holds the default value on creation for the pitch field.
+	memberface.DefaultPitch = memberfaceDescPitch.Default.(float64)
+	// memberfaceDescBlurScore is the schema descriptor for blur_score field.
+	memberfaceDescBlurScore := memberfaceFields[7].Descriptor()
+	// memberface.DefaultBlurScore holds the default value on creation for the blur_score field.
+	memberface.DefaultBlurScore = memberfaceDescBlurScore.Default.(float64)
+	// memberfaceDescIsActive is the schema descriptor for is_active field.
+	memberfaceDescIsActive := memberfaceFields[8].Descriptor()
+	// memberface.DefaultIsActive holds the default value on creation for the is_active field.
+	memberface.DefaultIsActive = memberfaceDescIsActive.Default.(bool)
+	// memberfaceDescCreatedAt is the schema descriptor for created_at field.
+	memberfaceDescCreatedAt := memberfaceFields[9].Descriptor()
+	// memberface.DefaultCreatedAt holds the default value on creation for the created_at field.
+	memberface.DefaultCreatedAt = memberfaceDescCreatedAt.Default.(func() time.Time)
+	// memberfaceDescID is the schema descriptor for id field.
+	memberfaceDescID := memberfaceFields[0].Descriptor()
+	// memberface.DefaultID holds the default value on creation for the id field.
+	memberface.DefaultID = memberfaceDescID.Default.(func() string)
 	recordingFields := schema.Recording{}.Fields()
 	_ = recordingFields
 	// recordingDescCreatedAt is the schema descriptor for created_at field.

@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Playback from './pages/Playback';
 import Devices from './pages/Devices';
 import NvrMonitor from './pages/NvrMonitor';
+import Members from './pages/Members';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -65,6 +66,14 @@ const App = () => {
                     element={
                       <AdminRoute>
                         <Devices />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="members"
+                    element={
+                      <AdminRoute>
+                        <Members />
                       </AdminRoute>
                     }
                   />

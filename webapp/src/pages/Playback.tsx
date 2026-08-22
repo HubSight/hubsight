@@ -189,6 +189,7 @@ const Playback = () => {
           <VideoPlayer
             mode={mode}
             cameraId={currentCamId}
+            enableAi={cameras.find((c) => c.id === selectedCam)?.enable_ai}
             activeRecording={activeRecording}
             videoRef={videoRef}
             containerRef={playerContainerRef}
