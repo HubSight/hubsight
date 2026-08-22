@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Loader2, AlertCircle, Activity } from 'lucide-react';
+import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { useSocket } from '../../context/SocketContext';
 import axiosClient from '../../api/axiosClient';
@@ -16,6 +16,40 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [streamError, setStreamError] = useState<string | null>(null);
+  const [hasAudioTrack, setHasAudioTrack] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (isMuted || volume === 0) {
+      const targetVol = volume > 0 ? volume : 1;
+      video.muted = false;
+      video.volume = targetVol;
+      setVolume(targetVol);
+      setIsMuted(false);
+      video.play().catch(() => {});
+    } else {
+      video.muted = true;
+      setIsMuted(true);
+    }
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    const video = videoRef.current;
+    setVolume(newVolume);
+    if (!video) return;
+    if (newVolume === 0) {
+      video.muted = true;
+      setIsMuted(true);
+    } else {
+      video.muted = false;
+      video.volume = newVolume;
+      setIsMuted(false);
+      video.play().catch(() => {});
+    }
+  };
 
   // ── Bounding box timestamp queue ──────────────────────────────────────────
   // Each entry: { ts: ms wall-clock when server processed the frame, boxes[] }
@@ -348,9 +382,13 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
         });
 
         pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver('audio', { direction: 'recvonly' });
 
         pc.ontrack = (event) => {
           if (!isActive) return;
+          if (event.track.kind === 'audio') {
+            setHasAudioTrack(true);
+          }
           if (event.streams?.[0]) {
             if (video.srcObject !== event.streams[0]) video.srcObject = event.streams[0];
           } else if (event.track) {
@@ -457,6 +495,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
             <tbody>
               <tr><td className="pr-3 text-slate-300">Resolution</td><td className="font-semibold">{stats.resolution}</td></tr>
               <tr><td className="pr-3 text-slate-300">Codec/Proto</td><td className="font-semibold text-sky-400">{stats.codec} / {stats.protocol}</td></tr>
+              <tr><td className="pr-3 text-slate-300">Audio Track</td><td className={`font-semibold ${hasAudioTrack ? 'text-emerald-400' : 'text-slate-400'}`}>{hasAudioTrack ? 'Detected' : 'None'}</td></tr>
               <tr><td className="pr-3 text-slate-300">Render FPS</td><td className="font-semibold text-emerald-400">{stats.renderFps}</td></tr>
               <tr><td className="pr-3 text-slate-300">Decode FPS</td><td className="font-semibold text-emerald-400">{stats.decodeFps}</td></tr>
               <tr>
@@ -490,7 +529,50 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, onLiveStatusCh
 
       {/* Control overlay */}
       <div className="absolute top-[max(1rem,env(safe-area-inset-top,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-40 flex items-center gap-2">
+        {/* Audio Volume & Mute/Unmute Control */}
+        <div 
+          className="flex items-center bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-xl border border-white/20 hover:border-white/40 shadow-lg p-1 transition-all"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={toggleMute}
+            className={`p-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              !isMuted && volume > 0
+                ? 'text-emerald-400 hover:text-emerald-300'
+                : 'text-white/80 hover:text-white'
+            }`}
+            title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+          >
+            {isMuted || volume === 0 ? (
+              <VolumeX size={16} />
+            ) : volume < 0.5 ? (
+              <Volume1 size={16} />
+            ) : (
+              <Volume2 size={16} />
+            )}
+            <span className="text-[11px] font-mono hidden sm:inline-block">
+              {isMuted ? 'Mute' : `${Math.round(volume * 100)}%`}
+            </span>
+          </button>
+
+          {/* Interactive Volume Slider */}
+          <div className="w-16 sm:w-20 px-1.5 flex items-center">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              className="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400"
+              title={`Âm lượng: ${Math.round((isMuted ? 0 : volume) * 100)}%`}
+            />
+          </div>
+        </div>
+
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             setShowTrace(!showTrace);
