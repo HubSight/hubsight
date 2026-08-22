@@ -173,3 +173,31 @@ class FaceEngine:
    - *Giải pháp*: Cho phép thêm nhiều ảnh mẫu cho 1 thành viên (mặt chính diện, mặt nghiêng 45°, có đeo kính nhẹ) để tăng độ phủ đặc trưng vector.
 3. **Môi trường CPU không có GPU**:
    - *Giải pháp*: ONNX Runtime CPU được tối ưu hoá SIMD/AVX2/NEON xử lý 1 khuôn mặt trong < 8ms, hoàn toàn đáp ứng thời gian thực 25-30 FPS.
+
+---
+
+## 8. Nguyên tắc Bất biến: Đảm bảo 100% Không ảnh hưởng tới Luồng Livestream (Zero-Impact Guarantee)
+
+Hệ thống được thiết kế theo nguyên tắc **Tách biệt Hoàn toàn (Decoupled Pipeline)**:
+
+```mermaid
+flowchart LR
+    CAM["Camera RTSP"] -->|Luồng Chính H.264/H.265| GO2RTC["go2rtc (webrtc-service)\nDirect Passthrough (0% CPU)"]
+    CAM -.->|Luồng Phụ Sub-Stream (5-10 FPS)| AI["vision-service\n(YOLO11 + InsightFace)"]
+    
+    GO2RTC ==>|WebRTC Video + Opus Audio| BROWSER_VIDEO["<video> Thẻ Video gốc\n(Độ trễ < 50ms, 60 FPS, 0 Drop Frame)"]
+    AI -.->|Toạ độ Box JSON qua WebSocket| BROWSER_CANVAS["<canvas> Overlay trong suốt\n(Vẽ khung tên người nhà / người lạ)"]
+```
+
+### Các cơ chế đảm bảo hiệu năng tối đa:
+1. **Luồng Livestream WebRTC độc lập tuyệt đối (`webrtc-service`)**:
+   - Video và Audio truyền trực tiếp từ Camera tới trình duyệt Web qua WebRTC bằng cơ chế **Bitstream Copy (0% CPU)**.
+   - Luồng livestream **KHÔNG bao giờ đi qua Python hay bất kỳ khâu xử lý AI nào**. Do đó, dù AI có bận xử lý hay bị tắt, luồng livestream vẫn đạt 100% tốc độ gốc (60 FPS/30 FPS), độ trễ cực thấp (< 50ms) và âm thanh trong trẻo.
+2. **AI chỉ lấy Sub-Stream (Luồng phụ nhẹ) hoặc lấy frame bất đồng bộ**:
+   - `vision-service` chỉ đọc sub-stream độ phân giải thấp (360p / 720p) hoặc lấy mẫu định kỳ 5 - 10 FPS để phân tích, hoàn toàn không chiếm dụng băng thông của luồng chính.
+3. **Hiển thị bằng Canvas Overlay trong suốt trên Web (`LivePlayer.tsx`)**:
+   - Thẻ `<video>` phát luồng WebRTC nguyên bản không bị can thiệp.
+   - Thẻ `<canvas>` trong suốt nằm đè lên trên chỉ nhận toạ độ JSON (vài byte qua WebSocket) để vẽ khung tên mượt mà 60 FPS bằng phần cứng GPU máy khách (Client-side rendering).
+4. **Không can thiệp vào NVR Recorder**:
+   - Quá trình ghi hình MP4 lưu trữ 24/7 của NVR Service chạy độc lập hoàn toàn, không bị ảnh hưởng bởi quá trình nhận diện AI.
+
