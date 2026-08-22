@@ -90,6 +90,8 @@ const en: Record<TranslationKey, string> = {
   'settings.timeout1m': '1 Minute',
   'settings.timeout5m': '5 Minutes',
   'settings.lockNow': 'Lock Application Now',
+  'settings.timezoneTitle': 'Display Timezone',
+  'settings.timezoneDesc': 'Timezone used to display timestamps in notifications and event logs (Default: UTC+7).',
 
   // === App Lock Screen ===
   'lock.touchIdPrompt': 'Touch ID / Face ID / Device PIN',

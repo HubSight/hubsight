@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppLockProvider } from './context/AppLockContext';
 import { SocketProvider } from './context/SocketContext';
+import { TimezoneProvider } from './context/TimezoneContext';
 import { I18nProvider } from './i18n';
 import { LocaleSync } from './components/LocaleSync';
 import MainLayout from './layouts/MainLayout';
@@ -46,20 +47,21 @@ const App = () => {
     <I18nProvider>
       <AuthProvider>
         <LocaleSync />
-        <AppLockProvider>
-          <SocketProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
+        <TimezoneProvider>
+          <AppLockProvider>
+            <SocketProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
 
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout />
-                    </ProtectedRoute>
-                  }
-                >
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout />
+                      </ProtectedRoute>
+                    }
+                  >
                   <Route index element={<IndexRedirect />} />
                   <Route
                     path="devices"
@@ -91,9 +93,10 @@ const App = () => {
             </BrowserRouter>
           </SocketProvider>
         </AppLockProvider>
-      </AuthProvider>
-    </I18nProvider>
-  );
+      </TimezoneProvider>
+    </AuthProvider>
+  </I18nProvider>
+);
 };
 
 export default App;

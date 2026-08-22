@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, ShieldCheck, HeartHandshake, AlertTriangle, Bell, ArrowRight } from 'lucide-react';
 import type { NotificationItem } from '../../types/notification';
 import { useSocket } from '../../context/SocketContext';
+import { useTimezone } from '../../context/TimezoneContext';
 import { useNavigate } from 'react-router-dom';
 
 // Simple Web Audio API gentle notification chime (0 external dependencies)
@@ -42,6 +43,7 @@ const playNotificationChime = (category: string) => {
 
 export const NotificationToast: React.FC = () => {
   const { socket } = useSocket();
+  const { formatNotificationBody } = useTimezone();
   const navigate = useNavigate();
   const [currentToast, setCurrentToast] = useState<NotificationItem | null>(null);
 
@@ -136,7 +138,7 @@ export const NotificationToast: React.FC = () => {
               {currentToast.title}
             </h4>
             <p className="text-[11px] text-slate-300 mt-1 line-clamp-2 leading-relaxed">
-              {currentToast.body}
+              {formatNotificationBody(currentToast.body, currentToast.created_at || Date.now())}
             </p>
             <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-orange-400 group-hover:text-orange-300 transition-colors">
               <span>Xem trực tiếp camera</span>

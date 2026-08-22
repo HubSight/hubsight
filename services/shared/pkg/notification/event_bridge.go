@@ -33,19 +33,19 @@ func IngestVisionEvent(ctx context.Context, cameraID, eventType, name, role, mem
 	case "family":
 		category = "family"
 		title = fmt.Sprintf("👤 %s đã về nhà", name)
-		body = fmt.Sprintf("Nhận diện thành viên gia đình (%s) lúc %s", name, now.Format("15:04:05"))
+		body = fmt.Sprintf("Nhận diện thành viên gia đình (%s)", name)
 	case "guest", "neighbor", "staff":
 		category = "guest"
 		title = fmt.Sprintf("👤 %s vừa đến", name)
-		body = fmt.Sprintf("Phát hiện khách quen / hàng xóm (%s) lúc %s", name, now.Format("15:04:05"))
+		body = fmt.Sprintf("Phát hiện khách quen / hàng xóm (%s)", name)
 	case "stranger":
 		category = "stranger"
 		title = "⚠️ Cảnh báo: Phát hiện người lạ"
-		body = fmt.Sprintf("Phát hiện người chưa xác định tại camera lúc %s", now.Format("15:04:05"))
+		body = "Phát hiện người chưa xác định tại camera"
 	default:
 		category = "system"
 		title = "👁️ Phát hiện chuyển động người"
-		body = fmt.Sprintf("Phát hiện người lúc %s", now.Format("15:04:05"))
+		body = "Phát hiện chuyển động người tại camera"
 	}
 
 	_, err := CreateAndDispatchNotification(ctx, cameraID, eventType, title, body, category, memberID, thumbURL)

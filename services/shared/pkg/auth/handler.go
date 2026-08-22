@@ -153,3 +153,61 @@ func UpdateLocaleHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, updated)
 }
+
+func UpdateTimezoneHandler(c *gin.Context) {
+	userObj, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	u := userObj.(*ent.User)
+
+	var req UpdateTimezoneRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.Timezone == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Timezone is required"})
+		return
+	}
+
+	updated, err := database.Client.User.UpdateOneID(u.ID).
+		SetTimezone(req.Timezone).
+		Save(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update timezone in database"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
+}
+
+func UpdatePreferencesHandler(c *gin.Context) {
+	userObj, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	u := userObj.(*ent.User)
+
+	var req UpdatePreferencesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	updateQuery := database.Client.User.UpdateOneID(u.ID)
+	if req.Locale != nil && (*req.Locale == "vi" || *req.Locale == "en") {
+		updateQuery.SetLocale(user.Locale(*req.Locale))
+	}
+	if req.Timezone != nil && *req.Timezone != "" {
+		updateQuery.SetTimezone(*req.Timezone)
+	}
+
+	updated, err := updateQuery.Save(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences in database"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
+}

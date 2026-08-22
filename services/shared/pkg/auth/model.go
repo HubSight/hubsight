@@ -22,3 +22,12 @@ type ChangePasswordRequest struct {
 type UpdateLocaleRequest struct {
 	Locale string `json:"locale"`
 }
+
+type UpdateTimezoneRequest struct {
+	Timezone string `json:"timezone"`
+}
+
+type UpdatePreferencesRequest struct {
+	Locale   *string `json:"locale,omitempty"`
+	Timezone *string `json:"timezone,omitempty"`
+}

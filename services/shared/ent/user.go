@@ -29,6 +29,8 @@ type User struct {
 	IsActive bool `json:"is_active,omitempty"`
 	// User's preferred UI language
 	Locale user.Locale `json:"locale,omitempty"`
+	// User's preferred display timezone
+	Timezone string `json:"timezone,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -66,7 +68,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case user.FieldID, user.FieldUsername, user.FieldFullName, user.FieldPasswordHash, user.FieldRole, user.FieldLocale:
+		case user.FieldID, user.FieldUsername, user.FieldFullName, user.FieldPasswordHash, user.FieldRole, user.FieldLocale, user.FieldTimezone:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldLastLoginAt:
 			values[i] = new(sql.NullTime)
@@ -126,6 +128,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field locale", values[i])
 			} else if value.Valid {
 				_m.Locale = user.Locale(value.String)
+			}
+		case user.FieldTimezone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field timezone", values[i])
+			} else if value.Valid {
+				_m.Timezone = value.String
 			}
 		case user.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -203,6 +211,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("locale=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Locale))
+	builder.WriteString(", ")
+	builder.WriteString("timezone=")
+	builder.WriteString(_m.Timezone)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

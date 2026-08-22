@@ -28,6 +28,8 @@ func (User) Fields() []ent.Field {
 		field.Bool("is_active").Default(true),
 		field.Enum("locale").Values("vi", "en").Default("vi").
 			Comment("User's preferred UI language"),
+		field.String("timezone").Default("Asia/Ho_Chi_Minh").
+			Comment("User's preferred display timezone"),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 		field.Time("last_login_at").Optional(),

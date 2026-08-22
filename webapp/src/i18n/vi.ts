@@ -88,6 +88,8 @@ const vi = {
   'settings.timeout1m': '1 Phút',
   'settings.timeout5m': '5 Phút',
   'settings.lockNow': 'Khoá ứng dụng ngay',
+  'settings.timezoneTitle': 'Múi giờ hiển thị',
+  'settings.timezoneDesc': 'Múi giờ dùng để hiển thị thời gian trong các thông báo và nhật ký (Mặc định: UTC+7).',
 
   // === App Lock Screen ===
   'lock.touchIdPrompt': 'Touch ID / Face ID / Mã PIN Thiết bị',

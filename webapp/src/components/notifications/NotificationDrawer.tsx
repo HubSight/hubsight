@@ -19,6 +19,7 @@ import axiosClient from '../../api/axiosClient';
 import { subscribeToWebPush, isPushNotificationSupported, getPushNotificationPermission } from '../../utils/push';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
+import { useTimezone } from '../../context/TimezoneContext';
 
 dayjs.extend(relativeTime);
 
@@ -35,6 +36,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 }) => {
   const { t } = useTranslation();
   const { socket } = useSocket();
+  const { formatNotificationBody, formatDateTime } = useTimezone();
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -320,13 +322,16 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                         >
                           {n.title}
                         </h4>
-                        <span className="text-[10px] text-slate-400 shrink-0 font-mono">
+                        <span
+                          className="text-[10px] text-slate-400 shrink-0 font-mono"
+                          title={formatDateTime(n.created_at)}
+                        >
                           {dayjs(n.created_at).fromNow()}
                         </span>
                       </div>
 
                       <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
-                        {n.body}
+                        {formatNotificationBody(n.body, n.created_at)}
                       </p>
 
                       {n.camera_id && (

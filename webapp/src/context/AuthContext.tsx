@@ -7,6 +7,7 @@ interface User {
   full_name?: string;
   role: 'admin' | 'viewer';
   locale: 'vi' | 'en';
+  timezone?: string;
   is_active: boolean;
   created_at: string;
   last_login_at: string;

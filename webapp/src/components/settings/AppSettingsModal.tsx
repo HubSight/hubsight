@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppLock } from '../../context/AppLockContext';
+import { useTimezone, TIMEZONE_OPTIONS } from '../../context/TimezoneContext';
 import { useTranslation } from '../../i18n';
 import {
   Shield,
@@ -10,7 +11,8 @@ import {
   AlertCircle,
   Loader2,
   Lock,
-  Smartphone
+  Smartphone,
+  Globe
 } from 'lucide-react';
 import { isPwa } from '../../utils/pwa';
 
@@ -20,6 +22,7 @@ interface AppSettingsModalProps {
 
 export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) => {
   const { t } = useTranslation();
+  const { timezone, setTimezone } = useTimezone();
   const {
     appLockEnabled,
     biometricEnabled,
@@ -99,11 +102,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
         <div className="p-6 space-y-5 overflow-y-auto">
           {/* PWA Mode Info Badge */}
           <div
-            className={`p-3 rounded-2xl border flex items-center gap-3 text-xs ${
-              isRunningPwa
-                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
-                : 'bg-slate-50 border-slate-200 text-slate-600'
-            }`}
+            className={`p-3 rounded-2xl border flex items-center gap-3 text-xs ${isRunningPwa
+              ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
+              : 'bg-slate-50 border-slate-200 text-slate-600'
+              }`}
           >
             <Smartphone size={18} className={isRunningPwa ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
             <div>
@@ -133,6 +135,30 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
             </div>
           )}
 
+          {/* Setting: Timezone Preference */}
+          <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <Globe size={16} className="text-orange-600 shrink-0" />
+              <span>{t('settings.timezoneTitle')}</span>
+            </div>
+            <p className="text-xs text-slate-500">
+              {t('settings.timezoneDesc')}
+            </p>
+            <div className="pt-1">
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 cursor-pointer shadow-2xs"
+              >
+                {TIMEZONE_OPTIONS.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Setting 1: App Lock Toggle */}
           <div className="flex items-center justify-between p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl">
             <div className="pr-3">
@@ -156,9 +182,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
 
           {/* Setting 2: Biometric Unlock Toggle */}
           <div
-            className={`p-4 border rounded-2xl transition-all ${
-              !appLockEnabled ? 'opacity-50 pointer-events-none bg-slate-50/40 border-slate-200/60' : 'bg-slate-50/80 border-slate-200/80'
-            }`}
+            className={`p-4 border rounded-2xl transition-all ${!appLockEnabled ? 'opacity-50 pointer-events-none bg-slate-50/40 border-slate-200/60' : 'bg-slate-50/80 border-slate-200/80'
+              }`}
           >
             <div className="flex items-center justify-between">
               <div className="pr-3">
@@ -176,9 +201,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                 </p>
               </div>
               <label
-                className={`relative inline-flex items-center shrink-0 ${
-                  !biometricSupported || loadingBio ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                }`}
+                className={`relative inline-flex items-center shrink-0 ${!biometricSupported || loadingBio ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                  }`}
               >
                 <input
                   type="checkbox"
@@ -199,9 +223,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
 
           {/* Setting 3: Lock Timeout */}
           <div
-            className={`space-y-2 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl ${
-              !appLockEnabled ? 'opacity-50 pointer-events-none' : ''
-            }`}
+            className={`space-y-2 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl ${!appLockEnabled ? 'opacity-50 pointer-events-none' : ''
+              }`}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
               <Clock size={16} className="text-slate-400" />
@@ -220,11 +243,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                   key={opt.value}
                   type="button"
                   onClick={() => setLockTimeout(opt.value)}
-                  className={`py-2 px-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer text-center ${
-                    lockTimeout === opt.value
-                      ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-                  }`}
+                  className={`py-2 px-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer text-center ${lockTimeout === opt.value
+                    ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                    }`}
                 >
                   {opt.label}
                 </button>

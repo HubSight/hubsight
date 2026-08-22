@@ -106,6 +106,8 @@ func main() {
 		protected.PUT("/password", auth.ChangePasswordHandler)
 		protected.POST("/verify-password", auth.VerifyPasswordHandler)
 		protected.PUT("/locale", auth.UpdateLocaleHandler)
+		protected.PUT("/timezone", auth.UpdateTimezoneHandler)
+		protected.PUT("/preferences", auth.UpdatePreferencesHandler)
 	}
 
 	log.Printf("Auth Service listening on :%s", port)
