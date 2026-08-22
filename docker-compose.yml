@@ -113,13 +113,13 @@ services:
     image: rabbitmq:3-management
     restart: unless-stopped
 
-  # 🔴 Redis Cache & Queue for Asynq background jobs
+  # 🔵 Valkey Cache & Queue for Asynq background jobs (Drop-in replacement for Redis)
   redis-service:
-    image: redis:7-alpine
+    image: valkey/valkey:8-alpine
     restart: unless-stopped
     volumes:
       - cctv_redis:/data
-    command: redis-server --appendonly yes
+    command: valkey-server --appendonly yes
 
   # 🕒 Background Cron & Job Worker Service (Retention, etc.)
   bgrd-service:
