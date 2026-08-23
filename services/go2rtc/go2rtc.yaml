@@ -29,3 +29,9 @@ streams:
   cam_XbXVEFntLOe5bNHVUtm3R_live_1:
     - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
     - ffmpeg:rtsp://138.2.87.35:8554/bunny#audio=opus
+  cam_XbXVEFntLOe5bNHVUtm3R_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+    - ffmpeg:rtsp://138.2.87.35:8554/bunny#audio=opus
+  cam_XbXVEFntLOe5bNHVUtm3R_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+    - ffmpeg:rtsp://138.2.87.35:8554/bunny#audio=opus

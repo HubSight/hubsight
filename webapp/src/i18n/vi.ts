@@ -292,6 +292,7 @@ const vi = {
   'playback.live': 'Trực tiếp',
   'playback.archive': 'Xem lại',
   'playback.device': 'Thiết bị:',
+  'playback.selectDevice': 'Chọn thiết bị',
   'playback.noDevices': 'Không có thiết bị',
   'playback.date': 'Ngày:',
   'playback.recordings': 'Bản ghi:',

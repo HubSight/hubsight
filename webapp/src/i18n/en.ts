@@ -294,6 +294,7 @@ const en: Record<TranslationKey, string> = {
   'playback.live': 'Live',
   'playback.archive': 'Archive',
   'playback.device': 'Device:',
+  'playback.selectDevice': 'Select device',
   'playback.noDevices': 'No devices',
   'playback.date': 'Date:',
   'playback.recordings': 'Recordings:',
