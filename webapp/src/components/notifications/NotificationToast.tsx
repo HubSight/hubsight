@@ -82,7 +82,7 @@ export const NotificationToast: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-overlay-safe right-overlay-safe z-50 max-w-sm w-[calc(100vw-2rem)] sm:w-full animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto">
+    <div className="fixed top-overlay-safe left-3 right-3 sm:left-auto sm:right-4 z-50 max-w-sm sm:w-full mx-auto sm:mx-0 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto">
       <div
         onClick={handleClick}
         className={`p-4 rounded-2xl shadow-xl border backdrop-blur-md cursor-pointer transition-all duration-200 group relative overflow-hidden ${

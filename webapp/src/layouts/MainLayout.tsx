@@ -192,23 +192,6 @@ const MainLayout = () => {
               {t('nav.nvrMonitor')}
             </NavLink>
           )}
-
-          {/* Notifications Button */}
-          <button
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              setShowNotificationDrawer(true);
-            }}
-            className="nav-link w-full text-left cursor-pointer relative"
-          >
-            <Bell size={20} />
-            <span className="flex-1">{t('notifications.title')}</span>
-            {unreadNotifCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500 text-white leading-none">
-                {unreadNotifCount}
-              </span>
-            )}
-          </button>
         </nav>
 
         {/* Language Switch */}
@@ -276,48 +259,69 @@ const MainLayout = () => {
             </div>
           )}
 
-          {/* Interactive User Row */}
-          <button
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className={`w-full flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${
-              isUserMenuOpen
-                ? 'bg-orange-50/50 border-orange-200 shadow-xs'
-                : 'bg-white hover:bg-slate-50 border-transparent hover:border-slate-200'
-            }`}
-          >
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${
-                user?.role === 'admin'
-                  ? 'bg-red-50 text-red-600 group-hover:bg-red-100'
-                  : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+          {/* Interactive User Row with Bell Button next to Profile */}
+          <div className="flex items-center gap-1.5">
+            {/* Profile Button */}
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className={`flex-1 min-w-0 flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${
+                isUserMenuOpen
+                  ? 'bg-orange-50/50 border-orange-200 shadow-xs'
+                  : 'bg-white hover:bg-slate-50 border-transparent hover:border-slate-200'
               }`}
             >
-              <UserIcon size={16} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p
-                className="text-xs font-bold text-slate-800 truncate leading-tight"
-                title={user?.full_name || user?.username}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${
+                  user?.role === 'admin'
+                    ? 'bg-red-50 text-red-600 group-hover:bg-red-100'
+                    : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                }`}
               >
-                {user?.full_name || user?.username}
-              </p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${
-                    user?.role === 'admin'
-                      ? 'bg-red-50 text-red-600 border-red-200'
-                      : 'bg-blue-50 text-blue-600 border-blue-200'
-                  }`}
-                >
-                  {user?.role === 'admin' ? t('admin') : t('viewer')}
-                </span>
-                <span className="text-[11px] text-slate-400 font-mono truncate">
-                  @{user?.username}
-                </span>
+                <UserIcon size={16} />
               </div>
-            </div>
-            <ChevronsUpDown size={14} className="text-slate-400 group-hover:text-slate-600 shrink-0 transition-colors" />
-          </button>
+              <div className="min-w-0 flex-1">
+                <p
+                  className="text-xs font-bold text-slate-800 truncate leading-tight"
+                  title={user?.full_name || user?.username}
+                >
+                  {user?.full_name || user?.username}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${
+                      user?.role === 'admin'
+                        ? 'bg-red-50 text-red-600 border-red-200'
+                        : 'bg-blue-50 text-blue-600 border-blue-200'
+                    }`}
+                  >
+                    {user?.role === 'admin' ? t('admin') : t('viewer')}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-mono truncate">
+                    @{user?.username}
+                  </span>
+                </div>
+              </div>
+              <ChevronsUpDown size={14} className="text-slate-400 group-hover:text-slate-600 shrink-0 transition-colors" />
+            </button>
+
+            {/* Notification Bell Button */}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setShowNotificationDrawer(true);
+              }}
+              className="relative p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-white shadow-2xs"
+              title={t('notifications.title')}
+              aria-label={t('notifications.title')}
+            >
+              <Bell size={18} />
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white flex items-center justify-center ring-2 ring-white leading-none animate-pulse">
+                  {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                </span>
+              )}
+            </button>
+          </div>
 
           <AppFooter className="mt-2 pt-2 border-t border-slate-100/80" />
         </div>
