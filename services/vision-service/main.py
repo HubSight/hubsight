@@ -47,6 +47,16 @@ def ensure_go2rtc_stream(cam_id, rtsp_url):
     except Exception as e:
         logger.warning(f"[{cam_id}] Could not register stream in go2rtc: {e}")
 
+def remove_go2rtc_stream(cam_id):
+    try:
+        url = f"{WEBRTC_API_URL}/api/streams"
+        params = [("name", f"cam_{cam_id}_cv")]
+        # Using DELETE method if supported, otherwise just remove it from active configuration
+        requests.delete(url, params=params, timeout=3)
+        logger.debug(f"[{cam_id}] Removed Connection #0 from go2rtc")
+    except Exception as e:
+        logger.warning(f"[{cam_id}] Could not remove stream from go2rtc: {e}")
+
 def get_ai_cameras():
     try:
         channel = grpc.insecure_channel(CORE_GRPC_URL)
@@ -173,7 +183,7 @@ def main():
                 cam_name = cam.get('name') or f"Camera {cam_id}"
                 host = cam.get('host')
                 
-                if cam_id and host:
+                if cam_id and host and cam.get('enable_ai') and cam.get('is_active'):
                     current_cam_ids.add(cam_id)
                     if cam_id not in active_streams:
                         stop_event = threading.Event()
@@ -198,6 +208,7 @@ def main():
                     logger.info(f"[{cam_id}] Camera removed or AI disabled. Stopping thread.")
                     active_streams[cam_id]['stop_event'].set()
                     active_streams[cam_id]['thread'].join(timeout=5)
+                    remove_go2rtc_stream(cam_id)
                     del active_streams[cam_id]
                     
         time.sleep(5)  # Poll every 5s for camera config updates

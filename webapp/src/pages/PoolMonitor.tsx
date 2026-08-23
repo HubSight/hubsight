@@ -162,7 +162,7 @@ export const PoolMonitor = () => {
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-2xl font-black text-blue-900">{data?.total_live_streams ?? 0}</span>
                 <span className="text-[11px] font-bold text-slate-500">
-                  ≤ 5 viewers/conn
+                  1 client / conn (Max 4)
                 </span>
               </div>
             </div>
@@ -298,8 +298,9 @@ export const PoolMonitor = () => {
                         {liveConns.length > 0 ? (
                           <div className="space-y-2.5">
                             {liveConns.map((conn) => {
-                              const percent = Math.min(100, (conn.active_users / 5) * 100);
-                              const isFull = conn.active_users >= 5;
+                              const max = conn.max_users || 1;
+                              const percent = Math.min(100, (conn.active_users / max) * 100);
+                              const isFull = conn.active_users >= max;
 
                               return (
                                 <div
@@ -318,7 +319,7 @@ export const PoolMonitor = () => {
                                     <div className="flex items-center gap-1 text-xs font-bold shrink-0">
                                       <Users size={12} className="text-slate-500" />
                                       <span className={isFull ? 'text-amber-600' : 'text-slate-700'}>
-                                        {conn.active_users} / 5
+                                        {conn.active_users} / {conn.max_users || 1}
                                       </span>
                                       <span className="text-[10px] text-slate-400 font-normal">clients</span>
                                     </div>

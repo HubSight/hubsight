@@ -60,13 +60,13 @@ const vi = {
   'pool.autoCleanup': 'Thu hồi idle sau 30s',
   'pool.cameraListTitle': 'Danh sách Camera trong Pool',
   'pool.cvSectionTitle': 'Connection #0 (Dedicated cho Computer Vision)',
-  'pool.liveSectionTitle': 'Bể kết nối Live Stream (Tối đa 5 clients/connection)',
+  'pool.liveSectionTitle': 'Bể kết nối Live Stream (Mỗi Client là 1 Connection độc lập, tối đa 4 Live)',
   'pool.noLiveStreams': 'Chưa có client nào xem live stream. Khi có người xem, hệ thống sẽ tự động cấp phát Connection #1.',
   'pool.cvRunningBadge': '24/7 Background AI Active',
   'pool.policyTitle': 'Quy tắc phân bổ Bể kết nối (Connection Pool Policy)',
   'pool.policy1': 'Mỗi camera duy trì ít nhất 1 kết nối Connection #0 dành riêng cho luồng Computer Vision (CV) xử lý liên tục 24/7 dưới nền.',
-  'pool.policy2': 'Luồng Live stream tự động gộp tối đa 5 người xem trên 1 connection RTSP để bảo vệ phần cứng camera không bị quá tải.',
-  'pool.policy3': 'Khi tất cả luồng live đạt 5 người xem, hệ thống sẽ tự động tạo connection tiếp theo (#2, #3...). Khi 0 người xem sau 30s, connection live tự động giải phóng.',
+  'pool.policy2': 'Luồng Live stream kết nối 1-1 với client. Tối đa 4 người xem trực tiếp cùng lúc do giới hạn vật lý của camera (5 connection trừ 1 cho AI).',
+  'pool.policy3': 'Khi 0 người xem sau 30s, connection live tự động giải phóng.',
 
   // === Change Password Modal ===
   'password.title': 'Đổi mật khẩu',

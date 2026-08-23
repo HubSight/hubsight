@@ -62,13 +62,13 @@ const en: Record<TranslationKey, string> = {
   'pool.autoCleanup': 'Auto GC 30s Idle',
   'pool.cameraListTitle': 'Camera Pool Registry',
   'pool.cvSectionTitle': 'Connection #0 (Dedicated for Computer Vision)',
-  'pool.liveSectionTitle': 'Live Stream Connection Pool (Max 5 clients/connection)',
+  'pool.liveSectionTitle': 'Live Stream Connection Pool (1 Client = 1 Connection, Max 4)',
   'pool.noLiveStreams': 'No active viewers on live stream. Connection #1 will automatically spawn when a client connects.',
   'pool.cvRunningBadge': '24/7 Background AI Active',
   'pool.policyTitle': 'Connection Pool Allocation Policy',
   'pool.policy1': 'Each active camera maintains Connection #0 dedicated for Computer Vision (CV) running 24/7 in the background.',
-  'pool.policy2': 'Live streaming dynamically multiplexes up to 5 concurrent viewers per RTSP socket to prevent camera hardware overload.',
-  'pool.policy3': 'When all live streams reach capacity (5 viewers), a new connection is spawned (#2, #3...). Streams with 0 viewers are automatically reaped after 30s idle.',
+  'pool.policy2': 'Live streaming provides 1:1 direct connection for each viewer. Maximum 4 concurrent viewers allowed due to camera hardware constraints (5 total minus 1 for AI).',
+  'pool.policy3': 'Streams with 0 viewers are automatically reaped after 30s idle.',
 
   // === Change Password Modal ===
   'password.title': 'Change Password',

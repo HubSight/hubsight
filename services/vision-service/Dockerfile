@@ -27,6 +27,7 @@ COPY services/shared/proto ./proto
 # 5. Compile Protobuf
 RUN mkdir -p pb && \
     python -m grpc_tools.protoc -I=./proto --python_out=./pb --grpc_python_out=./pb ./proto/*.proto && \
-    touch ./pb/__init__.py
+    touch ./pb/__init__.py && \
+    sed -i 's/import core_pb2 as core__pb2/from . import core_pb2 as core__pb2/' pb/core_pb2_grpc.py
 
 CMD ["python", "-u", "main.py"]

@@ -141,22 +141,25 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		return nil, fmt.Errorf("camera %s is inactive", camID)
 	}
 
-	// 1. Find existing Live connection with active_users < 5
+	// Camera has a hardware limit of 5 connections total.
+	// Connection #0 is reserved for CV.
+	// So we allow up to 4 independent live stream connections (1 client = 1 connection).
+
+	// 1. Find an existing IDLE Live connection (ActiveUsers == 0)
 	var candidate *StreamConnection
 	for _, conn := range p.LivePool {
-		if conn.ActiveUsers < 5 {
-			if candidate == nil || conn.ActiveUsers < candidate.ActiveUsers {
-				candidate = conn
-			}
+		if conn.ActiveUsers == 0 {
+			candidate = conn
+			break
 		}
 	}
 
 	if candidate != nil {
-		candidate.ActiveUsers++
+		candidate.ActiveUsers = 1
 		candidate.LastUsedAt = time.Now()
 		candidate.Status = "active"
-		log.Printf("[Pool] RE-USING live stream %s for cam %s (Clients: %d/5)",
-			candidate.StreamName, camID, candidate.ActiveUsers)
+		log.Printf("[Pool] RE-USING idle live stream %s for cam %s (Clients: 1/1)",
+			candidate.StreamName, camID)
 
 		return &AcquireResult{
 			StreamName:  candidate.StreamName,
@@ -166,10 +169,17 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		}, nil
 	}
 
-	// 2. All live streams full (5 clients) or none exists -> Spawn New Connection
+	// 2. All existing live streams are busy. Check limit (max 4 live streams)
+	if len(p.LivePool) >= 4 {
+		return nil, fmt.Errorf("camera %s has reached its hardware limit of 5 connections (1 CV + 4 Live)", camID)
+	}
+
+	// 3. Spawn New Connection
 	p.NextLiveIndex++
 	newIndex := p.NextLiveIndex
 	newStreamName := fmt.Sprintf("cam_%s_live_%d", camID, newIndex)
+
+
 
 	if err := m.go2rtc.RegisterStream(ctx, newStreamName, p.Host); err != nil {
 		p.NextLiveIndex-- // Rollback
@@ -184,14 +194,14 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		StreamName:  newStreamName,
 		SourceURL:   p.Host,
 		ActiveUsers: 1,
-		MaxUsers:    5,
+		MaxUsers:    1,
 		CreatedAt:   time.Now(),
 		LastUsedAt:  time.Now(),
 		Status:      "active",
 	}
 	p.LivePool[newStreamName] = newConn
 
-	log.Printf("[Pool] CREATED new live stream connection #%d (%s) for cam %s (Clients: 1/5)",
+	log.Printf("[Pool] CREATED new live stream connection #%d (%s) for cam %s (Clients: 1/1)",
 		newIndex, newStreamName, camID)
 
 	return &AcquireResult{
@@ -223,7 +233,7 @@ func (m *Manager) ReleaseLiveStream(camID, streamName string) {
 		if conn.ActiveUsers == 0 {
 			conn.Status = "idle"
 		}
-		log.Printf("[Pool] RELEASED viewer from %s (Remaining clients: %d/5)", streamName, conn.ActiveUsers)
+		log.Printf("[Pool] RELEASED viewer from %s (Remaining clients: %d/1)", streamName, conn.ActiveUsers)
 	}
 }
 

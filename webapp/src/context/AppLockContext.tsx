@@ -207,11 +207,9 @@ export const AppLockProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const now = Date.now();
       localStorage.setItem(STORAGE_KEYS.LAST_HIDDEN_TIME, String(now));
       
-      if (lockTimeout === 0) {
-        setIsLocked(true);
-        localStorage.setItem(STORAGE_KEYS.IS_LOCKED, 'true');
-        sessionStorage.removeItem(STORAGE_KEYS.SESSION_UNLOCKED);
-      }
+      // We no longer lock IMMEDIATELY upon going to background because
+      // opening a file picker or switching to a 2FA app triggers background state.
+      // We evaluate the lock condition upon returning to foreground instead.
     };
 
     // Called whenever app returns to foreground, user unlocks phone, returns to PWA, etc.
@@ -224,7 +222,12 @@ export const AppLockProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const lastHiddenStr = localStorage.getItem(STORAGE_KEYS.LAST_HIDDEN_TIME);
       if (lastHiddenStr) {
         const elapsed = (Date.now() - Number(lastHiddenStr)) / 1000;
-        if (elapsed >= lockTimeout) {
+        
+        // If timeout is 0 (Immediate), we still provide a short 10-second grace period 
+        // to allow users to open the OS file picker, camera, or 2FA app.
+        const effectiveTimeout = lockTimeout === 0 ? 10 : lockTimeout;
+        
+        if (elapsed >= effectiveTimeout) {
           setIsLocked(true);
           localStorage.setItem(STORAGE_KEYS.IS_LOCKED, 'true');
           sessionStorage.removeItem(STORAGE_KEYS.SESSION_UNLOCKED);
@@ -244,8 +247,7 @@ export const AppLockProvider: React.FC<{ children: React.ReactNode }> = ({ child
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pagehide', handleAppBackground);
     window.addEventListener('pageshow', handleAppForeground);
-    window.addEventListener('blur', handleAppBackground);
-    window.addEventListener('focus', handleAppForeground);
+    // Removed blur/focus events because they fire aggressively on PC (e.g. clicking outside window)
     // Page Lifecycle API support if available
     document.addEventListener('freeze' as any, handleAppBackground);
     document.addEventListener('resume' as any, handleAppForeground);
