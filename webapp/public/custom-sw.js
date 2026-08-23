@@ -19,6 +19,9 @@ self.addEventListener('push', (event) => {
         }
       }
     }
+    
+    // Ensure absolute URL
+    const absoluteUrl = new URL(targetUrl, self.location.origin).href;
 
     const title = payload.title || 'HubSight - Thông báo an ninh';
     const options = {
@@ -30,9 +33,9 @@ self.addEventListener('push', (event) => {
       renotify: true,
       vibrate: [200, 100, 200],
       data: {
-        url: targetUrl,
+        url: absoluteUrl,
       },
-    actions: [
+      actions: [
       { action: 'open_playback', title: 'Xem lại' },
       { action: 'close', title: 'Bỏ qua' },
     ],
@@ -49,7 +52,7 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  const targetUrl = event.notification.data?.url || '/playback';
+  const targetUrl = event.notification.data?.url || new URL('/playback', self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {

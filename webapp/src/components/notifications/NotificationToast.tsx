@@ -76,7 +76,14 @@ export const NotificationToast: React.FC = () => {
 
   const handleClick = () => {
     if (currentToast.camera_id) {
-      navigate(`/playback`);
+      let url = `/playback?camera_id=${currentToast.camera_id}`;
+      if (currentToast.created_at) {
+        const tsMs = new Date(currentToast.created_at).getTime();
+        if (!isNaN(tsMs)) {
+          url += `&t=${tsMs}`;
+        }
+      }
+      navigate(url);
     }
     setCurrentToast(null);
   };

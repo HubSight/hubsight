@@ -51,12 +51,17 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if !isActive {
-		// If camera is deactivated, terminate all streams
+	if !isActive || !enableAI {
+		// If camera is deactivated OR AI is disabled, terminate CV stream
 		if p.CVConnection != nil {
 			_ = m.go2rtc.UnregisterStream(ctx, p.CVConnection.StreamName)
 			p.CVConnection = nil
+			log.Printf("[Pool] Camera %s AI deactivated or inactive. CV Connection #0 terminated.", camID)
 		}
+	}
+
+	if !isActive {
+		// If camera is completely deactivated, terminate all live streams
 		for name := range p.LivePool {
 			_ = m.go2rtc.UnregisterStream(ctx, name)
 		}
@@ -65,25 +70,27 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 		return nil
 	}
 
-	// Always ensure Connection #0 (CV Dedicated) is registered and active
-	cvStreamName := fmt.Sprintf("cam_%s_cv", camID)
-	if err := m.go2rtc.RegisterStream(ctx, cvStreamName, host); err != nil {
-		log.Printf("[Pool] Warning: Failed to register Connection #0 (CV) for cam %s: %v", camID, err)
-	} else {
-		p.CVConnection = &StreamConnection{
-			ID:          fmt.Sprintf("conn_%s_cv", camID),
-			CameraID:    camID,
-			Index:       0,
-			Purpose:     PurposeCV,
-			StreamName:  cvStreamName,
-			SourceURL:   host,
-			ActiveUsers: 1, // Always held by CV Engine
-			MaxUsers:    1,
-			CreatedAt:   time.Now(),
-			LastUsedAt:  time.Now(),
-			Status:      "active",
+	if enableAI {
+		// Ensure Connection #0 (CV Dedicated) is registered and active
+		cvStreamName := fmt.Sprintf("cam_%s_cv", camID)
+		if err := m.go2rtc.RegisterStream(ctx, cvStreamName, host); err != nil {
+			log.Printf("[Pool] Warning: Failed to register Connection #0 (CV) for cam %s: %v", camID, err)
+		} else {
+			p.CVConnection = &StreamConnection{
+				ID:          fmt.Sprintf("conn_%s_cv", camID),
+				CameraID:    camID,
+				Index:       0,
+				Purpose:     PurposeCV,
+				StreamName:  cvStreamName,
+				SourceURL:   host,
+				ActiveUsers: 1, // Always held by CV Engine
+				MaxUsers:    1,
+				CreatedAt:   time.Now(),
+				LastUsedAt:  time.Now(),
+				Status:      "active",
+			}
+			log.Printf("[Pool] Camera %s (%s): Connection #0 (CV Dedicated) READY -> %s", camID, name, cvStreamName)
 		}
-		log.Printf("[Pool] Camera %s (%s): Connection #0 (CV Dedicated) READY -> %s", camID, name, cvStreamName)
 	}
 
 	// If host changed, refresh all active live streams
