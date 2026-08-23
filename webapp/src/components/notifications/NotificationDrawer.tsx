@@ -154,7 +154,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200/90 flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200/90 flex flex-col pt-safe pb-safe animate-in slide-in-from-right duration-300">
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
             <div className="flex items-center gap-2.5">

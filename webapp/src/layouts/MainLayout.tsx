@@ -88,7 +88,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-safe pr-safe">
       {/* App Lock Screen Overlay */}
       <AppLockScreen />
 
@@ -103,34 +103,36 @@ const MainLayout = () => {
       />
 
       {/* Mobile Header (In flex-flow on mobile: shrink-0, hidden on desktop) */}
-      <header className="md:hidden shrink-0 w-full h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-30 flex items-center justify-between px-4 shadow-xs">
-        <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
-          <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
-            <Camera size={18} />
+      <header className="md:hidden shrink-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-30 pt-safe shadow-xs">
+        <div className="h-14 flex items-center justify-between px-4">
+          <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
+            <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
+              <Camera size={18} />
+            </div>
+            <h2 className="text-base font-bold m-0 text-slate-800 tracking-tight">HubSight</h2>
+          </NavLink>
+
+          <div className="flex items-center gap-1">
+            {/* Notification Bell on Mobile */}
+            <button
+              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation relative cursor-pointer"
+              onClick={() => setShowNotificationDrawer(true)}
+              aria-label="Notifications"
+            >
+              <Bell size={20} />
+              {unreadNotifCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
+              )}
+            </button>
+
+            <button
+              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation cursor-pointer"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <Menu size={22} />
+            </button>
           </div>
-          <h2 className="text-base font-bold m-0 text-slate-800 tracking-tight">HubSight</h2>
-        </NavLink>
-
-        <div className="flex items-center gap-1">
-          {/* Notification Bell on Mobile */}
-          <button
-            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation relative cursor-pointer"
-            onClick={() => setShowNotificationDrawer(true)}
-            aria-label="Notifications"
-          >
-            <Bell size={20} />
-            {unreadNotifCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
-            )}
-          </button>
-
-          <button
-            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation cursor-pointer"
-            onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="Open navigation menu"
-          >
-            <Menu size={22} />
-          </button>
         </div>
       </header>
 
@@ -144,12 +146,12 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] overflow-hidden
+        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col pt-safe pb-safe overflow-hidden
         transition-all duration-300 ease-in-out md:relative md:py-6
-        ${isMobileMenuOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full w-[260px] md:translate-x-0'}
+        ${isMobileMenuOpen ? 'translate-x-0 w-[270px]' : '-translate-x-full w-[270px] md:translate-x-0'}
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
       `}>
-        <div className="flex items-center justify-between px-6 mb-8">
+        <div className="flex items-center justify-between px-6 pt-3 pb-2 md:pt-0 mb-6 md:mb-8">
           <NavLink to="/" className="flex items-center gap-3 no-underline group cursor-pointer">
             <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
               <Camera size={22} />
@@ -333,7 +335,7 @@ const MainLayout = () => {
       </button>
 
       {/* Main Content Area (Natural flex flow below Mobile Header) */}
-      <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden relative pb-[env(safe-area-inset-bottom,0px)] md:pb-0">
+      <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden relative pb-safe md:pb-0">
         <Outlet />
       </main>
 

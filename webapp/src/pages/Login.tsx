@@ -58,7 +58,7 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full flex items-center justify-center bg-slate-100 p-4 sm:p-6 font-sans text-slate-800 overflow-y-auto select-none">
+    <div className="relative min-h-[100dvh] w-full flex items-center justify-center bg-slate-100 p-4 sm:p-6 pt-safe pb-safe pl-safe pr-safe font-sans text-slate-800 overflow-y-auto select-none">
       
       {/* 1. Clean Subtle Gridlines */}
       <div
@@ -70,7 +70,7 @@ const Login = () => {
       />
 
       {/* Language Switch Top Right */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-overlay-safe right-overlay-safe z-20">
         <button
           onClick={handleSwitchLocale}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm rounded-xl text-xs font-semibold text-slate-700 hover:bg-white transition-all cursor-pointer"

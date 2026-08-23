@@ -436,7 +436,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
       )}
 
       {/* Top-Right Control overlay */}
-      <div className="absolute top-[max(1rem,env(safe-area-inset-top,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-40 flex items-center gap-2">
+      <div className="absolute top-overlay-safe right-overlay-safe z-40 flex items-center gap-2">
         {enableAi && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-950/70 text-purple-200 border border-purple-500/40 backdrop-blur shadow-lg pointer-events-none select-none animate-in fade-in duration-300">
             <Sparkles size={13} className="text-purple-400 animate-spin" style={{ animationDuration: '4s' }} />

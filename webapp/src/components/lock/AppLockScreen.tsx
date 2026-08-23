@@ -132,7 +132,7 @@ export const AppLockScreen: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-100/95 backdrop-blur-2xl flex flex-col items-center justify-center p-4 sm:p-6 text-slate-800 select-none animate-fade-in">
+    <div className="fixed inset-0 z-[9999] bg-slate-100/95 backdrop-blur-2xl flex flex-col items-center justify-center p-4 sm:p-6 pt-safe pb-safe pl-safe pr-safe text-slate-800 select-none animate-fade-in">
       {/* Main Lock Card */}
       <div className="relative w-full max-w-sm bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col items-center text-center">
         {/* User Avatar with Role Badge */}
