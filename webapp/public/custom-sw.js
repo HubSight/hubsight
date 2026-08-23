@@ -9,20 +9,29 @@ self.addEventListener('push', (event) => {
     payload = { title: 'HubSight', body: event.data.text() };
   }
 
-  const title = payload.title || 'HubSight - Thông báo an ninh';
-  const options = {
-    body: payload.body || 'Phát hiện sự kiện mới từ camera',
-    icon: '/pwa-192x192.png',
-    badge: '/favicon.svg',
-    image: payload.thumbnail_url || undefined,
-    tag: payload.id || `hub-notif-${Date.now()}`,
-    renotify: true,
-    vibrate: [200, 100, 200],
-    data: {
-      url: '/playback',
-      cameraId: payload.camera_id,
-      timestamp: payload.created_at || Date.now(),
-    },
+    let targetUrl = '/playback';
+    if (payload.camera_id) {
+      targetUrl += `?camera_id=${payload.camera_id}`;
+      if (payload.created_at) {
+        const tsMs = new Date(payload.created_at).getTime();
+        if (!isNaN(tsMs)) {
+          targetUrl += `&t=${tsMs}`;
+        }
+      }
+    }
+
+    const title = payload.title || 'HubSight - Thông báo an ninh';
+    const options = {
+      body: payload.body || 'Phát hiện sự kiện mới từ camera',
+      icon: '/pwa-192x192.png',
+      badge: '/favicon.svg',
+      image: payload.thumbnail_url || undefined,
+      tag: payload.id || `hub-notif-${Date.now()}`,
+      renotify: true,
+      vibrate: [200, 100, 200],
+      data: {
+        url: targetUrl,
+      },
     actions: [
       { action: 'open_playback', title: 'Xem lại' },
       { action: 'close', title: 'Bỏ qua' },
