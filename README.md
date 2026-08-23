@@ -1,6 +1,6 @@
 # HubSight - Smart Surveillance & Playback Platform
 
-A modern, robust, and full-featured camera recording and playback surveillance system built with **Go**, **Ent ORM**, **NestJS (Socket.IO Relay)**, **React (Vite + TypeScript)**, **webrtc-service (go2rtc)**, **FFmpeg**, and **PostgreSQL**.
+A modern, robust, and full-featured camera recording and playback surveillance system built with **Go**, **Ent ORM**, **NestJS (Socket.IO Relay)**, **React (Vite + TypeScript)**, **webrtc-service (go2rtc)**, **FFmpeg**, and **PostgreSQL (pgvector)**.
 
 ---
 
@@ -23,9 +23,10 @@ The frontend client communicates **exclusively** with the **API Gateway (`api-ga
 | **`auth-service`** | **Auth & SSO Engine** | *None* | `http://auth-service:8081` | **Private Internal Microservice** for SSO/OIDC auth, session verification, and token rotation. |
 | **`webrtc-service`** | **WebRTC Media Engine** | **`:8555`** | `http://webrtc-service:1984` | Port `:8555` UDP/TCP transmits direct WebRTC video RTP media. All signaling APIs are routed via Gateway `:8088/webrtc`. |
 | **`nvr-service`** | **NVR Recording Engine** | *None* | *Background Worker* | **Private Internal Worker** for FFmpeg chunking and S3 archiving. |
+| **`pool-service`** | **Connection Pool Monitor** | *None* | `http://pool-service:8080` | **Private Internal Service** managing RTSP/WebRTC active stream connections, client count tracking, and persistent CV connection #0 logic. |
 | **`bgrd-service`** | **Background Job Worker** | *None* | *Background Worker* | **Private Internal Worker** handling periodic tasks like 3-day retention cron via `asynq`. |
 | **`redis-service`** | **Redis Queue** | *None* | `redis://redis-service:6379` | **Private Internal Cache** used by `asynq` for job queues. |
-| **`vision-service`**| **AI Vision Engine (YOLO)**| *None* | *Background Worker* | **Private Internal Service** for AI real-time person detection. Uses OpenCV and Ultralytics YOLO, and publishes bounding box coordinates to RabbitMQ. |
+| **`vision-service`**| **AI Vision Engine (YOLO)**| *None* | *Background Worker* | **Private Internal Service** for AI real-time person & face detection. Uses OpenCV and Ultralytics YOLO, and publishes bounding box coordinates to RabbitMQ. |
 
 ---
 
@@ -34,39 +35,28 @@ The frontend client communicates **exclusively** with the **API Gateway (`api-ga
 ### 1. Single-Entry API Gateway (`api-gateway`)
 - **Single Origin For All Protocols**: Frontend only targets **`http://localhost:8088`** for REST, Auth, and WebSockets (`ws://`/`wss://`).
 - **Pure Path Names**:
-  - `/api/auth/*` ➔ `http://auth-service:8081` (rewrites to `/auth/*`)
-  - `/relay` & `/relay/*` ➔ `http://relay-service:3001` (WebSocket upgrades on path `/relay`)
-  - `/webrtc/*` ➔ `http://webrtc-service:1984/*` (WebRTC signaling & WHEP streams)
-  - `/api/*` (devices, archive, live, recorder) ➔ `http://core-service:8080`
-- **Complete Internal Isolation**: `core-service`, `auth-service`, `relay-service`, and `nvr-service` have zero host port exposure.
+  - `/api/auth/*` ➔ `http://auth-service:8081`
+  - `/relay` & `/relay/*` ➔ `http://relay-service:3001`
+  - `/webrtc/*` ➔ `http://webrtc-service:1984/*`
+  - `/api/*` (devices, archive, live, recorder, pool, members) ➔ `http://core-service:8080`
 
-### 2. AI Person Detection & Real-time Tracking (Phase 1)
-- **YOLOv11 Inference**: The `vision-service` reads RTSP camera streams and detects people in real-time using CPU-optimized `yolo11n`.
-- **Live Bounding Boxes**: The AI engine continuously publishes bounding box coordinates (normalized 0-1) to RabbitMQ.
-- **Socket.IO Relaying**: The NestJS `relay-service` forwards AI events (`vision.person.update`) directly to the React frontend, allowing the `<LivePlayer>` to render moving red tracking rectangles dynamically over the WebRTC stream via HTML5 Canvas.
+### 2. AI Person & Face Recognition (pgvector)
+- **YOLOv11 Inference**: The `vision-service` reads RTSP camera streams and detects people in real-time.
+- **Face Recognition**: Supports storing and querying Face Embeddings using PostgreSQL `pgvector`.
+- **Live Bounding Boxes**: The AI engine publishes coordinates to RabbitMQ. The `relay-service` forwards them to the frontend, allowing `<LivePlayer>` to render moving red tracking rectangles dynamically over the WebRTC stream.
+- **Smart Face Gallery**: Frontend optimized with infinite scrolling, quality-based sorting, and batch actions to manage hundreds of face vectors seamlessly without UI lag.
 
-### 3. Client Connection Examples
+### 3. Background Push Notifications & Smart Routing
+- **Web Push API (Service Worker)**: Uses `webpush-go` and a custom Service Worker for cross-platform background & offline notification delivery (Push API + VAPID).
+- **Intelligent Routing**: Clicking a notification (both system tray or in-app drawer) automatically routes the user to the Playback screen, selects the relevant camera, and seeks precisely to the timestamp of the event.
 
-#### Frontend Socket.IO Connection:
-```typescript
-import { io } from 'socket.io-client';
+### 4. Continuous AI Processing (Connection #0)
+- Dedicated `pool-service` tracks active live streams.
+- The `vision-service` connects as a background connection #0 to maintain continuous CV detection and anomaly notifications even when no users are viewing the stream. The connection pool automatically synchronizes state.
 
-const socket = io('http://localhost:8088', {
-  path: '/relay',
-  withCredentials: true,
-  transports: ['websocket', 'polling'],
-});
-```
-
-#### Frontend WebRTC Live Video:
-```typescript
-const response = await fetch('http://localhost:8088/api/live/5/webrtc', {
-  method: 'POST',
-  body: peerConnection.localDescription?.sdp,
-  headers: { 'Content-Type': 'application/sdp' },
-  credentials: 'include',
-});
-```
+### 5. Role-Based Access Control (RBAC)
+- **Admin Role**: Full access to device management, face vector libraries (Member Profiles), and system health monitors (`/pool`, `/recorder`).
+- **Viewer Role**: Strict read-only access restricted to Live Streams, Playback, and receiving notifications.
 
 ---
 
@@ -91,7 +81,7 @@ Access points:
 ### 2. Seeding Accounts & RBAC Setup
 
 ```bash
-cd services/backend
+cd services/core
 go run cmd/seed/main.go
 ```
 
@@ -101,9 +91,7 @@ Generates `users_credentials.csv` with credentials for configured accounts.
 
 Before deploying this refactor to an existing database, run the versioned
 migrations with `DATABASE_URL` set. Migration `000002` preserves rows while
-replacing every primary key and the `sessions.user_id` / `recordings.camera_id`
-foreign keys with 21-character Nano IDs. It has no rollback path, so take a
-database backup first.
+replacing every primary key and foreign keys with 21-character Nano IDs. It has no rollback path, so take a database backup first.
 
 ```bash
 DATABASE_URL='postgres://…' ./scripts/migrate.sh

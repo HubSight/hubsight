@@ -163,7 +163,14 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     }
     if (n.camera_id) {
       onClose();
-      navigate('/playback');
+      let url = `/playback?camera_id=${n.camera_id}`;
+      if (n.created_at) {
+        const ts = new Date(n.created_at).getTime();
+        if (!isNaN(ts)) {
+          url += `&t=${ts}`;
+        }
+      }
+      navigate(url);
     }
   };
 

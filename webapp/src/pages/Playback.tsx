@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import axiosClient from '../api/axiosClient';
 import type { CameraItem, Recording } from '../types/recording';
@@ -9,6 +10,8 @@ import { PlaybackSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 
 const Playback = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [cameras, setCameras] = useState<CameraItem[]>([]);
   const [selectedCam, setSelectedCam] = useState<string>('');
   const [dateObj, setDateObj] = useState<Date>(new Date());
@@ -30,21 +33,53 @@ const Playback = () => {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const seekTargetRef = useRef<number | null>(null);
 
+  const targetTimestampRef = useRef<number | null>(null);
+
   // Fetch cameras on mount
   const fetchCameras = useCallback(async () => {
     try {
       const res = await axiosClient.get('/cameras');
       const cams: CameraItem[] = res.data || [];
       setCameras(cams);
-      if (cams.length > 0 && !selectedCam) {
-        setSelectedCam(cams[0].id);
+      
+      const queryCamId = searchParams.get('camera_id');
+      const queryTime = searchParams.get('t');
+      
+      let targetCamId = selectedCam;
+      if (queryCamId && cams.some((c) => c.id === queryCamId)) {
+        targetCamId = queryCamId;
+      } else if (cams.length > 0 && !selectedCam) {
+        targetCamId = cams[0].id;
       }
+
+      if (targetCamId && targetCamId !== selectedCam) {
+        setSelectedCam(targetCamId);
+      }
+
+      if (queryTime && targetCamId) {
+        const ts = parseInt(queryTime, 10);
+        if (!isNaN(ts)) {
+          targetTimestampRef.current = ts;
+          const d = new Date(ts);
+          setDateObj(d);
+          setActiveMonth(d);
+          setMode('archive');
+        }
+      } else if (queryCamId) {
+        setMode('live');
+      }
+
+      // Cleanup URL silently
+      if (queryCamId || queryTime) {
+        setSearchParams({}, { replace: true });
+      }
+
     } catch (err) {
       console.error('Failed to fetch cameras:', err);
     } finally {
       setInitialLoading(false);
     }
-  }, [selectedCam]);
+  }, [selectedCam, searchParams, setSearchParams]);
 
   useEffect(() => {
     fetchCameras();
@@ -86,12 +121,32 @@ const Playback = () => {
       const recs: Recording[] = res.data || [];
       setRecordings(recs);
       if (recs.length > 0) {
-        setActiveRecording((prev) => {
-          if (prev && recs.some((r) => r.id === prev.id)) {
-            return prev;
+        if (targetTimestampRef.current) {
+          const targetTs = targetTimestampRef.current;
+          // Find the recording that covers this timestamp
+          const targetRec = recs.find(r => {
+             const start = new Date(r.start_at).getTime();
+             const end = new Date(r.end_at).getTime();
+             return targetTs >= start && targetTs <= end;
+          });
+          
+          if (targetRec) {
+             setActiveRecording(targetRec);
+             const start = new Date(targetRec.start_at).getTime();
+             seekTargetRef.current = (targetTs - start) / 1000;
+          } else {
+             // Fallback if no exact match
+             setActiveRecording(recs[0]);
           }
-          return recs[0];
-        });
+          targetTimestampRef.current = null;
+        } else {
+          setActiveRecording((prev) => {
+            if (prev && recs.some((r) => r.id === prev.id)) {
+              return prev;
+            }
+            return recs[0];
+          });
+        }
       } else {
         setActiveRecording(null);
       }
