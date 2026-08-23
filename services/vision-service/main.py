@@ -4,10 +4,14 @@ import logging
 import time
 import requests
 import threading
+import grpc
 from dotenv import load_dotenv
 from rabbitmq_client import RabbitMQClient
 from detector import PersonDetector
 from face_engine import FaceEngine
+
+import pb.core_pb2 as core_pb2
+import pb.core_pb2_grpc as core_pb2_grpc
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -15,8 +19,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
-CORE_SERVICE_URL = os.getenv("CORE_SERVICE_URL", "http://core-service:8080")
-M2M_SECRET = os.getenv("M2M_SECRET", "cctv-internal-m2m-secret")
+CORE_GRPC_URL = os.getenv("CORE_GRPC_URL", "core-service:50053")
 PROCESS_FPS = int(os.getenv("PROCESS_FPS", "0"))
 # Internal go2rtc RTSP server – vision-service reads from the same buffered
 # source that WebRTC uses, ensuring temporal alignment with the live stream.
@@ -46,15 +49,23 @@ def ensure_go2rtc_stream(cam_id, rtsp_url):
 
 def get_ai_cameras():
     try:
-        headers = {"X-Service-Key": M2M_SECRET}
-        resp = requests.get(f"{CORE_SERVICE_URL}/api/internal/pool/cameras", headers=headers, timeout=5)
-        if resp.status_code == 200:
-            all_cams = resp.json()
-            # Filter active cameras with AI enabled for continuous background inference
-            return [c for c in all_cams if c.get('is_active', True) and c.get('enable_ai', True)]
-        logger.warning(f"Core service returned status {resp.status_code} for AI cameras sync")
+        channel = grpc.insecure_channel(CORE_GRPC_URL)
+        client = core_pb2_grpc.CoreServiceStub(channel)
+        req = core_pb2.GetCamerasRequest(only_active=True, only_ai_enabled=True)
+        resp = client.GetCameras(req, timeout=5)
+        
+        cams = []
+        for c in resp.cameras:
+            cams.append({
+                'id': c.id,
+                'name': c.name,
+                'host': c.host,
+                'is_active': c.is_active,
+                'enable_ai': c.enable_ai
+            })
+        return cams
     except Exception as e:
-        logger.warning(f"Error fetching AI cameras from core-service: {e}")
+        logger.warning(f"Error fetching AI cameras from core-service gRPC: {e}")
     return None
 
 def sync_face_embeddings():
@@ -63,15 +74,22 @@ def sync_face_embeddings():
     if face_engine is None:
         return
     try:
-        headers = {"X-Service-Key": M2M_SECRET}
-        resp = requests.get(f"{CORE_SERVICE_URL}/api/internal/face-embeddings", headers=headers, timeout=5)
-        if resp.status_code == 200:
-            items = resp.json()
-            face_engine.load_embeddings(items)
-        else:
-            logger.warning(f"Failed to sync face embeddings: {resp.status_code}")
+        channel = grpc.insecure_channel(CORE_GRPC_URL)
+        client = core_pb2_grpc.CoreServiceStub(channel)
+        resp = client.GetFaces(core_pb2.GetFacesRequest(), timeout=5)
+        
+        items = []
+        for f in resp.faces:
+            items.append({
+                'member_id': f.member_id,
+                'name': f.name,
+                'role': f.role,
+                'embedding': list(f.embedding),
+                'face_id': f.face_id
+            })
+        face_engine.load_embeddings(items)
     except Exception as e:
-        logger.warning(f"Error syncing face embeddings: {e}")
+        logger.warning(f"Error syncing face embeddings via gRPC: {e}")
 
 def stream_worker(cam_id, cam_name, rtsp_url, stop_event):
     ensure_go2rtc_stream(cam_id, rtsp_url)

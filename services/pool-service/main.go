@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,8 +15,11 @@ import (
 	"cctv/pool-service/pkg/events"
 	"cctv/pool-service/pkg/pool"
 	"cctv/pool-service/pkg/webrtc"
+	"cctv/shared/pkg/pb"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type CameraSyncItem struct {
@@ -27,34 +30,23 @@ type CameraSyncItem struct {
 	EnableAI bool   `json:"enable_ai"`
 }
 
-func syncCamerasFromCore(ctx context.Context, mgr *pool.Manager, coreURL, secret string) error {
-	client := &http.Client{Timeout: 5 * time.Second}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/internal/pool/cameras", coreURL), nil)
+func syncCamerasFromCore(ctx context.Context, mgr *pool.Manager, coreGrpcURL string) error {
+	conn, err := grpc.Dial(coreGrpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to core-service gRPC: %w", err)
 	}
-	if secret != "" {
-		req.Header.Set("X-Service-Key", secret)
-	}
+	defer conn.Close()
 
-	resp, err := client.Do(req)
+	client := pb.NewCoreServiceClient(conn)
+	resp, err := client.GetCameras(ctx, &pb.GetCamerasRequest{OnlyActive: false, OnlyAiEnabled: false})
 	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("core service returned status %d", resp.StatusCode)
+		return fmt.Errorf("core service GetCameras failed: %w", err)
 	}
 
-	var cameras []CameraSyncItem
-	if err := json.NewDecoder(resp.Body).Decode(&cameras); err != nil {
-		return err
-	}
-
-	log.Printf("[Pool Sync] Loaded %d cameras from Core Service on startup", len(cameras))
+	cameras := resp.Cameras
+	log.Printf("[Pool Sync] Loaded %d cameras from Core Service on startup via gRPC", len(cameras))
 	for _, cam := range cameras {
-		_ = mgr.UpsertCamera(ctx, cam.ID, cam.Name, cam.Host, cam.IsActive, cam.EnableAI)
+		_ = mgr.UpsertCamera(ctx, cam.Id, cam.Name, cam.Host, cam.IsActive, cam.EnableAi)
 	}
 	return nil
 }
@@ -67,9 +59,9 @@ func main() {
 		port = "8085"
 	}
 
-	coreURL := os.Getenv("CORE_SERVICE_URL")
-	if coreURL == "" {
-		coreURL = "http://core-service:8080"
+	coreGrpcURL := os.Getenv("CORE_GRPC_URL")
+	if coreGrpcURL == "" {
+		coreGrpcURL = "core-service:50053"
 	}
 
 	m2mSecret := os.Getenv("M2M_SECRET")
@@ -94,11 +86,28 @@ func main() {
 	go func() {
 		for i := 0; i < 5; i++ {
 			time.Sleep(time.Duration(i*2) * time.Second)
-			if err := syncCamerasFromCore(ctx, poolMgr, coreURL, m2mSecret); err == nil {
+			if err := syncCamerasFromCore(ctx, poolMgr, coreGrpcURL); err == nil {
 				break
 			} else {
 				log.Printf("[Pool Init] Retrying camera sync from Core Service (%d/5): %v", i+1, err)
 			}
+		}
+	}()
+
+	// Start gRPC server
+	go func() {
+		lis, err := net.Listen("tcp", ":50052")
+		if err != nil {
+			log.Fatalf("Failed to listen on gRPC port 50052: %v", err)
+		}
+		s := grpc.NewServer()
+		pb.RegisterPoolServiceServer(s, &grpcPoolServer{
+			poolMgr:      poolMgr,
+			go2rtcClient: go2rtcClient,
+		})
+		log.Printf("[Pool Service] gRPC listening on :50052")
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC: %v", err)
 		}
 	}()
 
@@ -221,7 +230,7 @@ func main() {
 				return
 			}
 
-			if err := syncCamerasFromCore(c.Request.Context(), poolMgr, coreURL, m2mSecret); err != nil {
+			if err := syncCamerasFromCore(c.Request.Context(), poolMgr, coreGrpcURL); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
@@ -251,4 +260,66 @@ func main() {
 	defer shutdownCancel()
 	_ = srv.Shutdown(shutdownCtx)
 	log.Println("[Pool Service] Server exited cleanly.")
+}
+
+// gRPC Implementation
+type grpcPoolServer struct {
+	pb.UnimplementedPoolServiceServer
+	poolMgr      *pool.Manager
+	go2rtcClient *webrtc.Go2RTCClient
+}
+
+func (s *grpcPoolServer) SignalWebRTC(ctx context.Context, req *pb.SignalWebRTCRequest) (*pb.SignalWebRTCResponse, error) {
+	if req.CameraId == "" {
+		return nil, fmt.Errorf("camera ID is required")
+	}
+
+	result, err := s.poolMgr.AcquireLiveStream(ctx, req.CameraId)
+	if err != nil {
+		return nil, err
+	}
+
+	answerSDP, statusCode, err := s.go2rtcClient.ForwardWebRTCOffer(
+		ctx,
+		result.StreamName,
+		[]byte(req.SdpOffer),
+		req.ContentType,
+	)
+
+	if err != nil {
+		s.poolMgr.ReleaseLiveStream(req.CameraId, result.StreamName)
+		return nil, fmt.Errorf("go2rtc error %d: %v", statusCode, err)
+	}
+
+	return &pb.SignalWebRTCResponse{
+		SdpAnswer:      string(answerSDP),
+		PoolStreamName: result.StreamName,
+		PoolConnIndex:  fmt.Sprintf("%d", result.ConnIndex),
+	}, nil
+}
+
+func (s *grpcPoolServer) ReleaseStream(ctx context.Context, req *pb.ReleaseStreamRequest) (*pb.ReleaseStreamResponse, error) {
+	if req.StreamName != "" {
+		s.poolMgr.ReleaseLiveStream(req.CameraId, req.StreamName)
+	}
+	return &pb.ReleaseStreamResponse{Success: true}, nil
+}
+
+func (s *grpcPoolServer) HeartbeatStream(ctx context.Context, req *pb.HeartbeatStreamRequest) (*pb.HeartbeatStreamResponse, error) {
+	if req.StreamName != "" {
+		s.poolMgr.Heartbeat(req.CameraId, req.StreamName)
+	}
+	return &pb.HeartbeatStreamResponse{Success: true}, nil
+}
+
+func (s *grpcPoolServer) GetStatusSummary(ctx context.Context, req *pb.GetStatusSummaryRequest) (*pb.GetStatusSummaryResponse, error) {
+	status := s.poolMgr.GetStatusSummary()
+	
+	return &pb.GetStatusSummaryResponse{
+		Summary: &pb.PoolSummary{
+			TotalCameras:       int32(status.TotalCameras),
+			TotalActiveStreams: int32(status.TotalLiveStreams),
+			TotalViewers:       int32(status.TotalActiveViewers),
+		},
+	}, nil
 }

@@ -4,7 +4,12 @@ WORKDIR /app
 
 ENV CGO_ENABLED=0 GOOS=linux
 
-# 1. Layer cache for dependencies
+# 1. Install Protoc and Go plugins
+RUN apk add --no-cache protoc protobuf-dev
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
+
+# 2. Layer cache for dependencies
 COPY go.work go.work.sum* ./
 COPY services/shared/go.mod services/shared/go.sum* ./services/shared/
 COPY services/auth/go.mod services/auth/go.sum* ./services/auth/
@@ -18,8 +23,15 @@ COPY services/seed/go.mod services/seed/go.sum* ./services/seed/
 RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/auth && go mod download
 
-# 2. Copy source and build with compiler cache mount
+# 3. Copy source and build with compiler cache mount
 COPY services/shared ./services/shared
+
+# Compile Protobuf
+RUN mkdir -p services/shared/pkg/pb && \
+    protoc --go_out=services/shared/pkg/pb --go_opt=paths=source_relative \
+           --go-grpc_out=services/shared/pkg/pb --go-grpc_opt=paths=source_relative \
+           -I=services/shared/proto services/shared/proto/*.proto
+
 COPY services/auth ./services/auth
 
 WORKDIR /app/services/auth

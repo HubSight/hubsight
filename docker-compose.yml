@@ -29,6 +29,7 @@ services:
       PORT: "8080"
       AUTH_SERVICE_URL: "http://auth-service:8081"
       POOL_SERVICE_URL: "http://pool-service:8085"
+      POOL_GRPC_URL: "pool-service:50052"
       WEBRTC_SERVICE_URL: "http://webrtc-service:1984"
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       M2M_SECRET: "cctv-internal-m2m-secret"
@@ -52,6 +53,7 @@ services:
     environment:
       PORT: "8085"
       CORE_SERVICE_URL: "http://core-service:8080"
+      CORE_GRPC_URL: "core-service:50053"
       WEBRTC_SERVICE_URL: "http://webrtc-service:1984"
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       M2M_SECRET: "cctv-internal-m2m-secret"
@@ -74,12 +76,13 @@ services:
   # ⚡ Dedicated Socket.IO Relay Microservice (Private, routed via API Gateway :8088/socket.io)
   relay-service:
     build:
-      context: ./services/relay-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/relay-service/Dockerfile
     restart: unless-stopped
     environment:
       PORT: "3001"
       AUTH_SERVICE_URL: "http://auth-service:8081"
+      AUTH_GRPC_URL: "auth-service:50051"
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       M2M_SECRET: "cctv-internal-m2m-secret"
     depends_on:
@@ -103,12 +106,13 @@ services:
   # 👁️ Vision Service (Person Detection via YOLO)
   vision-service:
     build:
-      context: ./services/vision-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/vision-service/Dockerfile
     restart: unless-stopped
     environment:
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       CORE_SERVICE_URL: "http://core-service:8080"
+      CORE_GRPC_URL: "core-service:50053"
       M2M_SECRET: "cctv-internal-m2m-secret"
       # Read from go2rtc's internal RTSP server (same buffer as WebRTC stream)
       # so that bounding box timestamps align with the video shown in the browser.

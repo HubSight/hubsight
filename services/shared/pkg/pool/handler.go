@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"cctv/shared/pkg/pb"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,28 +22,14 @@ func getPoolServiceURL() string {
 
 // PoolStatusHandler proxies the connection pool status to pool-service (admin only)
 func PoolStatusHandler(c *gin.Context) {
-	poolURL := fmt.Sprintf("%s/api/pool/status", getPoolServiceURL())
-	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, poolURL, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create pool status request: " + err.Error()})
-		return
-	}
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	client := GetGrpcClient()
+	resp, err := client.GetStatusSummary(c.Request.Context(), &pb.GetStatusSummaryRequest{})
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "pool-service unreachable: " + err.Error()})
 		return
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read pool status response"})
-		return
-	}
-
-	c.Data(resp.StatusCode, "application/json", body)
+	c.JSON(http.StatusOK, resp.Summary)
 }
 
 // PoolSyncHandler triggers manual re-synchronization of camera streams in pool-service (admin only)

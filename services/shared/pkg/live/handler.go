@@ -9,8 +9,9 @@ import (
 	"os"
 	"strings"
 	"time"
-
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/pb"
+	"cctv/shared/pkg/pool"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,35 +48,25 @@ func WebRTCHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if pool-service is configured
-	poolServiceURL := os.Getenv("POOL_SERVICE_URL")
-	if poolServiceURL == "" {
-		poolServiceURL = "http://pool-service:8085"
-	}
+	// 1. Forward WebRTC Offer to pool-service via gRPC
+	client := pool.GetGrpcClient()
+	resp, err := client.SignalWebRTC(c.Request.Context(), &pb.SignalWebRTCRequest{
+		CameraId:    camID,
+		SdpOffer:    string(body),
+		ContentType: c.Request.Header.Get("Content-Type"),
+	})
 
-	// 1. Forward WebRTC Offer to pool-service (which manages the <= 5 clients/conn scaling)
-	poolSignalingURL := fmt.Sprintf("%s/api/pool/cameras/%s/webrtc", poolServiceURL, url.PathEscape(camID))
-	poolReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, poolSignalingURL, bytes.NewReader(body))
 	if err == nil {
-		poolReq.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
-		client := &http.Client{Timeout: 10 * time.Second}
-		resp, err := client.Do(poolReq)
-		if err == nil {
-			defer resp.Body.Close()
-			respBody, readErr := io.ReadAll(resp.Body)
-			if readErr == nil && resp.StatusCode < 500 {
-				if poolStreamName := resp.Header.Get("X-Pool-Stream-Name"); poolStreamName != "" {
-					c.Header("X-Pool-Stream-Name", poolStreamName)
-				}
-				if poolConnIndex := resp.Header.Get("X-Pool-Conn-Index"); poolConnIndex != "" {
-					c.Header("X-Pool-Conn-Index", poolConnIndex)
-				}
-				c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), respBody)
-				return
-			}
+		if resp.PoolStreamName != "" {
+			c.Header("X-Pool-Stream-Name", resp.PoolStreamName)
 		}
-		fmt.Printf("[Live Proxy] pool-service unavailable (%v), falling back to direct go2rtc signaling\n", err)
+		if resp.PoolConnIndex != "" {
+			c.Header("X-Pool-Conn-Index", resp.PoolConnIndex)
+		}
+		c.Data(http.StatusOK, c.Request.Header.Get("Content-Type"), []byte(resp.SdpAnswer))
+		return
 	}
+	fmt.Printf("[Live Proxy] pool-service unavailable (%v), falling back to direct go2rtc signaling\n", err)
 
 	// Fallback directly to go2rtc if pool-service is unreachable
 	camName := fmt.Sprintf("cam_%s", camID)
@@ -121,27 +112,27 @@ func WebRTCHandler(c *gin.Context) {
 
 	req.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	httpClient := &http.Client{Timeout: 10 * time.Second}
+	httpResp, err := httpClient.Do(req)
 	if err != nil {
 		fmt.Printf("go2rtc error reaching server: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reach go2rtc server: " + err.Error()})
 		return
 	}
-	defer resp.Body.Close()
+	defer httpResp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read go2rtc answer"})
 		return
 	}
 
-	if resp.StatusCode >= 300 {
-		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("go2rtc error: %s", string(respBody))})
+	if httpResp.StatusCode >= 300 {
+		c.JSON(httpResp.StatusCode, gin.H{"error": fmt.Sprintf("go2rtc error: %s", string(respBody))})
 		return
 	}
 
-	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), respBody)
+	c.Data(httpResp.StatusCode, httpResp.Header.Get("Content-Type"), respBody)
 }
 
 // LiveStatusHandler returns real-time streaming health of a camera

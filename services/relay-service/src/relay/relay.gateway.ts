@@ -11,6 +11,9 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JoinRoomDto, LeaveRoomDto, RelayMessageDto } from './dto/relay.dto';
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
+import * as path from 'path';
 
 interface ValidateTokenResponse {
   valid: boolean;
@@ -44,13 +47,47 @@ export class RelayGateway
   server: Server;
 
   private readonly logger = new Logger(RelayGateway.name);
-  private readonly authServiceUrl =
-    process.env.AUTH_SERVICE_URL || 'http://auth-service:8081';
+  
+  // Use gRPC instead of HTTP
+  private readonly authGrpcUrl =
+    process.env.AUTH_GRPC_URL || 'auth-service:50051';
   private readonly m2mSecret =
     process.env.M2M_SECRET || 'cctv-internal-m2m-secret';
 
+  private authClient: any;
+
   afterInit(server: Server) {
     this.logger.log('Socket.IO Relay Gateway initialized with Auth & M2M protection.');
+    this.initGrpcClient();
+  }
+
+  private initGrpcClient() {
+    try {
+      const PROTO_PATH = path.join(
+        __dirname,
+        '..',
+        '..',
+        'proto',
+        'auth.proto',
+      );
+      const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true,
+      });
+      const protoDesc = grpc.loadPackageDefinition(packageDefinition) as any;
+      const AuthService = protoDesc.pb.AuthService;
+
+      this.authClient = new AuthService(
+        this.authGrpcUrl,
+        grpc.credentials.createInsecure(),
+      );
+      this.logger.log(`Initialized gRPC client for AuthService at ${this.authGrpcUrl}`);
+    } catch (error) {
+      this.logger.error('Failed to initialize gRPC client for AuthService', error);
+    }
   }
 
   async handleConnection(client: Socket) {
@@ -157,20 +194,17 @@ export class RelayGateway
   }
 
   private async validateWithAuthService(token: string): Promise<ValidateTokenResponse> {
-    const response = await fetch(`${this.authServiceUrl}/auth/validate-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ token }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Auth service returned status ${response.status}`);
+    if (!this.authClient) {
+      throw new Error('Auth gRPC client not initialized');
     }
-
-    return (await response.json()) as ValidateTokenResponse;
+    return new Promise((resolve, reject) => {
+      this.authClient.VerifyToken({ token }, (error: any, response: any) => {
+        if (error) {
+          return reject(error);
+        }
+        resolve(response as ValidateTokenResponse);
+      });
+    });
   }
 
   @SubscribeMessage('join_room')

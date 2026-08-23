@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -13,7 +14,9 @@ import (
 	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/mq"
+	"cctv/shared/pkg/pb"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -40,6 +43,20 @@ func main() {
 	if port == "" {
 		port = "8081"
 	}
+
+	// Start gRPC server
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			log.Fatalf("Failed to listen on gRPC port 50051: %v", err)
+		}
+		s := grpc.NewServer()
+		pb.RegisterAuthServiceServer(s, &grpcAuthServer{})
+		log.Printf("Auth Service gRPC listening on :50051")
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC: %v", err)
+		}
+	}()
 
 	r := gin.Default()
 
@@ -160,4 +177,31 @@ func handleValidateToken(c *gin.Context) {
 		Username: u.Username,
 		FullName: u.FullName,
 	})
+}
+
+// gRPC Implementation
+type grpcAuthServer struct {
+	pb.UnimplementedAuthServiceServer
+}
+
+func (s *grpcAuthServer) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.VerifyTokenResponse, error) {
+	if req.Token == "" {
+		return &pb.VerifyTokenResponse{Valid: false}, nil
+	}
+
+	u, err := auth.GetUserBySession(ctx, req.Token)
+	if err != nil || u == nil {
+		return &pb.VerifyTokenResponse{Valid: false}, nil
+	}
+
+	return &pb.VerifyTokenResponse{
+		Valid: true,
+		User: &pb.UserData{
+			Id:       u.ID,
+			Username: u.Username,
+			FullName: u.FullName,
+			Role:     string(u.Role),
+			IsActive: u.IsActive,
+		},
+	}, nil
 }
