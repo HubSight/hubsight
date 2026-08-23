@@ -230,12 +230,13 @@ func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, 
 }
 
 type IngestVisionEventInput struct {
-	CameraID string `json:"camera_id" binding:"required"`
-	Type     string `json:"type"`
-	Name     string `json:"name"`
-	Role     string `json:"role"`
-	MemberID string `json:"member_id"`
-	ThumbURL string `json:"thumbnail_url"`
+	CameraID   string `json:"camera_id" binding:"required"`
+	CameraName string `json:"camera_name"`
+	Type       string `json:"type"`
+	Name       string `json:"name"`
+	Role       string `json:"role"`
+	MemberID   string `json:"member_id"`
+	ThumbURL   string `json:"thumbnail_url"`
 }
 
 // IngestVisionEventHandler handles vision service notification ingestion
@@ -249,6 +250,7 @@ func IngestVisionEventHandler(c *gin.Context) {
 	err := IngestVisionEvent(
 		c.Request.Context(),
 		input.CameraID,
+		input.CameraName,
 		input.Type,
 		input.Name,
 		input.Role,

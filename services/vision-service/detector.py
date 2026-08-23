@@ -120,7 +120,7 @@ class PersonDetector:
             }
         return self.camera_states[camera_id]
 
-    def process_frame(self, frame, camera_id="default"):
+    def process_frame(self, frame, camera_id="default", camera_name=""):
         cam = self._get_cam_state(camera_id)
         current_time = time.time()
         
@@ -186,6 +186,7 @@ class PersonDetector:
                                             try:
                                                 payload = {
                                                     "camera_id": str(camera_id),
+                                                    "camera_name": str(camera_name) if camera_name else f"Camera {camera_id}",
                                                     "type": "stranger_detected" if track_state_obj.state == "stranger" else "person_identified",
                                                     "name": track_state_obj.name or "Người lạ",
                                                     "role": track_state_obj.role or "stranger",

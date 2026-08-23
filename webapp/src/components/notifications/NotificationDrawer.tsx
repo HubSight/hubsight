@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X,
   Bell,
@@ -38,6 +38,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const { socket } = useSocket();
   const { formatNotificationBody, formatDateTime } = useTimezone();
   const navigate = useNavigate();
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -45,6 +46,33 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [pushStatus, setPushStatus] = useState<NotificationPermission>('default');
   const [isSubscribingPush, setIsSubscribingPush] = useState(false);
+
+  // Auto-close when clicking outside drawer or pressing Escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     setPushStatus(getPushNotificationPermission());
@@ -150,11 +178,15 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in cursor-pointer"
+        aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200/90 flex flex-col pt-safe pb-safe animate-in slide-in-from-right duration-300">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
+        <div
+          ref={drawerRef}
+          className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200/90 flex flex-col pt-safe pb-safe animate-in slide-in-from-right duration-300 pointer-events-auto"
+        >
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
             <div className="flex items-center gap-2.5">

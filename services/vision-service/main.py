@@ -37,19 +37,21 @@ def ensure_go2rtc_stream(cam_id, rtsp_url):
         src_ffmpeg = f"ffmpeg:{rtsp_url}#audio=opus"
         
         url = f"{WEBRTC_API_URL}/api/streams"
-        params = [("name", f"cam_{cam_id}"), ("src", src_direct), ("src", src_ffmpeg)]
+        params = [("name", f"cam_{cam_id}_cv"), ("src", src_direct), ("src", src_ffmpeg)]
         resp = requests.put(url, params=params, timeout=3)
         if resp.status_code in (200, 201):
-            logger.debug(f"[{cam_id}] Registered stream in go2rtc successfully")
+            logger.debug(f"[{cam_id}] Registered Connection #0 in go2rtc successfully")
     except Exception as e:
         logger.warning(f"[{cam_id}] Could not register stream in go2rtc: {e}")
 
 def get_ai_cameras():
     try:
         headers = {"X-Service-Key": M2M_SECRET}
-        resp = requests.get(f"{CORE_SERVICE_URL}/api/internal/ai-cameras", headers=headers, timeout=5)
+        resp = requests.get(f"{CORE_SERVICE_URL}/api/internal/pool/cameras", headers=headers, timeout=5)
         if resp.status_code == 200:
-            return resp.json()
+            all_cams = resp.json()
+            # Filter active cameras with AI enabled for continuous background inference
+            return [c for c in all_cams if c.get('is_active', True) and c.get('enable_ai', True)]
         logger.error(f"Failed to fetch AI cameras: {resp.status_code} {resp.text}")
     except Exception as e:
         logger.error(f"Error fetching AI cameras: {e}")
@@ -71,17 +73,18 @@ def sync_face_embeddings():
     except Exception as e:
         logger.warning(f"Error syncing face embeddings: {e}")
 
-def stream_worker(cam_id, rtsp_url, stop_event):
+def stream_worker(cam_id, cam_name, rtsp_url, stop_event):
     ensure_go2rtc_stream(cam_id, rtsp_url)
-    go2rtc_url = f"{GO2RTC_RTSP_BASE}/cam_{cam_id}"
-    logger.info(f"[{cam_id}] Starting AI processing thread. Primary: {go2rtc_url}")
+    # Connection #0 dedicated for Computer Vision processing
+    go2rtc_cv_url = f"{GO2RTC_RTSP_BASE}/cam_{cam_id}_cv"
+    logger.info(f"[{cam_id} - {cam_name}] Starting AI processing thread (Connection #0: {go2rtc_cv_url})")
     
     frame_interval = 1.0 / PROCESS_FPS if PROCESS_FPS > 0 else 0
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
     
     while not stop_event.is_set():
         # Try internal go2rtc stream first
-        cap = cv2.VideoCapture(go2rtc_url)
+        cap = cv2.VideoCapture(go2rtc_cv_url)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
         if not cap.isOpened():
@@ -110,7 +113,7 @@ def stream_worker(cam_id, rtsp_url, stop_event):
                 
                 current_time = time.time()
                 if frame_interval == 0 or (current_time - last_process_time) >= frame_interval:
-                    detector.process_frame(frame, camera_id=str(cam_id))
+                    detector.process_frame(frame, camera_id=str(cam_id), camera_name=str(cam_name))
                     last_process_time = current_time
                     
         except Exception as e:
@@ -126,7 +129,7 @@ def stream_worker(cam_id, rtsp_url, stop_event):
 
 def main():
     global detector, face_engine
-    logger.info("Starting Vision Service with InsightFace ArcFace & YOLO Tracking...")
+    logger.info("Starting Vision Service with InsightFace ArcFace & YOLO Tracking (Connection Pool Mode)...")
     
     mq_client = RabbitMQClient(RABBITMQ_URL)
     mq_client.connect()
@@ -149,26 +152,27 @@ def main():
         current_cam_ids = set()
         for cam in cameras:
             cam_id = cam.get('id')
+            cam_name = cam.get('name') or f"Camera {cam_id}"
             host = cam.get('host')
             
             if cam_id and host:
                 current_cam_ids.add(cam_id)
                 if cam_id not in active_streams:
                     stop_event = threading.Event()
-                    t = threading.Thread(target=stream_worker, args=(cam_id, host, stop_event))
+                    t = threading.Thread(target=stream_worker, args=(cam_id, cam_name, host, stop_event))
                     t.daemon = True
                     t.start()
-                    active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host}
+                    active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host, 'name': cam_name}
                 elif active_streams[cam_id]['host'] != host:
                     logger.info(f"[{cam_id}] Host changed. Restarting thread.")
                     active_streams[cam_id]['stop_event'].set()
                     active_streams[cam_id]['thread'].join(timeout=5)
                     
                     stop_event = threading.Event()
-                    t = threading.Thread(target=stream_worker, args=(cam_id, host, stop_event))
+                    t = threading.Thread(target=stream_worker, args=(cam_id, cam_name, host, stop_event))
                     t.daemon = True
                     t.start()
-                    active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host}
+                    active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host, 'name': cam_name}
 
         # Stop threads for cameras that are no longer AI-enabled or active
         for cam_id in list(active_streams.keys()):

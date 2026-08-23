@@ -91,6 +91,54 @@ func PublishEvent(pattern string, data interface{}) error {
 	return nil
 }
 
+// PublishToQueue publishes a JSON message to a specific queue name.
+func PublishToQueue(queueName, pattern string, data interface{}) error {
+	if ch == nil {
+		if err := Init(); err != nil {
+			return err
+		}
+	}
+
+	body, err := json.Marshal(map[string]interface{}{
+		"pattern": pattern,
+		"data":    data,
+	})
+	if err != nil {
+		return err
+	}
+
+	q, err := ch.QueueDeclare(
+		queueName,
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	return ch.PublishWithContext(
+		context.Background(),
+		"",
+		q.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+}
+
+// PublishCameraEvent publishes camera lifecycle events to both relay_queue and pool_queue
+func PublishCameraEvent(pattern string, data interface{}) {
+	_ = PublishToQueue("relay_queue", pattern, data)
+	_ = PublishToQueue("pool_queue", pattern, data)
+	log.Printf("[MQ] Broadcasted camera event to relay and pool: %s", pattern)
+}
+
 // Close closes the RabbitMQ connection and channel.
 func Close() {
 	if ch != nil {

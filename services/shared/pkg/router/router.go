@@ -40,6 +40,7 @@ func New() *gin.Engine {
 		internal := api.Group("/internal")
 		{
 			internal.GET("/ai-cameras", device.ListAICamerasHandler)
+			internal.GET("/pool/cameras", device.ListPoolCamerasHandler)
 			internal.GET("/face-embeddings", member.ListAllEmbeddingsInternalHandler)
 			internal.POST("/notifications/ingest", notification.IngestVisionEventHandler)
 		}

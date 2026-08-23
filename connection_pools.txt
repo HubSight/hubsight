@@ -1,0 +1,14 @@
+Tính năng Bể kết nối thiết bị
+
+- Sẽ có 1 pool (microservice độc lập) để làm nơi khởi tạo, kết lúc vòng đời của các kết nối camera
+- Mỗi thiết bị trong hệ thống sẽ duy trì ít nhất 1 kết nối trong pool
+- Luồng CV sẽ lấy connection từ pool để xử lý
+- Luồng live stream cũng sẽ lấy connection từ pool nhưng sẽ sinh ra connection mới nếu thoả điều kiện sau:
+ - Không có connection nào ngoài connection #0 cho CV -> Tạo mới
+ - Khi không có connection nào < 5 client kết nối -> Tạo mới
+ - Có connection nào dưới 5 client -> Re-use
+ - Nếu tất cả connections đã đủ 5 client -> Tạo mới
+- Connection #0 của device là dành riêng cho CV xử lý, không dùng cho mục đích khác
+- Handle việc update/delete device cũng sẽ affected lên pool trực tiếp
+- CV luôn cần có ít nhất stream chạy dưới nền liên tục để xử lý nhận diện và gửi thông báo vào hệ thống
+- Thông báo cũng cần rõ ràng hơn để biết được: Ai? làm gì? với thiết bị nào? thời gian nào?

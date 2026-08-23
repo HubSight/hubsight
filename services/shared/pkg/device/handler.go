@@ -8,6 +8,7 @@ import (
 	"cctv/shared/ent/camera"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/live"
+	"cctv/shared/pkg/mq"
 	"github.com/gin-gonic/gin"
 )
 
@@ -67,6 +68,32 @@ func ListAICamerasHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+func ListPoolCamerasHandler(c *gin.Context) {
+	// Simple M2M Secret check
+	secret := c.GetHeader("X-Service-Key")
+	expected := os.Getenv("M2M_SECRET")
+	if expected != "" && secret != expected {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized internal access"})
+		return
+	}
+
+	// Fetch all cameras from DB for pool initialization
+	devices, err := database.Client.Camera.Query().
+		Order(ent.Asc("id")).
+		All(c.Request.Context())
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cameras for pool: " + err.Error()})
+		return
+	}
+
+	if devices == nil {
+		devices = []*ent.Camera{}
+	}
+
+	c.JSON(http.StatusOK, devices)
+}
+
 func AddDeviceHandler(c *gin.Context) {
 	var req DeviceInput
 
@@ -80,6 +107,9 @@ func AddDeviceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create device"})
 		return
 	}
+
+	// Notify Connection Pool and Relay of new device
+	mq.PublishCameraEvent("camera.created", dev)
 
 	c.JSON(http.StatusCreated, dev)
 }
@@ -95,6 +125,9 @@ func DeleteDeviceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete device"})
 		return
 	}
+
+	// Notify Connection Pool and Relay of deleted device
+	mq.PublishCameraEvent("camera.deleted", gin.H{"id": idStr})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Device deleted successfully"})
 }
@@ -118,6 +151,9 @@ func UpdateDeviceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device"})
 		return
 	}
+
+	// Notify Connection Pool and Relay of updated device
+	mq.PublishCameraEvent("camera.updated", dev)
 
 	c.JSON(http.StatusOK, dev)
 }
