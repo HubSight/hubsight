@@ -88,7 +88,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
       {/* App Lock Screen Overlay */}
       <AppLockScreen />
 
@@ -102,8 +102,8 @@ const MainLayout = () => {
         onUnreadCountChange={setUnreadNotifCount}
       />
 
-      {/* Mobile Header (Includes safe-area-inset-top) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-40 flex items-center justify-between px-4 shadow-xs">
+      {/* Mobile Header (In flex-flow on mobile: shrink-0, hidden on desktop) */}
+      <header className="md:hidden shrink-0 w-full h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-30 flex items-center justify-between px-4 shadow-xs">
         <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
           <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
             <Camera size={18} />
@@ -132,7 +132,7 @@ const MainLayout = () => {
             <Menu size={22} />
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Mobile Backdrop */}
       {isMobileMenuOpen && (
@@ -332,10 +332,10 @@ const MainLayout = () => {
         {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
 
-      {/* Main Content (Offset below Mobile Header with safe-area-inset-top) */}
-      <div className="flex-1 flex flex-col overflow-hidden relative pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[env(safe-area-inset-bottom,0px)] md:pt-0 md:pb-0">
+      {/* Main Content Area (Natural flex flow below Mobile Header) */}
+      <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden relative pb-[env(safe-area-inset-bottom,0px)] md:pb-0">
         <Outlet />
-      </div>
+      </main>
 
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
       {showSettingsModal && <AppSettingsModal onClose={() => setShowSettingsModal(false)} />}
