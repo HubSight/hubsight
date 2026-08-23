@@ -52,10 +52,10 @@ def get_ai_cameras():
             all_cams = resp.json()
             # Filter active cameras with AI enabled for continuous background inference
             return [c for c in all_cams if c.get('is_active', True) and c.get('enable_ai', True)]
-        logger.error(f"Failed to fetch AI cameras: {resp.status_code} {resp.text}")
+        logger.warning(f"Core service returned status {resp.status_code} for AI cameras sync")
     except Exception as e:
-        logger.error(f"Error fetching AI cameras: {e}")
-    return []
+        logger.warning(f"Error fetching AI cameras from core-service: {e}")
+    return None
 
 def sync_face_embeddings():
     """Fetch all member face vectors from core-service to keep in-memory store updated."""
@@ -77,7 +77,7 @@ def stream_worker(cam_id, cam_name, rtsp_url, stop_event):
     ensure_go2rtc_stream(cam_id, rtsp_url)
     # Connection #0 dedicated for Computer Vision processing
     go2rtc_cv_url = f"{GO2RTC_RTSP_BASE}/cam_{cam_id}_cv"
-    logger.info(f"[{cam_id} - {cam_name}] Starting AI processing thread (Connection #0: {go2rtc_cv_url})")
+    logger.info(f"[{cam_id} - {cam_name}] Starting 24/7 background AI processing thread (Connection #0: {go2rtc_cv_url})")
     
     frame_interval = 1.0 / PROCESS_FPS if PROCESS_FPS > 0 else 0
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
@@ -129,7 +129,7 @@ def stream_worker(cam_id, cam_name, rtsp_url, stop_event):
 
 def main():
     global detector, face_engine
-    logger.info("Starting Vision Service with InsightFace ArcFace & YOLO Tracking (Connection Pool Mode)...")
+    logger.info("Starting Vision Service with InsightFace ArcFace & YOLO Tracking (24/7 Background Mode)...")
     
     mq_client = RabbitMQClient(RABBITMQ_URL)
     mq_client.connect()
@@ -148,41 +148,41 @@ def main():
             last_sync_time = time.time()
 
         cameras = get_ai_cameras()
-        
-        current_cam_ids = set()
-        for cam in cameras:
-            cam_id = cam.get('id')
-            cam_name = cam.get('name') or f"Camera {cam_id}"
-            host = cam.get('host')
-            
-            if cam_id and host:
-                current_cam_ids.add(cam_id)
-                if cam_id not in active_streams:
-                    stop_event = threading.Event()
-                    t = threading.Thread(target=stream_worker, args=(cam_id, cam_name, host, stop_event))
-                    t.daemon = True
-                    t.start()
-                    active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host, 'name': cam_name}
-                elif active_streams[cam_id]['host'] != host:
-                    logger.info(f"[{cam_id}] Host changed. Restarting thread.")
+        if cameras is not None:
+            current_cam_ids = set()
+            for cam in cameras:
+                cam_id = cam.get('id')
+                cam_name = cam.get('name') or f"Camera {cam_id}"
+                host = cam.get('host')
+                
+                if cam_id and host:
+                    current_cam_ids.add(cam_id)
+                    if cam_id not in active_streams:
+                        stop_event = threading.Event()
+                        t = threading.Thread(target=stream_worker, args=(cam_id, cam_name, host, stop_event))
+                        t.daemon = True
+                        t.start()
+                        active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host, 'name': cam_name}
+                    elif active_streams[cam_id]['host'] != host:
+                        logger.info(f"[{cam_id}] Host changed. Restarting thread.")
+                        active_streams[cam_id]['stop_event'].set()
+                        active_streams[cam_id]['thread'].join(timeout=5)
+                        
+                        stop_event = threading.Event()
+                        t = threading.Thread(target=stream_worker, args=(cam_id, cam_name, host, stop_event))
+                        t.daemon = True
+                        t.start()
+                        active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host, 'name': cam_name}
+
+            # Stop threads only for cameras that were explicitly removed or disabled in the valid list
+            for cam_id in list(active_streams.keys()):
+                if cam_id not in current_cam_ids:
+                    logger.info(f"[{cam_id}] Camera removed or AI disabled. Stopping thread.")
                     active_streams[cam_id]['stop_event'].set()
                     active_streams[cam_id]['thread'].join(timeout=5)
+                    del active_streams[cam_id]
                     
-                    stop_event = threading.Event()
-                    t = threading.Thread(target=stream_worker, args=(cam_id, cam_name, host, stop_event))
-                    t.daemon = True
-                    t.start()
-                    active_streams[cam_id] = {'thread': t, 'stop_event': stop_event, 'host': host, 'name': cam_name}
-
-        # Stop threads for cameras that are no longer AI-enabled or active
-        for cam_id in list(active_streams.keys()):
-            if cam_id not in current_cam_ids:
-                logger.info(f"[{cam_id}] Camera removed or AI disabled. Stopping thread.")
-                active_streams[cam_id]['stop_event'].set()
-                active_streams[cam_id]['thread'].join(timeout=5)
-                del active_streams[cam_id]
-                
-        time.sleep(5)  # Poll every 5s for fast on-demand activation/deactivation
+        time.sleep(5)  # Poll every 5s for camera config updates
 
 if __name__ == "__main__":
     main()

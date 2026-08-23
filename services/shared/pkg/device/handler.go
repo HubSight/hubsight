@@ -7,7 +7,6 @@ import (
 	"cctv/shared/ent"
 	"cctv/shared/ent/camera"
 	"cctv/shared/pkg/database"
-	"cctv/shared/pkg/live"
 	"cctv/shared/pkg/mq"
 	"github.com/gin-gonic/gin"
 )
@@ -35,37 +34,23 @@ func ListAICamerasHandler(c *gin.Context) {
 		return
 	}
 
-	// Fetch all cameras with AI enabled from the database.
+	// Fetch all active cameras with AI enabled from database.
+	// In Connection Pool mode, CV runs continuously in background 24/7.
 	devices, err := database.Client.Camera.Query().
 		Where(camera.IsActive(true), camera.EnableAi(true)).
 		Order(ent.Asc("id")).
 		All(c.Request.Context())
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch AI cameras"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch AI cameras: " + err.Error()})
 		return
 	}
 
-	// Filter to only cameras that currently have at least one active viewer.
-	// This enables on-demand CV processing: vision-service only spins up threads
-	// when a real user is watching, saving significant server resources.
-	activeSet := make(map[string]struct{})
-	for _, id := range live.Tracker.ActiveCameraIDs() {
-		activeSet[id] = struct{}{}
+	if devices == nil {
+		devices = []*ent.Camera{}
 	}
 
-	var result []*ent.Camera
-	for _, d := range devices {
-		if _, watched := activeSet[d.ID]; watched {
-			result = append(result, d)
-		}
-	}
-
-	if result == nil {
-		result = []*ent.Camera{}
-	}
-
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, devices)
 }
 
 func ListPoolCamerasHandler(c *gin.Context) {

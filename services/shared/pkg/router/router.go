@@ -11,6 +11,7 @@ import (
 	"cctv/shared/pkg/member"
 	"cctv/shared/pkg/notification"
 	"cctv/shared/pkg/nvr"
+	"cctv/shared/pkg/pool"
 	"cctv/shared/pkg/recording"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -69,6 +70,8 @@ func New() *gin.Engine {
 				adminOnly.PUT("/members/:id", member.UpdateMemberHandler)
 				adminOnly.DELETE("/members/:id", member.DeleteMemberHandler)
 				adminOnly.POST("/members/:id/faces", member.AddMemberFaceHandler)
+				adminOnly.GET("/members/:id/faces", member.ListMemberFacesHandler)
+				adminOnly.DELETE("/members/:id/faces", member.BatchDeleteMemberFacesHandler)
 				adminOnly.DELETE("/members/:id/faces/:face_id", member.DeleteMemberFaceHandler)
 
 				adminOnly.POST("/devices", device.AddDeviceHandler)
@@ -81,6 +84,10 @@ func New() *gin.Engine {
 
 				// NVR recorder monitor endpoint
 				adminOnly.GET("/recorder/status", nvr.NvrStatusHandler)
+
+				// Connection Pool & Stream monitor endpoints
+				adminOnly.GET("/pool/status", pool.PoolStatusHandler)
+				adminOnly.POST("/pool/sync", pool.PoolSyncHandler)
 				
 				// Global settings
 				adminOnly.GET("/settings", cctvapi.GetSettings)

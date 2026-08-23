@@ -41,6 +41,7 @@ export default defineConfig({
         skipWaiting: true,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/healthz/],
+        importScripts: ['/custom-sw.js'],
       },
       manifest: {
         name: 'HubSight Surveillance & Playback',

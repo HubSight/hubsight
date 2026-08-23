@@ -36,6 +36,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
   const { t } = useTranslation();
   const { formatDateTime } = useTimezone();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   const [faces, setFaces] = useState<FaceItem[]>([]);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string>('');
@@ -44,15 +45,91 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
   const [error, setError] = useState('');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
+  // Pagination & Sorting state
+  const [totalFaces, setTotalFaces] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingFaces, setIsLoadingFaces] = useState(false);
+  const [sortBy, setSortBy] = useState<'created_at' | 'quality_score'>('created_at');
+
+  // Batch action state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedFaceIds, setSelectedFaceIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchFaces = async (pageNum: number, sort: string, append = false) => {
+    if (!member) return;
+    try {
+      setIsLoadingFaces(true);
+      const res = await axiosClient.get(`/members/${member.id}/faces`, {
+        params: { page: pageNum, limit: 20, sort_by: sort, order: 'desc' },
+      });
+      const data = res.data;
+      if (append) {
+        setFaces((prev) => {
+          // Avoid duplicates
+          const newFaces = data.data.filter((newF: FaceItem) => !prev.some(p => p.id === newF.id));
+          return [...prev, ...newFaces];
+        });
+      } else {
+        setFaces(data.data);
+      }
+      setTotalFaces(data.total);
+      setHasMore(pageNum < data.total_pages);
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to load faces');
+    } finally {
+      setIsLoadingFaces(false);
+    }
+  };
+
   // Sync state when member changes
   useEffect(() => {
     if (isOpen && member) {
-      setFaces(member.faces || []);
       setCurrentAvatarUrl(member.avatar_url || '');
       setError('');
       setSelectedPhotoIndex(null);
+      setSelectionMode(false);
+      setSelectedFaceIds(new Set());
+      setPage(1);
+      fetchFaces(1, sortBy, false);
     }
-  }, [isOpen, member]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, member, sortBy]);
+
+  // Handle ESC to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isUploading && !isDeleting) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isUploading, isDeleting, onClose]);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingFaces) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchFaces(nextPage, sortBy, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingFaces, page, sortBy, member]);
 
   if (!isOpen || !member) return null;
 
@@ -65,7 +142,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
       setError('');
       setUploadProgress({ current: 0, total: files.length });
 
-      const newFaces: FaceItem[] = [];
+      let addedCount = 0;
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -104,7 +181,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         });
 
         if (res.data) {
-          newFaces.unshift(res.data);
+          addedCount++;
           // If no avatar yet, auto-set first face photo as avatar
           if (!currentAvatarUrl && i === 0) {
             setCurrentAvatarUrl(s3PresignedUrl);
@@ -113,8 +190,11 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         }
       }
 
-      setFaces((prev) => [...newFaces, ...prev]);
-      onUpdate();
+      if (addedCount > 0) {
+        setPage(1);
+        await fetchFaces(1, sortBy, false);
+        onUpdate();
+      }
     } catch (err: any) {
       console.error('Failed to upload face photos:', err);
       setError(err?.response?.data?.error || t('members.uploadFaceFailed'));
@@ -142,6 +222,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     try {
       await axiosClient.delete(`/members/${member.id}/faces/${faceId}`);
       setFaces((prev) => prev.filter((f) => f.id !== faceId));
+      setTotalFaces((prev) => prev - 1);
       if (selectedPhotoIndex !== null) setSelectedPhotoIndex(null);
       onUpdate();
     } catch (err: any) {
@@ -150,11 +231,34 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     }
   };
 
+  const handleBatchDelete = async () => {
+    if (selectedFaceIds.size === 0) return;
+    if (!window.confirm(`Xoá ${selectedFaceIds.size} ảnh đã chọn?`)) return;
+
+    try {
+      setIsDeleting(true);
+      await axiosClient.delete(`/members/${member.id}/faces`, {
+        data: { face_ids: Array.from(selectedFaceIds) },
+      });
+
+      setSelectedFaceIds(new Set());
+      setSelectionMode(false);
+      setPage(1);
+      await fetchFaces(1, sortBy, false);
+      onUpdate();
+    } catch (err: any) {
+      console.error(err);
+      setError('Lỗi khi xoá nhiều ảnh.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const selectedFace = selectedPhotoIndex !== null ? faces[selectedPhotoIndex] : null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl h-[92vh] max-h-[900px] overflow-hidden shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
+      <div className="bg-white w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
@@ -194,7 +298,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                 <span>{t('gallery.title')}</span>
                 <span>•</span>
                 <span className="font-semibold text-orange-600">
-                  {faces.length} {t('members.faceSamplesCount')}
+                  {totalFaces} {t('members.faceSamplesCount')}
                 </span>
               </p>
             </div>
@@ -202,23 +306,11 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
-            >
-              {isUploading ? (
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Upload size={14} />
-              )}
-              {isUploading ? t('gallery.uploadingProgress') : t('gallery.uploadPhotos')}
-            </button>
-
-            <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              disabled={isUploading || isDeleting}
+              className="p-3 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <X size={20} />
+              <X size={28} />
             </button>
           </div>
         </div>
@@ -231,7 +323,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           multiple
           onChange={handleMultipleFilesUpload}
           className="hidden"
-          disabled={isUploading}
+          disabled={isUploading || isDeleting}
         />
 
         {/* Content Body */}
@@ -262,31 +354,29 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Quick Upload Button on Mobile */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="sm:hidden w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition-all"
-            >
-              <Upload size={14} />
-              {t('gallery.uploadPhotos')}
-            </button>
           </div>
 
           {/* Upload Dropzone Bar */}
           <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 hover:border-orange-500 bg-white hover:bg-orange-50/20 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all group"
+            onClick={() => {
+              if (!isUploading && !isDeleting) fileInputRef.current?.click();
+            }}
+            className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center gap-2 transition-all group ${
+              isUploading || isDeleting
+                ? 'border-slate-200 bg-slate-50/50 cursor-not-allowed opacity-60'
+                : 'border-slate-300 hover:border-orange-500 bg-white hover:bg-orange-50/20 cursor-pointer'
+            }`}
           >
-            <div className="w-12 h-12 rounded-2xl bg-slate-50 group-hover:bg-orange-100 flex items-center justify-center text-slate-400 group-hover:text-orange-600 group-hover:scale-105 transition-all">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+              isUploading || isDeleting ? 'bg-slate-100 text-slate-400' : 'bg-slate-50 group-hover:bg-orange-100 text-slate-400 group-hover:text-orange-600 group-hover:scale-105'
+            }`}>
               {isUploading ? (
                 <div className="w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Upload size={22} />
               )}
             </div>
-            <div className="text-xs font-bold text-slate-700 group-hover:text-orange-600 text-center">
+            <div className={`text-xs font-bold text-center ${isUploading || isDeleting ? 'text-slate-500' : 'text-slate-700 group-hover:text-orange-600'}`}>
               {isUploading
                 ? `${t('gallery.uploadingProgress')} (${uploadProgress?.current}/${uploadProgress?.total})`
                 : t('gallery.uploadPhotos')}
@@ -296,104 +386,210 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
             </p>
           </div>
 
-          {/* Photo Gallery Grid */}
+          {/* Photo Gallery Area */}
           <div>
-            <div className="flex items-center justify-between mb-3 px-1">
+            {/* Action Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 px-1">
               <div className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Layers size={14} className="text-slate-400" />
-                {t('members.tabFaces')} ({faces.length})
+                {t('members.tabFaces')} ({totalFaces})
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!selectionMode ? (
+                  <>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 outline-none focus:border-orange-500 cursor-pointer"
+                    >
+                      <option value="created_at">Mới nhất</option>
+                      <option value="quality_score">Điểm chất lượng (Cao xuống thấp)</option>
+                    </select>
+                    <button
+                      onClick={() => setSelectionMode(true)}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Chọn nhiều
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (selectedFaceIds.size === faces.length) {
+                          setSelectedFaceIds(new Set());
+                        } else {
+                          setSelectedFaceIds(new Set(faces.map((f) => f.id)));
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      {selectedFaceIds.size === faces.length ? 'Bỏ chọn hết' : 'Chọn tất cả trang này'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectionMode(false);
+                        setSelectedFaceIds(new Set());
+                      }}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Huỷ
+                    </button>
+                    <button
+                      onClick={handleBatchDelete}
+                      disabled={selectedFaceIds.size === 0 || isDeleting}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {isDeleting ? 'Đang xoá...' : `Xoá ${selectedFaceIds.size} mục`}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
             {faces.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-                {faces.map((f, idx) => {
-                  const isAvatar = currentAvatarUrl === f.sample_image_url;
-                  const qualityPercent = Math.round((f.quality_score || 0.88) * 100);
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+                  {faces.map((f, idx) => {
+                    const isAvatar = currentAvatarUrl === f.sample_image_url;
+                    const qualityPercent = Math.round((f.quality_score || 0.88) * 100);
+                    const isSelected = selectedFaceIds.has(f.id);
 
-                  return (
-                    <div
-                      key={f.id}
-                      className={`group relative bg-white rounded-2xl overflow-hidden border shadow-xs transition-all flex flex-col aspect-square hover:shadow-md ${
-                        isAvatar ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
-                      }`}
-                    >
-                      {/* Image */}
-                      <img
-                        src={f.sample_image_url}
-                        alt="Face vector sample"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-
-                      {/* Top Quality Badge */}
-                      <div className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900/80 text-white font-mono text-[10px] backdrop-blur-xs flex items-center gap-1">
-                        <CheckCircle2
-                          size={10}
-                          className={qualityPercent >= 90 ? 'text-emerald-400' : 'text-amber-400'}
-                        />
-                        {qualityPercent}%
-                      </div>
-
-                      {/* Top Right: Delete Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteFace(f.id);
-                        }}
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-600/90 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-sm cursor-pointer"
-                        title={t('gallery.deletePhoto')}
+                    return (
+                      <div
+                        key={f.id}
+                        className={`group relative bg-white rounded-2xl overflow-hidden border shadow-xs transition-all flex flex-col aspect-square hover:shadow-md ${
+                          isAvatar ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
+                        } ${isSelected ? 'ring-2 ring-orange-500 border-orange-500' : ''}`}
                       >
-                        <Trash2 size={12} />
-                      </button>
+                        {/* Image */}
+                        <img
+                          src={f.sample_image_url}
+                          alt="Face vector sample"
+                          loading="lazy"
+                          onClick={() => {
+                            if (selectionMode) {
+                              const newSet = new Set(selectedFaceIds);
+                              if (newSet.has(f.id)) newSet.delete(f.id);
+                              else newSet.add(f.id);
+                              setSelectedFaceIds(newSet);
+                            } else {
+                              setSelectedPhotoIndex(idx);
+                            }
+                          }}
+                          className={`w-full h-full object-cover transition-transform duration-300 ${
+                            selectionMode ? 'cursor-pointer hover:opacity-80' : 'group-hover:scale-105 cursor-pointer'
+                          } ${isSelected ? 'scale-90 opacity-80 rounded-xl' : ''}`}
+                        />
 
-                      {/* Avatar Star / Badge */}
-                      {isAvatar ? (
-                        <div className="absolute bottom-2 left-2 right-2 py-1 px-2 rounded-xl bg-emerald-600/90 backdrop-blur-xs text-white text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm">
-                          <Star size={11} className="fill-current" />
-                          <span>{t('gallery.currentAvatar')}</span>
+                        {/* Selection Checkmark */}
+                        {selectionMode && (
+                          <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                isSelected
+                                  ? 'bg-orange-500 border-orange-500 text-white'
+                                  : 'border-white/80 bg-black/20'
+                              }`}
+                            >
+                              {isSelected && <CheckCircle2 size={12} />}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Top Quality Badge */}
+                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900/80 text-white font-mono text-[10px] backdrop-blur-xs flex items-center gap-1 pointer-events-none">
+                          <CheckCircle2
+                            size={10}
+                            className={qualityPercent >= 90 ? 'text-emerald-400' : 'text-amber-400'}
+                          />
+                          {qualityPercent}%
                         </div>
-                      ) : (
-                        <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                        {/* Top Right: Delete Button */}
+                        {!selectionMode && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleSetAsAvatar(f.sample_image_url);
+                              handleDeleteFace(f.id);
                             }}
-                            className="flex-1 py-1 px-1.5 rounded-xl bg-slate-900/80 hover:bg-orange-600 backdrop-blur-xs text-white text-[10px] font-bold transition-colors truncate shadow-sm cursor-pointer text-center"
+                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-600/90 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-sm cursor-pointer"
+                            title={t('gallery.deletePhoto')}
                           >
-                            {t('gallery.setAsAvatar')}
+                            <Trash2 size={12} />
                           </button>
-                          <button
-                            onClick={() => setSelectedPhotoIndex(idx)}
-                            className="p-1 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white shadow-sm cursor-pointer"
-                            title={t('gallery.previewPhoto')}
-                          >
-                            <Maximize2 size={12} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center flex flex-col items-center justify-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center">
-                  <Sparkles size={26} />
+                        )}
+
+                        {/* Avatar Star / Badge */}
+                        {isAvatar ? (
+                          <div className="absolute bottom-2 left-2 right-2 py-1 px-2 rounded-xl bg-emerald-600/90 backdrop-blur-xs text-white text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm pointer-events-none">
+                            <Star size={11} className="fill-current" />
+                            <span>{t('gallery.currentAvatar')}</span>
+                          </div>
+                        ) : (
+                          !selectionMode && (
+                            <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSetAsAvatar(f.sample_image_url);
+                                }}
+                                className="flex-1 py-1 px-1.5 rounded-xl bg-slate-900/80 hover:bg-orange-600 backdrop-blur-xs text-white text-[10px] font-bold transition-colors truncate shadow-sm cursor-pointer text-center"
+                              >
+                                {t('gallery.setAsAvatar')}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedPhotoIndex(idx);
+                                }}
+                                className="p-1 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white shadow-sm cursor-pointer"
+                                title={t('gallery.previewPhoto')}
+                              >
+                                <Maximize2 size={12} />
+                              </button>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <h3 className="font-bold text-sm text-slate-800">
-                  {t('members.noFaceSamplesYet')}
-                </h3>
-                <p className="text-xs text-slate-400 max-w-md">
-                  {t('gallery.emptyHint')}
-                </p>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mt-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+
+                {/* Loading More / Intersection Target */}
+                <div
+                  ref={observerTarget}
+                  className="w-full h-14 flex items-center justify-center text-xs text-slate-400 mt-4"
                 >
-                  <Upload size={14} />
-                  {t('gallery.uploadPhotos')}
-                </button>
+                  {isLoadingFaces && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Đang tải thêm...</span>
+                    </div>
+                  )}
+                  {!hasMore && faces.length > 0 && <span>Đã tải hết {totalFaces} ảnh.</span>}
+                </div>
+              </>
+            ) : (
+              !isLoadingFaces && (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center">
+                    <Sparkles size={26} />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-800">
+                    {t('members.noFaceSamplesYet')}
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-md">
+                    {t('gallery.emptyHint')}
+                  </p>
+                </div>
+              )
+            )}
+            
+            {isLoadingFaces && faces.length === 0 && (
+              <div className="flex justify-center p-10">
+                <div className="w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
@@ -403,20 +599,14 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/70 text-xs text-slate-500 shrink-0">
           <div className="flex items-center gap-2 font-medium">
             <Sparkles size={13} className="text-orange-500" />
-            <span>{t('gallery.vectorCount')}: {faces.length * 512} floats</span>
+            <span>{t('gallery.vectorCount')}: {totalFaces * 512} floats</span>
           </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 transition-colors cursor-pointer"
-          >
-            {t('common.cancel')}
-          </button>
         </div>
       </div>
 
       {/* Lightbox Modal */}
       {selectedFace && (
-        <div className="fixed inset-0 bg-black/90 z-60 flex flex-col items-center justify-center p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-black/90 z-[110] flex flex-col items-center justify-center p-4 animate-in fade-in duration-150">
           {/* Lightbox Controls */}
           <div className="absolute top-4 right-4 flex items-center gap-3 text-white z-10">
             {currentAvatarUrl !== selectedFace.sample_image_url && (

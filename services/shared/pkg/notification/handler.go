@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/mq"
 
+	webpush "github.com/SherClockHolmes/webpush-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -193,6 +195,62 @@ func GetVapidPublicKeyHandler(c *gin.Context) {
 	})
 }
 
+func dispatchWebPushToSubscribers(dto NotificationDTO) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	subs, err := database.Client.PushSubscription.Query().All(ctx)
+	if err != nil || len(subs) == 0 {
+		return
+	}
+
+	publicKey := os.Getenv("VAPID_PUBLIC_KEY")
+	if publicKey == "" {
+		publicKey = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U"
+	}
+	privateKey := os.Getenv("VAPID_PRIVATE_KEY")
+	if privateKey == "" {
+		privateKey = "UUxI1x-d-Yv64R_x1A-nO_m7y_3eP6k0G7Q5U-3f8wA"
+	}
+	subscriber := os.Getenv("VAPID_SUBSCRIBER")
+	if subscriber == "" {
+		subscriber = "mailto:admin@quoctran.space"
+	}
+
+	payloadBytes, err := json.Marshal(dto)
+	if err != nil {
+		return
+	}
+
+	for _, sub := range subs {
+		s := &webpush.Subscription{
+			Endpoint: sub.Endpoint,
+			Keys: webpush.Keys{
+				P256dh: sub.P256dh,
+				Auth:   sub.Auth,
+			},
+		}
+
+		resp, err := webpush.SendNotification(payloadBytes, s, &webpush.Options{
+			Subscriber:      subscriber,
+			VAPIDPublicKey:  publicKey,
+			VAPIDPrivateKey: privateKey,
+			TTL:             3600,
+		})
+		if err != nil {
+			log.Printf("[WebPush] Error sending to %s: %v", sub.Endpoint, err)
+			continue
+		}
+		if resp != nil {
+			if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
+				log.Printf("[WebPush] Subscription expired (%d), removing %s", resp.StatusCode, sub.ID)
+				_ = database.Client.PushSubscription.DeleteOneID(sub.ID).Exec(context.Background())
+			}
+			_ = resp.Body.Close()
+		}
+	}
+}
+
 // CreateAndDispatchNotification saves notification, broadcasts to Socket.IO, and triggers Web Push
 func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, body, category, memberID, thumbURL string) (*ent.Notification, error) {
 	n, err := database.Client.Notification.Create().
@@ -225,6 +283,9 @@ func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, 
 	// 1. Broadcast online notification via Socket.IO
 	_ = mq.PublishEvent("notification.new", dto)
 	log.Printf("[Notification] Created in DB (ID: %s) & broadcasted: %s (%s)", n.ID, title, category)
+
+	// 2. Dispatch offline/background Web Push notifications
+	go dispatchWebPushToSubscribers(dto)
 
 	return n, nil
 }

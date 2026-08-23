@@ -616,3 +616,140 @@ func ListAllEmbeddingsInternalHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+// ListMemberFacesHandler returns paginated faces for a specific member
+func ListMemberFacesHandler(c *gin.Context) {
+	memberID := c.Param("id")
+	if memberID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid member ID"})
+		return
+	}
+
+	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "20")
+	sortBy := c.DefaultQuery("sort_by", "created_at")
+	order := c.DefaultQuery("order", "desc")
+
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 20
+	}
+
+	ctx := c.Request.Context()
+	query := database.Client.MemberFace.Query().
+		Where(memberface.MemberID(memberID), memberface.IsActive(true))
+
+	// Sorting
+	if sortBy == "quality_score" {
+		if order == "asc" {
+			query = query.Order(ent.Asc(memberface.FieldQualityScore))
+		} else {
+			query = query.Order(ent.Desc(memberface.FieldQualityScore))
+		}
+	} else { // default to created_at
+		if order == "asc" {
+			query = query.Order(ent.Asc(memberface.FieldCreatedAt))
+		} else {
+			query = query.Order(ent.Desc(memberface.FieldCreatedAt))
+		}
+	}
+
+	total, err := query.Count(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count faces: " + err.Error()})
+		return
+	}
+
+	faces, err := query.
+		Offset((page - 1) * limit).
+		Limit(limit).
+		All(ctx)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch faces: " + err.Error()})
+		return
+	}
+
+	result := make([]FaceItemDTO, 0, len(faces))
+	for _, f := range faces {
+		sampleURL := f.SampleImageURL
+		if strings.HasPrefix(sampleURL, "blob:") {
+			sampleURL = ""
+		}
+		result = append(result, FaceItemDTO{
+			ID:             f.ID,
+			MemberID:       f.MemberID,
+			SampleImageURL: sampleURL,
+			QualityScore:   f.QualityScore,
+			Yaw:            f.Yaw,
+			Pitch:          f.Pitch,
+			BlurScore:      f.BlurScore,
+			CreatedAt:      f.CreatedAt,
+		})
+	}
+
+	totalPages := (total + limit - 1) / limit
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":        result,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": totalPages,
+	})
+}
+
+// BatchDeleteMemberFacesInput represents the request body for batch delete
+type BatchDeleteMemberFacesInput struct {
+	FaceIDs []string `json:"face_ids" binding:"required"`
+}
+
+// BatchDeleteMemberFacesHandler deletes multiple face samples at once
+func BatchDeleteMemberFacesHandler(c *gin.Context) {
+	memberID := c.Param("id")
+	if memberID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid member ID"})
+		return
+	}
+
+	var input BatchDeleteMemberFacesInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		return
+	}
+
+	if len(input.FaceIDs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No face IDs provided"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Soft delete or hard delete depending on schema. Currently using hard delete.
+	_, err := database.Client.MemberFace.Delete().
+		Where(
+			memberface.MemberID(memberID),
+			memberface.IDIn(input.FaceIDs...),
+		).Exec(ctx)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete faces: " + err.Error()})
+		return
+	}
+
+	// Notify vision-service to reload embeddings for this member
+	_ = mq.PublishEvent("member.face.updated", gin.H{"action": "batch_delete_faces", "member_id": memberID})
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Face samples deleted successfully",
+		"count":   len(input.FaceIDs),
+	})
+}
+
