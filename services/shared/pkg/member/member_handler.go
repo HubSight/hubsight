@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"cctv/shared/ent"
@@ -18,7 +20,6 @@ import (
 	"cctv/shared/pkg/storage"
 
 	"github.com/gin-gonic/gin"
-	"github.com/minio/minio-go/v7"
 )
 
 type CreateMemberInput struct {
@@ -28,10 +29,10 @@ type CreateMemberInput struct {
 }
 
 type UpdateMemberInput struct {
-	Name      string `json:"name"`
-	Role      string `json:"role"`
-	AvatarURL string `json:"avatar_url"`
-	IsActive  *bool  `json:"is_active"`
+	Name      string  `json:"name"`
+	Role      string  `json:"role"`
+	AvatarURL *string `json:"avatar_url"`
+	IsActive  *bool   `json:"is_active"`
 }
 
 type AddFaceInput struct {
@@ -66,11 +67,148 @@ type MemberDTO struct {
 	UpdatedAt time.Time     `json:"updated_at"`
 }
 
-// ListMembersHandler returns all members with their face sample counts
+type PaginatedMembersResponse struct {
+	Data        []MemberDTO `json:"data"`
+	Total       int         `json:"total"`
+	Page        int         `json:"page"`
+	Limit       int         `json:"limit"`
+	TotalPages  int         `json:"total_pages"`
+	FamilyCount int         `json:"family_count"`
+	GuestCount  int         `json:"guest_count"`
+}
+
+// ListMembersHandler returns all members with optional pagination, search, and role filter
 func ListMembersHandler(c *gin.Context) {
 	ctx := c.Request.Context()
-	members, err := database.Client.Member.Query().
-		Where(member.IsActive(true)).
+
+	query := database.Client.Member.Query().Where(member.IsActive(true))
+
+	// Global category counts
+	familyCount, _ := database.Client.Member.Query().
+		Where(member.IsActive(true), member.RoleEQ(member.RoleFamily)).
+		Count(ctx)
+	guestCount, _ := database.Client.Member.Query().
+		Where(member.IsActive(true), member.RoleNEQ(member.RoleFamily)).
+		Count(ctx)
+
+	// Optional search filter
+	if search := strings.TrimSpace(c.Query("search")); search != "" {
+		query = query.Where(member.NameContainsFold(search))
+	}
+
+	// Optional role filter
+	if role := strings.TrimSpace(c.Query("role")); role != "" && role != "all" {
+		if role == "family" {
+			query = query.Where(member.RoleEQ(member.RoleFamily))
+		} else if role == "neighbor" {
+			query = query.Where(member.RoleNEQ(member.RoleFamily))
+		} else {
+			query = query.Where(member.RoleEQ(member.Role(role)))
+		}
+	}
+
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+
+	// If pagination parameters are provided, perform paginated query
+	if pageStr != "" || limitStr != "" || c.Query("search") != "" || c.Query("role") != "" {
+		page, _ := strconv.Atoi(pageStr)
+		if page <= 0 {
+			page = 1
+		}
+		limit, _ := strconv.Atoi(limitStr)
+		if limit <= 0 {
+			limit = 10
+		}
+
+		total, err := query.Count(ctx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count members: " + err.Error()})
+			return
+		}
+
+		members, err := query.
+			WithFaces(func(q *ent.MemberFaceQuery) {
+				q.Where(memberface.IsActive(true)).Order(ent.Desc(memberface.FieldCreatedAt))
+			}).
+			Order(ent.Asc(member.FieldCreatedAt)).
+			Offset((page - 1) * limit).
+			Limit(limit).
+			All(ctx)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch members: " + err.Error()})
+			return
+		}
+
+		result := make([]MemberDTO, 0, len(members))
+		for _, m := range members {
+			avatarURL := m.AvatarURL
+			if strings.HasPrefix(avatarURL, "blob:") {
+				avatarURL = ""
+			}
+
+			// If avatar is empty but member has face samples, use the first valid face sample
+			if avatarURL == "" && len(m.Edges.Faces) > 0 {
+				for _, f := range m.Edges.Faces {
+					if f.SampleImageURL != "" && !strings.HasPrefix(f.SampleImageURL, "blob:") {
+						avatarURL = f.SampleImageURL
+						break
+					}
+				}
+			}
+
+			dto := MemberDTO{
+				ID:        m.ID,
+				Name:      m.Name,
+				Role:      string(m.Role),
+				AvatarURL: avatarURL,
+				IsActive:  m.IsActive,
+				FaceCount: len(m.Edges.Faces),
+				CreatedAt: m.CreatedAt,
+				UpdatedAt: m.UpdatedAt,
+			}
+
+			faces := make([]FaceItemDTO, 0, len(m.Edges.Faces))
+			for _, f := range m.Edges.Faces {
+				sampleURL := f.SampleImageURL
+				if strings.HasPrefix(sampleURL, "blob:") {
+					sampleURL = ""
+				}
+				faces = append(faces, FaceItemDTO{
+					ID:             f.ID,
+					MemberID:       f.MemberID,
+					SampleImageURL: sampleURL,
+					QualityScore:   f.QualityScore,
+					Yaw:            f.Yaw,
+					Pitch:          f.Pitch,
+					BlurScore:      f.BlurScore,
+					CreatedAt:      f.CreatedAt,
+				})
+			}
+			dto.Faces = faces
+			result = append(result, dto)
+		}
+
+		totalPages := (total + limit - 1) / limit
+		if totalPages <= 0 {
+			totalPages = 1
+		}
+
+		c.JSON(http.StatusOK, PaginatedMembersResponse{
+			Data:        result,
+			Total:       total,
+			Page:        page,
+			Limit:       limit,
+			TotalPages:  totalPages,
+			FamilyCount: familyCount,
+			GuestCount:  guestCount,
+		})
+		return
+	}
+
+	// Legacy / Unpaginated Fallback: Return raw array
+	members, err := query.
 		WithFaces(func(q *ent.MemberFaceQuery) {
 			q.Where(memberface.IsActive(true)).Order(ent.Desc(memberface.FieldCreatedAt))
 		}).
@@ -84,11 +222,25 @@ func ListMembersHandler(c *gin.Context) {
 
 	result := make([]MemberDTO, 0, len(members))
 	for _, m := range members {
+		avatarURL := m.AvatarURL
+		if strings.HasPrefix(avatarURL, "blob:") {
+			avatarURL = ""
+		}
+
+		if avatarURL == "" && len(m.Edges.Faces) > 0 {
+			for _, f := range m.Edges.Faces {
+				if f.SampleImageURL != "" && !strings.HasPrefix(f.SampleImageURL, "blob:") {
+					avatarURL = f.SampleImageURL
+					break
+				}
+			}
+		}
+
 		dto := MemberDTO{
 			ID:        m.ID,
 			Name:      m.Name,
 			Role:      string(m.Role),
-			AvatarURL: m.AvatarURL,
+			AvatarURL: avatarURL,
 			IsActive:  m.IsActive,
 			FaceCount: len(m.Edges.Faces),
 			CreatedAt: m.CreatedAt,
@@ -97,10 +249,14 @@ func ListMembersHandler(c *gin.Context) {
 
 		faces := make([]FaceItemDTO, 0, len(m.Edges.Faces))
 		for _, f := range m.Edges.Faces {
+			sampleURL := f.SampleImageURL
+			if strings.HasPrefix(sampleURL, "blob:") {
+				sampleURL = ""
+			}
 			faces = append(faces, FaceItemDTO{
 				ID:             f.ID,
 				MemberID:       f.MemberID,
-				SampleImageURL: f.SampleImageURL,
+				SampleImageURL: sampleURL,
 				QualityScore:   f.QualityScore,
 				Yaw:            f.Yaw,
 				Pitch:          f.Pitch,
@@ -133,10 +289,15 @@ func CreateMemberHandler(c *gin.Context) {
 		role = member.RoleStaff
 	}
 
+	avatarURL := input.AvatarURL
+	if strings.HasPrefix(avatarURL, "blob:") {
+		avatarURL = ""
+	}
+
 	m, err := database.Client.Member.Create().
 		SetName(input.Name).
 		SetRole(role).
-		SetAvatarURL(input.AvatarURL).
+		SetAvatarURL(avatarURL).
 		Save(c.Request.Context())
 
 	if err != nil {
@@ -188,8 +349,12 @@ func UpdateMemberHandler(c *gin.Context) {
 			updater.SetRole(member.RoleStaff)
 		}
 	}
-	if input.AvatarURL != "" {
-		updater.SetAvatarURL(input.AvatarURL)
+	if input.AvatarURL != nil {
+		avatarURL := *input.AvatarURL
+		if strings.HasPrefix(avatarURL, "blob:") {
+			avatarURL = ""
+		}
+		updater.SetAvatarURL(avatarURL)
 	}
 	if input.IsActive != nil {
 		updater.SetIsActive(*input.IsActive)
@@ -237,7 +402,7 @@ func DeleteMemberHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Member deleted successfully"})
 }
 
-// UploadFaceImageHandler uploads an image file to S3 and returns the URL
+// UploadFaceImage uploads an image file to S3 and returns the presigned URL
 func UploadFaceImage(ctx context.Context, file *multipart.FileHeader, memberID string) (string, error) {
 	if storage.S3Client == nil {
 		return "", fmt.Errorf("S3 client not initialized")
@@ -255,15 +420,73 @@ func UploadFaceImage(ctx context.Context, file *multipart.FileHeader, memberID s
 	}
 	objName := fmt.Sprintf("faces/%s/%s%s", memberID, nanoid.New(), ext)
 
-	_, err = storage.S3Client.PutObject(ctx, storage.S3Bucket, objName, src, file.Size, minio.PutObjectOptions{
-		ContentType: file.Header.Get("Content-Type"),
-	})
+	return storage.UploadObject(ctx, objName, src, file.Size, file.Header.Get("Content-Type"))
+}
+
+// UploadImageHandler handles multipart image uploads (avatars, face portraits) to S3 and returns presigned S3 URL
+func UploadImageHandler(c *gin.Context) {
+	file, err := c.FormFile("file")
 	if err != nil {
-		return "", err
+		file, err = c.FormFile("avatar")
+		if err != nil {
+			file, err = c.FormFile("image")
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required"})
+				return
+			}
+		}
 	}
 
-	// Generate clean public or internal URL
-	return fmt.Sprintf("/api/archive/faces/%s", objName), nil
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to open image file: " + err.Error()})
+		return
+	}
+	defer src.Close()
+
+	ext := filepath.Ext(file.Filename)
+	if ext == "" {
+		ext = ".jpg"
+	}
+
+	folder := c.DefaultQuery("folder", "avatars")
+	objName := fmt.Sprintf("%s/%s%s", folder, nanoid.New(), ext)
+
+	presignedURL, err := storage.UploadObject(c.Request.Context(), objName, src, file.Size, file.Header.Get("Content-Type"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload to S3: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"url":         presignedURL,
+		"object_name": objName,
+	})
+}
+
+// GetPresignedUploadURLHandler returns a presigned PUT URL for client-side direct upload to S3
+func GetPresignedUploadURLHandler(c *gin.Context) {
+	ext := c.DefaultQuery("ext", ".jpg")
+	folder := c.DefaultQuery("folder", "avatars")
+	objName := fmt.Sprintf("%s/%s%s", folder, nanoid.New(), ext)
+
+	uploadURL, err := storage.PresignedPutObjectURL(c.Request.Context(), objName, time.Minute*15)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate presigned upload URL: " + err.Error()})
+		return
+	}
+
+	getURL, err := storage.PresignedGetObjectURL(c.Request.Context(), objName, time.Hour*24*7)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate presigned get URL: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"upload_url":  uploadURL,
+		"get_url":     getURL,
+		"object_name": objName,
+	})
 }
 
 // AddMemberFaceHandler adds a new face sample embedding

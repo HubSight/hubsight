@@ -51,6 +51,10 @@ func New() *gin.Engine {
 			// Members endpoints
 			protected.GET("/members", member.ListMembersHandler)
 
+			// Media / Image Upload & Presigned URL endpoints
+			protected.POST("/upload/image", member.UploadImageHandler)
+			protected.GET("/upload/presigned-url", member.GetPresignedUploadURLHandler)
+
 			// Devices endpoints (Read is allowed for all authenticated users)
 			protected.GET("/devices", device.ListDevicesHandler)
 			protected.GET("/cameras", device.ListDevicesHandler)

@@ -4,30 +4,71 @@ import axiosClient from '../api/axiosClient';
 import type { MemberItem } from '../types/member';
 import { MemberCard } from '../components/members/MemberCard';
 import { MemberModal } from '../components/members/MemberModal';
+import { MemberFaceGalleryModal } from '../components/members/MemberFaceGalleryModal';
+import { Pagination } from '../components/common/Pagination';
 import { useTranslation } from '../i18n';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 
 const Members: React.FC = () => {
   const { t } = useTranslation();
   const [members, setMembers] = useState<MemberItem[]>([]);
+  const [totalMembers, setTotalMembers] = useState(0);
+  const [familyCount, setFamilyCount] = useState(0);
+  const [guestCount, setGuestCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'family' | 'neighbor'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberItem | null>(null);
 
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [galleryMember, setGalleryMember] = useState<MemberItem | null>(null);
+
+  // Debounce search query input by 300ms before sending to backend
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset to page 1 whenever debounced search query or role filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, roleFilter]);
+
   const fetchMembers = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await axiosClient.get('/members');
-      setMembers(res.data || []);
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(pageSize),
+      });
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (roleFilter !== 'all') params.append('role', roleFilter);
+
+      const res = await axiosClient.get(`/members?${params.toString()}`);
+      if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        setMembers(res.data.data || []);
+        setTotalMembers(res.data.total || 0);
+        if (res.data.family_count !== undefined) setFamilyCount(res.data.family_count);
+        if (res.data.guest_count !== undefined) setGuestCount(res.data.guest_count);
+      } else if (Array.isArray(res.data)) {
+        setMembers(res.data);
+        setTotalMembers(res.data.length);
+        setFamilyCount(res.data.filter((m: MemberItem) => m.role === 'family').length);
+        setGuestCount(res.data.filter((m: MemberItem) => m.role !== 'family').length);
+      }
     } catch (err) {
       console.error('Failed to fetch members:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, pageSize, debouncedSearch, roleFilter]);
 
   useEffect(() => {
     fetchMembers();
@@ -43,26 +84,28 @@ const Members: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleManageFaces = (member: MemberItem) => {
+    setGalleryMember(member);
+    setIsGalleryOpen(true);
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('members.confirmDelete'))) return;
     try {
       await axiosClient.delete(`/members/${id}`);
-      setMembers((prev) => prev.filter((m) => m.id !== id));
+      fetchMembers();
     } catch (err) {
       console.error('Failed to delete member:', err);
     }
   };
 
-  const filteredMembers = members.filter((m) => {
-    const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
-    if (roleFilter === 'family') return m.role === 'family';
-    if (roleFilter === 'neighbor') return m.role !== 'family';
-    return true;
-  });
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
-  const familyCount = members.filter((m) => m.role === 'family').length;
-  const guestCount = members.filter((m) => m.role !== 'family').length;
+  const handleRoleFilterChange = (filter: 'all' | 'family' | 'neighbor') => {
+    setRoleFilter(filter);
+  };
 
   return (
     <PullToRefresh onRefresh={fetchMembers} className="h-full bg-slate-50/50 overflow-y-auto">
@@ -95,87 +138,91 @@ const Members: React.FC = () => {
         </div>
 
         {/* 4-Color Category Legend Banner */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white border border-emerald-200/80 rounded-2xl p-3.5 flex items-center gap-3">
-            <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0" />
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-800">Nhóm 1: Gia đình</div>
-              <div className="text-[11px] text-emerald-700 font-medium truncate">Thông báo Xanh lá • {familyCount} người</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="bg-white p-4 rounded-2xl border border-emerald-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-800">{t('members.roleFamily')}</div>
+              <div className="text-[11px] text-emerald-600 font-medium">{familyCount} thành viên</div>
             </div>
           </div>
 
-          <div className="bg-white border border-blue-200/80 rounded-2xl p-3.5 flex items-center gap-3">
-            <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0" />
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-800">Nhóm 2: Khách quen / Hàng xóm</div>
-              <div className="text-[11px] text-blue-700 font-medium truncate">Thông báo Xanh dương • {guestCount} người</div>
+          <div className="bg-white p-4 rounded-2xl border border-blue-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <HeartHandshake size={20} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-800">{t('members.roleNeighbor')}</div>
+              <div className="text-[11px] text-blue-600 font-medium">{guestCount} người quen</div>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center gap-3">
-            <span className="w-3.5 h-3.5 rounded-full bg-slate-400 shrink-0" />
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-800">Đang theo dõi</div>
-              <div className="text-[11px] text-slate-500 font-medium truncate">Chờ xác thực • Chưa đủ frame</div>
+          <div className="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+              <Users size={20} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-800">Khách lạ</div>
+              <div className="text-[11px] text-amber-600 font-medium">Tự động phát hiện</div>
             </div>
           </div>
 
-          <div className="bg-white border border-red-200/80 rounded-2xl p-3.5 flex items-center gap-3">
-            <span className="w-3.5 h-3.5 rounded-full bg-red-500 shrink-0" />
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-800">Người lạ</div>
-              <div className="text-[11px] text-red-600 font-medium truncate">Cảnh báo Đỏ • Kích hoạt NVR clip</div>
+          <div className="bg-white p-4 rounded-2xl border border-purple-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+              <Users size={20} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-800">Nhân viên / Shipper</div>
+              <div className="text-[11px] text-purple-600 font-medium">Giao hàng / Dịch vụ</div>
             </div>
           </div>
         </div>
 
-        {/* Toolbar: Search + Role Filter */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Search Box */}
-          <div className="relative w-full sm:w-80 flex items-center">
-            <Search size={16} className="absolute left-3.5 text-slate-400 pointer-events-none z-10" />
+        {/* Filter and Search Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="relative w-full sm:w-80">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               placeholder={t('members.searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl bg-white border border-slate-200 text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-slate-400"
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
             />
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 rounded-2xl w-full sm:w-auto overflow-x-auto">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <button
-              onClick={() => setRoleFilter('all')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              onClick={() => handleRoleFilterChange('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 roleFilter === 'all'
-                  ? 'bg-white text-orange-600 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
             >
-              {t('common.all')} ({members.length})
+              {t('common.all')}
             </button>
             <button
-              onClick={() => setRoleFilter('family')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+              onClick={() => handleRoleFilterChange('family')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 roleFilter === 'family'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
             >
-              <ShieldCheck size={13} />
-              {t('members.roleFamily')} ({familyCount})
+              {t('members.roleFamily')}
             </button>
             <button
-              onClick={() => setRoleFilter('neighbor')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+              onClick={() => handleRoleFilterChange('neighbor')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 roleFilter === 'neighbor'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
             >
-              <HeartHandshake size={13} />
-              {t('members.roleNeighbor')} ({guestCount})
+              {t('members.roleNeighbor')}
             </button>
           </div>
         </div>
@@ -187,18 +234,33 @@ const Members: React.FC = () => {
               <div key={i} className="h-44 bg-white/70 rounded-2xl animate-pulse border border-slate-200" />
             ))}
           </div>
-        ) : filteredMembers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMembers.map((member) => (
-              <MemberCard
-                key={member.id}
-                member={member}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onManageFaces={handleEdit}
-              />
-            ))}
-          </div>
+        ) : members.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {members.map((member) => (
+                <MemberCard
+                  key={member.id}
+                  member={member}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onManageFaces={handleManageFaces}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalMembers}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          </>
         ) : (
           <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center flex flex-col items-center justify-center gap-3">
             <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center">
@@ -219,7 +281,7 @@ const Members: React.FC = () => {
           </div>
         )}
 
-        {/* Modal */}
+        {/* Member Info Modal */}
         <MemberModal
           isOpen={isModalOpen}
           member={selectedMember}
@@ -228,6 +290,17 @@ const Members: React.FC = () => {
             setSelectedMember(null);
           }}
           onSuccess={fetchMembers}
+        />
+
+        {/* Dedicated Full Face Recognition Gallery Workspace Modal */}
+        <MemberFaceGalleryModal
+          isOpen={isGalleryOpen}
+          member={galleryMember}
+          onClose={() => {
+            setIsGalleryOpen(false);
+            setGalleryMember(null);
+          }}
+          onUpdate={fetchMembers}
         />
       </div>
     </PullToRefresh>
