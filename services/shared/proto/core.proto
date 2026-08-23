@@ -25,9 +25,11 @@ message GetFacesRequest {
 }
 
 message FaceVector {
-  string id = 1;
+  string face_id = 1;
   repeated float embedding = 2;
   string member_id = 3;
+  string name = 4;
+  string role = 5;
 }
 
 message GetFacesResponse {

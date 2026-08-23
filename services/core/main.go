@@ -101,15 +101,20 @@ func (s *grpcCoreServer) GetFaces(ctx context.Context, req *pb.GetFacesRequest) 
 		return nil, err
 	}
 
-	var pbFaces []*pb.FaceData
+	var pbFaces []*pb.FaceVector
 	for _, f := range faces {
 		if f.Edges.Member != nil && f.Edges.Member.IsActive {
-			pbFaces = append(pbFaces, &pb.FaceData{
-				FaceId:    f.ID.String(),
-				MemberId:  f.MemberID.String(),
+			// Convert float64 to float32
+			float32Embeds := make([]float32, len(f.Embedding))
+			for i, v := range f.Embedding {
+				float32Embeds[i] = float32(v)
+			}
+			pbFaces = append(pbFaces, &pb.FaceVector{
+				FaceId:    f.ID,
+				MemberId:  f.MemberID,
 				Name:      f.Edges.Member.Name,
 				Role:      string(f.Edges.Member.Role),
-				Embedding: f.Embedding,
+				Embedding: float32Embeds,
 			})
 		}
 	}
