@@ -68,7 +68,8 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 	currentCameraIDs := make(map[string]bool)
 
 	for _, cam := range cameras {
-		if !isNvrEnabled || !cam.IsActive {
+		// Event-based NVR buffering and capture is STRICTLY enabled ONLY if AI is enabled for this camera
+		if !isNvrEnabled || !cam.IsActive || !cam.EnableAi {
 			continue
 		}
 		currentCameraIDs[cam.ID] = true

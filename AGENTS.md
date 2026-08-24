@@ -58,8 +58,12 @@ Connections to `go2rtc` streams are tightly managed to save resources:
    - HTTP/REST for Gateway -> Service.
    - gRPC for high-performance Service -> Service (e.g., `vision` -> `core`).
    - RabbitMQ for async Event Broadcasting (e.g., `core` -> `relay`).
-5. **Deployment**: 
+5. **AI Enablement Rule for Event-based Capture**:
+   - Event-based NVR rolling buffering and capture is **STRICTLY EXCLUSIVE** to cameras where `enable_ai=true` in the Device Management settings.
+   - If a camera has `enable_ai=false`, neither `vision-service` nor `nvr-service` shall ever spawn stream connections, buffer chunks, or execute event capture for that camera.
+6. **Deployment**: 
    - There is ONLY ONE deployment command: `docker compose up -d --build`.
    - Never invent alternative shell scripts or kubernetes manifests unless explicitly requested.
 
 When modifying this repository, read and abide by these rules. Focus on resource efficiency (particularly streaming and AI processes) and keep the frontend strictly coupled to the gateway.
+
