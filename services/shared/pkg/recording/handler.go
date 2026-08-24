@@ -7,10 +7,12 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"cctv/shared/ent"
 	"cctv/shared/pkg/storage"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -103,4 +105,31 @@ func AvailableDaysHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, days)
+}
+
+func ThumbnailHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	rec, err := GetByID(c.Request.Context(), idStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Recording not found"})
+		return
+	}
+
+	ext := filepath.Ext(rec.FilePath)
+	thumbKey := strings.TrimSuffix(rec.FilePath, ext) + "_thumb.jpg"
+
+	expiry := time.Hour * 2
+	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, thumbKey, expiry, nil)
+	if err != nil {
+		log.Printf("Failed to generate thumbnail presigned URL: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get thumbnail"})
+		return
+	}
+
+	c.Redirect(http.StatusFound, presignedURL.String())
 }

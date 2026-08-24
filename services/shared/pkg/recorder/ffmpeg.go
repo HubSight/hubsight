@@ -9,6 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"cctv/shared/pkg/recording"
+	"cctv/shared/pkg/storage"
+
+	"github.com/minio/minio-go/v7"
 )
 
 // RunFFmpegProcess prepares arguments and executes the FFmpeg recording process
@@ -185,6 +190,57 @@ func RunEventFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	// Clean up concat file
 	os.Remove(concatFile)
 
-	log.Printf("[Cam %s] Event clip successfully saved to %s", cfg.CameraID, outPattern)
+	// Generate event thumbnail frame at 2.0s
+	thumbPath := strings.TrimSuffix(outPattern, ".mp4") + "_thumb.jpg"
+	thumbArgs := []string{
+		"-ss", "00:00:02",
+		"-i", outPattern,
+		"-vframes", "1",
+		"-q:v", "3",
+		"-vf", "scale=320:-1",
+		"-y",
+		thumbPath,
+	}
+	thumbCmd := exec.CommandContext(ctx, "ffmpeg", thumbArgs...)
+	if err := thumbCmd.Run(); err != nil {
+		log.Printf("[Cam %s] Thumbnail generation error: %v", cfg.CameraID, err)
+	} else {
+		log.Printf("[Cam %s] Event thumbnail successfully generated: %s", cfg.CameraID, thumbPath)
+	}
+
+	// Upload to S3 and save to database
+	if stat, err := os.Stat(outPattern); err == nil {
+		cameraFolder := SanitizeCameraFolder(cfg.Name, cfg.CameraID)
+		dateFolder := stat.ModTime().Format("2006-01-02")
+		videoObjectKey := fmt.Sprintf("%s/%s/%s", dateFolder, cameraFolder, filepath.Base(outPattern))
+		thumbObjectKey := fmt.Sprintf("%s/%s/%s", dateFolder, cameraFolder, filepath.Base(thumbPath))
+
+		if storage.S3Client != nil {
+			// Upload video
+			if _, err := storage.S3Client.FPutObject(context.Background(), storage.S3Bucket, videoObjectKey, outPattern, minio.PutObjectOptions{
+				ContentType: "video/mp4",
+			}); err == nil {
+				log.Printf("[Cam %s] Uploaded event video to S3: %s", cfg.CameraID, videoObjectKey)
+				os.Remove(outPattern)
+			}
+
+			// Upload thumbnail
+			if _, err := storage.S3Client.FPutObject(context.Background(), storage.S3Bucket, thumbObjectKey, thumbPath, minio.PutObjectOptions{
+				ContentType: "image/jpeg",
+			}); err == nil {
+				log.Printf("[Cam %s] Uploaded event thumbnail to S3: %s", cfg.CameraID, thumbObjectKey)
+				os.Remove(thumbPath)
+			}
+		}
+
+		duration := 35
+		if _, err := recording.Insert(context.Background(), cfg.CameraID, stat.ModTime().Add(-time.Duration(duration)*time.Second), stat.ModTime(), duration, videoObjectKey, stat.Size()); err != nil {
+			log.Printf("[Cam %s] Failed to insert event recording metadata: %v", cfg.CameraID, err)
+		} else {
+			log.Printf("[Cam %s] Event recording metadata saved: %s", cfg.CameraID, videoObjectKey)
+		}
+	}
+
+	log.Printf("[Cam %s] Event clip successfully processed for %s", cfg.CameraID, outPattern)
 	return nil
 }

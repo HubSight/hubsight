@@ -192,6 +192,11 @@ const Playback = () => {
       videoRef.current.currentTime = offsetSeconds;
       videoRef.current.play();
     }
+
+    // Scroll player into view smoothly
+    if (playerContainerRef.current) {
+      playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   };
 
   const handleLoadedMetadata = () => {

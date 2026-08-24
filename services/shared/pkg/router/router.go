@@ -13,6 +13,7 @@ import (
 	"cctv/shared/pkg/nvr"
 	"cctv/shared/pkg/pool"
 	"cctv/shared/pkg/recording"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -88,7 +89,7 @@ func New() *gin.Engine {
 				// Connection Pool & Stream monitor endpoints
 				adminOnly.GET("/pool/status", pool.PoolStatusHandler)
 				adminOnly.POST("/pool/sync", pool.PoolSyncHandler)
-				
+
 				// Global settings
 				adminOnly.GET("/settings", cctvapi.GetSettings)
 				adminOnly.PUT("/settings", cctvapi.UpdateSettings)
@@ -99,6 +100,7 @@ func New() *gin.Engine {
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)
 			protected.GET("/archive/:id/stream", recording.StreamHandler)
+			protected.GET("/archive/:id/thumbnail", recording.ThumbnailHandler)
 
 			// Notification endpoints
 			protected.GET("/notifications", notification.ListNotificationsHandler)
