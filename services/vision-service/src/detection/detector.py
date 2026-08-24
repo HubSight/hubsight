@@ -5,97 +5,11 @@ import numpy as np
 from ultralytics import YOLO
 import logging
 import time
-from collections import defaultdict
-from face_engine import FaceEngine
+from .motion_gate import MotionGate
+from .track_identity import TrackIdentity
+from src.recognition.face_engine import FaceEngine
 
 logger = logging.getLogger(__name__)
-
-class MotionGate:
-    """Lightweight (<0.3ms) motion pre-filter using frame differencing on downscaled image."""
-    def __init__(self, min_motion_pixels=200):
-        self.prev_gray = None
-        self.min_motion_pixels = min_motion_pixels
-
-    def has_motion(self, frame):
-        small = cv2.resize(frame, (160, 90), interpolation=cv2.INTER_NEAREST)
-        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
-
-        if self.prev_gray is None:
-            self.prev_gray = gray
-            return True
-
-        diff = cv2.absdiff(self.prev_gray, gray)
-        _, thresh = cv2.threshold(diff, 20, 255, cv2.THRESH_BINARY)
-        motion_count = cv2.countNonZero(thresh)
-        self.prev_gray = gray
-
-        return motion_count >= self.min_motion_pixels
-
-
-class TrackIdentity:
-    """Tracks identity state across time using multi-frame consensus."""
-    def __init__(self, track_id):
-        self.track_id = track_id
-        self.created_at = time.time()
-        self.last_seen = time.time()
-        self.last_face_infer = 0.0
-        
-        # State: 'verifying' (gray), 'family' (green), 'guest' (blue), 'stranger' (red)
-        self.state = "verifying"
-        self.name = ""
-        self.role = ""
-        self.member_id = None
-        self.confidence = 0.0
-        self.best_similarity = 0.0
-        
-        # Consensus buffer: list of (member_id, name, role, score, is_good)
-        self.match_history = []
-        self.good_eval_count = 0
-        self.is_locked = False
-
-    def update_match(self, member_id, name, role, similarity, is_good):
-        self.last_seen = time.time()
-        if is_good:
-            self.good_eval_count += 1
-            self.match_history.append((member_id, name, role, similarity))
-
-        if self.is_locked:
-            return
-
-        # Multi-frame consensus algorithm:
-        # 1. Count votes for specific members
-        member_votes = defaultdict(list)
-        for mid, mname, mrole, sim in self.match_history:
-            if mid is not None and sim >= 0.58:
-                member_votes[mid].append((mname, mrole, sim))
-
-        # Check if any member has >= 2 strong matches
-        for mid, votes in member_votes.items():
-            if len(votes) >= 2:
-                best_sim = max(v[2] for v in votes)
-                self.member_id = mid
-                self.name = votes[0][0]
-                self.role = votes[0][1] # 'family', 'guest', 'neighbor', 'staff'
-                self.best_similarity = round(best_sim, 2)
-                
-                # Map role to 4-color visual category
-                if self.role == "family":
-                    self.state = "family" # Green (#10b981)
-                else:
-                    self.state = "guest"  # Blue (#3b82f6)
-                self.is_locked = True
-                logger.info(f"[Track {self.track_id}] LOCKED identity: {self.name} ({self.role}) with score {best_sim:.2f}")
-                return
-
-        # If >= 4 good evaluations with no candidate match above 0.45 -> Stranger
-        if self.good_eval_count >= 4 and len(member_votes) == 0:
-            self.state = "stranger" # Red (#ef4444)
-            self.name = "Người lạ"
-            self.role = "stranger"
-            self.is_locked = True
-            logger.info(f"[Track {self.track_id}] LOCKED identity: STRANGER after {self.good_eval_count} clear frames")
-
 
 class PersonDetector:
     def __init__(self, mq_client, face_engine=None, conf_threshold=0.45, iou_threshold=0.5, no_person_timeout=4.0):

@@ -42,3 +42,5 @@ logs/
 *.log
 npm_cache
 .pnpm-store
+
+__pycache__
