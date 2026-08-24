@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	entgo.io/ent v0.14.6
+	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/bluenviron/gohlslib/v2 v2.4.2
 	github.com/bluenviron/gortsplib/v5 v5.6.3
 	github.com/gin-contrib/cors v1.7.7
@@ -13,11 +14,11 @@ require (
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/rabbitmq/amqp091-go v1.14.0
 	golang.org/x/crypto v0.55.0
+	google.golang.org/grpc v1.83.1
 )
 
 require (
 	ariga.io/atlas v0.36.2-0.20250730182955-2c6300d0a3e1 // indirect
-	github.com/SherClockHolmes/webpush-go v1.4.0 // indirect
 	github.com/abema/go-mp4 v1.7.1 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
@@ -86,7 +87,6 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	google.golang.org/grpc v1.83.1 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

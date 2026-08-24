@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"cctv/shared/pkg/pb"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -21,7 +22,7 @@ func GetGrpcClient() pb.PoolServiceClient {
 		if poolGrpcUrl == "" {
 			poolGrpcUrl = "pool-service:50052"
 		}
-		conn, err := grpc.Dial(poolGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(poolGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Fatalf("Failed to connect to pool-service gRPC: %v", err)
 		}
