@@ -149,7 +149,8 @@ export class RelayGateway
         `[Client Authenticated] User: ${authResult.user.username} (Role: ${client.data.role}, Socket: ${client.id})`,
       );
     } catch (error) {
-      this.logger.error(`[Auth Service Error] Failed to validate token for client ${client.id}: ${error.message}`);
+      const errObj = error as Error;
+      this.logger.error(`[Auth Service Error] Failed to validate token for client ${client.id}: ${errObj.message}`);
       client.emit('auth_error', { message: 'Authentication service temporarily unavailable.' });
       client.disconnect(true);
     }
