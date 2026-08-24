@@ -99,12 +99,17 @@ class TrackIdentity:
 
 class PersonDetector:
     def __init__(self, mq_client, face_engine=None, conf_threshold=0.45, iou_threshold=0.5, no_person_timeout=4.0):
-        self.model = YOLO('yolo26n.pt')
+        # We load a custom YOLO model assumed to support person(0), smoke(1), fire(2), weapon(3)
+        model_name = 'yolo-cctv.pt' if os.path.exists('yolo-cctv.pt') else 'yolo26n.pt'
+        self.model = YOLO(model_name)
         self.mq_client = mq_client
         self.face_engine = face_engine or FaceEngine()
         self.conf_threshold = conf_threshold
         self.iou_threshold = iou_threshold
         self.no_person_timeout = no_person_timeout
+        
+        # Danger classes mapping
+        self.danger_classes = {1: 'smoke', 2: 'fire', 3: 'weapon'}
         
         # State machine per camera: cam_id -> {'state', 'last_person_time', 'motion_gate', 'last_boxes', 'tracks'}
         self.camera_states = {}
@@ -131,10 +136,10 @@ class PersonDetector:
         if not is_moving and not person_present:
             return False, []
 
-        # 2. Optimized YOLO Person Tracking with ByteTrack
+        # 2. Optimized YOLO Person & Danger Tracking with ByteTrack
         results = self.model.track(
             source=frame,
-            classes=[0],
+            classes=[0, 1, 2, 3],
             imgsz=(384, 640),
             conf=self.conf_threshold,
             iou=self.iou_threshold,
@@ -152,76 +157,85 @@ class PersonDetector:
             h, w = orig_shape
             
             for box in result.boxes:
-                if int(box.cls[0]) == 0 and float(box.conf[0]) >= self.conf_threshold:
-                    person_detected = True
+                cls_id = int(box.cls[0])
+                conf = round(float(box.conf[0]), 2)
+                
+                if conf >= self.conf_threshold:
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
                     track_id = int(box.id[0]) if box.id is not None else None
-                    conf = round(float(box.conf[0]), 2)
                     
-                    person_norm = (x1/w, y1/h, x2/w, y2/h)
-                    
-                    track_state_obj = None
-                    if track_id is not None:
-                        active_track_ids.add(track_id)
-                        if track_id not in cam['tracks']:
-                            cam['tracks'][track_id] = TrackIdentity(track_id)
-                        track_state_obj = cam['tracks'][track_id]
-                        track_state_obj.last_seen = current_time
+                    # --- Danger Classes (Smoke, Fire, Weapon) ---
+                    if cls_id in self.danger_classes:
+                        danger_type = self.danger_classes[cls_id]
+                        
+                        # We don't track danger objects' identities, just report them
+                        boxes.append({
+                            "x1": round(x1 / w, 4), "y1": round(y1 / h, 4),
+                            "x2": round(x2 / w, 4), "y2": round(y2 / h, 4),
+                            "confidence": conf, "track_id": track_id or 0,
+                            "state": "danger", "name": danger_type.upper(), "role": "danger", "similarity": 1.0
+                        })
+                        
+                        # Throttle notifications for danger to avoid spam (1 per 10s)
+                        danger_key = f"danger_{danger_type}"
+                        last_alert = cam['tracks'].get(danger_key, 0) if isinstance(cam['tracks'].get(danger_key), float) else 0
+                        if current_time - last_alert > 10.0:
+                            cam['tracks'][danger_key] = current_time
+                            self._send_notification(camera_id, camera_name, f"{danger_type}_detected", danger_type.upper(), "danger", "")
+                        
+                        continue
 
-                        # Run Face Recognition at 3 FPS per track if not yet locked
-                        if (not track_state_obj.is_locked or (current_time - track_state_obj.last_face_infer) > 2.0):
-                            if (current_time - track_state_obj.last_face_infer) >= 0.25:
-                                track_state_obj.last_face_infer = current_time
-                                face_results = self.face_engine.extract_face_embeddings(frame, person_norm)
-                                if face_results:
-                                    # Pick the best face in this person box
-                                    best_face = max(face_results, key=lambda f: f.get("quality_score", 0))
-                                    if best_face.get("embedding") is not None:
-                                        mid, name, role, sim = self.face_engine.match_embedding(best_face["embedding"])
-                                        was_locked = track_state_obj.is_locked
-                                        track_state_obj.update_match(mid, name, role, sim, best_face.get("is_good", False))
-                                        
-                                        # When identity is freshly locked, ingest notification via core-service to persist in DB & broadcast
-                                        if not was_locked and track_state_obj.is_locked:
-                                            try:
-                                                payload = {
-                                                    "camera_id": str(camera_id),
-                                                    "camera_name": str(camera_name) if camera_name else f"Camera {camera_id}",
-                                                    "type": "stranger_detected" if track_state_obj.state == "stranger" else "person_identified",
-                                                    "name": track_state_obj.name or "Người lạ",
-                                                    "role": track_state_obj.role or "stranger",
-                                                    "member_id": str(track_state_obj.member_id) if track_state_obj.member_id else "",
-                                                    "thumbnail_url": ""
-                                                }
-                                                core_url = os.getenv("CORE_SERVICE_URL", "http://core-service:8080")
-                                                requests.post(
-                                                    f"{core_url}/api/internal/notifications/ingest",
-                                                    json=payload,
-                                                    timeout=1.5
-                                                )
-                                            except Exception as e:
-                                                logger.error(f"Failed to ingest notification: {e}")
-
-                    # Format box metadata
-                    state_cat = track_state_obj.state if track_state_obj else "verifying"
-                    name_label = track_state_obj.name if track_state_obj else ""
-                    role_label = track_state_obj.role if track_state_obj else ""
-                    
-                    boxes.append({
-                        "x1": round(x1 / w, 4),
-                        "y1": round(y1 / h, 4),
-                        "x2": round(x2 / w, 4),
-                        "y2": round(y2 / h, 4),
-                        "confidence": conf,
-                        "track_id": track_id,
-                        "state": state_cat,    # 'family' (green), 'guest' (blue), 'verifying' (gray), 'stranger' (red)
-                        "name": name_label,     # Member display name or 'Người lạ'
-                        "role": role_label,     # 'family', 'guest', 'neighbor', 'staff', 'stranger'
-                        "similarity": track_state_obj.best_similarity if track_state_obj else 0.0
-                    })
+                    # --- Person Class (0) ---
+                    if cls_id == 0:
+                        person_detected = True
+                        person_norm = (x1/w, y1/h, x2/w, y2/h)
+                        
+                        track_state_obj = None
+                        if track_id is not None:
+                            active_track_ids.add(track_id)
+                            if track_id not in cam['tracks'] or isinstance(cam['tracks'][track_id], float):
+                                cam['tracks'][track_id] = TrackIdentity(track_id)
+                            track_state_obj = cam['tracks'][track_id]
+                            track_state_obj.last_seen = current_time
+    
+                            # Run Face Recognition at 3 FPS per track if not yet locked
+                            if (not track_state_obj.is_locked or (current_time - track_state_obj.last_face_infer) > 2.0):
+                                if (current_time - track_state_obj.last_face_infer) >= 0.25:
+                                    track_state_obj.last_face_infer = current_time
+                                    face_results = self.face_engine.extract_face_embeddings(frame, person_norm)
+                                    if face_results:
+                                        # Pick the best face in this person box
+                                        best_face = max(face_results, key=lambda f: f.get("quality_score", 0))
+                                        if best_face.get("embedding") is not None:
+                                            mid, name, role, sim = self.face_engine.match_embedding(best_face["embedding"])
+                                            was_locked = track_state_obj.is_locked
+                                            track_state_obj.update_match(mid, name, role, sim, best_face.get("is_good", False))
+                                            
+                                            # Identity freshly locked
+                                            if not was_locked and track_state_obj.is_locked:
+                                                # ONLY send notification for strangers.
+                                                # Family members (known identities) do NOT trigger alerts.
+                                                if track_state_obj.state == "stranger":
+                                                    self._send_notification(
+                                                        camera_id, camera_name, "stranger_detected", 
+                                                        track_state_obj.name or "Người lạ", "stranger", ""
+                                                    )
+    
+                        # Format box metadata
+                        state_cat = track_state_obj.state if track_state_obj else "verifying"
+                        name_label = track_state_obj.name if track_state_obj else ""
+                        role_label = track_state_obj.role if track_state_obj else ""
+                        
+                        boxes.append({
+                            "x1": round(x1 / w, 4), "y1": round(y1 / h, 4),
+                            "x2": round(x2 / w, 4), "y2": round(y2 / h, 4),
+                            "confidence": conf, "track_id": track_id,
+                            "state": state_cat, "name": name_label, "role": role_label,
+                            "similarity": track_state_obj.best_similarity if track_state_obj else 0.0
+                        })
         
         # Clean up stale tracks older than 10 seconds
-        stale_tracks = [tid for tid, tobj in cam['tracks'].items() if (current_time - tobj.last_seen) > 10.0]
+        stale_tracks = [k for k, v in cam['tracks'].items() if (isinstance(v, TrackIdentity) and (current_time - v.last_seen) > 10.0)]
         for tid in stale_tracks:
             del cam['tracks'][tid]
 
@@ -242,6 +256,22 @@ class PersonDetector:
                 self._publish_state_change('vision.person.update', camera_id, cam['state'], cam['last_boxes'])
                 
         return person_detected, boxes
+
+    def _send_notification(self, camera_id, camera_name, n_type, name, role, member_id):
+        try:
+            payload = {
+                "camera_id": str(camera_id),
+                "camera_name": str(camera_name) if camera_name else f"Camera {camera_id}",
+                "type": n_type,
+                "name": name,
+                "role": role,
+                "member_id": str(member_id),
+                "thumbnail_url": ""
+            }
+            core_url = os.getenv("CORE_SERVICE_URL", "http://core-service:8080")
+            requests.post(f"{core_url}/api/internal/notifications/ingest", json=payload, timeout=1.5)
+        except Exception as e:
+            logger.error(f"Failed to ingest notification: {e}")
 
     def _publish_state_change(self, event, camera_id, state, boxes):
         payload = {

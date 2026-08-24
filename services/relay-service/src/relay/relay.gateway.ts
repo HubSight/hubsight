@@ -10,7 +10,33 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { JoinRoomDto, LeaveRoomDto, RelayMessageDto } from './dto/relay.dto';
+export class JoinRoomDto {
+  room: string;
+}
+
+export class LeaveRoomDto {
+  room: string;
+}
+
+export class RelayMessageDto {
+  targetRoom?: string;
+  targetSocketId?: string;
+  event: string;
+  payload: any;
+}
+
+export class EmitEventDto {
+  room?: string;
+  socketId?: string;
+  event: string;
+  data: any;
+}
+
+export class BroadcastEventDto {
+  event: string;
+  data: any;
+}
+
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import * as path from 'path';

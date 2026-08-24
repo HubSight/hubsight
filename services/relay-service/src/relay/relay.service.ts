@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RelayGateway } from './relay.gateway';
-import { EmitEventDto, BroadcastEventDto } from './dto/relay.dto';
+import { RelayGateway, EmitEventDto, BroadcastEventDto } from './relay.gateway';
 
 @Injectable()
 export class RelayService {

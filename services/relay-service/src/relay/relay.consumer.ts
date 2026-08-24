@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { RelayService } from './relay.service';
-import { EmitEventDto, BroadcastEventDto } from './dto/relay.dto';
+import { EmitEventDto, BroadcastEventDto } from './relay.gateway';
 
 @Controller()
 export class RelayConsumer {

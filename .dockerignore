@@ -23,3 +23,4 @@ webapp/dist
 services/**/dist
 services/**/bin
 services/**/__pycache__
+.venv

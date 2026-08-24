@@ -26,7 +26,7 @@ func NewManager(outDir string) *RecorderManager {
 
 // Start begins the reconciliation loop and the MQ event listener for event-based recording
 func (m *RecorderManager) Start(ctx context.Context) {
-	log.Println("Starting event-based CCTV Recorder Manager...")
+	log.Println("Starting event-based CCTV Recorder Manager with Zero-CPU Buffering...")
 
 	// Initial sync and periodic DB sync
 	m.reconcile(ctx)
@@ -93,24 +93,40 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 		}
 
 		if !exists {
-			log.Printf("Registered active camera for event-based NVR: %s (ID: %s)", cam.Name, cam.ID)
+			log.Printf("Registered active camera for Zero-CPU NVR Buffering: %s (ID: %s)", cam.Name, cam.ID)
+
+			// Start Continuous Buffer
+			camCtx, cancel := context.WithCancel(parentCtx)
+			go func(cID string) {
+				if err := StartContinuousBuffer(camCtx, cID); err != nil {
+					log.Printf("Continuous buffer exited for cam %s: %v", cID, err)
+				}
+			}(cam.ID)
+
 			m.activeRecorders[cam.ID] = ActiveRecorder{
 				Config: camConfig,
+				Cancel: cancel,
 			}
 		}
 	}
 
-	for id := range m.activeRecorders {
+	for id, active := range m.activeRecorders {
 		if !currentCameraIDs[id] {
-			log.Printf("Camera %s is no longer active. Removing from NVR pool...", id)
+			log.Printf("Camera %s is no longer active. Stopping continuous buffer...", id)
+			if active.Cancel != nil {
+				active.Cancel()
+			}
 			delete(m.activeRecorders, id)
 		}
 	}
 }
 
 func (m *RecorderManager) stopAll() {
-	// Not strictly needed since we don't have long running ffmpeg processes anymore,
-	// but kept for interface consistency.
+	for _, active := range m.activeRecorders {
+		if active.Cancel != nil {
+			active.Cancel()
+		}
+	}
 }
 
 func (m *RecorderManager) listenForEvents(ctx context.Context) {
