@@ -67,7 +67,7 @@ def sync_face_embeddings(face_engine):
         logger.warning(f"Error syncing face embeddings via gRPC: {e}")
 
 def main():
-    logger.info("Starting Vision Service with InsightFace ArcFace & YOLO Tracking (24/7 Background Mode)...")
+    logger.info("Starting Vision Service with InsightFace ArcFace & YOLO Tracking (Event-Driven MQ Mode)...")
     
     # 1. Initialize message broker
     mq_client = RabbitMQClient(RABBITMQ_URL)
@@ -85,20 +85,32 @@ def main():
         process_fps=PROCESS_FPS
     )
     
-    # Initial vector sync
+    # Initial vector sync and camera sync
     sync_face_embeddings(face_engine)
-    last_sync_time = time.time()
+    initial_cams = get_ai_cameras()
+    stream_mgr.reconcile(initial_cams)
     
-    while True:
-        # Periodically refresh vectors every 30s
-        if time.time() - last_sync_time > 30.0:
+    # 4. Start Event-Driven MQ Consumer for instant updates (<10ms response)
+    def on_mq_event(pattern, data):
+        logger.info(f"[MQ Event] Received '{pattern}': {data}")
+        if pattern.startswith("camera."):
+            logger.info("[MQ] Camera configuration changed, reconciling stream workers immediately...")
+            cams = get_ai_cameras()
+            stream_mgr.reconcile(cams)
+        elif pattern.startswith("member.") or pattern.startswith("face."):
+            logger.info("[MQ] Member or face vectors updated, reloading vector database immediately...")
             sync_face_embeddings(face_engine)
-            last_sync_time = time.time()
 
-        cameras = get_ai_cameras()
-        stream_mgr.reconcile(cameras)
-        
-        time.sleep(5)  # Poll every 5s for camera config updates
+    mq_client.start_consumer("vision_queue", on_mq_event)
+    logger.info("[Vision Service] Subscribed to vision_queue. Listening for real-time events.")
+    
+    # 5. Heartbeat backup loop (runs every 30s as safety fallback)
+    while True:
+        time.sleep(30)
+        # Periodic fallback check
+        cams = get_ai_cameras()
+        stream_mgr.reconcile(cams)
 
 if __name__ == "__main__":
     main()
+

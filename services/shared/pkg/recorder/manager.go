@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 
 	"cctv/shared/pkg/database"
@@ -30,7 +31,7 @@ func (m *RecorderManager) Start(ctx context.Context) {
 
 	// Initial sync and periodic DB sync
 	m.reconcile(ctx)
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	// Start MQ Listener for event-based recording
@@ -113,7 +114,7 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 
 	for id, active := range m.activeRecorders {
 		if !currentCameraIDs[id] {
-			log.Printf("Camera %s is no longer active. Stopping continuous buffer...", id)
+			log.Printf("Camera %s is no longer active / AI disabled. Stopping continuous buffer...", id)
 			if active.Cancel != nil {
 				active.Cancel()
 			}
@@ -163,7 +164,10 @@ func (m *RecorderManager) listenForEvents(ctx context.Context) {
 				continue
 			}
 
-			if msg.Pattern == "notification.new" && msg.Data.CameraID != "" {
+			if strings.HasPrefix(msg.Pattern, "camera.") {
+				log.Printf("[NVR] Camera settings changed (%s), reconciling active recorders immediately...", msg.Pattern)
+				m.reconcile(ctx)
+			} else if msg.Pattern == "notification.new" && msg.Data.CameraID != "" {
 				m.handleEventTrigger(ctx, msg.Data.CameraID)
 			}
 		}

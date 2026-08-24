@@ -132,11 +132,20 @@ func PublishToQueue(queueName, pattern string, data interface{}) error {
 	)
 }
 
-// PublishCameraEvent publishes camera lifecycle events to both relay_queue and pool_queue
+// PublishCameraEvent publishes camera lifecycle events to relay_queue, pool_queue, vision_queue, and nvr_recorder_queue
 func PublishCameraEvent(pattern string, data interface{}) {
 	_ = PublishToQueue("relay_queue", pattern, data)
 	_ = PublishToQueue("pool_queue", pattern, data)
-	log.Printf("[MQ] Broadcasted camera event to relay and pool: %s", pattern)
+	_ = PublishToQueue("vision_queue", pattern, data)
+	_ = PublishToQueue("nvr_recorder_queue", pattern, data)
+	log.Printf("[MQ] Broadcasted camera event: %s", pattern)
+}
+
+// PublishMemberEvent publishes member/face updates to relay_queue and vision_queue
+func PublishMemberEvent(pattern string, data interface{}) {
+	_ = PublishToQueue("relay_queue", pattern, data)
+	_ = PublishToQueue("vision_queue", pattern, data)
+	log.Printf("[MQ] Broadcasted member/face event: %s", pattern)
 }
 
 // Close closes the RabbitMQ connection and channel.

@@ -305,7 +305,7 @@ func CreateMemberHandler(c *gin.Context) {
 		return
 	}
 
-	_ = mq.PublishEvent("member.face.updated", gin.H{"action": "create", "member_id": m.ID})
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "create", "member_id": m.ID})
 
 	c.JSON(http.StatusCreated, MemberDTO{
 		ID:        m.ID,
@@ -366,7 +366,7 @@ func UpdateMemberHandler(c *gin.Context) {
 		return
 	}
 
-	_ = mq.PublishEvent("member.face.updated", gin.H{"action": "update", "member_id": m.ID})
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "update", "member_id": m.ID})
 
 	c.JSON(http.StatusOK, MemberDTO{
 		ID:        m.ID,
@@ -397,7 +397,7 @@ func DeleteMemberHandler(c *gin.Context) {
 		return
 	}
 
-	_ = mq.PublishEvent("member.face.updated", gin.H{"action": "delete", "member_id": id})
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "delete", "member_id": id})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Member deleted successfully"})
 }
@@ -531,7 +531,7 @@ func AddMemberFaceHandler(c *gin.Context) {
 		}
 	}
 
-	_ = mq.PublishEvent("member.face.updated", gin.H{"action": "add_face", "member_id": memberID, "face_id": face.ID})
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "add_face", "member_id": memberID, "face_id": face.ID})
 
 	c.JSON(http.StatusCreated, FaceItemDTO{
 		ID:             face.ID,
@@ -567,18 +567,18 @@ func DeleteMemberFaceHandler(c *gin.Context) {
 		return
 	}
 
-	_ = mq.PublishEvent("member.face.updated", gin.H{"action": "delete_face", "member_id": memberID, "face_id": faceID})
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "delete_face", "member_id": memberID, "face_id": faceID})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Face sample deleted successfully"})
 }
 
 // EmbeddingSyncDTO represents vector dataset for vision-service
 type EmbeddingSyncDTO struct {
-	MemberID  string      `json:"member_id"`
-	Name      string      `json:"name"`
-	Role      string      `json:"role"`
-	Embedding []float64   `json:"embedding"`
-	FaceID    string      `json:"face_id"`
+	MemberID  string    `json:"member_id"`
+	Name      string    `json:"name"`
+	Role      string    `json:"role"`
+	Embedding []float64 `json:"embedding"`
+	FaceID    string    `json:"face_id"`
 }
 
 // ListAllEmbeddingsInternalHandler is called by vision-service to load embeddings into RAM
@@ -745,11 +745,10 @@ func BatchDeleteMemberFacesHandler(c *gin.Context) {
 	}
 
 	// Notify vision-service to reload embeddings for this member
-	_ = mq.PublishEvent("member.face.updated", gin.H{"action": "batch_delete_faces", "member_id": memberID})
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "batch_delete_faces", "member_id": memberID})
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Face samples deleted successfully",
 		"count":   len(input.FaceIDs),
 	})
 }
-
