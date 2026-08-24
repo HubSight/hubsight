@@ -102,3 +102,54 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 
 	return nil
 }
+
+// RunEventFFmpegProcess prepares arguments and executes a short FFmpeg capture based on an event
+func RunEventFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
+	err := os.MkdirAll(cfg.OutDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	// Output format for event snippet
+	outPattern := filepath.Join(cfg.OutDir, fmt.Sprintf("cam%s_event_%%Y%%m%%d_%%H%%M%%S.mp4", cfg.CameraID))
+
+	args := []string{}
+
+	// Connection and analysis timeouts
+	args = append(args, "-timeout", "5000000", "-analyzeduration", "5000000", "-probesize", "5000000")
+
+	// RTSP Input URL - For NVR event capture, we read from the pool-service Connection #1 (cam_{id}_nvr)
+	// Webrtc-service internal RTSP server exposes this stream natively via :8554
+	go2rtcUrl := fmt.Sprintf("rtsp://webrtc-service:8554/cam_%s_nvr", cfg.CameraID)
+	args = append(args, "-i", go2rtcUrl)
+
+	// Since we are capturing from go2rtc, the stream is already in the right format
+	// But we use ultra-fast transcoding to 720p15 to save space
+	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "15")
+
+	// Audio Handling (go2rtc usually provides opus or copy)
+	switch cfg.AudioMode {
+	case "disabled", "none":
+		args = append(args, "-an")
+	default:
+		args = append(args, "-c:a", "aac", "-b:a", "128k")
+	}
+
+	// 30 second capture limit per event
+	args = append(args, "-t", "30")
+	args = append(args, "-f", "segment", "-segment_time", "30", "-strftime", "1")
+
+	// Target output file pattern
+	args = append(args, outPattern)
+
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
+	log.Printf("[Cam %s] Running Event FFmpeg: %s", cfg.CameraID, strings.Join(cmd.Args, " "))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}

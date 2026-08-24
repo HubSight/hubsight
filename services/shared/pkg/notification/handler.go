@@ -282,6 +282,7 @@ func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, 
 
 	// 1. Broadcast online notification via Socket.IO
 	_ = mq.PublishEvent("notification.new", dto)
+	_ = mq.PublishToQueue("nvr_recorder_queue", "notification.new", dto)
 	log.Printf("[Notification] Created in DB (ID: %s) & broadcasted: %s (%s)", n.ID, title, category)
 
 	// 2. Dispatch offline/background Web Push notifications
@@ -325,4 +326,3 @@ func IngestVisionEventHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
-

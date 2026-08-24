@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cctv/pool-service/pkg/pool"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -20,8 +21,8 @@ type CameraEventPayload struct {
 }
 
 type EventMessage struct {
-	Pattern string             `json:"pattern"`
-	Data    CameraEventPayload `json:"data"`
+	Pattern string          `json:"pattern"`
+	Data    json.RawMessage `json:"data"`
 }
 
 type Subscriber struct {
@@ -118,18 +119,28 @@ func (s *Subscriber) listenLoop(ctx context.Context) error {
 	}
 }
 
-func (s *Subscriber) handleEvent(ctx context.Context, pattern string, data CameraEventPayload) {
-	log.Printf("[Pool Events] Received event '%s' for camera ID %s (%s)", pattern, data.ID, data.Name)
+func (s *Subscriber) handleEvent(ctx context.Context, pattern string, data json.RawMessage) {
+	log.Printf("[Pool Events] Received event pattern '%s'", pattern)
 
 	switch pattern {
 	case "camera.created", "camera.updated", "camera.toggled", "camera.sync":
-		if data.ID != "" {
-			_ = s.manager.UpsertCamera(ctx, data.ID, data.Name, data.Host, data.IsActive, data.EnableAI)
+		var camData CameraEventPayload
+		if err := json.Unmarshal(data, &camData); err == nil && camData.ID != "" {
+			_ = s.manager.UpsertCamera(ctx, camData.ID, camData.Name, camData.Host, camData.IsActive, camData.EnableAI)
 		}
 
 	case "camera.deleted":
-		if data.ID != "" {
-			s.manager.DeleteCamera(ctx, data.ID)
+		var camData CameraEventPayload
+		if err := json.Unmarshal(data, &camData); err == nil && camData.ID != "" {
+			s.manager.DeleteCamera(ctx, camData.ID)
+		}
+
+	case "nvr.status.update":
+		var nvrData struct {
+			IsGlobalEnabled bool `json:"is_global_enabled"`
+		}
+		if err := json.Unmarshal(data, &nvrData); err == nil {
+			s.manager.UpdateNVRStatus(ctx, nvrData.IsGlobalEnabled)
 		}
 
 	default:

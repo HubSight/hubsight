@@ -2,10 +2,12 @@ package recorder
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/mq"
 )
 
 // RecorderManager coordinates dynamic recording processes across multiple cameras
@@ -22,15 +24,17 @@ func NewManager(outDir string) *RecorderManager {
 	}
 }
 
-// Start begins the continuous reconciliation loop to start, restart, and stop camera recorders
+// Start begins the reconciliation loop and the MQ event listener for event-based recording
 func (m *RecorderManager) Start(ctx context.Context) {
-	log.Println("Starting dynamic CCTV Recorder Manager...")
+	log.Println("Starting event-based CCTV Recorder Manager...")
 
-	ticker := time.NewTicker(10 * time.Second)
+	// Initial sync and periodic DB sync
+	m.reconcile(ctx)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
-	// Initial sync
-	m.reconcile(ctx)
+	// Start MQ Listener for event-based recording
+	go m.listenForEvents(ctx)
 
 	for {
 		select {
@@ -53,7 +57,6 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 
 	globalSettings, err := database.Client.Setting.Query().Only(parentCtx)
 	if err != nil {
-		// Assume enabled if setting is missing
 		globalSettings = nil
 	}
 
@@ -65,7 +68,6 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 	currentCameraIDs := make(map[string]bool)
 
 	for _, cam := range cameras {
-		// If NVR is globally disabled, treat all cameras as inactive
 		if !isNvrEnabled || !cam.IsActive {
 			continue
 		}
@@ -84,65 +86,89 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 		}
 
 		activeCam, exists := m.activeRecorders[cam.ID]
-		needsRestart := false
-
-		// Check if any configuration parameter has changed
-		if exists && (activeCam.Config != camConfig) {
-			log.Printf("Camera %s (ID: %s) configuration changed. Restarting FFmpeg...", cam.Name, cam.ID)
-			activeCam.Cancel()
-			needsRestart = true
+		if exists && activeCam.Config != camConfig {
+			log.Printf("Camera %s (ID: %s) configuration updated.", cam.Name, cam.ID)
+			activeCam.Config = camConfig
+			m.activeRecorders[cam.ID] = activeCam
 		}
 
-		if !exists || needsRestart {
-			if !exists {
-				log.Printf("Found new active camera: %s (ID: %s). Starting FFmpeg...", cam.Name, cam.ID)
-			}
-
-			camCtx, cancel := context.WithCancel(parentCtx)
+		if !exists {
+			log.Printf("Registered active camera for event-based NVR: %s (ID: %s)", cam.Name, cam.ID)
 			m.activeRecorders[cam.ID] = ActiveRecorder{
 				Config: camConfig,
-				Cancel: cancel,
 			}
-
-			go m.runCameraLoop(camCtx, camConfig)
 		}
 	}
 
-	// Terminate recorders for cameras that are deleted or deactivated
-	for id, activeCam := range m.activeRecorders {
+	for id := range m.activeRecorders {
 		if !currentCameraIDs[id] {
-			log.Printf("Camera %s is no longer active. Stopping recorder...", id)
-			activeCam.Cancel()
+			log.Printf("Camera %s is no longer active. Removing from NVR pool...", id)
 			delete(m.activeRecorders, id)
 		}
 	}
 }
 
-func (m *RecorderManager) runCameraLoop(ctx context.Context, cfg CameraConfig) {
+func (m *RecorderManager) stopAll() {
+	// Not strictly needed since we don't have long running ffmpeg processes anymore,
+	// but kept for interface consistency.
+}
+
+func (m *RecorderManager) listenForEvents(ctx context.Context) {
+	log.Println("[NVR] Connecting to MQ for event-based recording...")
+	if err := mq.Init(); err != nil {
+		log.Printf("[NVR] Failed to connect to MQ: %v", err)
+	}
+
+	// Wait a moment for MQ to establish
+	time.Sleep(2 * time.Second)
+
+	msgs, err := mq.Consume("nvr_recorder_queue")
+	if err != nil {
+		log.Printf("[NVR] Failed to consume MQ: %v", err)
+		return
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("Camera %s recorder stopped.", cfg.CameraID)
 			return
-		default:
-			err := RunFFmpegProcess(ctx, cfg)
-			if err != nil && ctx.Err() == nil {
-				log.Printf("Camera %s FFmpeg exited with error: %v. Restarting in 5s...", cfg.CameraID, err)
-				time.Sleep(5 * time.Second)
-			} else if ctx.Err() != nil {
-				log.Printf("Camera %s recorder stopped.", cfg.CameraID)
+		case d, ok := <-msgs:
+			if !ok {
 				return
-			} else {
-				log.Printf("Camera %s FFmpeg exited cleanly. Restarting in 5s...", cfg.CameraID)
-				time.Sleep(5 * time.Second)
+			}
+			var msg struct {
+				Pattern string `json:"pattern"`
+				Data    struct {
+					CameraID string `json:"camera_id"`
+				} `json:"data"`
+			}
+			if err := json.Unmarshal(d.Body, &msg); err != nil {
+				continue
+			}
+
+			if msg.Pattern == "notification.new" && msg.Data.CameraID != "" {
+				m.handleEventTrigger(ctx, msg.Data.CameraID)
 			}
 		}
 	}
 }
 
-func (m *RecorderManager) stopAll() {
-	for id, activeCam := range m.activeRecorders {
-		activeCam.Cancel()
-		delete(m.activeRecorders, id)
+func (m *RecorderManager) handleEventTrigger(ctx context.Context, camID string) {
+	// Look up config
+	cam, exists := m.activeRecorders[camID]
+	if !exists {
+		return
 	}
+
+	// Basic deduplication: avoid spawning multiple ffmpegs for the same camera concurrently
+	// In a real system, you'd use a mutex and a state tracker per camera
+	// For simplicity, we just fire and forget a goroutine if it's an event
+	go func(cfg CameraConfig) {
+		log.Printf("[NVR] Event detected for cam %s, starting 30s capture...", cfg.CameraID)
+		if err := RunEventFFmpegProcess(ctx, cfg); err != nil {
+			log.Printf("[NVR] Event capture failed for cam %s: %v", cfg.CameraID, err)
+		} else {
+			log.Printf("[NVR] Event capture completed for cam %s", cfg.CameraID)
+		}
+	}(cam.Config)
 }

@@ -86,7 +86,7 @@ func PublishEvent(pattern string, data interface{}) error {
 		log.Printf("Failed to publish event %s: %v", pattern, err)
 		return err
 	}
-	
+
 	log.Printf("Published MQ event: %s", pattern)
 	return nil
 }
@@ -147,4 +147,35 @@ func Close() {
 	if conn != nil {
 		conn.Close()
 	}
+}
+
+// Consume subscribes to a specific queue and returns a channel of deliveries
+func Consume(queueName string) (<-chan amqp.Delivery, error) {
+	if ch == nil {
+		if err := Init(); err != nil {
+			return nil, err
+		}
+	}
+
+	q, err := ch.QueueDeclare(
+		queueName,
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ch.Consume(
+		q.Name,
+		"",    // consumer tag
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,
+	)
 }

@@ -35,14 +35,21 @@ func NewGo2RTCClient() *Go2RTCClient {
 }
 
 // RegisterStream registers or updates dual-source profiles (direct RTSP + FFmpeg Opus) in go2rtc
-func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL string) error {
+func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL string, purpose string) error {
 	srcDirect := rtspURL
 	if !strings.Contains(srcDirect, "#") {
 		srcDirect = fmt.Sprintf("%s#backchannel=0#transport=tcp", srcDirect)
 	} else if !strings.Contains(srcDirect, "transport=") {
 		srcDirect = fmt.Sprintf("%s#transport=tcp", srcDirect)
 	}
-	srcFfmpeg := fmt.Sprintf("ffmpeg:%s#audio=opus", rtspURL)
+
+	var srcFfmpeg string
+	if purpose == "cv" {
+		// 640p 5FPS, no audio for CV
+		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#video=h264#width=640#framerate=5#audio=none", rtspURL)
+	} else {
+		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#audio=opus", rtspURL)
+	}
 
 	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s&src=%s",
 		c.BaseURL,

@@ -9,12 +9,13 @@ type StreamPurpose string
 
 const (
 	PurposeCV   StreamPurpose = "cv"   // Connection #0 dedicated for Computer Vision processing
-	PurposeLive StreamPurpose = "live" // Connections #1..N for WebRTC clients (Max 5 per conn)
+	PurposeNVR  StreamPurpose = "nvr"  // Connection #1 dedicated for NVR recording
+	PurposeLive StreamPurpose = "live" // Connections #2..N for WebRTC clients (Max 5 per conn)
 )
 
 // StreamConnection represents an active RTSP/Media stream in the pool
 type StreamConnection struct {
-	ID          string        `json:"id"`           // e.g. "cam_1_cv" (Conn #0), "cam_1_live_1" (Conn #1)
+	ID          string        `json:"id"` // e.g. "cam_1_cv" (Conn #0), "cam_1_live_1" (Conn #1)
 	CameraID    string        `json:"camera_id"`
 	Index       int           `json:"index"`        // 0: CV dedicated, >= 1: Live pool
 	Purpose     StreamPurpose `json:"purpose"`      // "cv" | "live"
@@ -24,7 +25,7 @@ type StreamConnection struct {
 	MaxUsers    int           `json:"max_users"`    // 5 for live, 1 for CV
 	CreatedAt   time.Time     `json:"created_at"`
 	LastUsedAt  time.Time     `json:"last_used_at"`
-	Status      string        `json:"status"`       // "active" | "idle" | "error"
+	Status      string        `json:"status"` // "active" | "idle" | "error"
 }
 
 // CameraPool holds the pool state and connections for a single camera
@@ -34,7 +35,8 @@ type CameraPool struct {
 	Host          string                       `json:"host"`
 	IsActive      bool                         `json:"is_active"`
 	EnableAI      bool                         `json:"enable_ai"`
-	CVConnection  *StreamConnection            `json:"cv_connection"` // Connection #0 (Always active for CV)
+	CVConnection  *StreamConnection            `json:"cv_connection"`  // Connection #0 (Always active for CV)
+	NVRConnection *StreamConnection            `json:"nvr_connection"` // Connection #1 (Active if NVR enabled globally)
 	LivePool      map[string]*StreamConnection `json:"live_pool"`      // Map of stream_name -> StreamConnection
 	NextLiveIndex int                          `json:"next_live_index"`
 	mu            sync.RWMutex
@@ -53,6 +55,7 @@ type PoolStatusSummary struct {
 	TotalCameras       int           `json:"total_cameras"`
 	ActiveCameras      int           `json:"active_cameras"`
 	TotalCVStreams     int           `json:"total_cv_streams"`
+	TotalNVRStreams    int           `json:"total_nvr_streams"`
 	TotalLiveStreams   int           `json:"total_live_streams"`
 	TotalActiveViewers int           `json:"total_active_viewers"`
 	Cameras            []*CameraPool `json:"cameras"`
