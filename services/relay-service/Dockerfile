@@ -3,34 +3,40 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Install ts-proto and grpc tools
-RUN apk add --no-cache protoc
+# Enable pnpm via corepack & install protoc for gRPC proto compilation
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV CI=true
+RUN corepack enable && corepack prepare pnpm@latest --activate && \
+    apk add --no-cache protoc
 
-COPY services/relay-service/package.json services/relay-service/package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm install
+COPY services/relay-service/package.json services/relay-service/pnpm-lock.yaml* services/relay-service/pnpm-workspace.yaml* services/relay-service/.npmrc* ./
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 COPY services/relay-service .
 COPY services/shared/proto ./proto
 
-# We do not strictly need to generate ts files if we use @grpc/proto-loader,
-# but using ts-proto provides type safety. Let's install it and generate.
-RUN npm install -g ts-proto && \
-    mkdir -p src/pb && \
-    protoc --plugin=protoc-gen-ts_proto=$(which protoc-gen-ts_proto) \
+# Generate TypeScript definitions from proto files using ts-proto
+RUN mkdir -p src/pb && \
+    protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto \
            --ts_proto_out=src/pb \
            --ts_proto_opt=nestJs=true \
            -I=./proto ./proto/*.proto
 
-RUN npm run build
+RUN pnpm run build
 
 FROM node:24-alpine AS runner
 
 WORKDIR /app
 
-COPY services/relay-service/package.json services/relay-service/package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm install --omit=dev
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY services/relay-service/package.json services/relay-service/pnpm-lock.yaml* services/relay-service/pnpm-workspace.yaml* services/relay-service/.npmrc* ./
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --prod --frozen-lockfile
 
 COPY --from=builder /app/dist ./dist
 # Also copy the raw proto files just in case @grpc/proto-loader needs them at runtime
