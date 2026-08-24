@@ -27,7 +27,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go build -ldflags="-s -w" -trimpath -o /app/dist/recorder main.go
 
-FROM alpine:latest
+# Pinned Alpine version for reproducible builds
+FROM alpine:3.21
 WORKDIR /app
+# ffmpeg: required by nvr-service to encode/stitch video event clips and extract thumbnails
+# ca-certificates: required for HTTPS calls to S3 (MinIO) presigned URLs
+RUN apk add --no-cache ffmpeg ca-certificates
 COPY --from=builder /app/dist/recorder /app/recorder
 CMD ["/app/recorder"]

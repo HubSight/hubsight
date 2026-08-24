@@ -39,8 +39,9 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go build -ldflags="-s -w" -trimpath -o /app/dist/pool main.go
 
-FROM alpine:latest
+FROM alpine:3.21
 WORKDIR /app
+RUN apk add --no-cache ca-certificates
 COPY --from=builder /app/dist/pool /app/pool
 EXPOSE 8085
 ENV PORT=8085

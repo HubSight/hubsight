@@ -47,8 +47,9 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build -ldflags="-s -w" -trimpath -o /app/dist/gateway main.go
 
 # Stage 3: Final Production Image
-FROM alpine:latest
+FROM alpine:3.21
 WORKDIR /app
+RUN apk add --no-cache ca-certificates
 
 COPY --from=backend-builder /app/dist/gateway /app/gateway
 COPY --from=frontend-builder /app/dist /app/public
