@@ -58,7 +58,7 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full flex items-center justify-center bg-slate-900 p-4 sm:p-6 pt-safe pb-safe pl-safe pr-safe font-sans text-slate-800 overflow-y-auto select-none">
+    <div className="relative min-h-[100dvh] w-full flex flex-col sm:justify-center sm:items-center bg-slate-900 p-0 sm:p-6 font-sans text-slate-800 overflow-x-hidden overflow-y-auto overscroll-none select-none">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden>
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-[1.03]"
@@ -75,10 +75,9 @@ const Login = () => {
               'radial-gradient(ellipse at 58% 42%, transparent 28%, rgba(15, 23, 42, 0.38) 72%, rgba(15, 23, 42, 0.62) 100%)',
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-slate-900/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-slate-900/20" />
       </div>
 
-      {/* Language Switch Top Right */}
       <div className="absolute top-overlay-safe right-overlay-safe z-20">
         <button
           onClick={handleSwitchLocale}
@@ -89,12 +88,13 @@ const Login = () => {
         </button>
       </div>
 
-      {/* 3. Main Login Card - Touch & Mobile Responsive */}
-      <div className="relative z-10 w-full max-w-[400px] my-auto">
-        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-9 shadow-xl sm:shadow-2xl transition-all">
-          {/* Header */}
-          <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-orange-600 flex items-center justify-center text-white mb-3.5 shadow-sm">
+      <div className="relative z-10 w-full sm:max-w-[400px] flex-1 sm:flex-none flex flex-col min-h-0 pt-[calc(env(safe-area-inset-top,0px)+3.25rem)] sm:pt-0 sm:my-auto">
+        <div className="flex-1 sm:flex-none flex flex-col bg-white/95 backdrop-blur-xl border-t border-slate-200/70 sm:border sm:border-slate-200/80 rounded-t-[1.75rem] sm:rounded-3xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 md:p-9 shadow-[0_-12px_40px_rgba(15,23,42,0.14)] sm:shadow-[0_0_0_0.5px_rgba(15,23,42,0.04),0_1px_1px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.08)]">
+          <div className="sm:hidden flex justify-center pb-3 pt-0.5" aria-hidden>
+            <span className="block w-10 h-1 rounded-full bg-slate-300/90" />
+          </div>
+          <div className="flex flex-col items-center text-center mb-5 sm:mb-8">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-orange-600 flex items-center justify-center text-white mb-3 sm:mb-3.5 shadow-sm">
               <Camera className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">{t('login.title')}</h1>
@@ -109,8 +109,7 @@ const Login = () => {
             </div>
           )}
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 flex-1">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
                 {t('login.username')}
@@ -180,8 +179,7 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Footer inside card */}
-          <div className="pt-4 mt-6 border-t border-slate-100">
+          <div className="pt-4 mt-auto sm:mt-6 border-t border-slate-100">
             <AppFooter className="pb-0 pt-2" />
           </div>
         </div>
