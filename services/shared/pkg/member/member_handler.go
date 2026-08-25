@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -383,6 +384,42 @@ func UpdateMemberHandler(c *gin.Context) {
 	})
 }
 
+// deleteStoredSampleImage removes a member face/avatar object from S3/MinIO.
+// Missing or non-storage URLs are ignored so DB deletion can still proceed.
+func deleteStoredSampleImage(ctx context.Context, sampleURL string) {
+	obj := storage.ObjectNameFromURL(sampleURL)
+	if obj == "" {
+		return
+	}
+	if !strings.HasPrefix(obj, "faces/") && !strings.HasPrefix(obj, "avatars/") {
+		return
+	}
+	if err := storage.DeleteFaceObject(ctx, obj); err != nil {
+		log.Printf("[member] failed to delete sample image %s from storage: %v", obj, err)
+	}
+}
+
+func reassignAvatarIfDeleted(ctx context.Context, memberID string, deletedURLs map[string]struct{}) {
+	if len(deletedURLs) == 0 {
+		return
+	}
+	m, err := database.Client.Member.Get(ctx, memberID)
+	if err != nil || m.AvatarURL == "" {
+		return
+	}
+	if _, hit := deletedURLs[m.AvatarURL]; !hit {
+		return
+	}
+	nextURL := ""
+	if remaining, rerr := database.Client.MemberFace.Query().
+		Where(memberface.MemberID(memberID), memberface.IsActive(true)).
+		Order(ent.Desc(memberface.FieldCreatedAt)).
+		First(ctx); rerr == nil && remaining != nil && remaining.SampleImageURL != "" {
+		nextURL = remaining.SampleImageURL
+	}
+	_ = database.Client.Member.UpdateOneID(memberID).SetAvatarURL(nextURL).Exec(ctx)
+}
+
 // DeleteMemberHandler deletes a member and associated face embeddings
 func DeleteMemberHandler(c *gin.Context) {
 	id := c.Param("id")
@@ -392,7 +429,15 @@ func DeleteMemberHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Delete faces first
+	if faces, ferr := database.Client.MemberFace.Query().Where(memberface.MemberID(id)).All(ctx); ferr == nil {
+		for _, f := range faces {
+			deleteStoredSampleImage(ctx, f.SampleImageURL)
+		}
+	}
+	if m, merr := database.Client.Member.Get(ctx, id); merr == nil {
+		deleteStoredSampleImage(ctx, m.AvatarURL)
+	}
+
 	_, _ = database.Client.MemberFace.Delete().Where(memberface.MemberID(id)).Exec(ctx)
 
 	err := database.Client.Member.DeleteOneID(id).Exec(ctx)
@@ -408,8 +453,8 @@ func DeleteMemberHandler(c *gin.Context) {
 
 // UploadFaceImage uploads an image file to S3 and returns the presigned URL
 func UploadFaceImage(ctx context.Context, file *multipart.FileHeader, memberID string) (string, error) {
-	if storage.S3Client == nil {
-		return "", fmt.Errorf("S3 client not initialized")
+	if storage.Faces == nil {
+		return "", fmt.Errorf("OCI faces storage not initialized")
 	}
 
 	src, err := file.Open()
@@ -424,7 +469,7 @@ func UploadFaceImage(ctx context.Context, file *multipart.FileHeader, memberID s
 	}
 	objName := fmt.Sprintf("faces/%s/%s%s", memberID, nanoid.New(), ext)
 
-	return storage.UploadObject(ctx, objName, src, file.Size, file.Header.Get("Content-Type"))
+	return storage.UploadFaceObject(ctx, objName, src, file.Size, file.Header.Get("Content-Type"))
 }
 
 // UploadImageHandler handles multipart image uploads (avatars, face portraits) to S3 and returns presigned S3 URL
@@ -456,7 +501,7 @@ func UploadImageHandler(c *gin.Context) {
 	folder := c.DefaultQuery("folder", "avatars")
 	objName := fmt.Sprintf("%s/%s%s", folder, nanoid.New(), ext)
 
-	presignedURL, err := storage.UploadObject(c.Request.Context(), objName, src, file.Size, file.Header.Get("Content-Type"))
+	presignedURL, err := storage.UploadFaceObject(c.Request.Context(), objName, src, file.Size, file.Header.Get("Content-Type"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload to S3: " + err.Error()})
 		return
@@ -474,13 +519,13 @@ func GetPresignedUploadURLHandler(c *gin.Context) {
 	folder := c.DefaultQuery("folder", "avatars")
 	objName := fmt.Sprintf("%s/%s%s", folder, nanoid.New(), ext)
 
-	uploadURL, err := storage.PresignedPutObjectURL(c.Request.Context(), objName, time.Minute*15)
+	uploadURL, err := storage.PresignedFacePutURL(c.Request.Context(), objName, time.Minute*15)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate presigned upload URL: " + err.Error()})
 		return
 	}
 
-	getURL, err := storage.PresignedGetObjectURL(c.Request.Context(), objName, time.Hour*24*7)
+	getURL, err := storage.FaceObjectURL(c.Request.Context(), objName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate presigned get URL: " + err.Error()})
 		return
@@ -625,7 +670,7 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 	}
 
 	objName := fmt.Sprintf("faces/%s/%s.jpg", memberID, nanoid.New())
-	sampleURL, err := storage.UploadObject(c.Request.Context(), objName, bytes.NewReader(cropBytes), int64(len(cropBytes)), "image/jpeg")
+	sampleURL, err := storage.UploadFaceObject(c.Request.Context(), objName, bytes.NewReader(cropBytes), int64(len(cropBytes)), "image/jpeg")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload cropped face: " + err.Error(), "code": "STORAGE"})
 		return
@@ -742,10 +787,16 @@ func DeleteMemberFaceHandler(c *gin.Context) {
 	}
 
 	memberID := face.MemberID
+	deleteStoredSampleImage(ctx, face.SampleImageURL)
+
 	err = database.Client.MemberFace.DeleteOneID(faceID).Exec(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete face: " + err.Error()})
 		return
+	}
+
+	if face.SampleImageURL != "" {
+		reassignAvatarIfDeleted(ctx, memberID, map[string]struct{}{face.SampleImageURL: {}})
 	}
 
 	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "delete_face", "member_id": memberID, "face_id": faceID})
@@ -913,8 +964,25 @@ func BatchDeleteMemberFacesHandler(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Soft delete or hard delete depending on schema. Currently using hard delete.
-	_, err := database.Client.MemberFace.Delete().
+	faces, err := database.Client.MemberFace.Query().
+		Where(
+			memberface.MemberID(memberID),
+			memberface.IDIn(input.FaceIDs...),
+		).All(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load faces: " + err.Error()})
+		return
+	}
+
+	deletedURLs := make(map[string]struct{}, len(faces))
+	for _, f := range faces {
+		deleteStoredSampleImage(ctx, f.SampleImageURL)
+		if f.SampleImageURL != "" {
+			deletedURLs[f.SampleImageURL] = struct{}{}
+		}
+	}
+
+	_, err = database.Client.MemberFace.Delete().
 		Where(
 			memberface.MemberID(memberID),
 			memberface.IDIn(input.FaceIDs...),
@@ -924,6 +992,8 @@ func BatchDeleteMemberFacesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete faces: " + err.Error()})
 		return
 	}
+
+	reassignAvatarIfDeleted(ctx, memberID, deletedURLs)
 
 	// Notify vision-service to reload embeddings for this member
 	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "batch_delete_faces", "member_id": memberID})

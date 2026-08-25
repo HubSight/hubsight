@@ -15,6 +15,10 @@ type Manager struct {
 	pools        map[string]*CameraPool
 	poolsMu      sync.RWMutex
 	IsNVREnabled bool
+
+	onChange      func(*PoolStatusSummary)
+	notifyMu      sync.Mutex
+	notifyPending bool
 }
 
 func NewManager(go2rtcClient *webrtc.Go2RTCClient) *Manager {
@@ -23,6 +27,34 @@ func NewManager(go2rtcClient *webrtc.Go2RTCClient) *Manager {
 		pools:        make(map[string]*CameraPool),
 		IsNVREnabled: true, // Default to true until event syncs it
 	}
+}
+
+// SetOnChange registers a callback invoked (debounced) after pool mutations.
+func (m *Manager) SetOnChange(fn func(*PoolStatusSummary)) {
+	m.onChange = fn
+}
+
+// scheduleNotify publishes a snapshot as soon as pool mutexes are released.
+// A short coalescing window batches a burst of upserts (sync) into one event.
+func (m *Manager) scheduleNotify() {
+	if m.onChange == nil {
+		return
+	}
+	m.notifyMu.Lock()
+	defer m.notifyMu.Unlock()
+	if m.notifyPending {
+		return
+	}
+	m.notifyPending = true
+	go func() {
+		time.Sleep(15 * time.Millisecond)
+		m.notifyMu.Lock()
+		m.notifyPending = false
+		m.notifyMu.Unlock()
+		if m.onChange != nil {
+			m.onChange(m.GetStatusSummary())
+		}
+	}()
 }
 
 // UpsertCamera registers or updates a camera in the connection pool
@@ -74,6 +106,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 			p.NVRConnection = nil
 		}
 		log.Printf("[Pool] Camera %s deactivated. All pool connections terminated.", camID)
+		m.scheduleNotify()
 		return nil
 	}
 
@@ -136,6 +169,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 		_ = m.go2rtc.RegisterStream(ctx, streamName, host, string(PurposeLive))
 	}
 
+	m.scheduleNotify()
 	return nil
 }
 
@@ -159,9 +193,31 @@ func (m *Manager) GetCVStream(camID string) (string, error) {
 	return p.CVConnection.StreamName, nil
 }
 
-// AcquireLiveStream applies the allocation algorithm:
-// 1. Re-use existing live connection if clients < 5
-// 2. Otherwise create new connection (#2, #3...)
+func liveConnCap(conn *StreamConnection) int {
+	if conn != nil && conn.MaxUsers > 0 {
+		return conn.MaxUsers
+	}
+	return LiveMaxClientsPerConn
+}
+
+// pickReusableLiveConn returns the fullest live conn that still has a free slot.
+// That keeps RTSP sockets on the camera at ceil(viewers / 5) instead of one per client.
+func pickReusableLiveConn(p *CameraPool) *StreamConnection {
+	var best *StreamConnection
+	for _, conn := range p.LivePool {
+		if conn.ActiveUsers >= liveConnCap(conn) {
+			continue
+		}
+		if best == nil || conn.ActiveUsers > best.ActiveUsers {
+			best = conn
+		}
+	}
+	return best
+}
+
+// AcquireLiveStream assigns a viewer to a shared live RTSP pull (#2+).
+// Clients reuse an existing live connection until it has LiveMaxClientsPerConn
+// viewers; only then is a new go2rtc/RTSP producer opened.
 func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*AcquireResult, error) {
 	m.poolsMu.RLock()
 	p, exists := m.pools[camID]
@@ -178,33 +234,26 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		return nil, fmt.Errorf("camera %s is inactive", camID)
 	}
 
-	// 1. Find an existing Live connection with < 5 clients
-	var candidate *StreamConnection
-	for _, conn := range p.LivePool {
-		if conn.ActiveUsers < 5 {
-			candidate = conn
-			break
-		}
-	}
-
-	if candidate != nil {
+	if candidate := pickReusableLiveConn(p); candidate != nil {
 		candidate.ActiveUsers++
 		candidate.LastUsedAt = time.Now()
 		candidate.Status = "active"
-		log.Printf("[Pool] RE-USING live stream %s for cam %s (Clients: %d/5)",
-			candidate.StreamName, camID, candidate.ActiveUsers)
+		log.Printf("[Pool] RE-USING live stream %s for cam %s (Clients: %d/%d) — same RTSP pull",
+			candidate.StreamName, camID, candidate.ActiveUsers, liveConnCap(candidate))
 
-		return &AcquireResult{
+		res := &AcquireResult{
 			StreamName:  candidate.StreamName,
 			IsNewStream: false,
 			ActiveUsers: candidate.ActiveUsers,
 			ConnIndex:   candidate.Index,
-		}, nil
+		}
+		m.scheduleNotify()
+		return res, nil
 	}
 
-	// 2. All existing live streams are full (5 clients). Spawn New Connection.
+	// Every live conn is full (5/5). Open a new RTSP producer (#2, #3, ...).
 	p.NextLiveIndex++
-	newIndex := p.NextLiveIndex // This will be 2, 3, 4... since initialized to 1
+	newIndex := p.NextLiveIndex // first live is 2 (0=CV, 1=NVR)
 	newStreamName := fmt.Sprintf("cam_%s_live_%d", camID, newIndex)
 
 	if err := m.go2rtc.RegisterStream(ctx, newStreamName, p.Host, string(PurposeLive)); err != nil {
@@ -220,16 +269,17 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		StreamName:  newStreamName,
 		SourceURL:   p.Host,
 		ActiveUsers: 1,
-		MaxUsers:    5,
+		MaxUsers:    LiveMaxClientsPerConn,
 		CreatedAt:   time.Now(),
 		LastUsedAt:  time.Now(),
 		Status:      "active",
 	}
 	p.LivePool[newStreamName] = newConn
 
-	log.Printf("[Pool] CREATED new live stream connection #%d (%s) for cam %s (Clients: 1/5)",
-		newIndex, newStreamName, camID)
+	log.Printf("[Pool] CREATED shared live connection #%d (%s) for cam %s (Clients: 1/%d)",
+		newIndex, newStreamName, camID, LiveMaxClientsPerConn)
 
+	m.scheduleNotify()
 	return &AcquireResult{
 		StreamName:  newStreamName,
 		IsNewStream: true,
@@ -265,6 +315,7 @@ func (m *Manager) ReleaseLiveStream(camID, streamName string) {
 		} else {
 			log.Printf("[Pool] RELEASED viewer from %s (Remaining clients: %d/5)", streamName, conn.ActiveUsers)
 		}
+		m.scheduleNotify()
 	}
 }
 
@@ -307,6 +358,7 @@ func (m *Manager) DeleteCamera(ctx context.Context, camID string) {
 		_ = m.go2rtc.UnregisterStream(ctx, streamName)
 	}
 	log.Printf("[Pool] Camera %s completely removed from connection pool.", camID)
+	m.scheduleNotify()
 }
 
 // UpdateNVRStatus dynamically toggles Connection #1 for all active cameras
@@ -350,6 +402,7 @@ func (m *Manager) UpdateNVRStatus(ctx context.Context, enabled bool) {
 		}
 		p.mu.Unlock()
 	}
+	m.scheduleNotify()
 }
 
 // GetStatusSummary returns an aggregated health view of all camera pools
@@ -378,17 +431,22 @@ func (m *Manager) GetStatusSummary() *PoolStatusSummary {
 			summary.TotalActiveViewers += conn.ActiveUsers
 		}
 
-		// Clone pool structure for safe threadless serialization
 		poolCopy := &CameraPool{
 			CameraID:      p.CameraID,
 			CameraName:    p.CameraName,
 			Host:          p.Host,
 			IsActive:      p.IsActive,
 			EnableAI:      p.EnableAI,
-			CVConnection:  p.CVConnection,
-			NVRConnection: p.NVRConnection,
 			LivePool:      make(map[string]*StreamConnection, len(p.LivePool)),
 			NextLiveIndex: p.NextLiveIndex,
+		}
+		if p.CVConnection != nil {
+			cv := *p.CVConnection
+			poolCopy.CVConnection = &cv
+		}
+		if p.NVRConnection != nil {
+			nvr := *p.NVRConnection
+			poolCopy.NVRConnection = &nvr
 		}
 		for k, v := range p.LivePool {
 			connCopy := *v

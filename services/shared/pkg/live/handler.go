@@ -206,3 +206,45 @@ func AIStopHandler(c *gin.Context) {
 		"last_viewer": lastViewer, // true when CV was just deactivated for this camera
 	})
 }
+
+// PoolReleaseHandler returns a live-pool lease when a viewer disconnects.
+func PoolReleaseHandler(c *gin.Context) {
+	camID := c.Param("id")
+	streamName := c.Query("stream_name")
+	if camID == "" || streamName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "camera id and stream_name are required"})
+		return
+	}
+
+	client := pool.GetGrpcClient()
+	_, err := client.ReleaseStream(c.Request.Context(), &pb.ReleaseStreamRequest{
+		CameraId:   camID,
+		StreamName: streamName,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to release pool stream: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "released", "stream_name": streamName})
+}
+
+// PoolHeartbeatHandler refreshes LastUsedAt on a live-pool lease so GC does not reap an active viewer.
+func PoolHeartbeatHandler(c *gin.Context) {
+	camID := c.Param("id")
+	streamName := c.Query("stream_name")
+	if camID == "" || streamName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "camera id and stream_name are required"})
+		return
+	}
+
+	client := pool.GetGrpcClient()
+	_, err := client.HeartbeatStream(c.Request.Context(), &pb.HeartbeatStreamRequest{
+		CameraId:   camID,
+		StreamName: streamName,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to heartbeat pool stream: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "alive", "stream_name": streamName})
+}

@@ -8,10 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hibiken/asynq"
+	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/storage"
 	"cctv/shared/pkg/worker"
+	"github.com/hibiken/asynq"
 )
 
 func main() {
@@ -21,8 +22,9 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	cfg := config.Load()
 	log.Println("[bgrd-service] Initializing S3 storage...")
-	if err := storage.ConnectS3("", "", "", "", false); err != nil {
+	if err := storage.ConnectS3(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket, cfg.S3UseSSL); err != nil {
 		log.Fatalf("Failed to initialize S3 storage: %v", err)
 	}
 
@@ -31,7 +33,7 @@ func main() {
 	if redisAddr == "" {
 		redisAddr = "redis://localhost:6379" // fallback for local dev
 	}
-	
+
 	// Parse redis URL
 	opt, err := asynq.ParseRedisURI(redisAddr)
 	if err != nil {

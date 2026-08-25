@@ -30,6 +30,23 @@ func main() {
 		log.Fatalf("S3 connection failed: %v", err)
 	}
 
+	if cfg.FacesS3AccessKey != "" && cfg.FacesS3Bucket != "" {
+		if err := storage.ConnectFaces(storage.FacesOptions{
+			Endpoint:  cfg.FacesS3Endpoint,
+			AccessKey: cfg.FacesS3AccessKey,
+			SecretKey: cfg.FacesS3SecretKey,
+			Bucket:    cfg.FacesS3Bucket,
+			UseSSL:    cfg.FacesS3UseSSL,
+			Region:    cfg.FacesS3Region,
+			Namespace: cfg.FacesS3Namespace,
+			Public:    cfg.FacesS3Public,
+		}); err != nil {
+			log.Fatalf("OCI faces storage connection failed: %v", err)
+		}
+	} else {
+		log.Println("FACES_S3_ACCESS_KEY not set; member face uploads require OCI Object Storage")
+	}
+
 	if err := mq.Init(); err != nil {
 		log.Printf("RabbitMQ connection failed: %v (Real-time events may not work)", err)
 	} else {

@@ -15,6 +15,7 @@ import (
 	"cctv/pool-service/pkg/events"
 	"cctv/pool-service/pkg/pool"
 	"cctv/pool-service/pkg/webrtc"
+	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/pb"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -72,6 +73,13 @@ func main() {
 	go2rtcClient := webrtc.NewGo2RTCClient()
 	poolMgr := pool.NewManager(go2rtcClient)
 
+	if err := mq.Init(); err != nil {
+		log.Printf("[Pool Service] RabbitMQ publisher unavailable: %v", err)
+	} else {
+		poolMgr.SetOnChange(events.PublishStatusSnapshot)
+		log.Println("[Pool Service] Real-time pool.status.update publisher enabled")
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -87,6 +95,7 @@ func main() {
 		for i := 0; i < 5; i++ {
 			time.Sleep(time.Duration(i*2) * time.Second)
 			if err := syncCamerasFromCore(ctx, poolMgr, coreGrpcURL); err == nil {
+				events.PublishStatusSnapshot(poolMgr.GetStatusSummary())
 				break
 			} else {
 				log.Printf("[Pool Init] Retrying camera sync from Core Service (%d/5): %v", i+1, err)
@@ -234,7 +243,9 @@ func main() {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			c.JSON(http.StatusOK, gin.H{"status": "synced", "summary": poolMgr.GetStatusSummary()})
+			summary := poolMgr.GetStatusSummary()
+			events.PublishStatusSnapshot(summary)
+			c.JSON(http.StatusOK, gin.H{"status": "synced", "summary": summary})
 		})
 	}
 
@@ -314,7 +325,7 @@ func (s *grpcPoolServer) HeartbeatStream(ctx context.Context, req *pb.HeartbeatS
 
 func (s *grpcPoolServer) GetStatusSummary(ctx context.Context, req *pb.GetStatusSummaryRequest) (*pb.GetStatusSummaryResponse, error) {
 	status := s.poolMgr.GetStatusSummary()
-	
+
 	return &pb.GetStatusSummaryResponse{
 		Summary: &pb.PoolSummary{
 			TotalCameras:       int32(status.TotalCameras),

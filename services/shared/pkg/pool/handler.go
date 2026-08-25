@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	"cctv/shared/pkg/pb"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,16 +18,38 @@ func getPoolServiceURL() string {
 	return url
 }
 
-// PoolStatusHandler proxies the connection pool status to pool-service (admin only)
+// PoolStatusHandler proxies the full pool snapshot from pool-service (admin only).
+// Must use HTTP /api/pool/status — gRPC PoolSummary only has aggregate counts and
+// cannot populate the Pool Monitor camera list or live connections.
 func PoolStatusHandler(c *gin.Context) {
-	client := GetGrpcClient()
-	resp, err := client.GetStatusSummary(c.Request.Context(), &pb.GetStatusSummaryRequest{})
+	poolURL := fmt.Sprintf("%s/api/pool/status", getPoolServiceURL())
+	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, poolURL, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create status request: " + err.Error()})
+		return
+	}
+
+	secret := os.Getenv("M2M_SECRET")
+	if secret == "" {
+		secret = "cctv-internal-m2m-secret"
+	}
+	req.Header.Set("X-Service-Key", secret)
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "pool-service unreachable: " + err.Error()})
 		return
 	}
+	defer resp.Body.Close()
 
-	c.JSON(http.StatusOK, resp.Summary)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read pool status"})
+		return
+	}
+
+	c.Data(resp.StatusCode, "application/json", body)
 }
 
 // PoolSyncHandler triggers manual re-synchronization of camera streams in pool-service (admin only)

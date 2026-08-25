@@ -80,4 +80,12 @@ export class RelayConsumer {
       data,
     });
   }
+
+  @EventPattern('pool.status.update')
+  handlePoolStatusUpdate(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'pool.status.update',
+      data,
+    });
+  }
 }

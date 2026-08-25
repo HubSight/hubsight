@@ -2,7 +2,7 @@ export interface StreamConnection {
   id: string;
   camera_id: string;
   index: number;
-  purpose: 'cv' | 'live';
+  purpose: 'cv' | 'nvr' | 'live';
   stream_name: string;
   source_url: string;
   active_users: number;
@@ -19,6 +19,7 @@ export interface CameraPool {
   is_active: boolean;
   enable_ai: boolean;
   cv_connection: StreamConnection | null;
+  nvr_connection?: StreamConnection | null;
   live_pool: Record<string, StreamConnection>;
   next_live_index: number;
 }
@@ -27,6 +28,7 @@ export interface PoolStatusSummary {
   total_cameras: number;
   active_cameras: number;
   total_cv_streams: number;
+  total_nvr_streams?: number;
   total_live_streams: number;
   total_active_viewers: number;
   cameras: CameraPool[];

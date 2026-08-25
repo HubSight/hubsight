@@ -16,10 +16,10 @@ var (
 	mutex sync.Mutex
 )
 
-// Init connects to RabbitMQ and opens a channel.
-func Init() error {
-	mutex.Lock()
-	defer mutex.Unlock()
+func initLocked() error {
+	if ch != nil {
+		return nil
+	}
 
 	url := os.Getenv("RABBITMQ_URL")
 	if url == "" {
@@ -41,62 +41,16 @@ func Init() error {
 	return nil
 }
 
-// PublishEvent publishes a JSON message to a specified queue/pattern.
-// This is used to communicate with the NestJS microservice which listens on the queue name corresponding to the event pattern.
-func PublishEvent(pattern string, data interface{}) error {
-	if ch == nil {
-		if err := Init(); err != nil {
-			return err
-		}
-	}
-
-	body, err := json.Marshal(map[string]interface{}{
-		"pattern": pattern,
-		"data":    data,
-	})
-	if err != nil {
-		return err
-	}
-
-	// For NestJS RabbitMQ microservices, we typically publish to a queue.
-	// Since relay-service consumes from a specific queue, we declare it or just publish to default exchange with routing key = queue name.
-	q, err := ch.QueueDeclare(
-		"relay_queue", // name
-		true,          // durable
-		false,         // delete when unused
-		false,         // exclusive
-		false,         // no-wait
-		nil,           // arguments
-	)
-	if err != nil {
-		return err
-	}
-
-	err = ch.PublishWithContext(
-		context.Background(),
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		})
-	if err != nil {
-		log.Printf("Failed to publish event %s: %v", pattern, err)
-		return err
-	}
-
-	log.Printf("Published MQ event: %s", pattern)
-	return nil
+// Init connects to RabbitMQ and opens a channel.
+func Init() error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return initLocked()
 }
 
-// PublishToQueue publishes a JSON message to a specific queue name.
-func PublishToQueue(queueName, pattern string, data interface{}) error {
-	if ch == nil {
-		if err := Init(); err != nil {
-			return err
-		}
+func publishLocked(queueName, pattern string, data interface{}) error {
+	if err := initLocked(); err != nil {
+		return err
 	}
 
 	body, err := json.Marshal(map[string]interface{}{
@@ -109,10 +63,10 @@ func PublishToQueue(queueName, pattern string, data interface{}) error {
 
 	q, err := ch.QueueDeclare(
 		queueName,
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
+		true,
+		false,
+		false,
+		false,
 		nil,
 	)
 	if err != nil {
@@ -130,6 +84,29 @@ func PublishToQueue(queueName, pattern string, data interface{}) error {
 			Body:        body,
 		},
 	)
+}
+
+// PublishEvent publishes a JSON message to a specified queue/pattern.
+// This is used to communicate with the NestJS microservice which listens on the queue name corresponding to the event pattern.
+func PublishEvent(pattern string, data interface{}) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	err := publishLocked("relay_queue", pattern, data)
+	if err != nil {
+		log.Printf("Failed to publish event %s: %v", pattern, err)
+		return err
+	}
+
+	log.Printf("Published MQ event: %s", pattern)
+	return nil
+}
+
+// PublishToQueue publishes a JSON message to a specific queue name.
+func PublishToQueue(queueName, pattern string, data interface{}) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return publishLocked(queueName, pattern, data)
 }
 
 // PublishCameraEvent publishes camera lifecycle events to relay_queue, pool_queue, vision_queue, and nvr_recorder_queue
@@ -150,11 +127,15 @@ func PublishMemberEvent(pattern string, data interface{}) {
 
 // Close closes the RabbitMQ connection and channel.
 func Close() {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if ch != nil {
 		ch.Close()
+		ch = nil
 	}
 	if conn != nil {
 		conn.Close()
+		conn = nil
 	}
 }
 

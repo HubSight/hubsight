@@ -34,19 +34,26 @@ func (m *Manager) reapIdleConnections(ctx context.Context, idleTimeout time.Dura
 	m.poolsMu.RUnlock()
 
 	now := time.Now()
+	reaped := false
 	for _, p := range poolsCopy {
 		p.mu.Lock()
 		for streamName, conn := range p.LivePool {
-			// Only reap Live connections with 0 active users that exceeded idle timeout
-			if conn.ActiveUsers == 0 && now.Sub(conn.LastUsedAt) > idleTimeout {
-				log.Printf("[Pool GC] Reaping idle live stream %s for cam %s (Idle duration: %v)",
-					streamName, p.CameraID, now.Sub(conn.LastUsedAt).Round(time.Second))
-
-				// Unregister from go2rtc media router to close RTSP connection to physical camera
-				_ = m.go2rtc.UnregisterStream(ctx, streamName)
-				delete(p.LivePool, streamName)
+			// Reap when idle with 0 clients, or when LastUsedAt is stale (tab closed
+			// without release — ActiveUsers would otherwise stay > 0 forever).
+			idleFor := now.Sub(conn.LastUsedAt)
+			zombie := idleFor > idleTimeout
+			if !zombie {
+				continue
 			}
+			log.Printf("[Pool GC] Reaping live stream %s for cam %s (idle %v, clients %d)",
+				streamName, p.CameraID, idleFor.Round(time.Second), conn.ActiveUsers)
+			_ = m.go2rtc.UnregisterStream(ctx, streamName)
+			delete(p.LivePool, streamName)
+			reaped = true
 		}
 		p.mu.Unlock()
+	}
+	if reaped {
+		m.scheduleNotify()
 	}
 }

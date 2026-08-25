@@ -2,6 +2,13 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX, Sparkles } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { useSocket } from '../../context/SocketContext';
+import axiosClient from '../../api/axiosClient';
+
+const releasePoolStream = (cameraId: string, streamName: string) => {
+  const baseUrl = import.meta.env.VITE_API_URL || '/api';
+  const url = `${baseUrl}/live/${cameraId}/release?stream_name=${encodeURIComponent(streamName)}`;
+  fetch(url, { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
+};
 
 interface OverlayBox {
   x1: number;
@@ -328,6 +335,8 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
   useEffect(() => {
     let pc: RTCPeerConnection | null = null;
     let isActive = true;
+    let poolStreamName: string | null = null;
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
     const initWebRTC = async () => {
       const video = videoRef.current;
@@ -420,7 +429,21 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
 
         if (!response.ok) throw new Error('Failed to negotiate WebRTC');
         const answerSdp = await response.text();
-        if (!isActive) return;
+        poolStreamName = response.headers.get('X-Pool-Stream-Name');
+
+        if (!isActive) {
+          if (poolStreamName) releasePoolStream(cameraId, poolStreamName);
+          return;
+        }
+
+        if (poolStreamName) {
+          heartbeatTimer = setInterval(() => {
+            if (!poolStreamName) return;
+            axiosClient
+              .post(`/live/${cameraId}/heartbeat?stream_name=${encodeURIComponent(poolStreamName)}`)
+              .catch(() => {});
+          }, 15_000);
+        }
 
         await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answerSdp }));
 
@@ -438,6 +461,8 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
 
     return () => {
       isActive = false;
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      if (poolStreamName) releasePoolStream(cameraId, poolStreamName);
       stopStatsPoll();
       onLiveStatusChange?.(false);
       if (pc) pc.close();

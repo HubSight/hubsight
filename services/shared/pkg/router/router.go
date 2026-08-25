@@ -28,7 +28,7 @@ func New() *gin.Engine {
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-Service-Key"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "X-Pool-Stream-Name", "X-Pool-Conn-Index"},
 		AllowCredentials: true,
 	}))
 
@@ -121,6 +121,8 @@ func New() *gin.Engine {
 			// Live streaming endpoints (WebRTC signaling)
 			protected.POST("/live/:id/webrtc", live.WebRTCHandler)
 			protected.GET("/live-status/:id", live.LiveStatusHandler)
+			protected.POST("/live/:id/release", live.PoolReleaseHandler)
+			protected.POST("/live/:id/heartbeat", live.PoolHeartbeatHandler)
 			// Optional live-viewer heartbeat (NVR monitor fallback only).
 			// Does NOT start/stop vision-service — CV + logs + push run 24/7 when enable_ai.
 			protected.POST("/live/:id/ai/heartbeat", live.AIHeartbeatHandler)
