@@ -112,10 +112,12 @@ func New() *gin.Engine {
 
 			// Notification endpoints
 			protected.GET("/cameras/:id/recognition-logs", recognitionlog.ListHandler)
+			protected.DELETE("/cameras/:id/recognition-logs", recognitionlog.ClearHandler)
 
 			protected.GET("/notifications", notification.ListNotificationsHandler)
 			protected.PATCH("/notifications/:id/read", notification.MarkReadHandler)
 			protected.POST("/notifications/read-all", notification.MarkAllReadHandler)
+			protected.DELETE("/notifications", notification.ClearAllNotificationsHandler)
 			protected.DELETE("/notifications/:id", notification.DeleteNotificationHandler)
 			protected.POST("/notifications/subscribe-push", notification.SubscribePushHandler)
 			protected.GET("/notifications/vapid-key", notification.GetVapidPublicKeyHandler)

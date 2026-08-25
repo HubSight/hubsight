@@ -33,11 +33,17 @@ class StreamManager:
         os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
         
         while not stop_event.is_set():
-            cap = cv2.VideoCapture(go2rtc_cv_url)
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            
-            if not cap.isOpened():
-                self.ensure_go2rtc_stream(cam_id, rtsp_url)
+            cap = None
+            for attempt in range(4):
+                cap = cv2.VideoCapture(go2rtc_cv_url)
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                if cap.isOpened():
+                    break
+                cap.release()
+                cap = None
+                time.sleep(1.0)
+
+            if cap is None or not cap.isOpened():
                 logger.warning(f"[{cam_id}] go2rtc stream not ready, trying direct RTSP source...")
                 cap = cv2.VideoCapture(rtsp_url)
                 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -52,6 +58,7 @@ class StreamManager:
                 cap.grab()
                 
             last_process_time = 0
+            logged_open = False
             
             try:
                 while cap.isOpened() and not stop_event.is_set():
@@ -59,6 +66,10 @@ class StreamManager:
                     if not ret:
                         logger.warning(f"[{cam_id}] Failed to read frame or end of stream.")
                         break
+                    if not logged_open:
+                        h, w = frame.shape[:2]
+                        logger.info(f"[{cam_id}] AI stream open {w}x{h}")
+                        logged_open = True
                     
                     current_time = time.time()
                     if frame_interval == 0 or (current_time - last_process_time) >= frame_interval:

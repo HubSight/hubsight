@@ -36,9 +36,9 @@ type Camera struct {
 	// ExtraArgs holds the value of the "extra_args" field.
 	ExtraArgs string `json:"extra_args,omitempty"`
 	// IsActive holds the value of the "is_active" field.
-	IsActive bool `json:"is_active,omitempty"`
+	IsActive bool `json:"is_active"`
 	// EnableAi holds the value of the "enable_ai" field.
-	EnableAi bool `json:"enable_ai,omitempty"`
+	EnableAi bool `json:"enable_ai"`
 	// Draw live bounding boxes when enable_ai is true
 	ShowBbox bool `json:"show_bbox"`
 	// CreatedAt holds the value of the "created_at" field.

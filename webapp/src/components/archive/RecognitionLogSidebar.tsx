@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient';
 import { useSocket } from '../../context/SocketContext';
 import { useTimezone } from '../../context/TimezoneContext';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '../../i18n/vi';
 import type { RecognitionLogItem } from '../../types/recognitionLog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface RecognitionLogSidebarProps {
   cameraId: string;
+  variant?: 'card' | 'docked';
 }
 
 const CATEGORY_STYLES: Record<string, { bar: string; text: string; bg: string; border: string }> = {
@@ -50,7 +53,7 @@ const CATEGORY_STYLES: Record<string, { bar: string; text: string; bg: string; b
   },
 };
 
-export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ cameraId }) => {
+export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ cameraId, variant = 'card' }) => {
   const { t } = useTranslation();
   const { socket } = useSocket();
   const { formatTime } = useTimezone();
@@ -59,6 +62,8 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
   const [logs, setLogs] = useState<RecognitionLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const fetchLogs = useCallback(async (id: string) => {
     setLoading(true);
@@ -87,10 +92,15 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
       setLogs((prev) => [item, ...prev.filter((l) => l.id !== item.id)]);
     };
     socket.on('vision.log.new', handleNew);
+    const handleMemberUpdated = () => {
+      fetchLogs(cameraId);
+    };
+    socket.on('member.face.updated', handleMemberUpdated);
     return () => {
       socket.off('vision.log.new', handleNew);
+      socket.off('member.face.updated', handleMemberUpdated);
     };
-  }, [socket, cameraId]);
+  }, [socket, cameraId, fetchLogs]);
 
   const renderMessage = (item: RecognitionLogItem) => {
     const key = item.message_key as TranslationKey;
@@ -103,12 +113,47 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
     navigate(`/playback?camera_id=${item.camera_id}&t=${ts}`);
   };
 
+  const handleClear = async () => {
+    if (!cameraId) return;
+    setClearing(true);
+    try {
+      await axiosClient.delete(`/cameras/${cameraId}/recognition-logs`);
+      setLogs([]);
+      setConfirmClear(false);
+    } catch (err) {
+      console.error('Failed to clear recognition logs:', err);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const isDocked = variant === 'docked';
+
   return (
-    <aside className="flex flex-col h-[40vh] lg:h-full lg:max-h-[calc(100dvh-5rem)] bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-100">
-        <h3 className="text-sm font-semibold text-slate-800 tracking-tight">{t('log.title')}</h3>
+    <aside
+      className={
+        isDocked
+          ? 'flex flex-col h-full min-h-0 w-full bg-white overflow-hidden'
+          : 'flex flex-col h-[40vh] bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden'
+      }
+    >
+      <div className={`px-4 border-b border-slate-100 shrink-0 flex items-center justify-between gap-2 ${isDocked ? 'py-4' : 'py-3'}`}>
+        <h3 className={`font-semibold text-slate-800 tracking-tight ${isDocked ? 'text-[15px]' : 'text-sm'}`}>
+          {t('log.title')}
+        </h3>
+        {logs.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setConfirmClear(true)}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-red-600 cursor-pointer transition-colors"
+            title={t('log.clear')}
+          >
+            <Trash2 size={13} />
+            {t('log.clear')}
+          </button>
+        )}
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 playback-scrollbar">
+      <div className={`flex-1 overflow-y-auto space-y-2.5 playback-scrollbar ${isDocked ? 'p-4' : 'p-3'}`}>
         {loading && logs.length === 0 ? (
           <div className="space-y-2 p-1">
             {[1, 2, 3, 4].map((i) => (
@@ -128,14 +173,14 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
                 key={item.id}
                 type="button"
                 onClick={() => handleClick(item)}
-                className={`w-full text-left relative overflow-hidden rounded-xl border px-3 py-2.5 cursor-pointer transition-colors ${style.bg} ${style.border} hover:brightness-[0.98]`}
+                className={`w-full text-left relative overflow-hidden rounded-xl border cursor-pointer transition-colors ${style.bg} ${style.border} hover:brightness-[0.98] ${isDocked ? 'px-3.5 py-3' : 'px-3 py-2.5'}`}
               >
                 <span className={`absolute top-0 bottom-0 left-0 w-1 ${style.bar}`} />
                 <div className="pl-1.5">
                   <div className="text-[10px] font-mono text-slate-400 mb-0.5">
                     {formatTime(item.created_at)}
                   </div>
-                  <p className={`text-[12px] leading-snug font-medium ${style.text}`}>
+                  <p className={`leading-snug font-medium ${style.text} ${isDocked ? 'text-[13px]' : 'text-[12px]'}`}>
                     {renderMessage(item)}
                   </p>
                 </div>
@@ -144,6 +189,18 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
           })
         )}
       </div>
+      <ConfirmDialog
+        isOpen={confirmClear}
+        title={t('log.confirmClearTitle')}
+        message={t('log.confirmClear')}
+        confirmLabel={t('log.clear')}
+        variant="danger"
+        isLoading={clearing}
+        onConfirm={handleClear}
+        onCancel={() => {
+          if (!clearing) setConfirmClear(false);
+        }}
+      />
     </aside>
   );
 };

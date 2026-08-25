@@ -20,6 +20,7 @@ import { subscribeToWebPush, isPushNotificationSupported, getPushNotificationPer
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import { useTimezone } from '../../context/TimezoneContext';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 dayjs.extend(relativeTime);
 
@@ -46,6 +47,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [pushStatus, setPushStatus] = useState<NotificationPermission>('default');
   const [isSubscribingPush, setIsSubscribingPush] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   // Auto-close when clicking outside drawer or pressing Escape
   useEffect(() => {
@@ -145,6 +148,21 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
       console.error('Failed to delete notification:', err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      await axiosClient.delete('/notifications');
+      setNotifications([]);
+      setUnreadCount(0);
+      onUnreadCountChange?.(0);
+      setConfirmClear(false);
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -272,15 +290,26 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               </button>
             </div>
 
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllRead}
-                className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold cursor-pointer"
-              >
-                <CheckCheck size={14} />
-                {t('notifications.markAllRead')}
-              </button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold cursor-pointer"
+                >
+                  <CheckCheck size={14} />
+                  {t('notifications.markAllRead')}
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => setConfirmClear(true)}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-600 font-semibold cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  {t('notifications.clearAll')}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Notification List */}
@@ -401,6 +430,18 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={confirmClear}
+        title={t('notifications.confirmClearTitle')}
+        message={t('notifications.confirmClear')}
+        confirmLabel={t('notifications.clearAll')}
+        variant="danger"
+        isLoading={clearing}
+        onConfirm={handleClearAll}
+        onCancel={() => {
+          if (!clearing) setConfirmClear(false);
+        }}
+      />
     </div>
   );
 };

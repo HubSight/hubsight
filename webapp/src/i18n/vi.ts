@@ -361,6 +361,8 @@ const vi = {
   'playback.tracePktLost': 'Gói tin mất',
   'playback.traceJitter': 'Độ biến thiên (Jitter)',
   'playback.traceBufferLag': 'Độ trễ đệm',
+  'playback.traceJbDelay': 'Jitter buffer',
+  'playback.traceRtt': 'ICE RTT',
 
   // === Timeline Control ===
   'timeline.title': 'Dòng thời gian sự kiện (Event-based Playback)',
@@ -503,6 +505,9 @@ const vi = {
   'notifications.subtitle': 'Lịch sử nhận diện người và cảnh báo',
   'notifications.unread': 'Chưa đọc',
   'notifications.markAllRead': 'Đã đọc tất cả',
+  'notifications.clearAll': 'Xoá tất cả',
+  'notifications.confirmClearTitle': 'Xoá tất cả thông báo?',
+  'notifications.confirmClear': 'Toàn bộ thông báo trong hộp thư sẽ bị xoá. Không hoàn tác được.',
   'notifications.noNotifications': 'Chưa có thông báo nào',
   'notifications.enablePushTitle': 'Bật thông báo đẩy PWA',
   'notifications.enablePushDesc': 'Nhận cảnh báo ngay lập tức trên thiết bị ngay cả khi đã đóng ứng dụng.',
@@ -520,6 +525,9 @@ const vi = {
 
   // === Recognition logs (Playback sidebar) ===
   'log.title': 'Nhật ký nhận diện',
+  'log.clear': 'Xoá nhật ký',
+  'log.confirmClearTitle': 'Xoá nhật ký nhận diện?',
+  'log.confirmClear': 'Toàn bộ nhật ký nhận diện của camera này sẽ bị xoá. Không hoàn tác được.',
   'log.empty': 'Chưa có nhận diện trên camera này',
   'log.loading': 'Đang tải nhật ký...',
   'log.error': 'Không tải được nhật ký nhận diện',

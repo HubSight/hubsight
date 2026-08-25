@@ -43,6 +43,22 @@ class TrackIdentityBehaviorTests(unittest.TestCase):
         t.created_at = time.time() - 60
         self.assertIsNone(t.check_loitering())
 
+    def test_two_mid_scores_lock_family(self):
+        t = TrackIdentity(4)
+        t.update_match("mem1", "Cậu Quốc", "family", 0.54, True)
+        self.assertFalse(t.is_locked)
+        t.update_match("mem1", "Cậu Quốc", "family", 0.61, True)
+        self.assertTrue(t.is_locked)
+        self.assertEqual(t.state, "family")
+        self.assertEqual(t.name, "Cậu Quốc")
+
+    def test_weak_hits_do_not_lock_stranger_after_four_frames(self):
+        t = TrackIdentity(5)
+        for _ in range(4):
+            t.update_match("mem1", "Cậu Quốc", "family", 0.47, True)
+        self.assertFalse(t.is_locked)
+        self.assertNotEqual(t.state, "stranger")
+
 
 if __name__ == "__main__":
     unittest.main()

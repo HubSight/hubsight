@@ -137,6 +137,16 @@ func DeleteNotificationHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
+// ClearAllNotificationsHandler deletes every in-app notification.
+func ClearAllNotificationsHandler(c *gin.Context) {
+	n, err := database.Client.Notification.Delete().Exec(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear notifications: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": n})
+}
+
 // SubscribePushHandler registers a Web Push subscription
 func SubscribePushHandler(c *gin.Context) {
 	var input SubscribePushInput

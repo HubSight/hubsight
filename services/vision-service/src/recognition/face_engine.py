@@ -23,7 +23,7 @@ from .face_quality_gate import FaceQualityGate
 
 class FaceEngine:
     """InsightFace ArcFace Engine with In-Memory NumPy Vector Index and Dynamic Sync."""
-    def __init__(self, model_name="buffalo_s", strong_thresh=0.65, weak_thresh=0.50):
+    def __init__(self, model_name="buffalo_s", strong_thresh=0.58, weak_thresh=0.45):
         self.model_name = model_name
         self.strong_thresh = strong_thresh
         self.weak_thresh = weak_thresh
@@ -35,6 +35,7 @@ class FaceEngine:
         # In-memory vector matrix: shape (N, 512) normalized
         self.embedding_matrix = np.empty((0, 512), dtype=np.float32)
         self.metadata_list = [] # List of {member_id, name, role, face_id}
+        self.members = {}  # member_id -> {name, role}
         
         self._init_model()
 
@@ -69,14 +70,28 @@ class FaceEngine:
                             "face_id": item.get("face_id", "")
                         })
             
+            members = {}
+            for meta in metas:
+                mid = meta.get("member_id")
+                if mid:
+                    members[mid] = {"name": meta.get("name", "Unknown"), "role": meta.get("role", "family")}
+            self.members = members
             if len(vectors) > 0:
                 self.embedding_matrix = np.vstack(vectors)
                 self.metadata_list = metas
-                logger.info(f"Loaded {len(metas)} face embeddings into In-Memory RAM matrix.")
+                logger.info(f"Loaded {len(metas)} face embeddings into In-Memory RAM matrix ({len(members)} members).")
             else:
                 self.embedding_matrix = np.empty((0, 512), dtype=np.float32)
                 self.metadata_list = []
                 logger.info("In-Memory embedding store is currently empty.")
+
+    def label_for(self, member_id):
+        """Current gallery name/role for a member_id, or None."""
+        if not member_id:
+            return None
+        with self.lock:
+            info = self.members.get(member_id)
+            return dict(info) if info else None
 
     def extract_face_embeddings(self, frame, person_bbox=None):
         """Extract face detection, landmarks and 512D ArcFace embeddings from person crop or full frame."""
@@ -153,14 +168,12 @@ class FaceEngine:
             best_score = float(sims[best_idx])
             best_meta = self.metadata_list[best_idx]
 
+        role = best_meta.get("role") or "family"
+        if role in ("verifying", "stranger"):
+            role = "family"
         if best_score >= self.strong_thresh:
-            # Strong match: return member name and role
-            role = best_meta.get("role", "family")
             return best_meta.get("member_id"), best_meta.get("name"), role, best_score
-        elif best_score >= self.weak_thresh:
-            # Weak match candidate for multi-frame aggregation
-            role = best_meta.get("role", "family")
-            return best_meta.get("member_id"), best_meta.get("name"), "verifying", best_score
-        else:
-            # Unknown / stranger candidate
-            return None, "Người lạ", "stranger", best_score
+        if best_score >= self.weak_thresh:
+            # Keep the real gallery role so two weak frames can lock family/guest, not "verifying".
+            return best_meta.get("member_id"), best_meta.get("name"), role, best_score
+        return None, "Người lạ", "stranger", best_score

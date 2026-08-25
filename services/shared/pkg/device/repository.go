@@ -108,3 +108,28 @@ func Update(ctx context.Context, id string, input DeviceInput) (*ent.Camera, err
 func Delete(ctx context.Context, id string) error {
 	return database.Client.Camera.DeleteOneID(id).Exec(ctx)
 }
+
+// CameraEventPayload always includes bools. ent json omitempty drops enable_ai=false
+// which made pool/vision treat an AI camera as disabled on every update.
+func CameraEventPayload(dev *ent.Camera) map[string]interface{} {
+	if dev == nil {
+		return map[string]interface{}{}
+	}
+	return map[string]interface{}{
+		"id":               dev.ID,
+		"name":             dev.Name,
+		"host":             dev.Host,
+		"brand":            dev.Brand,
+		"rtsp_port":        dev.RtspPort,
+		"rtsp_transport":   dev.RtspTransport,
+		"segment_duration": dev.SegmentDuration,
+		"video_codec":      dev.VideoCodec,
+		"audio_mode":       dev.AudioMode,
+		"extra_args":       dev.ExtraArgs,
+		"is_active":        dev.IsActive,
+		"enable_ai":        dev.EnableAi,
+		"show_bbox":        dev.ShowBbox,
+		"created_at":       dev.CreatedAt,
+		"updated_at":       dev.UpdatedAt,
+	}
+}

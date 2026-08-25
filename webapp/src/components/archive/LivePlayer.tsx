@@ -17,7 +17,17 @@ interface OverlayBox {
   y2: number;
   state?: string;
   name?: string;
+  track_id?: number;
+  angle_deg?: number | null;
+  keypoints?: number[][];
 }
+
+const POSE_SKELETON: [number, number][] = [
+  [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+  [5, 11], [6, 12], [11, 12],
+  [11, 13], [13, 15], [12, 14], [14, 16],
+  [0, 1], [0, 2], [1, 3], [2, 4], [0, 5], [0, 6],
+];
 
 const BOX_COLORS: Record<string, string> = {
   family: '#10b981',
@@ -84,23 +94,61 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
 
     ctx.lineWidth = 2;
     ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+    let fallenCount = 0;
     for (const box of boxesRef.current) {
       const color = BOX_COLORS[box.state || 'verifying'] || BOX_COLORS.verifying;
       const x = ox + box.x1 * dw;
       const y = oy + box.y1 * dh;
-      const w = (box.x2 - box.x1) * dw;
-      const h = (box.y2 - box.y1) * dh;
+      const bw = (box.x2 - box.x1) * dw;
+      const bh = (box.y2 - box.y1) * dh;
+      if (box.state === 'fall') fallenCount += 1;
       ctx.strokeStyle = color;
-      ctx.strokeRect(x, y, w, h);
+      ctx.lineWidth = box.state === 'fall' ? 3 : 2;
+      ctx.strokeRect(x, y, bw, bh);
+
+      const kpts = box.keypoints;
+      if (Array.isArray(kpts) && kpts.length >= 17) {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        for (const [a, b] of POSE_SKELETON) {
+          const pa = kpts[a];
+          const pb = kpts[b];
+          if (!pa || !pb || pa[2] < 0.3 || pb[2] < 0.3) continue;
+          ctx.beginPath();
+          ctx.moveTo(ox + pa[0] * dw, oy + pa[1] * dh);
+          ctx.lineTo(ox + pb[0] * dw, oy + pb[1] * dh);
+          ctx.stroke();
+        }
+        for (const kp of kpts) {
+          if (!kp || kp[2] < 0.3) continue;
+          ctx.beginPath();
+          ctx.fillStyle = color;
+          ctx.arc(ox + kp[0] * dw, oy + kp[1] * dh, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
       const label = box.name || box.state || '';
       if (label) {
         const pad = 4;
+        ctx.font = box.state === 'fall' ? 'bold 12px ui-sans-serif, system-ui, sans-serif' : '12px ui-sans-serif, system-ui, sans-serif';
         const textW = ctx.measureText(label).width;
+        const ly = Math.max(0, y - 18);
         ctx.fillStyle = color;
-        ctx.fillRect(x, Math.max(0, y - 18), textW + pad * 2, 18);
+        ctx.fillRect(x, ly, textW + pad * 2, 18);
         ctx.fillStyle = '#fff';
         ctx.fillText(label, x + pad, Math.max(12, y - 5));
       }
+    }
+    if (fallenCount > 0) {
+      const banner = `ALERT! ${fallenCount} FALL DETECTED`;
+      ctx.font = 'bold 13px ui-sans-serif, system-ui, sans-serif';
+      const tw = ctx.measureText(banner).width;
+      const bx = Math.max(8, cssW - tw - 28);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(bx, 10, tw + 20, 26);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(banner, bx + 10, 28);
     }
   }, [enableAi, showBbox]);
 
@@ -183,6 +231,8 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
     decodeFps: 0,
     droppedFrames: 0,
     latencyMs: 0,
+    jitterBufferMs: 0,
+    rttMs: 0,
     resolution: '',
     protocol: 'Unknown',
     codec: 'Unknown',
@@ -206,23 +256,13 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
     liveEdgeSyncRef.current = setInterval(async () => {
       if (!video || video.paused || video.ended || !pc) return;
 
-      // ── Live Edge Auto-Sync (Catch up if video buffer drifts > 400ms) ──
-      try {
-        if (video.buffered.length > 0) {
-          const liveEnd = video.buffered.end(video.buffered.length - 1);
-          const drift = liveEnd - video.currentTime;
-          if (drift > 0.4) {
-            video.currentTime = liveEnd;
-          }
-        }
-      } catch (_) {}
-
       try {
         const statsReport = await pc.getStats();
         let inboundVideo: any = null;
         let localCandidate: any = null;
         let remoteCandidate: any = null;
         let codecInfo: any = null;
+        let nominatedPair: any = null;
 
         statsReport.forEach((stat: any) => {
           if (stat.type === 'inbound-rtp' && stat.kind === 'video') {
@@ -232,6 +272,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
             }
           }
           if (stat.type === 'candidate-pair' && (stat.state === 'succeeded' || stat.nominated)) {
+            nominatedPair = stat;
             if (stat.localCandidateId && typeof (statsReport as any).get === 'function') {
               localCandidate = (statsReport as any).get(stat.localCandidateId);
             }
@@ -286,11 +327,26 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
             latency = Math.round((video.buffered.end(video.buffered.length - 1) - video.currentTime) * 1000);
           }
 
+          let jitterBufferMs = 0;
+          if (inboundVideo) {
+            const jbDelay = inboundVideo.jitterBufferDelay;
+            const jbEmitted = inboundVideo.jitterBufferEmittedCount;
+            if (typeof jbDelay === 'number' && typeof jbEmitted === 'number' && jbEmitted > 0) {
+              jitterBufferMs = Math.round((jbDelay / jbEmitted) * 1000);
+            }
+          }
+
+          const rttMs = nominatedPair && typeof nominatedPair.currentRoundTripTime === 'number'
+            ? Math.round(nominatedPair.currentRoundTripTime * 1000)
+            : 0;
+
           setStats({
             renderFps,
             decodeFps,
             droppedFrames: dropped,
             latencyMs: latency,
+            jitterBufferMs,
+            rttMs,
             resolution: `${video.videoWidth}x${video.videoHeight}`,
             protocol: protocol.toUpperCase(),
             codec,
@@ -363,30 +419,44 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         const mediaStream = new MediaStream();
         video.srcObject = mediaStream;
 
+        const applyLowDelay = (receiver: RTCRtpReceiver) => {
+          const r = receiver as RTCRtpReceiver & { jitterBufferTarget?: number; playoutDelayHint?: number };
+          // 80ms absorbs one missed packet without the hitch of a 0ms buffer.
+          try { r.jitterBufferTarget = 80; } catch { /* Safari / older Chromium */ }
+          try { r.playoutDelayHint = 0.08; } catch { /* not supported */ }
+        };
+
+        const attachTrack = (track: MediaStreamTrack) => {
+          if (!mediaStream.getTracks().includes(track)) {
+            mediaStream.addTrack(track);
+          }
+        };
+
         pc.ontrack = (event) => {
           if (!isActive) return;
-          if (event.track) {
-            if (event.track.kind === 'audio') {
+          if (event.receiver) applyLowDelay(event.receiver);
+
+          const handleTrack = (track: MediaStreamTrack) => {
+            if (track.kind === 'audio') {
               setHasAudioTrack(true);
-            }
-            if (!mediaStream.getTracks().includes(event.track)) {
-              mediaStream.addTrack(event.track);
-            }
-          }
-          if (event.streams?.[0]) {
-            event.streams[0].getTracks().forEach(track => {
-              if (track.kind === 'audio') {
-                setHasAudioTrack(true);
+              // Do not attach a silent/pending audio track to <video>: Chrome holds
+              // video frames to A/V-sync, which shows up as multi-second delay with green stats.
+              if (!track.muted) {
+                attachTrack(track);
+                return;
               }
-              if (!mediaStream.getTracks().includes(track)) {
-                mediaStream.addTrack(track);
-              }
-            });
-          }
+              track.addEventListener('unmute', () => attachTrack(track), { once: true });
+              return;
+            }
+            attachTrack(track);
+          };
+
+          if (event.track) handleTrack(event.track);
+          event.streams?.[0]?.getTracks().forEach(handleTrack);
+
           setIsInitializing(false);
           onLiveStatusChange?.(true);
 
-          // Attempt 100% volume unmuted by default
           video.volume = 1.0;
           video.muted = false;
           setVolume(1.0);
@@ -531,6 +601,18 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
                 <td className="pr-3 text-slate-300">{t('playback.traceBufferLag')}</td>
                 <td className={`font-semibold ${stats.latencyMs > 500 ? 'text-orange-400' : 'text-emerald-400'}`}>
                   {stats.latencyMs} ms
+                </td>
+              </tr>
+              <tr>
+                <td className="pr-3 text-slate-300">{t('playback.traceJbDelay')}</td>
+                <td className={`font-semibold ${stats.jitterBufferMs > 1000 ? 'text-red-400' : stats.jitterBufferMs > 400 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                  {stats.jitterBufferMs} ms
+                </td>
+              </tr>
+              <tr>
+                <td className="pr-3 text-slate-300">{t('playback.traceRtt')}</td>
+                <td className={`font-semibold ${stats.rttMs > 80 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                  {stats.rttMs} ms
                 </td>
               </tr>
             </tbody>

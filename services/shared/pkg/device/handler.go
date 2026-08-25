@@ -93,8 +93,7 @@ func AddDeviceHandler(c *gin.Context) {
 		return
 	}
 
-	// Notify Connection Pool and Relay of new device
-	mq.PublishCameraEvent("camera.created", dev)
+	mq.PublishCameraEvent("camera.created", CameraEventPayload(dev))
 
 	c.JSON(http.StatusCreated, dev)
 }
@@ -137,8 +136,7 @@ func UpdateDeviceHandler(c *gin.Context) {
 		return
 	}
 
-	// Notify Connection Pool and Relay of updated device
-	mq.PublishCameraEvent("camera.updated", dev)
+	mq.PublishCameraEvent("camera.updated", CameraEventPayload(dev))
 
 	c.JSON(http.StatusOK, dev)
 }

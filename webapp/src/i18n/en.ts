@@ -363,6 +363,8 @@ const en: Record<TranslationKey, string> = {
   'playback.tracePktLost': 'Packet Loss',
   'playback.traceJitter': 'Jitter',
   'playback.traceBufferLag': 'Buffer Lag',
+  'playback.traceJbDelay': 'Jitter Buffer',
+  'playback.traceRtt': 'ICE RTT',
 
   // === Timeline Control ===
   'timeline.title': 'Event-Based Playback Timeline',
@@ -505,6 +507,9 @@ const en: Record<TranslationKey, string> = {
   'notifications.subtitle': 'Person recognition and security alerts history',
   'notifications.unread': 'Unread',
   'notifications.markAllRead': 'Mark all as read',
+  'notifications.clearAll': 'Clear all',
+  'notifications.confirmClearTitle': 'Clear all notifications?',
+  'notifications.confirmClear': 'Every notification in the inbox will be deleted. This cannot be undone.',
   'notifications.noNotifications': 'No notifications yet',
   'notifications.enablePushTitle': 'Enable PWA Push Notifications',
   'notifications.enablePushDesc': 'Receive instant device alerts even when the app is closed.',
@@ -522,6 +527,9 @@ const en: Record<TranslationKey, string> = {
 
   // === Recognition logs (Playback sidebar) ===
   'log.title': 'Recognition log',
+  'log.clear': 'Clear log',
+  'log.confirmClearTitle': 'Clear recognition log?',
+  'log.confirmClear': 'All recognition events for this camera will be deleted. This cannot be undone.',
   'log.empty': 'No recognitions on this camera yet',
   'log.loading': 'Loading logs...',
   'log.error': 'Failed to load recognition logs',

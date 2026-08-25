@@ -246,9 +246,9 @@ const Playback = () => {
   }
 
   return (
-    <PullToRefresh onRefresh={handleRefresh} className="h-full bg-slate-50/50 playback-scrollbar">
-      <div className="flex-1 flex flex-col lg:flex-row min-w-0 max-w-[1920px] mx-auto pb-8 lg:gap-4">
-        <div className="flex-1 flex flex-col min-w-0">
+    <div className="h-full flex min-h-0 min-w-0">
+      <PullToRefresh onRefresh={handleRefresh} className="flex-1 min-w-0 h-full bg-slate-50/50 playback-scrollbar">
+        <div className="flex flex-col min-w-0 pb-8 max-w-[1920px]">
           {/* 1. YouTube-style Video Player (Sticky on mobile top, static on desktop) */}
           <div className="sticky top-0 z-30 w-full bg-black shadow-md md:static md:shadow-none">
             <VideoPlayer
@@ -266,12 +266,9 @@ const Playback = () => {
             />
           </div>
 
-          {/* Wrapper for items below video */}
           <div className="flex flex-col shrink-0 px-4 lg:px-6 mt-4 gap-4">
-            {/* 2. Horizontal Settings Toolbar */}
             <ArchiveSidebar {...sidebarProps} />
 
-            {/* 3. Interactive Timeline */}
             <div
               className={`pb-6 shrink-0 ${
                 !selectedCam ? 'opacity-50 pointer-events-none' : ''
@@ -287,15 +284,21 @@ const Playback = () => {
               />
             </div>
           </div>
-        </div>
 
-        {enableAi && selectedCam && (
-          <div className="px-4 lg:px-0 lg:pr-6 mt-4 lg:mt-0 w-full lg:w-80 shrink-0">
-            <RecognitionLogSidebar cameraId={selectedCam} />
-          </div>
-        )}
-      </div>
-    </PullToRefresh>
+          {enableAi && selectedCam && (
+            <div className="lg:hidden px-4 mt-0">
+              <RecognitionLogSidebar cameraId={selectedCam} />
+            </div>
+          )}
+        </div>
+      </PullToRefresh>
+
+      {enableAi && selectedCam && (
+        <aside className="hidden lg:flex flex-col w-[22rem] xl:w-[26rem] 2xl:w-[28rem] shrink-0 h-full min-h-0 border-l border-slate-200 bg-white">
+          <RecognitionLogSidebar cameraId={selectedCam} variant="docked" />
+        </aside>
+      )}
+    </div>
   );
 };
 

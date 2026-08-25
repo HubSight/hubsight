@@ -136,3 +136,21 @@ func ListHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, dtos)
 }
+
+// ClearHandler deletes all recognition logs for a camera.
+func ClearHandler(c *gin.Context) {
+	camID := c.Param("id")
+	if camID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
+		return
+	}
+
+	n, err := database.Client.RecognitionLog.Delete().
+		Where(entlog.CameraID(camID)).
+		Exec(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear recognition logs: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": n})
+}

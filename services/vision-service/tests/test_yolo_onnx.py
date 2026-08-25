@@ -6,6 +6,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from src.detection.detector import _load_fire_class_map, _normalize_danger_label  # noqa: E402
 from src.detection.yolo_onnx import (  # noqa: E402
     YOLOOnnxDetector,
     letterbox,
@@ -98,6 +99,27 @@ class PostprocessTests(unittest.TestCase):
                         imported.add(node.module.split(".")[0])
                 hits = imported & banned
                 self.assertFalse(hits, msg=f"{path} imports banned packages: {hits}")
+
+
+class FireSmokeLabelTests(unittest.TestCase):
+    def test_normalize_labels(self):
+        self.assertEqual(_normalize_danger_label("Fire"), "fire")
+        self.assertEqual(_normalize_danger_label("SMOKE"), "smoke")
+        self.assertIsNone(_normalize_danger_label("other"))
+
+    def test_load_class_map(self):
+        import json
+        import tempfile
+
+        payload = {"0": "fire", "1": "smoke", "2": "other"}
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+            json.dump(payload, fh)
+            path = fh.name
+        try:
+            mapping = _load_fire_class_map(path)
+            self.assertEqual(mapping, {0: "fire", 1: "smoke"})
+        finally:
+            os.unlink(path)
 
 
 if __name__ == "__main__":

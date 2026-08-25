@@ -103,6 +103,7 @@ def main():
         elif pattern.startswith("member.") or pattern.startswith("face."):
             logger.info("[MQ] Member or face vectors updated, reloading vector database immediately...")
             sync_face_embeddings(face_engine)
+            detector.refresh_locked_identities()
 
     mq_client.start_consumer("vision_queue", on_mq_event)
     logger.info("[Vision Service] Subscribed to vision_queue. Listening for real-time events.")
@@ -110,7 +111,8 @@ def main():
     # 5. Heartbeat backup loop (runs every 30s as safety fallback)
     while True:
         time.sleep(30)
-        # Periodic fallback check
+        sync_face_embeddings(face_engine)
+        detector.refresh_locked_identities()
         cams = get_ai_cameras()
         stream_mgr.reconcile(cams)
 

@@ -45,10 +45,14 @@ func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL s
 
 	var srcFfmpeg string
 	if purpose == "cv" {
-		// 640p 10FPS, no audio for CV (recognition accuracy)
-		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#video=h264#width=640#framerate=10#audio=none", rtspURL)
+		// Transcode once from the already-pulled RTSP producer (no second camera socket).
+		// Keep source resolution (only drop to 10 FPS). 640p shrinks faces too much for ArcFace.
+		// Pull the camera URL, not the stream name — self-ffmpeg on a not-yet-open producer fails with "unknown error".
+		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#video=h264#framerate=10#audio=none", rtspURL)
 	} else {
-		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#audio=opus", rtspURL)
+		// Audio-only producer. go2rtc mixes this Opus with H264 from the RTSP source.
+		// Do NOT set #video=copy here — that would send video through ffmpeg's muxer (~1s+ delay).
+		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#audio=opus", streamName)
 	}
 
 	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s&src=%s",

@@ -19,6 +19,8 @@ import (
 	"cctv/shared/ent"
 	"cctv/shared/ent/member"
 	"cctv/shared/ent/memberface"
+	entnotif "cctv/shared/ent/notification"
+	"cctv/shared/ent/recognitionlog"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/nanoid"
@@ -353,13 +355,19 @@ func UpdateMemberHandler(c *gin.Context) {
 		updater.SetIsActive(*input.IsActive)
 	}
 
+	old, _ := database.Client.Member.Get(c.Request.Context(), id)
+
 	m, err := updater.Save(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update member: " + err.Error()})
 		return
 	}
 
-	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "update", "member_id": m.ID})
+	if old != nil && old.Name != m.Name {
+		rewriteStoredMemberName(c.Request.Context(), m.ID, old.Name, m.Name)
+	}
+
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "update", "member_id": m.ID, "name": m.Name})
 
 	c.JSON(http.StatusOK, MemberDTO{
 		ID:        m.ID,
@@ -370,6 +378,53 @@ func UpdateMemberHandler(c *gin.Context) {
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
 	})
+}
+
+func rewriteStoredMemberName(ctx context.Context, memberID, oldName, newName string) {
+	if memberID == "" || newName == "" {
+		return
+	}
+	logs, err := database.Client.RecognitionLog.Query().
+		Where(recognitionlog.MemberID(memberID)).
+		All(ctx)
+	if err != nil {
+		log.Printf("[Member] failed to load recognition logs for rename: %v", err)
+	} else {
+		for _, l := range logs {
+			params := l.MessageParams
+			if params == nil {
+				params = map[string]string{}
+			}
+			if params["name"] == newName {
+				continue
+			}
+			params["name"] = newName
+			if _, err := l.Update().SetMessageParams(params).Save(ctx); err != nil {
+				log.Printf("[Member] failed to rewrite log %s name: %v", l.ID, err)
+			}
+		}
+	}
+
+	if oldName == "" || oldName == newName {
+		return
+	}
+	notifs, err := database.Client.Notification.Query().
+		Where(entnotif.MemberID(memberID)).
+		All(ctx)
+	if err != nil {
+		log.Printf("[Member] failed to load notifications for rename: %v", err)
+		return
+	}
+	for _, n := range notifs {
+		title := strings.ReplaceAll(n.Title, oldName, newName)
+		body := strings.ReplaceAll(n.Body, oldName, newName)
+		if title == n.Title && body == n.Body {
+			continue
+		}
+		if _, err := n.Update().SetTitle(title).SetBody(body).Save(ctx); err != nil {
+			log.Printf("[Member] failed to rewrite notification %s name: %v", n.ID, err)
+		}
+	}
 }
 
 // deleteStoredSampleImage removes a member face/avatar object from S3/MinIO.

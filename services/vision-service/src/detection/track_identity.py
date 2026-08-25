@@ -30,6 +30,9 @@ class TrackIdentity:
         self.is_fallen = False
         self.last_abnormal_alert = 0.0
         self.loiter_alerted = False
+        self.torso_angle = None
+        self.keypoints = None  # (17,3) normalized 0–1
+        self.angle_history = []  # (ts, angle_deg)
 
     def update_pose_history(self, norm_box):
         x1, y1, x2, y2 = norm_box
@@ -41,14 +44,44 @@ class TrackIdentity:
         # Keep last 5 seconds of boxes
         self.box_history = [b for b in self.box_history if now - b[0] <= 5.0]
 
-    def check_abnormal_behavior(self, now=None):
-        """Detect sudden posture anomaly (e.g. falling down or lying on the ground)."""
+    def check_abnormal_behavior(self, now=None, torso_angle=None):
+        """Fall via pose torso angle when available; otherwise bbox aspect-ratio."""
+        now = now if now is not None else time.time()
+        self.torso_angle = torso_angle
+        if torso_angle is not None:
+            return self._check_fall_from_angle(now, torso_angle)
+        if self.keypoints is None:
+            return self._check_fall_from_box(now)
+        return None
+
+    def _check_fall_from_angle(self, now, angle_deg):
+        from .fall_kinematics import FALL_ANGLE_DEG, UPRIGHT_ANGLE_DEG
+
+        self.angle_history.append((now, float(angle_deg)))
+        self.angle_history = [a for a in self.angle_history if now - a[0] <= 5.0]
+        if len(self.angle_history) < 3:
+            return None
+        if angle_deg >= FALL_ANGLE_DEG:
+            past_upright = any(a[1] <= UPRIGHT_ANGLE_DEG for a in self.angle_history[:-1])
+            if past_upright and not self.is_fallen:
+                if now - self.last_abnormal_alert < 30.0:
+                    self.is_fallen = True
+                    return None
+                self.is_fallen = True
+                self.last_abnormal_alert = now
+                logger.info("[Track %s] FALLEN pose angle=%.1f deg", self.track_id, angle_deg)
+                return "fall_detected"
+            if past_upright:
+                self.is_fallen = True
+            return None
+        if angle_deg <= UPRIGHT_ANGLE_DEG:
+            self.is_fallen = False
+        return None
+
+    def _check_fall_from_box(self, now):
         if len(self.box_history) < 3:
             return None
-
-        now = now if now is not None else time.time()
         current_ar = self.box_history[-1][2]
-        # Require a prior upright posture in the 5s window to reduce sitting/couch FPs.
         if current_ar >= 1.15:
             past_standing = any(b[2] < 0.7 for b in self.box_history[:-1])
             if past_standing and not self.is_fallen:
@@ -78,39 +111,48 @@ class TrackIdentity:
         self.last_seen = time.time()
         if is_good:
             self.good_eval_count += 1
+        if is_good or member_id is not None:
             self.match_history.append((member_id, name, role, similarity))
 
         if self.is_locked:
+            # Keep lock, but pick up gallery rename/role change immediately.
+            if member_id and member_id == self.member_id and name:
+                self.name = name
+                if role and role not in ("verifying", "stranger", ""):
+                    self.role = role
+                    self.state = "family" if role == "family" else "guest"
             return
 
-        # Multi-frame consensus algorithm:
-        # 1. Count votes for specific members
+        # Multi-frame consensus:
+        # Live 640–720p faces often sit 0.52–0.65 vs enrolled photos; require two votes at 0.52+.
         member_votes = defaultdict(list)
         for mid, mname, mrole, sim in self.match_history:
-            if mid is not None and sim >= 0.58:
+            if mid is not None and sim >= 0.52:
                 member_votes[mid].append((mname, mrole, sim))
 
-        # Check if any member has >= 2 strong matches
         for mid, votes in member_votes.items():
             if len(votes) >= 2:
-                best_sim = max(v[2] for v in votes)
+                best = max(votes, key=lambda v: v[2])
+                best_sim = best[2]
                 self.member_id = mid
-                self.name = votes[0][0]
-                self.role = votes[0][1] # 'family', 'guest', 'neighbor', 'staff'
+                self.name = best[0]
+                self.role = best[1] if best[1] not in ("verifying", "stranger", "") else "family"
                 self.best_similarity = round(best_sim, 2)
-                
-                # Map role to 4-color visual category
                 if self.role == "family":
-                    self.state = "family" # Green (#10b981)
+                    self.state = "family"
                 else:
-                    self.state = "guest"  # Blue (#3b82f6)
+                    self.state = "guest"
                 self.is_locked = True
                 logger.info(f"[Track {self.track_id}] LOCKED identity: {self.name} ({self.role}) with score {best_sim:.2f}")
                 return
 
-        # If >= 4 good evaluations with no candidate match above 0.45 -> Stranger
-        if self.good_eval_count >= 4 and len(member_votes) == 0:
-            self.state = "stranger" # Red (#ef4444)
+        # Weak gallery hits must not be frozen as stranger (ByteTrack IDs churn on a webcam).
+        has_member_hint = any(
+            mid is not None and sim >= 0.45
+            for mid, _, _, sim in self.match_history
+        )
+        if self.good_eval_count >= 10 and len(member_votes) == 0 and not has_member_hint:
+            self.state = "stranger"
             self.name = "Người lạ"
             self.role = "stranger"
             self.is_locked = True

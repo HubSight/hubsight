@@ -86,6 +86,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip cache purge 2>/dev/null || true
 
 COPY --from=model-fetcher /app/*.onnx ./
+COPY --from=model-fetcher /app/yolo-fire-smoke.names.json ./
 COPY --from=model-fetcher /root/.insightface /root/.insightface
 COPY --from=proto-builder /app/pb ./pb
 COPY services/vision-service/main.py ./main.py
