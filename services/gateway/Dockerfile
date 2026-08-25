@@ -24,24 +24,20 @@ WORKDIR /app
 ENV CGO_ENABLED=0 GOOS=linux
 RUN apk add --no-cache ca-certificates tzdata
 
-# Cache Go modules
 # 1. Layer cache for dependencies
 COPY go.work go.work.sum* ./
 COPY services/shared/go.mod services/shared/go.sum* ./services/shared/
 COPY services/gateway/go.mod services/gateway/go.sum* ./services/gateway/
 COPY services/core/go.mod services/core/go.sum* ./services/core/
 COPY services/auth/go.mod services/auth/go.sum* ./services/auth/
-COPY services/core/go.mod services/core/go.sum* ./services/core/
 COPY services/pool-service/go.mod services/pool-service/go.sum* ./services/pool-service/
 COPY services/recorder/go.mod services/recorder/go.sum* ./services/recorder/
 COPY services/bgrd/go.mod services/bgrd/go.sum* ./services/bgrd/
-COPY services/pool-service/go.mod services/pool-service/go.sum* ./services/pool-service/
 COPY services/seed/go.mod services/seed/go.sum* ./services/seed/
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/gateway && go mod download
 
-# Copy source and compile with build cache mount
 # 2. Copy source and build with compiler cache mount
 COPY services/shared ./services/shared
 COPY services/gateway ./services/gateway
@@ -52,10 +48,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build -ldflags="-s -w" -trimpath -o /app/dist/gateway main.go
 
 # Stage 3: Final Production Image
-FROM alpine:3.21
-WORKDIR /app
-RUN apk add --no-cache ca-certificates tzdata
-
 FROM scratch
 COPY --from=backend-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=backend-builder /usr/share/zoneinfo /usr/share/zoneinfo
@@ -65,4 +57,3 @@ COPY --from=frontend-builder /app/dist /app/public
 EXPOSE 8080
 ENV PORT=8080
 CMD ["/app/gateway"]
-

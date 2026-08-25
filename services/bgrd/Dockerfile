@@ -28,9 +28,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go build -ldflags="-s -w" -trimpath -o /app/dist/bgrd main.go
 
-FROM alpine:3.21
-WORKDIR /app
-RUN apk add --no-cache ca-certificates tzdata
 FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
@@ -38,4 +35,3 @@ COPY --from=builder /app/dist/bgrd /app/bgrd
 EXPOSE 8080
 ENV PORT=8080
 CMD ["/app/bgrd"]
-
