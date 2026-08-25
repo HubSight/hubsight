@@ -97,6 +97,9 @@ func ConnectFaces(opts FacesOptions) error {
 	ctx := context.Background()
 	exists, err := client.BucketExists(ctx, opts.Bucket)
 	if err != nil {
+		if resp := minio.ToErrorResponse(err); resp.Code != "" {
+			return fmt.Errorf("OCI faces bucket check failed: %s (%s)", resp.Code, resp.Message)
+		}
 		return fmt.Errorf("OCI faces bucket check failed: %w", err)
 	}
 	if !exists {

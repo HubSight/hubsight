@@ -153,16 +153,6 @@ func ListMembersHandler(c *gin.Context) {
 				avatarURL = ""
 			}
 
-			// If avatar is empty but member has face samples, use the first valid face sample
-			if avatarURL == "" && len(m.Edges.Faces) > 0 {
-				for _, f := range m.Edges.Faces {
-					if f.SampleImageURL != "" && !strings.HasPrefix(f.SampleImageURL, "blob:") {
-						avatarURL = f.SampleImageURL
-						break
-					}
-				}
-			}
-
 			dto := MemberDTO{
 				ID:        m.ID,
 				Name:      m.Name,
@@ -230,15 +220,6 @@ func ListMembersHandler(c *gin.Context) {
 		avatarURL := m.AvatarURL
 		if strings.HasPrefix(avatarURL, "blob:") {
 			avatarURL = ""
-		}
-
-		if avatarURL == "" && len(m.Edges.Faces) > 0 {
-			for _, f := range m.Edges.Faces {
-				if f.SampleImageURL != "" && !strings.HasPrefix(f.SampleImageURL, "blob:") {
-					avatarURL = f.SampleImageURL
-					break
-				}
-			}
 		}
 
 		dto := MemberDTO{
@@ -359,7 +340,14 @@ func UpdateMemberHandler(c *gin.Context) {
 		if strings.HasPrefix(avatarURL, "blob:") {
 			avatarURL = ""
 		}
-		updater.SetAvatarURL(avatarURL)
+		if avatarURL == "" {
+			if err := clearMemberAvatar(c.Request.Context(), id); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear avatar: " + err.Error()})
+				return
+			}
+		} else {
+			updater.SetAvatarURL(avatarURL)
+		}
 	}
 	if input.IsActive != nil {
 		updater.SetIsActive(*input.IsActive)
@@ -486,6 +474,15 @@ func UploadImageHandler(c *gin.Context) {
 		}
 	}
 
+	if file.Size > maxRawImageBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": rawImageTooLargeError, "code": "TOO_LARGE"})
+		return
+	}
+	if !allowedJPEGOrPNG(file.Header.Get("Content-Type"), file.Filename) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": jpegPNGOnlyError, "code": "BAD_TYPE"})
+		return
+	}
+
 	src, err := file.Open()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to open image file: " + err.Error()})
@@ -493,15 +490,33 @@ func UploadImageHandler(c *gin.Context) {
 	}
 	defer src.Close()
 
-	ext := filepath.Ext(file.Filename)
-	if ext == "" {
-		ext = ".jpg"
+	raw, err := io.ReadAll(io.LimitReader(src, maxRawImageBytes+1))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read image file: " + err.Error()})
+		return
+	}
+	if int64(len(raw)) > maxRawImageBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": rawImageTooLargeError, "code": "TOO_LARGE"})
+		return
+	}
+	if !sniffJPEGOrPNG(raw) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": jpegPNGOnlyError, "code": "BAD_TYPE"})
+		return
+	}
+
+	ext := ".jpg"
+	if sniffPNG(raw) {
+		ext = ".png"
 	}
 
 	folder := c.DefaultQuery("folder", "avatars")
 	objName := fmt.Sprintf("%s/%s%s", folder, nanoid.New(), ext)
 
-	presignedURL, err := storage.UploadFaceObject(c.Request.Context(), objName, src, file.Size, file.Header.Get("Content-Type"))
+	ct := "image/jpeg"
+	if ext == ".png" {
+		ct = "image/png"
+	}
+	presignedURL, err := storage.UploadFaceObject(c.Request.Context(), objName, bytes.NewReader(raw), int64(len(raw)), ct)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload to S3: " + err.Error()})
 		return
@@ -538,8 +553,6 @@ func GetPresignedUploadURLHandler(c *gin.Context) {
 	})
 }
 
-const maxEnrollBytes = 10 << 20 // 10MB
-
 type visionEnrollResponse struct {
 	OK           bool      `json:"ok"`
 	Code         string    `json:"code"`
@@ -552,21 +565,7 @@ type visionEnrollResponse struct {
 	BlurScore    float64   `json:"blur_score"`
 }
 
-func allowedEnrollContentType(ct, filename string) bool {
-	ct = strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
-	switch ct {
-	case "image/jpeg", "image/jpg", "image/png", "image/webp":
-		return true
-	}
-	ext := strings.ToLower(filepath.Ext(filename))
-	switch ext {
-	case ".jpg", ".jpeg", ".png", ".webp":
-		return true
-	}
-	return false
-}
-
-func callVisionEnroll(ctx context.Context, imageBytes []byte, contentType string) (*visionEnrollResponse, int, error) {
+func callVisionEnroll(ctx context.Context, imageBytes []byte, contentType string, requireQuality bool) (*visionEnrollResponse, int, error) {
 	base := strings.TrimRight(os.Getenv("VISION_SERVICE_URL"), "/")
 	if base == "" {
 		base = "http://vision-service:8090"
@@ -574,7 +573,11 @@ func callVisionEnroll(ctx context.Context, imageBytes []byte, contentType string
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/internal/enroll", bytes.NewReader(imageBytes))
+	enrollURL := base + "/internal/enroll"
+	if !requireQuality {
+		enrollURL += "?quality=off"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, enrollURL, bytes.NewReader(imageBytes))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -604,8 +607,26 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 		return
 	}
 
-	if _, err := database.Client.Member.Get(c.Request.Context(), memberID); err != nil {
+	ctx := c.Request.Context()
+	if _, err := database.Client.Member.Get(ctx, memberID); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found", "code": "NOT_FOUND"})
+		return
+	}
+
+	n, err := database.Client.MemberFace.Query().
+		Where(memberface.MemberID(memberID), memberface.IsActive(true)).
+		Count(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count face samples", "code": "INTERNAL"})
+		return
+	}
+	if n >= maxSamplesPerMember {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "Member already has 1000 face samples",
+			"code":  "SAMPLE_LIMIT",
+			"limit": maxSamplesPerMember,
+			"count": n,
+		})
 		return
 	}
 
@@ -614,12 +635,12 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required", "code": "BAD_REQUEST"})
 		return
 	}
-	if file.Size > maxEnrollBytes {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image exceeds 10MB", "code": "TOO_LARGE"})
+	if file.Size > maxSampleUploadBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image is too large to process", "code": "TOO_LARGE"})
 		return
 	}
-	if !allowedEnrollContentType(file.Header.Get("Content-Type"), file.Filename) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Only JPEG, PNG, or WebP images are allowed", "code": "BAD_TYPE"})
+	if !allowedJPEGOrPNG(file.Header.Get("Content-Type"), file.Filename) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": jpegPNGOnlyError, "code": "BAD_TYPE"})
 		return
 	}
 
@@ -629,17 +650,27 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 		return
 	}
 	defer src.Close()
-	raw, err := io.ReadAll(io.LimitReader(src, maxEnrollBytes+1))
+	raw, err := io.ReadAll(io.LimitReader(src, maxSampleUploadBytes+1))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read image file", "code": "DECODE_ERROR"})
 		return
 	}
-	if int64(len(raw)) > maxEnrollBytes {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image exceeds 10MB", "code": "TOO_LARGE"})
+	if int64(len(raw)) > maxSampleUploadBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image is too large to process", "code": "TOO_LARGE"})
+		return
+	}
+	if !sniffJPEGOrPNG(raw) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": jpegPNGOnlyError, "code": "BAD_TYPE"})
 		return
 	}
 
-	vision, status, err := callVisionEnroll(c.Request.Context(), raw, file.Header.Get("Content-Type"))
+	prepared, err := compressSampleJPEG(raw)
+	if err != nil || len(prepared) == 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Could not prepare image for face detection", "code": "DECODE_ERROR"})
+		return
+	}
+
+	vision, status, err := callVisionEnroll(ctx, prepared, "image/jpeg", true)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Vision service unavailable", "code": "VISION_UNAVAILABLE"})
 		return
@@ -669,8 +700,25 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 		return
 	}
 
+	n, err = database.Client.MemberFace.Query().
+		Where(memberface.MemberID(memberID), memberface.IsActive(true)).
+		Count(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count face samples", "code": "INTERNAL"})
+		return
+	}
+	if n >= maxSamplesPerMember {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "Member already has 1000 face samples",
+			"code":  "SAMPLE_LIMIT",
+			"limit": maxSamplesPerMember,
+			"count": n,
+		})
+		return
+	}
+
 	objName := fmt.Sprintf("faces/%s/%s.jpg", memberID, nanoid.New())
-	sampleURL, err := storage.UploadFaceObject(c.Request.Context(), objName, bytes.NewReader(cropBytes), int64(len(cropBytes)), "image/jpeg")
+	sampleURL, err := storage.UploadFaceObject(ctx, objName, bytes.NewReader(cropBytes), int64(len(cropBytes)), "image/jpeg")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload cropped face: " + err.Error(), "code": "STORAGE"})
 		return
@@ -684,15 +732,15 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 		SetYaw(vision.Yaw).
 		SetPitch(vision.Pitch).
 		SetBlurScore(vision.BlurScore).
-		Save(c.Request.Context())
+		Save(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save member face: " + err.Error(), "code": "INTERNAL"})
 		return
 	}
 
-	m, err := database.Client.Member.Get(c.Request.Context(), memberID)
+	m, err := database.Client.Member.Get(ctx, memberID)
 	if err == nil && (m.AvatarURL == "" || m.AvatarURL == "/placeholder.jpg") {
-		_ = database.Client.Member.UpdateOneID(memberID).SetAvatarURL(sampleURL).Exec(c.Request.Context())
+		_ = database.Client.Member.UpdateOneID(memberID).SetAvatarURL(sampleURL).Exec(ctx)
 	}
 
 	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "add_face", "member_id": memberID, "face_id": face.ID})

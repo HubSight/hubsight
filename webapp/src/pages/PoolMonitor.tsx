@@ -167,7 +167,7 @@ export const PoolMonitor = () => {
               </div>
               <div className="mt-3">
                 <span className="text-xs font-bold text-slate-700">30s Idle Timeout</span>
-                <p className="text-[10px] text-slate-400 mt-0.5">Tự đóng socket camera</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{t('pool.closeIdleSocket')}</p>
               </div>
             </div>
           </div>
@@ -243,7 +243,7 @@ export const PoolMonitor = () => {
                                 {cam.cv_connection.stream_name}
                               </span>
                               <span className="text-[11px] text-slate-500 mt-0.5 block">
-                                Dành riêng cho Vision Service (YOLO Tracking + Face Recognition 24/7)
+                                {t('pool.cvDedicatedHint')}
                               </span>
                             </div>
                             <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 self-start sm:self-center">
@@ -335,10 +335,10 @@ export const PoolMonitor = () => {
                                   <div className="flex items-center justify-between text-[10px] text-slate-400">
                                     <span>
                                       {conn.status === 'idle'
-                                        ? '⚠️ Idle (Đang đếm lùi thu hồi)'
-                                        : '🟢 Đang phục vụ client'}
+                                        ? `⚠️ ${t('pool.connIdleReclaim')}`
+                                        : `🟢 ${t('pool.connServing')}`}
                                     </span>
-                                    <span>Hoạt động: {dayjs(conn.last_used_at).fromNow()}</span>
+                                    <span>{t('pool.lastActive', { time: dayjs(conn.last_used_at).fromNow() })}</span>
                                   </div>
                                 </div>
                               );

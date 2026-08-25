@@ -16,13 +16,14 @@ import (
 )
 
 func main() {
+	cfg := config.Load()
+
 	// 1. Initialize dependencies (DB and Storage)
 	log.Println("[bgrd-service] Initializing database...")
-	if err := database.Connect(""); err != nil {
+	if err := database.Connect(cfg.DatabaseURL); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	cfg := config.Load()
 	log.Println("[bgrd-service] Initializing S3 storage...")
 	if err := storage.ConnectS3(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket, cfg.S3UseSSL); err != nil {
 		log.Fatalf("Failed to initialize S3 storage: %v", err)

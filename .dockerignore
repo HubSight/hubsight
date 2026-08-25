@@ -7,6 +7,8 @@ webapp/dist
 ## Go build outputs
 services/**/dist
 services/**/bin
+services/bgrd/bgrd
+services/seed/seed
 
 ## Python runtime artifacts
 **/.venv

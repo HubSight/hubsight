@@ -71,6 +71,8 @@ func New() *gin.Engine {
 				// Member management
 				adminOnly.POST("/members", member.CreateMemberHandler)
 				adminOnly.PUT("/members/:id", member.UpdateMemberHandler)
+				adminOnly.POST("/members/:id/avatar", member.UpdateMemberAvatarHandler)
+				adminOnly.DELETE("/members/:id/avatar", member.DeleteMemberAvatarHandler)
 				adminOnly.DELETE("/members/:id", member.DeleteMemberHandler)
 				adminOnly.POST("/members/:id/faces/enroll", member.EnrollMemberFaceHandler)
 				adminOnly.POST("/members/:id/faces", member.AddMemberFaceHandler)

@@ -1,7 +1,7 @@
 opencv-python-headless
 onnxruntime>=1.20.0
 pika
-python-dotenv
+python-dotenv>=1.0.1
 requests
 insightface>=0.7.3
 numpy>=1.26.0

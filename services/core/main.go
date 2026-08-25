@@ -41,7 +41,7 @@ func main() {
 			Namespace: cfg.FacesS3Namespace,
 			Public:    cfg.FacesS3Public,
 		}); err != nil {
-			log.Fatalf("OCI faces storage connection failed: %v", err)
+			log.Printf("OCI faces storage connection failed: %v (member face uploads disabled)", err)
 		}
 	} else {
 		log.Println("FACES_S3_ACCESS_KEY not set; member face uploads require OCI Object Storage")

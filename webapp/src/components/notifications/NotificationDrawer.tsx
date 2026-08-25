@@ -376,7 +376,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                       {n.camera_id && (
                         <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-orange-600">
                           <Video size={12} />
-                          <span>Xem lại camera</span>
+                          <span>{t('notifications.viewCamera')}</span>
                         </div>
                       )}
                     </div>

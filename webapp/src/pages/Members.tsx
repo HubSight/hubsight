@@ -156,7 +156,7 @@ const Members: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-slate-800">{t('members.roleFamily')}</div>
-              <div className="text-[11px] text-emerald-600 font-medium">{familyCount} thành viên</div>
+              <div className="text-[11px] text-emerald-600 font-medium">{t('members.familyCount', { count: familyCount })}</div>
             </div>
           </div>
 
@@ -166,7 +166,7 @@ const Members: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-slate-800">{t('members.roleNeighbor')}</div>
-              <div className="text-[11px] text-blue-600 font-medium">{guestCount} người quen</div>
+              <div className="text-[11px] text-blue-600 font-medium">{t('members.guestCount', { count: guestCount })}</div>
             </div>
           </div>
 
@@ -175,8 +175,8 @@ const Members: React.FC = () => {
               <Users size={20} />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-800">Khách lạ</div>
-              <div className="text-[11px] text-amber-600 font-medium">Tự động phát hiện</div>
+              <div className="text-xs font-bold text-slate-800">{t('members.roleStranger')}</div>
+              <div className="text-[11px] text-amber-600 font-medium">{t('members.roleStrangerDesc')}</div>
             </div>
           </div>
 
@@ -185,8 +185,8 @@ const Members: React.FC = () => {
               <Users size={20} />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-800">Nhân viên / Shipper</div>
-              <div className="text-[11px] text-purple-600 font-medium">Giao hàng / Dịch vụ</div>
+              <div className="text-xs font-bold text-slate-800">{t('members.roleStaffBanner')}</div>
+              <div className="text-[11px] text-purple-600 font-medium">{t('members.roleStaffBannerDesc')}</div>
             </div>
           </div>
         </div>

@@ -93,8 +93,8 @@ def encode_jpeg(image: np.ndarray, quality: int = JPEG_QUALITY) -> bytes:
     return buf.tobytes()
 
 
-def enroll_from_bytes(face_engine, data: bytes) -> dict:
-    """Detect exactly one face, gate quality, return crop JPEG + 512D embedding. Raises EnrollError."""
+def enroll_from_bytes(face_engine, data: bytes, *, require_quality: bool = True) -> dict:
+    """Detect exactly one face, optionally gate quality, return crop JPEG + 512D embedding."""
     if face_engine is None or getattr(face_engine, "app", None) is None:
         raise EnrollError("VISION_UNAVAILABLE", "Face engine is not ready")
 
@@ -117,7 +117,7 @@ def enroll_from_bytes(face_engine, data: bytes) -> dict:
     kps = face.kps * scale if face.kps is not None else None
 
     is_good, q_score, blur, yaw, pitch = face_engine.quality_gate.evaluate(frame, orig_bbox, kps)
-    if not is_good:
+    if require_quality and not is_good:
         raise EnrollError(
             "LOW_QUALITY",
             f"Face quality too low (score={q_score}, blur={blur}, yaw={yaw}, pitch={pitch})",

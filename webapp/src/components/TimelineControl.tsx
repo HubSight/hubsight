@@ -190,7 +190,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-colors cursor-pointer"
-            title={isCollapsed ? 'Mở rộng' : 'Thu gọn'}
+            title={isCollapsed ? t('timeline.expand') : t('timeline.collapse')}
           >
             {isCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
           </button>
@@ -265,9 +265,9 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                 <div className="p-4 bg-emerald-500/10 rounded-full">
                   <ShieldCheck size={32} className="text-emerald-500" />
                 </div>
-                <span className="text-slate-300 font-semibold text-sm">Mọi thứ đều an toàn</span>
+                <span className="text-slate-300 font-semibold text-sm">{t('timeline.allSafe')}</span>
                 <p className="text-[11px] text-slate-500 max-w-sm">
-                  Không có sự kiện an ninh nào được ghi nhận trong khoảng thời gian này.
+                  {t('timeline.noSecurityEvents')}
                 </p>
               </div>
             ) : (

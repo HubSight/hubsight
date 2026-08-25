@@ -4,6 +4,7 @@ import type { NotificationItem } from '../../types/notification';
 import { useSocket } from '../../context/SocketContext';
 import { useTimezone } from '../../context/TimezoneContext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '../../i18n';
 
 // Simple Web Audio API gentle notification chime (0 external dependencies)
 const playNotificationChime = (category: string) => {
@@ -44,6 +45,7 @@ const playNotificationChime = (category: string) => {
 export const NotificationToast: React.FC = () => {
   const { socket } = useSocket();
   const { formatNotificationBody } = useTimezone();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [currentToast, setCurrentToast] = useState<NotificationItem | null>(null);
 
@@ -148,7 +150,7 @@ export const NotificationToast: React.FC = () => {
               {formatNotificationBody(currentToast.body, currentToast.created_at || Date.now())}
             </p>
             <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-orange-400 group-hover:text-orange-300 transition-colors">
-              <span>Xem trực tiếp camera</span>
+              <span>{t('notifications.watchLive')}</span>
               <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
@@ -160,7 +162,7 @@ export const NotificationToast: React.FC = () => {
               setCurrentToast(null);
             }}
             className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            title="Đóng"
+            title={t('close')}
           >
             <X size={14} />
           </button>

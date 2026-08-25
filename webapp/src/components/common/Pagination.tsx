@@ -55,13 +55,12 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* Left: Summary text & Page Size Selector */}
       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
         <span className="font-medium text-slate-600">
-          {t('pagination.showing', { start: startItem, end: endItem, total: totalItems }) ||
-            `Hiển thị ${startItem}-${endItem} / ${totalItems}`}
+          {t('pagination.showing', { start: startItem, end: endItem, total: totalItems })}
         </span>
 
         {onPageSizeChange && (
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1">
-            <span className="text-[11px] text-slate-400 font-medium">{t('pagination.rowsPerPage') || 'Số dòng:'}</span>
+            <span className="text-[11px] text-slate-400 font-medium">{t('pagination.rowsPerPage')}</span>
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
@@ -86,7 +85,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
             className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-            title={t('pagination.firstPage') || 'Trang đầu'}
+            title={t('pagination.firstPage')}
           >
             <ChevronsLeft size={14} />
           </button>
@@ -97,7 +96,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-            title={t('pagination.prevPage') || 'Trang trước'}
+            title={t('pagination.prevPage')}
           >
             <ChevronLeft size={14} />
           </button>
@@ -139,7 +138,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-            title={t('pagination.nextPage') || 'Trang sau'}
+            title={t('pagination.nextPage')}
           >
             <ChevronRight size={14} />
           </button>
@@ -150,7 +149,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage === totalPages}
             className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-            title={t('pagination.lastPage') || 'Trang cuối'}
+            title={t('pagination.lastPage')}
           >
             <ChevronsRight size={14} />
           </button>

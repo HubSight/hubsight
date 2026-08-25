@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
+import 'dayjs/locale/en';
 import vi from './vi';
 import en from './en';
 import type { TranslationKey } from './vi';
@@ -22,6 +25,10 @@ const I18nContext = createContext<I18nContextType>({
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [locale, setLocale] = useState<Locale>('vi');
+
+  useEffect(() => {
+    dayjs.locale(locale === 'vi' ? 'vi' : 'en');
+  }, [locale]);
 
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>): string => {

@@ -4,6 +4,11 @@ import { X, ShieldCheck, HeartHandshake, Camera, User, Trash2 } from 'lucide-rea
 import type { MemberItem, MemberFormData } from '../../types/member';
 import { useTranslation } from '../../i18n';
 import axiosClient from '../../api/axiosClient';
+import {
+  MEMBER_IMAGE_ACCEPT,
+  compressImageToJpeg,
+  isJpegOrPngFile,
+} from '../../constants/memberImages';
 
 interface MemberModalProps {
   member?: MemberItem | null;
@@ -29,6 +34,8 @@ export const MemberModal: React.FC<MemberModalProps> = ({
   });
 
   const [previewAvatar, setPreviewAvatar] = useState<string>('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -44,6 +51,8 @@ export const MemberModal: React.FC<MemberModalProps> = ({
           avatar_url: cleanAvatar,
         });
         setPreviewAvatar(cleanAvatar);
+        setAvatarFile(null);
+        setCreatedId(null);
       } else {
         setFormData({
           name: '',
@@ -51,6 +60,8 @@ export const MemberModal: React.FC<MemberModalProps> = ({
           avatar_url: '',
         });
         setPreviewAvatar('');
+        setAvatarFile(null);
+        setCreatedId(null);
       }
       setError('');
     }
@@ -58,39 +69,79 @@ export const MemberModal: React.FC<MemberModalProps> = ({
 
   if (!isOpen) return null;
 
+  const avatarErrorMessage = (code?: string, fallback?: string) => {
+    switch (code) {
+      case 'NO_FACE':
+        return t('gallery.errNoFace');
+      case 'MULTI_FACE':
+        return t('gallery.errMultiFace');
+      case 'LOW_QUALITY':
+        return t('gallery.errLowQuality');
+      case 'VISION_UNAVAILABLE':
+        return t('gallery.errVisionDown');
+      case 'TOO_LARGE':
+        return t('gallery.errTooLarge');
+      case 'COMPRESS_FAILED':
+        return t('members.avatarTooLarge');
+      case 'BAD_TYPE':
+        return t('gallery.errBadType');
+      default:
+        return fallback || t('common.errorOccurred');
+    }
+  };
+
+  const uploadMemberAvatar = async (memberId: string, file: File) => {
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', file);
+    const res = await axiosClient.post(`/members/${memberId}/avatar`, uploadFormData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data?.avatar_url as string | undefined;
+  };
+
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!isJpegOrPngFile(file)) {
+      setError(t('gallery.errBadType'));
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+      return;
+    }
+
+    const localPreview = URL.createObjectURL(file);
+    setPreviewAvatar(localPreview);
+    setError('');
+    setUploadingAvatar(true);
+
     try {
-      setUploadingAvatar(true);
-      setError('');
+      const compressed = await compressImageToJpeg(file);
+      const compressedPreview = URL.createObjectURL(compressed);
+      setPreviewAvatar(compressedPreview);
+      URL.revokeObjectURL(localPreview);
 
-      // Create local preview ONLY for UI display during upload
-      const localPreview = URL.createObjectURL(file);
-      setPreviewAvatar(localPreview);
+      if (!isEditing || !member) {
+        setAvatarFile(compressed);
+        return;
+      }
 
-      // Upload file directly to S3-compatible backend and retrieve presigned link
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-
-      const res = await axiosClient.post('/upload/image?folder=avatars', uploadFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (res.data?.url) {
-        const s3Url = res.data.url;
-        setFormData((prev) => ({ ...prev, avatar_url: s3Url }));
-        setPreviewAvatar(s3Url);
+      const url = await uploadMemberAvatar(member.id, compressed);
+      if (url) {
+        setFormData((prev) => ({ ...prev, avatar_url: url }));
+        setPreviewAvatar(url);
+        setAvatarFile(null);
+        URL.revokeObjectURL(compressedPreview);
       } else {
-        throw new Error('S3 upload returned empty URL');
+        throw new Error('empty avatar url');
       }
     } catch (err: any) {
-      console.error('Failed to upload avatar to S3:', err);
-      setError(err?.response?.data?.error || t('common.errorOccurred'));
+      const code = err?.response?.data?.code;
+      setError(avatarErrorMessage(code, err?.response?.data?.error));
       setPreviewAvatar(formData.avatar_url);
+      setAvatarFile(null);
     } finally {
       setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
     }
   };
 
@@ -102,7 +153,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
     }
 
     if (uploadingAvatar) {
-      setError('Đang tải ảnh đại diện lên máy chủ lưu trữ, vui lòng chờ...');
+      setError(t('common.saving'));
       return;
     }
 
@@ -110,22 +161,48 @@ export const MemberModal: React.FC<MemberModalProps> = ({
       setIsSubmitting(true);
       setError('');
 
-      const cleanAvatar = formData.avatar_url && !formData.avatar_url.startsWith('blob:') ? formData.avatar_url : '';
-      const payload: MemberFormData = {
-        ...formData,
-        avatar_url: cleanAvatar,
+      const payload = {
+        name: formData.name,
+        role: formData.role,
       };
 
-      if (isEditing && member) {
-        await axiosClient.put(`/members/${member.id}`, payload);
+      const existingId = member?.id || createdId;
+      if (existingId) {
+        const body: Record<string, unknown> = { ...payload };
+        if (!formData.avatar_url && member?.avatar_url) {
+          body.avatar_url = '';
+        }
+        await axiosClient.put(`/members/${existingId}`, body);
+        if (avatarFile) {
+          const url = await uploadMemberAvatar(existingId, avatarFile);
+          if (url) {
+            setFormData((prev) => ({ ...prev, avatar_url: url }));
+            setPreviewAvatar(url);
+            setAvatarFile(null);
+          }
+        }
       } else {
-        await axiosClient.post('/members', payload);
+        const created = await axiosClient.post('/members', payload);
+        const newId = created.data?.id as string | undefined;
+        if (!newId) {
+          throw new Error('missing member id');
+        }
+        setCreatedId(newId);
+        if (avatarFile) {
+          const url = await uploadMemberAvatar(newId, avatarFile);
+          if (url) {
+            setFormData((prev) => ({ ...prev, avatar_url: url }));
+            setPreviewAvatar(url);
+            setAvatarFile(null);
+          }
+        }
       }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err?.response?.data?.error || t('common.errorOccurred'));
+      const code = err?.response?.data?.code;
+      setError(avatarErrorMessage(code, err?.response?.data?.error));
     } finally {
       setIsSubmitting(false);
     }
@@ -165,7 +242,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
             <input
               type="file"
               ref={avatarInputRef}
-              accept="image/*"
+              accept={MEMBER_IMAGE_ACCEPT}
               onChange={handleAvatarFileChange}
               className="hidden"
             />
@@ -230,9 +307,19 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                 {previewAvatar && (
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      const id = member?.id || createdId;
                       setFormData({ ...formData, avatar_url: '' });
                       setPreviewAvatar('');
+                      setAvatarFile(null);
+                      if (!id) {
+                        return;
+                      }
+                      try {
+                        await axiosClient.delete(`/members/${id}/avatar`);
+                      } catch (err: any) {
+                        setError(err?.response?.data?.error || t('common.errorOccurred'));
+                      }
                     }}
                     className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-semibold text-red-600 transition-colors cursor-pointer"
                   >
@@ -279,7 +366,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                 </div>
                 <div>
                   <div className="font-bold text-xs text-slate-800">
-                    {t('members.roleFamily')} (Xanh lá)
+                    {t('members.roleFamily')} {t('members.roleColorGreen')}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-0.5">
                     {t('members.roleFamilyDesc')}
@@ -301,7 +388,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                 </div>
                 <div>
                   <div className="font-bold text-xs text-slate-800">
-                    {t('members.roleNeighbor')} (Xanh dương)
+                    {t('members.roleNeighbor')} {t('members.roleColorBlue')}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-0.5">
                     {t('members.roleNeighborDesc')}

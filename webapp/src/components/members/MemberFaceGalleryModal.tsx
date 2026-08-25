@@ -20,6 +20,14 @@ import { useTranslation } from '../../i18n';
 import axiosClient from '../../api/axiosClient';
 import { useTimezone } from '../../context/TimezoneContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import {
+  MEMBER_IMAGE_ACCEPT,
+  MAX_RAW_IMAGE_BYTES,
+  MAX_SAMPLES_PER_MEMBER,
+  MAX_SAMPLES_PER_UPLOAD,
+  compressImageToJpeg,
+  isJpegOrPngFile,
+} from '../../constants/memberImages';
 
 interface MemberFaceGalleryModalProps {
   member: MemberItem | null;
@@ -151,6 +159,10 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         return t('gallery.errTooLarge');
       case 'BAD_TYPE':
         return t('gallery.errBadType');
+      case 'SAMPLE_LIMIT':
+        return t('gallery.errSampleLimit');
+      case 'BATCH_LIMIT':
+        return t('gallery.errBatchLimit');
       default:
         return fallback || t('members.uploadFaceFailed');
     }
@@ -160,21 +172,44 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    if (files.length > MAX_SAMPLES_PER_UPLOAD) {
+      setError(t('gallery.errBatchLimit'));
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const remaining = MAX_SAMPLES_PER_MEMBER - totalFaces;
+    if (remaining <= 0) {
+      setError(t('gallery.errSampleLimit'));
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const selected = Array.from(files).slice(0, remaining);
+
     try {
       setIsUploading(true);
       setError('');
-      setUploadProgress({ current: 0, total: files.length });
+      setUploadProgress({ current: 0, total: selected.length });
 
       let addedCount = 0;
       const skipped: string[] = [];
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setUploadProgress({ current: i + 1, total: files.length });
+      for (let i = 0; i < selected.length; i++) {
+        const file = selected[i];
+        setUploadProgress({ current: i + 1, total: selected.length });
+
+        if (!isJpegOrPngFile(file)) {
+          skipped.push(`${file.name}: ${t('gallery.errBadType')}`);
+          continue;
+        }
 
         try {
+          const prepared = file.size > MAX_RAW_IMAGE_BYTES
+            ? await compressImageToJpeg(file, MAX_RAW_IMAGE_BYTES)
+            : file;
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append('file', prepared);
           const res = await axiosClient.post(`/members/${member.id}/faces/enroll`, formData, {
             timeout: 20000,
           });
@@ -188,6 +223,9 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           const code = err?.response?.data?.code as string | undefined;
           const reason = enrollErrorMessage(code, err?.response?.data?.error);
           skipped.push(`${file.name}: ${reason}`);
+          if (code === 'SAMPLE_LIMIT') {
+            break;
+          }
         }
       }
 
@@ -199,7 +237,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
 
       const parts: string[] = [];
       if (addedCount > 0) {
-        parts.push(t('gallery.enrollSummary', { ok: addedCount, total: files.length }));
+        parts.push(t('gallery.enrollSummary', { ok: addedCount, total: selected.length }));
       }
       if (skipped.length > 0) {
         parts.push(t('gallery.enrollSkipped', { count: skipped.length, reasons: skipped.join('; ') }));
@@ -313,7 +351,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                 <span>{t('gallery.title')}</span>
                 <span>•</span>
                 <span className="font-semibold text-orange-600">
-                  {totalFaces} {t('members.faceSamplesCount')}
+                  {totalFaces}/{MAX_SAMPLES_PER_MEMBER} {t('members.faceSamplesCount')}
                 </span>
               </p>
             </div>
@@ -334,11 +372,11 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         <input
           type="file"
           ref={fileInputRef}
-          accept="image/*"
+          accept={MEMBER_IMAGE_ACCEPT}
           multiple
           onChange={handleMultipleFilesUpload}
           className="hidden"
-          disabled={isUploading || isDeleting}
+          disabled={isUploading || isDeleting || totalFaces >= MAX_SAMPLES_PER_MEMBER}
         />
 
         {/* Content Body */}
@@ -374,10 +412,12 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           {/* Upload Dropzone Bar */}
           <div
             onClick={() => {
-              if (!isUploading && !isDeleting) fileInputRef.current?.click();
+              if (!isUploading && !isDeleting && totalFaces < MAX_SAMPLES_PER_MEMBER) {
+                fileInputRef.current?.click();
+              }
             }}
             className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center gap-2 transition-all group ${
-              isUploading || isDeleting
+              isUploading || isDeleting || totalFaces >= MAX_SAMPLES_PER_MEMBER
                 ? 'border-slate-200 bg-slate-50/50 cursor-not-allowed opacity-60'
                 : 'border-slate-300 hover:border-orange-500 bg-white hover:bg-orange-50/20 cursor-pointer'
             }`}
@@ -421,14 +461,14 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                       onChange={(e) => setSortBy(e.target.value as any)}
                       className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 outline-none focus:border-orange-500 cursor-pointer"
                     >
-                      <option value="created_at">Mới nhất</option>
-                      <option value="quality_score">Điểm chất lượng (Cao xuống thấp)</option>
+                      <option value="created_at">{t('gallery.sortNewest')}</option>
+                      <option value="quality_score">{t('gallery.sortQuality')}</option>
                     </select>
                     <button
                       onClick={() => setSelectionMode(true)}
                       className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
-                      Chọn nhiều
+                      {t('gallery.selectMultiple')}
                     </button>
                   </>
                 ) : (
@@ -443,7 +483,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                       }}
                       className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
-                      {selectedFaceIds.size === faces.length ? 'Bỏ chọn hết' : 'Chọn tất cả trang này'}
+                      {selectedFaceIds.size === faces.length ? t('gallery.deselectAll') : t('gallery.selectAllPage')}
                     </button>
                     <button
                       onClick={() => {
@@ -452,14 +492,14 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                       }}
                       className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
-                      Huỷ
+                      {t('common.cancel')}
                     </button>
                     <button
                       onClick={handleBatchDelete}
                       disabled={selectedFaceIds.size === 0 || isDeleting}
                       className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {isDeleting ? 'Đang xoá...' : `Xoá ${selectedFaceIds.size} mục`}
+                      {isDeleting ? t('gallery.deleting') : t('gallery.deleteSelected', { count: selectedFaceIds.size })}
                     </button>
                   </>
                 )}
@@ -583,10 +623,10 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                   {isLoadingFaces && (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                      <span>Đang tải thêm...</span>
+                      <span>{t('gallery.loadingMore')}</span>
                     </div>
                   )}
-                  {!hasMore && faces.length > 0 && <span>Đã tải hết {totalFaces} ảnh.</span>}
+                  {!hasMore && faces.length > 0 && <span>{t('gallery.loadedAll', { count: totalFaces })}</span>}
                 </div>
               </>
             ) : (

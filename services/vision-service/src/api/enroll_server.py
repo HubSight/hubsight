@@ -6,12 +6,13 @@ import json
 import logging
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
 
 from src.recognition.enroll import EnrollError, enroll_from_bytes
 
 logger = logging.getLogger(__name__)
 
-MAX_BODY = 10 * 1024 * 1024
+MAX_BODY = 2 * 1024 * 1024
 
 
 class _EnrollHandler(BaseHTTPRequestHandler):
@@ -35,9 +36,12 @@ class _EnrollHandler(BaseHTTPRequestHandler):
         self._json(404, {"ok": False, "code": "NOT_FOUND", "message": "not found"})
 
     def do_POST(self):
-        if self.path.rstrip("/") != "/internal/enroll":
+        parsed = urlparse(self.path)
+        if parsed.path.rstrip("/") != "/internal/enroll":
             self._json(404, {"ok": False, "code": "NOT_FOUND", "message": "not found"})
             return
+        qs = parse_qs(parsed.query)
+        require_quality = (qs.get("quality") or ["on"])[0].lower() != "off"
         try:
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:
@@ -46,12 +50,12 @@ class _EnrollHandler(BaseHTTPRequestHandler):
             self._json(400, {"ok": False, "code": "DECODE_ERROR", "message": "Empty body"})
             return
         if length > MAX_BODY:
-            self._json(413, {"ok": False, "code": "TOO_LARGE", "message": "Image exceeds 10MB"})
+            self._json(413, {"ok": False, "code": "TOO_LARGE", "message": "Image exceeds 2MB"})
             return
         data = self.rfile.read(length)
         engine = getattr(self.server, "face_engine", None)
         try:
-            result = enroll_from_bytes(engine, data)
+            result = enroll_from_bytes(engine, data, require_quality=require_quality)
             self._json(200, result)
         except EnrollError as exc:
             status = 503 if exc.code == "VISION_UNAVAILABLE" else 422

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import axiosClient from '../api/axiosClient';
+import { useTranslation } from '../i18n';
 
 export interface TimezoneOption {
   value: string;
@@ -9,7 +10,7 @@ export interface TimezoneOption {
 }
 
 export const TIMEZONE_OPTIONS: TimezoneOption[] = [
-  { value: 'Asia/Ho_Chi_Minh', label: 'UTC+7 (Việt Nam, Bangkok, Jakarta)', offset: '+07:00' },
+  { value: 'Asia/Ho_Chi_Minh', label: 'UTC+7 (Vietnam, Bangkok, Jakarta)', offset: '+07:00' },
   { value: 'Asia/Singapore', label: 'UTC+8 (Singapore, Hong Kong, Beijing)', offset: '+08:00' },
   { value: 'Asia/Tokyo', label: 'UTC+9 (Tokyo, Seoul)', offset: '+09:00' },
   { value: 'Asia/Dubai', label: 'UTC+4 (Dubai, Abu Dhabi)', offset: '+04:00' },
@@ -42,6 +43,8 @@ const TimezoneContext = createContext<TimezoneContextType>({
 
 export const TimezoneProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, setUser } = useAuth();
+  const { t, locale } = useTranslation();
+  const intlLocale = locale === 'en' ? 'en-GB' : 'vi-VN';
   const [timezone, setTimezoneState] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved || DEFAULT_TIMEZONE;
@@ -74,7 +77,7 @@ export const TimezoneProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const d = new Date(date);
         if (isNaN(d.getTime())) return '';
-        return new Intl.DateTimeFormat('vi-VN', {
+        return new Intl.DateTimeFormat(intlLocale, {
           timeZone: timezone,
           hour: '2-digit',
           minute: '2-digit',
@@ -85,14 +88,14 @@ export const TimezoneProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return '';
       }
     };
-  }, [timezone]);
+  }, [timezone, intlLocale]);
 
   const formatDateTime = useMemo(() => {
     return (date: string | Date | number): string => {
       try {
         const d = new Date(date);
         if (isNaN(d.getTime())) return '';
-        return new Intl.DateTimeFormat('vi-VN', {
+        return new Intl.DateTimeFormat(intlLocale, {
           timeZone: timezone,
           year: 'numeric',
           month: '2-digit',
@@ -106,7 +109,7 @@ export const TimezoneProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return '';
       }
     };
-  }, [timezone]);
+  }, [timezone, intlLocale]);
 
   const formatNotificationBody = useMemo(() => {
     return (body: string, createdAt: string | Date | number): string => {
@@ -114,10 +117,10 @@ export const TimezoneProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (!timeStr) return body;
 
       // Clean any server-side UTC hardcoded string like "lúc 16:06:30"
-      const cleanBody = body.replace(/\s*lúc\s*\d{1,2}:\d{2}(:\d{2})?/gi, '').trim();
-      return `${cleanBody} lúc ${timeStr}`;
+      const cleanBody = body.replace(/\s*(lúc|at)\s*\d{1,2}:\d{2}(:\d{2})?/gi, '').trim();
+      return `${cleanBody} ${t('common.at')} ${timeStr}`;
     };
-  }, [formatTime]);
+  }, [formatTime, t]);
 
   return (
     <TimezoneContext.Provider

@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"cctv/shared/ent/user"
+	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/argon2"
@@ -52,7 +53,8 @@ func hashPassword(password string) (string, error) {
 }
 
 func main() {
-	if err := database.Connect(""); err != nil {
+	cfg := config.Load()
+	if err := database.Connect(cfg.DatabaseURL); err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer database.Close()
