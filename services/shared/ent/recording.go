@@ -28,6 +28,8 @@ type Recording struct {
 	DurationSeconds int `json:"duration_seconds,omitempty"`
 	// FilePath holds the value of the "file_path" field.
 	FilePath string `json:"file_path,omitempty"`
+	// ThumbnailPath holds the value of the "thumbnail_path" field.
+	ThumbnailPath string `json:"thumbnail_path,omitempty"`
 	// SizeBytes holds the value of the "size_bytes" field.
 	SizeBytes int64 `json:"size_bytes,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -65,7 +67,7 @@ func (*Recording) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case recording.FieldDurationSeconds, recording.FieldSizeBytes:
 			values[i] = new(sql.NullInt64)
-		case recording.FieldID, recording.FieldCameraID, recording.FieldFilePath:
+		case recording.FieldID, recording.FieldCameraID, recording.FieldFilePath, recording.FieldThumbnailPath:
 			values[i] = new(sql.NullString)
 		case recording.FieldStartAt, recording.FieldEndAt, recording.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -119,6 +121,12 @@ func (_m *Recording) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field file_path", values[i])
 			} else if value.Valid {
 				_m.FilePath = value.String
+			}
+		case recording.FieldThumbnailPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field thumbnail_path", values[i])
+			} else if value.Valid {
+				_m.ThumbnailPath = value.String
 			}
 		case recording.FieldSizeBytes:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -187,6 +195,9 @@ func (_m *Recording) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("file_path=")
 	builder.WriteString(_m.FilePath)
+	builder.WriteString(", ")
+	builder.WriteString("thumbnail_path=")
+	builder.WriteString(_m.ThumbnailPath)
 	builder.WriteString(", ")
 	builder.WriteString("size_bytes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SizeBytes))

@@ -14,6 +14,7 @@ export interface Recording {
   end_at: string;
   duration_seconds: number;
   file_path: string;
+  thumbnail_path?: string;
   size_bytes: number;
   created_at: string;
 }

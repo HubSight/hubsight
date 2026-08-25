@@ -116,6 +116,7 @@ var (
 		{Name: "end_at", Type: field.TypeTime},
 		{Name: "duration_seconds", Type: field.TypeInt},
 		{Name: "file_path", Type: field.TypeString, Unique: true},
+		{Name: "thumbnail_path", Type: field.TypeString, Nullable: true},
 		{Name: "size_bytes", Type: field.TypeInt64},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "camera_id", Type: field.TypeString},
@@ -128,7 +129,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "recordings_cameras_recordings",
-				Columns:    []*schema.Column{RecordingsColumns[7]},
+				Columns:    []*schema.Column{RecordingsColumns[8]},
 				RefColumns: []*schema.Column{CamerasColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

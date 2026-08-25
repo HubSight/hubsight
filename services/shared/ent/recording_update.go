@@ -91,6 +91,26 @@ func (_u *RecordingUpdate) SetNillableFilePath(v *string) *RecordingUpdate {
 	return _u
 }
 
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (_u *RecordingUpdate) SetThumbnailPath(v string) *RecordingUpdate {
+	_u.mutation.SetThumbnailPath(v)
+	return _u
+}
+
+// SetNillableThumbnailPath sets the "thumbnail_path" field if the given value is not nil.
+func (_u *RecordingUpdate) SetNillableThumbnailPath(v *string) *RecordingUpdate {
+	if v != nil {
+		_u.SetThumbnailPath(*v)
+	}
+	return _u
+}
+
+// ClearThumbnailPath clears the value of the "thumbnail_path" field.
+func (_u *RecordingUpdate) ClearThumbnailPath() *RecordingUpdate {
+	_u.mutation.ClearThumbnailPath()
+	return _u
+}
+
 // SetSizeBytes sets the "size_bytes" field.
 func (_u *RecordingUpdate) SetSizeBytes(v int64) *RecordingUpdate {
 	_u.mutation.ResetSizeBytes()
@@ -193,6 +213,12 @@ func (_u *RecordingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.FilePath(); ok {
 		_spec.SetField(recording.FieldFilePath, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.ThumbnailPath(); ok {
+		_spec.SetField(recording.FieldThumbnailPath, field.TypeString, value)
+	}
+	if _u.mutation.ThumbnailPathCleared() {
+		_spec.ClearField(recording.FieldThumbnailPath, field.TypeString)
+	}
 	if value, ok := _u.mutation.SizeBytes(); ok {
 		_spec.SetField(recording.FieldSizeBytes, field.TypeInt64, value)
 	}
@@ -282,6 +308,26 @@ func (_u *RecordingUpdateOne) SetNillableFilePath(v *string) *RecordingUpdateOne
 	if v != nil {
 		_u.SetFilePath(*v)
 	}
+	return _u
+}
+
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (_u *RecordingUpdateOne) SetThumbnailPath(v string) *RecordingUpdateOne {
+	_u.mutation.SetThumbnailPath(v)
+	return _u
+}
+
+// SetNillableThumbnailPath sets the "thumbnail_path" field if the given value is not nil.
+func (_u *RecordingUpdateOne) SetNillableThumbnailPath(v *string) *RecordingUpdateOne {
+	if v != nil {
+		_u.SetThumbnailPath(*v)
+	}
+	return _u
+}
+
+// ClearThumbnailPath clears the value of the "thumbnail_path" field.
+func (_u *RecordingUpdateOne) ClearThumbnailPath() *RecordingUpdateOne {
+	_u.mutation.ClearThumbnailPath()
 	return _u
 }
 
@@ -416,6 +462,12 @@ func (_u *RecordingUpdateOne) sqlSave(ctx context.Context) (_node *Recording, er
 	}
 	if value, ok := _u.mutation.FilePath(); ok {
 		_spec.SetField(recording.FieldFilePath, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ThumbnailPath(); ok {
+		_spec.SetField(recording.FieldThumbnailPath, field.TypeString, value)
+	}
+	if _u.mutation.ThumbnailPathCleared() {
+		_spec.ClearField(recording.FieldThumbnailPath, field.TypeString)
 	}
 	if value, ok := _u.mutation.SizeBytes(); ok {
 		_spec.SetField(recording.FieldSizeBytes, field.TypeInt64, value)

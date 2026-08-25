@@ -85,7 +85,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install opencv-python-headless && \
     pip install \
         --extra-index-url https://download.pytorch.org/whl/cpu \
-        -r requirements.txt
+        -r requirements.txt && \
+    pip uninstall -y opencv-python
 
 # Bake in pre-fetched YOLO model weights (eliminates internet download at startup)
 COPY --from=model-fetcher /app/yolo26n.pt ./yolo26n.pt

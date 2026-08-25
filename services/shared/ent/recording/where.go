@@ -90,6 +90,11 @@ func FilePath(v string) predicate.Recording {
 	return predicate.Recording(sql.FieldEQ(FieldFilePath, v))
 }
 
+// ThumbnailPath applies equality check predicate on the "thumbnail_path" field. It's identical to ThumbnailPathEQ.
+func ThumbnailPath(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldEQ(FieldThumbnailPath, v))
+}
+
 // SizeBytes applies equality check predicate on the "size_bytes" field. It's identical to SizeBytesEQ.
 func SizeBytes(v int64) predicate.Recording {
 	return predicate.Recording(sql.FieldEQ(FieldSizeBytes, v))
@@ -348,6 +353,81 @@ func FilePathEqualFold(v string) predicate.Recording {
 // FilePathContainsFold applies the ContainsFold predicate on the "file_path" field.
 func FilePathContainsFold(v string) predicate.Recording {
 	return predicate.Recording(sql.FieldContainsFold(FieldFilePath, v))
+}
+
+// ThumbnailPathEQ applies the EQ predicate on the "thumbnail_path" field.
+func ThumbnailPathEQ(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldEQ(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathNEQ applies the NEQ predicate on the "thumbnail_path" field.
+func ThumbnailPathNEQ(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldNEQ(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathIn applies the In predicate on the "thumbnail_path" field.
+func ThumbnailPathIn(vs ...string) predicate.Recording {
+	return predicate.Recording(sql.FieldIn(FieldThumbnailPath, vs...))
+}
+
+// ThumbnailPathNotIn applies the NotIn predicate on the "thumbnail_path" field.
+func ThumbnailPathNotIn(vs ...string) predicate.Recording {
+	return predicate.Recording(sql.FieldNotIn(FieldThumbnailPath, vs...))
+}
+
+// ThumbnailPathGT applies the GT predicate on the "thumbnail_path" field.
+func ThumbnailPathGT(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldGT(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathGTE applies the GTE predicate on the "thumbnail_path" field.
+func ThumbnailPathGTE(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldGTE(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathLT applies the LT predicate on the "thumbnail_path" field.
+func ThumbnailPathLT(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldLT(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathLTE applies the LTE predicate on the "thumbnail_path" field.
+func ThumbnailPathLTE(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldLTE(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathContains applies the Contains predicate on the "thumbnail_path" field.
+func ThumbnailPathContains(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldContains(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathHasPrefix applies the HasPrefix predicate on the "thumbnail_path" field.
+func ThumbnailPathHasPrefix(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldHasPrefix(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathHasSuffix applies the HasSuffix predicate on the "thumbnail_path" field.
+func ThumbnailPathHasSuffix(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldHasSuffix(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathIsNil applies the IsNil predicate on the "thumbnail_path" field.
+func ThumbnailPathIsNil() predicate.Recording {
+	return predicate.Recording(sql.FieldIsNull(FieldThumbnailPath))
+}
+
+// ThumbnailPathNotNil applies the NotNil predicate on the "thumbnail_path" field.
+func ThumbnailPathNotNil() predicate.Recording {
+	return predicate.Recording(sql.FieldNotNull(FieldThumbnailPath))
+}
+
+// ThumbnailPathEqualFold applies the EqualFold predicate on the "thumbnail_path" field.
+func ThumbnailPathEqualFold(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldEqualFold(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathContainsFold applies the ContainsFold predicate on the "thumbnail_path" field.
+func ThumbnailPathContainsFold(v string) predicate.Recording {
+	return predicate.Recording(sql.FieldContainsFold(FieldThumbnailPath, v))
 }
 
 // SizeBytesEQ applies the EQ predicate on the "size_bytes" field.

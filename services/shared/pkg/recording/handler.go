@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"cctv/shared/ent"
@@ -120,11 +119,13 @@ func ThumbnailHandler(c *gin.Context) {
 		return
 	}
 
-	ext := filepath.Ext(rec.FilePath)
-	thumbKey := strings.TrimSuffix(rec.FilePath, ext) + "_thumb.jpg"
+	if rec.ThumbnailPath == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Thumbnail not found"})
+		return
+	}
 
 	expiry := time.Hour * 2
-	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, thumbKey, expiry, nil)
+	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, rec.ThumbnailPath, expiry, nil)
 	if err != nil {
 		log.Printf("Failed to generate thumbnail presigned URL: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get thumbnail"})

@@ -4289,6 +4289,7 @@ type RecordingMutation struct {
 	duration_seconds    *int
 	addduration_seconds *int
 	file_path           *string
+	thumbnail_path      *string
 	size_bytes          *int64
 	addsize_bytes       *int64
 	created_at          *time.Time
@@ -4604,6 +4605,55 @@ func (m *RecordingMutation) ResetFilePath() {
 	m.file_path = nil
 }
 
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (m *RecordingMutation) SetThumbnailPath(s string) {
+	m.thumbnail_path = &s
+}
+
+// ThumbnailPath returns the value of the "thumbnail_path" field in the mutation.
+func (m *RecordingMutation) ThumbnailPath() (r string, exists bool) {
+	v := m.thumbnail_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThumbnailPath returns the old "thumbnail_path" field's value of the Recording entity.
+// If the Recording object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecordingMutation) OldThumbnailPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThumbnailPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThumbnailPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThumbnailPath: %w", err)
+	}
+	return oldValue.ThumbnailPath, nil
+}
+
+// ClearThumbnailPath clears the value of the "thumbnail_path" field.
+func (m *RecordingMutation) ClearThumbnailPath() {
+	m.thumbnail_path = nil
+	m.clearedFields[recording.FieldThumbnailPath] = struct{}{}
+}
+
+// ThumbnailPathCleared returns if the "thumbnail_path" field was cleared in this mutation.
+func (m *RecordingMutation) ThumbnailPathCleared() bool {
+	_, ok := m.clearedFields[recording.FieldThumbnailPath]
+	return ok
+}
+
+// ResetThumbnailPath resets all changes to the "thumbnail_path" field.
+func (m *RecordingMutation) ResetThumbnailPath() {
+	m.thumbnail_path = nil
+	delete(m.clearedFields, recording.FieldThumbnailPath)
+}
+
 // SetSizeBytes sets the "size_bytes" field.
 func (m *RecordingMutation) SetSizeBytes(i int64) {
 	m.size_bytes = &i
@@ -4757,7 +4807,7 @@ func (m *RecordingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecordingMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.camera != nil {
 		fields = append(fields, recording.FieldCameraID)
 	}
@@ -4772,6 +4822,9 @@ func (m *RecordingMutation) Fields() []string {
 	}
 	if m.file_path != nil {
 		fields = append(fields, recording.FieldFilePath)
+	}
+	if m.thumbnail_path != nil {
+		fields = append(fields, recording.FieldThumbnailPath)
 	}
 	if m.size_bytes != nil {
 		fields = append(fields, recording.FieldSizeBytes)
@@ -4797,6 +4850,8 @@ func (m *RecordingMutation) Field(name string) (ent.Value, bool) {
 		return m.DurationSeconds()
 	case recording.FieldFilePath:
 		return m.FilePath()
+	case recording.FieldThumbnailPath:
+		return m.ThumbnailPath()
 	case recording.FieldSizeBytes:
 		return m.SizeBytes()
 	case recording.FieldCreatedAt:
@@ -4820,6 +4875,8 @@ func (m *RecordingMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldDurationSeconds(ctx)
 	case recording.FieldFilePath:
 		return m.OldFilePath(ctx)
+	case recording.FieldThumbnailPath:
+		return m.OldThumbnailPath(ctx)
 	case recording.FieldSizeBytes:
 		return m.OldSizeBytes(ctx)
 	case recording.FieldCreatedAt:
@@ -4867,6 +4924,13 @@ func (m *RecordingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFilePath(v)
+		return nil
+	case recording.FieldThumbnailPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThumbnailPath(v)
 		return nil
 	case recording.FieldSizeBytes:
 		v, ok := value.(int64)
@@ -4938,7 +5002,11 @@ func (m *RecordingMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *RecordingMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(recording.FieldThumbnailPath) {
+		fields = append(fields, recording.FieldThumbnailPath)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -4951,6 +5019,11 @@ func (m *RecordingMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *RecordingMutation) ClearField(name string) error {
+	switch name {
+	case recording.FieldThumbnailPath:
+		m.ClearThumbnailPath()
+		return nil
+	}
 	return fmt.Errorf("unknown Recording nullable field %s", name)
 }
 
@@ -4972,6 +5045,9 @@ func (m *RecordingMutation) ResetField(name string) error {
 		return nil
 	case recording.FieldFilePath:
 		m.ResetFilePath()
+		return nil
+	case recording.FieldThumbnailPath:
+		m.ResetThumbnailPath()
 		return nil
 	case recording.FieldSizeBytes:
 		m.ResetSizeBytes()

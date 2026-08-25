@@ -217,7 +217,7 @@ func init() {
 	recordingFields := schema.Recording{}.Fields()
 	_ = recordingFields
 	// recordingDescCreatedAt is the schema descriptor for created_at field.
-	recordingDescCreatedAt := recordingFields[7].Descriptor()
+	recordingDescCreatedAt := recordingFields[8].Descriptor()
 	// recording.DefaultCreatedAt holds the default value on creation for the created_at field.
 	recording.DefaultCreatedAt = recordingDescCreatedAt.Default.(func() time.Time)
 	// recordingDescID is the schema descriptor for id field.

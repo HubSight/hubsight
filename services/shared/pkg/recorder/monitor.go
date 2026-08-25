@@ -13,6 +13,7 @@ import (
 
 	"cctv/shared/pkg/recording"
 	"cctv/shared/pkg/storage"
+
 	"github.com/minio/minio-go/v7"
 )
 
@@ -93,7 +94,7 @@ func MonitorSegments(ctx context.Context, cameraID, cameraName string, outDir st
 					}
 
 					// Insert metadata into DB
-					if _, err := recording.Insert(context.Background(), cameraID, info.ModTime().Add(-minAge), info.ModTime(), segDuration, objectKey, info.Size()); err != nil {
+					if _, err := recording.Insert(context.Background(), cameraID, info.ModTime().Add(-minAge), info.ModTime(), segDuration, objectKey, "", info.Size()); err != nil {
 						log.Printf("[Cam %s] Failed to insert recording metadata: %v", cameraID, err)
 					} else {
 						log.Printf("[Cam %s] Saved recording metadata for %s", cameraID, objectKey)

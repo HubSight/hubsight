@@ -29,13 +29,14 @@ func GetByID(ctx context.Context, id string) (*ent.Recording, error) {
 }
 
 // Ensure the Camera exists first (for foreign key). We can hardcode camera 1 for now if needed.
-func Insert(ctx context.Context, cameraID string, startAt, endAt time.Time, duration int, filePath string, sizeBytes int64) (*ent.Recording, error) {
+func Insert(ctx context.Context, cameraID string, startAt, endAt time.Time, duration int, filePath string, thumbnailPath string, sizeBytes int64) (*ent.Recording, error) {
 	return database.Client.Recording.Create().
 		SetCameraID(cameraID).
 		SetStartAt(startAt).
 		SetEndAt(endAt).
 		SetDurationSeconds(duration).
 		SetFilePath(filePath).
+		SetThumbnailPath(thumbnailPath).
 		SetSizeBytes(sizeBytes).
 		Save(ctx)
 }

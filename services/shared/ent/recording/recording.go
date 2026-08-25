@@ -24,6 +24,8 @@ const (
 	FieldDurationSeconds = "duration_seconds"
 	// FieldFilePath holds the string denoting the file_path field in the database.
 	FieldFilePath = "file_path"
+	// FieldThumbnailPath holds the string denoting the thumbnail_path field in the database.
+	FieldThumbnailPath = "thumbnail_path"
 	// FieldSizeBytes holds the string denoting the size_bytes field in the database.
 	FieldSizeBytes = "size_bytes"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -49,6 +51,7 @@ var Columns = []string{
 	FieldEndAt,
 	FieldDurationSeconds,
 	FieldFilePath,
+	FieldThumbnailPath,
 	FieldSizeBytes,
 	FieldCreatedAt,
 }
@@ -101,6 +104,11 @@ func ByDurationSeconds(opts ...sql.OrderTermOption) OrderOption {
 // ByFilePath orders the results by the file_path field.
 func ByFilePath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFilePath, opts...).ToFunc()
+}
+
+// ByThumbnailPath orders the results by the thumbnail_path field.
+func ByThumbnailPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldThumbnailPath, opts...).ToFunc()
 }
 
 // BySizeBytes orders the results by the size_bytes field.

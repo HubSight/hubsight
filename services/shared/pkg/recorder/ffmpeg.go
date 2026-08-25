@@ -234,7 +234,7 @@ func RunEventFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 		}
 
 		duration := 35
-		if _, err := recording.Insert(context.Background(), cfg.CameraID, stat.ModTime().Add(-time.Duration(duration)*time.Second), stat.ModTime(), duration, videoObjectKey, stat.Size()); err != nil {
+		if _, err := recording.Insert(context.Background(), cfg.CameraID, stat.ModTime().Add(-time.Duration(duration)*time.Second), stat.ModTime(), duration, videoObjectKey, thumbObjectKey, stat.Size()); err != nil {
 			log.Printf("[Cam %s] Failed to insert event recording metadata: %v", cfg.CameraID, err)
 		} else {
 			log.Printf("[Cam %s] Event recording metadata saved: %s", cfg.CameraID, videoObjectKey)

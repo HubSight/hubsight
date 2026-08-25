@@ -51,6 +51,20 @@ func (_c *RecordingCreate) SetFilePath(v string) *RecordingCreate {
 	return _c
 }
 
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (_c *RecordingCreate) SetThumbnailPath(v string) *RecordingCreate {
+	_c.mutation.SetThumbnailPath(v)
+	return _c
+}
+
+// SetNillableThumbnailPath sets the "thumbnail_path" field if the given value is not nil.
+func (_c *RecordingCreate) SetNillableThumbnailPath(v *string) *RecordingCreate {
+	if v != nil {
+		_c.SetThumbnailPath(*v)
+	}
+	return _c
+}
+
 // SetSizeBytes sets the "size_bytes" field.
 func (_c *RecordingCreate) SetSizeBytes(v int64) *RecordingCreate {
 	_c.mutation.SetSizeBytes(v)
@@ -211,6 +225,10 @@ func (_c *RecordingCreate) createSpec() (*Recording, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.FilePath(); ok {
 		_spec.SetField(recording.FieldFilePath, field.TypeString, value)
 		_node.FilePath = value
+	}
+	if value, ok := _c.mutation.ThumbnailPath(); ok {
+		_spec.SetField(recording.FieldThumbnailPath, field.TypeString, value)
+		_node.ThumbnailPath = value
 	}
 	if value, ok := _c.mutation.SizeBytes(); ok {
 		_spec.SetField(recording.FieldSizeBytes, field.TypeInt64, value)

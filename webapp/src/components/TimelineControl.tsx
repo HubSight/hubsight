@@ -12,7 +12,8 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  HardDrive
+  HardDrive,
+  ShieldCheck
 } from 'lucide-react';
 import type { Recording } from '../types/recording';
 import { useTranslation } from '../i18n';
@@ -261,11 +262,13 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
           {/* 3. Event Video Clips Grid */}
           <div className="pt-2">
             {filteredRecordings.length === 0 ? (
-              <div className="py-10 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2 bg-slate-950/40 rounded-xl border border-slate-800/40">
-                <Clock size={28} className="text-slate-600 mb-1" />
-                <span className="text-slate-300 font-medium">{t('timeline.noDataInterval')}</span>
+              <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-3 bg-slate-950/40 rounded-xl border border-slate-800/40 shadow-inner">
+                <div className="p-4 bg-emerald-500/10 rounded-full">
+                  <ShieldCheck size={32} className="text-emerald-500" />
+                </div>
+                <span className="text-slate-300 font-semibold text-sm">Mọi thứ đều an toàn</span>
                 <p className="text-[11px] text-slate-500 max-w-sm">
-                  {t('timeline.prePostBuffer')}
+                  Không có sự kiện an ninh nào được ghi nhận trong khoảng thời gian này.
                 </p>
               </div>
             ) : (
@@ -290,15 +293,17 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                     >
                       {/* Thumbnail Container (16:9) */}
                       <div className="relative aspect-video w-full bg-slate-950 overflow-hidden flex items-center justify-center">
-                        <img
-                          src={`/api/archive/${rec.id}/thumbnail`}
-                          alt={meta.label}
-                          onError={(e) => {
-                            // If thumbnail not found or failed, hide img and show fallback icon
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
+                        {rec.thumbnail_path && (
+                          <img
+                            src={`${import.meta.env.VITE_API_URL || '/api'}/archive/${rec.id}/thumbnail`}
+                            alt={meta.label}
+                            onError={(e) => {
+                              // If thumbnail not found or failed, hide img and show fallback icon
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        )}
 
                         {/* Fallback Icon overlay when image is not present or loading */}
                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 -z-10 pointer-events-none">

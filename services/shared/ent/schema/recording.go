@@ -27,6 +27,7 @@ func (Recording) Fields() []ent.Field {
 		field.Time("end_at"),
 		field.Int("duration_seconds"),
 		field.String("file_path").Unique(),
+		field.String("thumbnail_path").Optional(),
 		field.Int64("size_bytes"),
 		field.Time("created_at").Default(time.Now),
 	}
