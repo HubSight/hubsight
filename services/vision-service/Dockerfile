@@ -57,9 +57,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     torch torchvision ultralytics lapx
 RUN python -c "\
 from ultralytics import YOLO; import numpy as np; \
-m = YOLO('yolo11n.pt'); \
+m = YOLO('yolo26n.pt'); \
 m.track(np.zeros((384,640,3), dtype=np.uint8), classes=[0], imgsz=(384,640), tracker='bytetrack.yaml', verbose=False); \
-print('YOLO yolo11n.pt cached OK')"
+print('YOLO yolo26n.pt cached OK')"
 
 # =============================================================================
 # Stage 3: runtime — lean production image
@@ -90,7 +90,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip uninstall -y polars polars-runtime-32 sympy mpmath
 
 # Bake in pre-fetched YOLO model weights (eliminates internet download at startup)
-COPY --from=model-fetcher /app/yolo11n.pt ./yolo11n.pt
+COPY --from=model-fetcher /app/yolo26n.pt ./yolo26n.pt
 
 # Bake in pre-fetched InsightFace models (eliminates network call at startup)
 COPY --from=model-fetcher /root/.insightface /root/.insightface
