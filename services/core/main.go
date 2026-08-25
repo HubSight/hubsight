@@ -91,7 +91,8 @@ func (s *grpcCoreServer) GetCameras(ctx context.Context, req *pb.GetCamerasReque
 
 	var pbCams []*pb.CameraData
 	for _, c := range cams {
-		if req.OnlyActive && !c.IsActive {
+		streaming := c.IsActive && !c.IsStopped
+		if req.OnlyActive && !streaming {
 			continue
 		}
 		if req.OnlyAiEnabled && !c.EnableAi {
@@ -101,7 +102,7 @@ func (s *grpcCoreServer) GetCameras(ctx context.Context, req *pb.GetCamerasReque
 			Id:       c.ID,
 			Name:     c.Name,
 			Host:     c.Host,
-			IsActive: c.IsActive,
+			IsActive: streaming,
 			EnableAi: c.EnableAi,
 		})
 	}

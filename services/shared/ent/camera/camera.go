@@ -34,6 +34,8 @@ const (
 	FieldExtraArgs = "extra_args"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldIsStopped holds the string denoting the is_stopped field in the database.
+	FieldIsStopped = "is_stopped"
 	// FieldEnableAi holds the string denoting the enable_ai field in the database.
 	FieldEnableAi = "enable_ai"
 	// FieldShowBbox holds the string denoting the show_bbox field in the database.
@@ -68,6 +70,7 @@ var Columns = []string{
 	FieldAudioMode,
 	FieldExtraArgs,
 	FieldIsActive,
+	FieldIsStopped,
 	FieldEnableAi,
 	FieldShowBbox,
 	FieldCreatedAt,
@@ -105,6 +108,8 @@ var (
 	DefaultExtraArgs string
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// DefaultIsStopped holds the default value on creation for the "is_stopped" field.
+	DefaultIsStopped bool
 	// DefaultEnableAi holds the default value on creation for the "enable_ai" field.
 	DefaultEnableAi bool
 	// DefaultShowBbox holds the default value on creation for the "show_bbox" field.
@@ -175,6 +180,11 @@ func ByExtraArgs(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByIsStopped orders the results by the is_stopped field.
+func ByIsStopped(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsStopped, opts...).ToFunc()
 }
 
 // ByEnableAi orders the results by the enable_ai field.

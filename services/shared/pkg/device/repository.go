@@ -18,6 +18,7 @@ type DeviceInput struct {
 	AudioMode       string `json:"audio_mode"`
 	ExtraArgs       string `json:"extra_args"`
 	IsActive        *bool  `json:"is_active"`
+	IsStopped       *bool  `json:"is_stopped"`
 	EnableAi        *bool  `json:"enable_ai"`
 	ShowBbox        *bool  `json:"show_bbox"`
 }
@@ -58,6 +59,9 @@ func Create(ctx context.Context, input DeviceInput) (*ent.Camera, error) {
 	if input.IsActive != nil {
 		query.SetIsActive(*input.IsActive)
 	}
+	if input.IsStopped != nil {
+		query.SetIsStopped(*input.IsStopped)
+	}
 	if input.EnableAi != nil {
 		query.SetEnableAi(*input.EnableAi)
 	}
@@ -95,6 +99,9 @@ func Update(ctx context.Context, id string, input DeviceInput) (*ent.Camera, err
 	if input.IsActive != nil {
 		query.SetIsActive(*input.IsActive)
 	}
+	if input.IsStopped != nil {
+		query.SetIsStopped(*input.IsStopped)
+	}
 	if input.EnableAi != nil {
 		query.SetEnableAi(*input.EnableAi)
 	}
@@ -107,6 +114,15 @@ func Update(ctx context.Context, id string, input DeviceInput) (*ent.Camera, err
 
 func Delete(ctx context.Context, id string) error {
 	return database.Client.Camera.DeleteOneID(id).Exec(ctx)
+}
+
+func SetStopped(ctx context.Context, id string, stopped bool) (*ent.Camera, error) {
+	return database.Client.Camera.UpdateOneID(id).SetIsStopped(stopped).Save(ctx)
+}
+
+// IsStreaming reports whether the camera may hold pool / live / CV / NVR connections.
+func IsStreaming(dev *ent.Camera) bool {
+	return dev != nil && dev.IsActive && !dev.IsStopped
 }
 
 // CameraEventPayload always includes bools. ent json omitempty drops enable_ai=false
@@ -127,6 +143,7 @@ func CameraEventPayload(dev *ent.Camera) map[string]interface{} {
 		"audio_mode":       dev.AudioMode,
 		"extra_args":       dev.ExtraArgs,
 		"is_active":        dev.IsActive,
+		"is_stopped":       dev.IsStopped,
 		"enable_ai":        dev.EnableAi,
 		"show_bbox":        dev.ShowBbox,
 		"created_at":       dev.CreatedAt,

@@ -4,6 +4,7 @@ export interface CameraItem {
   host: string;
   brand: string;
   is_active: boolean;
+  is_stopped?: boolean;
   enable_ai?: boolean;
   show_bbox?: boolean;
 }

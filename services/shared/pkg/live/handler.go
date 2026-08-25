@@ -36,8 +36,8 @@ func WebRTCHandler(c *gin.Context) {
 		return
 	}
 
-	if !cam.IsActive {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Camera is currently inactive"})
+	if !cam.IsActive || cam.IsStopped {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Camera is currently stopped"})
 		return
 	}
 
@@ -150,10 +150,10 @@ func LiveStatusHandler(c *gin.Context) {
 		return
 	}
 
-	// Since we delegate to go2rtc on the fly, we just return whether it's active in DB
 	c.JSON(http.StatusOK, gin.H{
-		"camera_id": camID,
-		"is_live":   cam.IsActive,
+		"camera_id":  camID,
+		"is_live":    cam.IsActive && !cam.IsStopped,
+		"is_stopped": cam.IsStopped,
 	})
 }
 

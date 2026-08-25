@@ -22,6 +22,7 @@ interface TimelineControlProps {
   currentDate: string; // YYYY-MM-DD
   activeRecording?: Recording | null;
   mode?: 'live' | 'archive';
+  liveOffline?: boolean;
   onSeek: (recording: Recording, offsetSeconds: number) => void;
   onGoLive?: () => void;
 }
@@ -77,6 +78,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
   currentDate,
   activeRecording,
   mode = 'live',
+  liveOffline = false,
   onSeek,
   onGoLive
 }) => {
@@ -170,30 +172,41 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
             })}
           </div>
 
-          {/* Go Live Button */}
-          {onGoLive && (
+          <div className="flex items-center bg-slate-950/70 rounded-xl p-1 border border-slate-800 shadow-inner">
+            {onGoLive && (
+              <button
+                onClick={onGoLive}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg font-medium transition-all cursor-pointer ${
+                  mode === 'live' && !liveOffline
+                    ? 'bg-slate-800 text-orange-400 shadow-sm border border-slate-700 font-semibold'
+                    : liveOffline
+                    ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+                title={liveOffline ? t('playback.liveOfflineTitle') : t('timeline.watchLive')}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    mode === 'live' && !liveOffline
+                      ? 'bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.8)]'
+                      : 'bg-slate-500'
+                  }`}
+                />
+                <Radio
+                  size={12}
+                  className={mode === 'live' && !liveOffline ? 'text-orange-400' : 'text-slate-500'}
+                />
+                <span>{t('timeline.live')}</span>
+              </button>
+            )}
             <button
-              onClick={onGoLive}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm ${
-                mode === 'live'
-                  ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30 border border-orange-500 ring-2 ring-orange-500/20 animate-pulse'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700'
-              }`}
-              title={t('timeline.watchLive')}
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer"
+              title={isCollapsed ? t('timeline.expand') : t('timeline.collapse')}
             >
-              <Radio size={13} className={mode === 'live' ? 'text-white' : 'text-orange-500'} />
-              <span>{t('timeline.live')}</span>
+              {isCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
             </button>
-          )}
-
-          {/* Collapse Toggle */}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-colors cursor-pointer"
-            title={isCollapsed ? t('timeline.expand') : t('timeline.collapse')}
-          >
-            {isCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
-          </button>
+          </div>
         </div>
       </div>
 

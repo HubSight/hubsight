@@ -95,17 +95,20 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	}
 
 	if !isActive {
-		// If camera is completely deactivated, terminate all live streams
+		// Stop / deactivate: tear down live, NVR, and CV immediately.
 		for name := range p.LivePool {
 			_ = m.go2rtc.UnregisterStream(ctx, name)
 		}
 		p.LivePool = make(map[string]*StreamConnection)
-		// Terminate NVR stream if exists
 		if p.NVRConnection != nil {
 			_ = m.go2rtc.UnregisterStream(ctx, p.NVRConnection.StreamName)
 			p.NVRConnection = nil
 		}
-		log.Printf("[Pool] Camera %s deactivated. All pool connections terminated.", camID)
+		if p.CVConnection != nil {
+			_ = m.go2rtc.UnregisterStream(ctx, p.CVConnection.StreamName)
+			p.CVConnection = nil
+		}
+		log.Printf("[Pool] Camera %s stopped or deactivated. All pool connections terminated immediately.", camID)
 		m.scheduleNotify()
 		return nil
 	}
@@ -231,7 +234,7 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 	defer p.mu.Unlock()
 
 	if !p.IsActive {
-		return nil, fmt.Errorf("camera %s is inactive", camID)
+		return nil, fmt.Errorf("camera %s is stopped", camID)
 	}
 
 	if candidate := pickReusableLiveConn(p); candidate != nil {

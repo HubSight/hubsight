@@ -34,10 +34,10 @@ func ListAICamerasHandler(c *gin.Context) {
 		return
 	}
 
-	// Fetch all active cameras with AI enabled from database.
+	// Fetch all streaming cameras with AI enabled from database.
 	// In Connection Pool mode, CV runs continuously in background 24/7.
 	devices, err := database.Client.Camera.Query().
-		Where(camera.IsActive(true), camera.EnableAi(true)).
+		Where(camera.IsActive(true), camera.IsStopped(false), camera.EnableAi(true)).
 		Order(ent.Asc("id")).
 		All(c.Request.Context())
 
@@ -137,6 +137,80 @@ func UpdateDeviceHandler(c *gin.Context) {
 	}
 
 	mq.PublishCameraEvent("camera.updated", CameraEventPayload(dev))
+
+	c.JSON(http.StatusOK, dev)
+}
+
+func pickAlternativeCamera(c *gin.Context, stoppedID string) (id, name string) {
+	others, err := database.Client.Camera.Query().
+		Where(
+			camera.IDNEQ(stoppedID),
+			camera.IsActive(true),
+			camera.IsStopped(false),
+		).
+		Order(ent.Asc(camera.FieldID)).
+		All(c.Request.Context())
+	if err != nil || len(others) == 0 {
+		return "", ""
+	}
+	return others[0].ID, others[0].Name
+}
+
+func StopDeviceHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		return
+	}
+
+	dev, err := SetStopped(c.Request.Context(), idStr, true)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stop device"})
+		return
+	}
+
+	altID, altName := pickAlternativeCamera(c, idStr)
+	updatedPayload := CameraEventPayload(dev)
+	mq.PublishCameraEvent("camera.updated", updatedPayload)
+
+	stoppedPayload := CameraEventPayload(dev)
+	if altID != "" {
+		stoppedPayload["alternative_id"] = altID
+		stoppedPayload["alternative_name"] = altName
+	}
+	mq.PublishCameraEvent("camera.stopped", stoppedPayload)
+
+	c.JSON(http.StatusOK, gin.H{
+		"camera":           dev,
+		"alternative_id":   altID,
+		"alternative_name": altName,
+	})
+}
+
+func StartDeviceHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		return
+	}
+
+	dev, err := SetStopped(c.Request.Context(), idStr, false)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start device"})
+		return
+	}
+
+	payload := CameraEventPayload(dev)
+	mq.PublishCameraEvent("camera.updated", payload)
+	_ = mq.PublishEvent("camera.started", payload)
 
 	c.JSON(http.StatusOK, dev)
 }

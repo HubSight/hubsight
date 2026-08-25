@@ -63,6 +63,7 @@ type CameraMutation struct {
 	audio_mode          *string
 	extra_args          *string
 	is_active           *bool
+	is_stopped          *bool
 	enable_ai           *bool
 	show_bbox           *bool
 	created_at          *time.Time
@@ -580,6 +581,42 @@ func (m *CameraMutation) ResetIsActive() {
 	m.is_active = nil
 }
 
+// SetIsStopped sets the "is_stopped" field.
+func (m *CameraMutation) SetIsStopped(b bool) {
+	m.is_stopped = &b
+}
+
+// IsStopped returns the value of the "is_stopped" field in the mutation.
+func (m *CameraMutation) IsStopped() (r bool, exists bool) {
+	v := m.is_stopped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsStopped returns the old "is_stopped" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldIsStopped(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsStopped is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsStopped requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsStopped: %w", err)
+	}
+	return oldValue.IsStopped, nil
+}
+
+// ResetIsStopped resets all changes to the "is_stopped" field.
+func (m *CameraMutation) ResetIsStopped() {
+	m.is_stopped = nil
+}
+
 // SetEnableAi sets the "enable_ai" field.
 func (m *CameraMutation) SetEnableAi(b bool) {
 	m.enable_ai = &b
@@ -812,7 +849,7 @@ func (m *CameraMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CameraMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.name != nil {
 		fields = append(fields, camera.FieldName)
 	}
@@ -842,6 +879,9 @@ func (m *CameraMutation) Fields() []string {
 	}
 	if m.is_active != nil {
 		fields = append(fields, camera.FieldIsActive)
+	}
+	if m.is_stopped != nil {
+		fields = append(fields, camera.FieldIsStopped)
 	}
 	if m.enable_ai != nil {
 		fields = append(fields, camera.FieldEnableAi)
@@ -883,6 +923,8 @@ func (m *CameraMutation) Field(name string) (ent.Value, bool) {
 		return m.ExtraArgs()
 	case camera.FieldIsActive:
 		return m.IsActive()
+	case camera.FieldIsStopped:
+		return m.IsStopped()
 	case camera.FieldEnableAi:
 		return m.EnableAi()
 	case camera.FieldShowBbox:
@@ -920,6 +962,8 @@ func (m *CameraMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldExtraArgs(ctx)
 	case camera.FieldIsActive:
 		return m.OldIsActive(ctx)
+	case camera.FieldIsStopped:
+		return m.OldIsStopped(ctx)
 	case camera.FieldEnableAi:
 		return m.OldEnableAi(ctx)
 	case camera.FieldShowBbox:
@@ -1006,6 +1050,13 @@ func (m *CameraMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsActive(v)
+		return nil
+	case camera.FieldIsStopped:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsStopped(v)
 		return nil
 	case camera.FieldEnableAi:
 		v, ok := value.(bool)
@@ -1140,6 +1191,9 @@ func (m *CameraMutation) ResetField(name string) error {
 		return nil
 	case camera.FieldIsActive:
 		m.ResetIsActive()
+		return nil
+	case camera.FieldIsStopped:
+		m.ResetIsStopped()
 		return nil
 	case camera.FieldEnableAi:
 		m.ResetEnableAi()

@@ -70,7 +70,7 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 
 	for _, cam := range cameras {
 		// Event-based NVR buffering and capture is STRICTLY enabled ONLY if AI is enabled for this camera
-		if !isNvrEnabled || !cam.IsActive || !cam.EnableAi {
+		if !isNvrEnabled || !cam.IsActive || cam.IsStopped || !cam.EnableAi {
 			continue
 		}
 		currentCameraIDs[cam.ID] = true

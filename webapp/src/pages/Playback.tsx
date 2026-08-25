@@ -9,14 +9,35 @@ import { ArchiveSidebar } from '../components/archive/ArchiveSidebar';
 import { RecognitionLogSidebar } from '../components/archive/RecognitionLogSidebar';
 import { PlaybackSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { useSocket } from '../context/SocketContext';
+import { useTranslation } from '../i18n';
+
+type CameraStoppedEvent = {
+  id?: string;
+  name?: string;
+  is_stopped?: boolean;
+  alternative_id?: string;
+  alternative_name?: string;
+};
+
+type StoppedPrompt = {
+  cameraName: string;
+  alternativeId: string;
+  alternativeName: string;
+};
 
 const Playback = () => {
+  const { t } = useTranslation();
+  const { socket } = useSocket();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [cameras, setCameras] = useState<CameraItem[]>([]);
   const [selectedCam, setSelectedCam] = useState<string>('');
   const [dateObj, setDateObj] = useState<Date>(new Date());
   const dateStr = dayjs(dateObj).format('YYYY-MM-DD');
+  const [liveOffline, setLiveOffline] = useState(false);
+  const [stoppedPrompt, setStoppedPrompt] = useState<StoppedPrompt | null>(null);
 
   const [activeMonth, setActiveMonth] = useState<Date>(dateObj);
   const [availableDays, setAvailableDays] = useState<number[]>([]);
@@ -35,6 +56,15 @@ const Playback = () => {
   const seekTargetRef = useRef<number | null>(null);
 
   const targetTimestampRef = useRef<number | null>(null);
+  const selectedCamRef = useRef(selectedCam);
+  const modeRef = useRef(mode);
+
+  useEffect(() => {
+    selectedCamRef.current = selectedCam;
+  }, [selectedCam]);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   // Fetch cameras on mount
   const fetchCameras = useCallback(async () => {
@@ -50,12 +80,15 @@ const Playback = () => {
       if (queryCamId && cams.some((c) => c.id === queryCamId)) {
         targetCamId = queryCamId;
       } else if (cams.length > 0 && !selectedCam) {
-        targetCamId = cams[0].id;
+        const running = cams.find((c) => !c.is_stopped);
+        targetCamId = (running || cams[0]).id;
       }
 
       if (targetCamId && targetCamId !== selectedCam) {
         setSelectedCam(targetCamId);
       }
+      const liveCam = cams.find((c) => c.id === (targetCamId || selectedCam));
+      setLiveOffline(Boolean(liveCam?.is_stopped));
 
       if (queryTime && targetCamId) {
         const ts = parseInt(queryTime, 10);
@@ -180,7 +213,62 @@ const Playback = () => {
     setSelectedCam(camId);
     setMode('live');
     setIsLiveStreaming(false);
+    setStoppedPrompt(null);
+    const cam = cameras.find((c) => c.id === camId);
+    setLiveOffline(Boolean(cam?.is_stopped));
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStopped = (raw: CameraStoppedEvent) => {
+      const camId = raw?.id;
+      if (!camId) return;
+      setCameras((prev) => prev.map((c) => (c.id === camId ? { ...c, is_stopped: true } : c)));
+      if (selectedCamRef.current !== camId || modeRef.current !== 'live') return;
+      setLiveOffline(true);
+      setIsLiveStreaming(false);
+      if (raw.alternative_id) {
+        setStoppedPrompt({
+          cameraName: raw.name || '',
+          alternativeId: raw.alternative_id,
+          alternativeName: raw.alternative_name || '',
+        });
+      } else {
+        setStoppedPrompt(null);
+      }
+    };
+
+    const handleCameraState = (raw: CameraStoppedEvent) => {
+      if (!raw?.id) return;
+      setCameras((prev) =>
+        prev.map((c) =>
+          c.id === raw.id
+            ? { ...c, is_stopped: Boolean(raw.is_stopped), name: raw.name || c.name }
+            : c
+        )
+      );
+      if (selectedCamRef.current !== raw.id) return;
+      if (raw.is_stopped) {
+        if (modeRef.current === 'live') {
+          setLiveOffline(true);
+          setIsLiveStreaming(false);
+        }
+        return;
+      }
+      setLiveOffline(false);
+      setStoppedPrompt(null);
+    };
+
+    socket.on('camera.stopped', handleStopped);
+    socket.on('camera.started', handleCameraState);
+    socket.on('camera.updated', handleCameraState);
+    return () => {
+      socket.off('camera.stopped', handleStopped);
+      socket.off('camera.started', handleCameraState);
+      socket.off('camera.updated', handleCameraState);
+    };
+  }, [socket]);
 
   // When user seeks on timeline, automatically switch to Archive mode
   const handleSeek = (rec: Recording, offsetSeconds: number) => {
@@ -210,6 +298,8 @@ const Playback = () => {
 
   const handleGoLive = () => {
     setMode('live');
+    const cam = cameras.find((c) => c.id === selectedCam);
+    setLiveOffline(Boolean(cam?.is_stopped));
   };
 
   const currentCamId = selectedCam || null;
@@ -260,6 +350,8 @@ const Playback = () => {
               videoRef={videoRef}
               containerRef={playerContainerRef}
               isLive={isLiveStreaming}
+              liveOffline={liveOffline}
+              cameraName={selectedCamera?.name}
               onLiveStatusChange={setIsLiveStreaming}
               onLoadedMetadata={handleLoadedMetadata}
               onGoLive={handleGoLive}
@@ -279,6 +371,7 @@ const Playback = () => {
                 currentDate={dateStr}
                 activeRecording={activeRecording}
                 mode={mode}
+                liveOffline={liveOffline}
                 onSeek={handleSeek}
                 onGoLive={handleGoLive}
               />
@@ -298,6 +391,21 @@ const Playback = () => {
           <RecognitionLogSidebar cameraId={selectedCam} variant="docked" />
         </aside>
       )}
+
+      <ConfirmDialog
+        isOpen={!!stoppedPrompt}
+        title={t('playback.cameraStoppedTitle')}
+        message={t('playback.cameraStoppedMessage', { name: stoppedPrompt?.cameraName || '' })}
+        confirmLabel={t('playback.switchCamera')}
+        cancelLabel={t('playback.stayOnBlack')}
+        variant="primary"
+        onConfirm={() => {
+          const nextId = stoppedPrompt?.alternativeId;
+          setStoppedPrompt(null);
+          if (nextId) handleSelectCam(nextId);
+        }}
+        onCancel={() => setStoppedPrompt(null)}
+      />
     </div>
   );
 };

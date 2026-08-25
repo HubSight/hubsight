@@ -46,6 +46,8 @@ const Devices = () => {
   const [error, setError] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [pendingStopId, setPendingStopId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchDevices = async () => {
     try {
@@ -200,6 +202,38 @@ const Devices = () => {
     setPendingDeleteId(id);
   };
 
+  const handleStopDevice = (dev: DeviceType) => {
+    setPendingStopId(dev.id);
+  };
+
+  const executeStopDevice = async () => {
+    if (!pendingStopId) return;
+    try {
+      setTogglingId(pendingStopId);
+      await axiosClient.post(`/cameras/${pendingStopId}/stop`);
+      setPendingStopId(null);
+      fetchDevices();
+    } catch (err) {
+      console.error('Failed to stop device', err);
+      setError(t('common.errorOccurred'));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleStartDevice = async (dev: DeviceType) => {
+    try {
+      setTogglingId(dev.id);
+      await axiosClient.post(`/cameras/${dev.id}/start`);
+      fetchDevices();
+    } catch (err) {
+      console.error('Failed to start device', err);
+      setError(t('common.errorOccurred'));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const executeDeleteDevice = async () => {
     if (!pendingDeleteId) return;
     try {
@@ -311,6 +345,9 @@ const Devices = () => {
                 device={dev}
                 onEdit={handleOpenModal}
                 onDelete={handleDeleteDevice}
+                onStop={handleStopDevice}
+                onStart={handleStartDevice}
+                isToggling={togglingId === dev.id}
               />
             ))}
           </div>
@@ -347,6 +384,19 @@ const Devices = () => {
         onConfirm={executeDeleteDevice}
         onCancel={() => {
           if (!isDeleting) setPendingDeleteId(null);
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={!!pendingStopId}
+        title={t('devices.confirmStopTitle')}
+        message={t('devices.confirmStop')}
+        confirmLabel={t('devices.stopDevice')}
+        variant="primary"
+        isLoading={togglingId === pendingStopId}
+        onConfirm={executeStopDevice}
+        onCancel={() => {
+          if (!togglingId) setPendingStopId(null);
         }}
       />
     </PullToRefresh>

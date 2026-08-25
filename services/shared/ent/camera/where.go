@@ -115,6 +115,11 @@ func IsActive(v bool) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldIsActive, v))
 }
 
+// IsStopped applies equality check predicate on the "is_stopped" field. It's identical to IsStoppedEQ.
+func IsStopped(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldIsStopped, v))
+}
+
 // EnableAi applies equality check predicate on the "enable_ai" field. It's identical to EnableAiEQ.
 func EnableAi(v bool) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldEnableAi, v))
@@ -678,6 +683,16 @@ func IsActiveEQ(v bool) predicate.Camera {
 // IsActiveNEQ applies the NEQ predicate on the "is_active" field.
 func IsActiveNEQ(v bool) predicate.Camera {
 	return predicate.Camera(sql.FieldNEQ(FieldIsActive, v))
+}
+
+// IsStoppedEQ applies the EQ predicate on the "is_stopped" field.
+func IsStoppedEQ(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldIsStopped, v))
+}
+
+// IsStoppedNEQ applies the NEQ predicate on the "is_stopped" field.
+func IsStoppedNEQ(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldIsStopped, v))
 }
 
 // EnableAiEQ applies the EQ predicate on the "enable_ai" field.

@@ -94,12 +94,19 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
                     setIsDropdownOpen(false);
                   }}
                 >
-                  <span className="truncate">{c.name}</span>
-                  {c.enable_ai && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 ml-2 shadow-sm font-semibold tracking-wider">
-                      AI
-                    </span>
-                  )}
+                  <span className={`truncate ${c.is_stopped ? 'text-slate-400' : ''}`}>{c.name}</span>
+                  <span className="flex items-center gap-1 shrink-0 ml-2">
+                    {c.is_stopped && (
+                      <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 font-semibold">
+                        {t('playback.stoppedBadge')}
+                      </span>
+                    )}
+                    {c.enable_ai && (
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 shadow-sm font-semibold tracking-wider">
+                        AI
+                      </span>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>

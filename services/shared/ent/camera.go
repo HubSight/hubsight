@@ -37,6 +37,8 @@ type Camera struct {
 	ExtraArgs string `json:"extra_args,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active"`
+	// Admin pause: camera stays registered but all pool connections are torn down
+	IsStopped bool `json:"is_stopped"`
 	// EnableAi holds the value of the "enable_ai" field.
 	EnableAi bool `json:"enable_ai"`
 	// Draw live bounding boxes when enable_ai is true
@@ -74,7 +76,7 @@ func (*Camera) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case camera.FieldIsActive, camera.FieldEnableAi, camera.FieldShowBbox:
+		case camera.FieldIsActive, camera.FieldIsStopped, camera.FieldEnableAi, camera.FieldShowBbox:
 			values[i] = new(sql.NullBool)
 		case camera.FieldRtspPort, camera.FieldSegmentDuration:
 			values[i] = new(sql.NullInt64)
@@ -162,6 +164,12 @@ func (_m *Camera) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_active", values[i])
 			} else if value.Valid {
 				_m.IsActive = value.Bool
+			}
+		case camera.FieldIsStopped:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_stopped", values[i])
+			} else if value.Valid {
+				_m.IsStopped = value.Bool
 			}
 		case camera.FieldEnableAi:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -257,6 +265,9 @@ func (_m *Camera) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
+	builder.WriteString(", ")
+	builder.WriteString("is_stopped=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsStopped))
 	builder.WriteString(", ")
 	builder.WriteString("enable_ai=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EnableAi))

@@ -31,6 +31,10 @@ func (Camera) Fields() []ent.Field {
 		field.String("audio_mode").Default("auto"),
 		field.String("extra_args").Default(""),
 		field.Bool("is_active").Default(true).StructTag(`json:"is_active"`),
+		field.Bool("is_stopped").
+			Default(false).
+			StructTag(`json:"is_stopped"`).
+			Comment("Admin pause: camera stays registered but all pool connections are torn down"),
 		field.Bool("enable_ai").Default(false).StructTag(`json:"enable_ai"`),
 		field.Bool("show_bbox").
 			Default(true).

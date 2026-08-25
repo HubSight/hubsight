@@ -13,11 +13,12 @@ import (
 )
 
 type CameraEventPayload struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Host     string `json:"host"`
-	IsActive bool   `json:"is_active"`
-	EnableAI bool   `json:"enable_ai"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Host      string `json:"host"`
+	IsActive  bool   `json:"is_active"`
+	IsStopped bool   `json:"is_stopped"`
+	EnableAI  bool   `json:"enable_ai"`
 }
 
 type EventMessage struct {
@@ -123,10 +124,11 @@ func (s *Subscriber) handleEvent(ctx context.Context, pattern string, data json.
 	log.Printf("[Pool Events] Received event pattern '%s'", pattern)
 
 	switch pattern {
-	case "camera.created", "camera.updated", "camera.toggled", "camera.sync":
+	case "camera.created", "camera.updated", "camera.toggled", "camera.sync", "camera.stopped":
 		var camData CameraEventPayload
 		if err := json.Unmarshal(data, &camData); err == nil && camData.ID != "" {
-			_ = s.manager.UpsertCamera(ctx, camData.ID, camData.Name, camData.Host, camData.IsActive, camData.EnableAI)
+			streaming := camData.IsActive && !camData.IsStopped
+			_ = s.manager.UpsertCamera(ctx, camData.ID, camData.Name, camData.Host, streaming, camData.EnableAI)
 		}
 
 	case "camera.deleted":

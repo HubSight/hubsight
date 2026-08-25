@@ -10,6 +10,7 @@ export interface DeviceType {
   audio_mode: string;
   extra_args: string;
   is_active: boolean;
+  is_stopped: boolean;
   enable_ai: boolean;
   show_bbox: boolean;
   created_at: string;

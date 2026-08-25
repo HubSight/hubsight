@@ -8,7 +8,8 @@ import {
   Gauge,
   Camera,
   Check,
-  Download
+  Download,
+  VideoOff
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import type { Recording } from '../../types/recording';
@@ -26,6 +27,8 @@ interface VideoPlayerProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   containerRef?: React.RefObject<HTMLDivElement | null>;
   isLive: boolean;
+  liveOffline?: boolean;
+  cameraName?: string;
   onLiveStatusChange?: (isLive: boolean) => void;
   onLoadedMetadata: () => void;
   onGoLive?: () => void;
@@ -42,6 +45,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   videoRef,
   containerRef: externalContainerRef,
   isLive,
+  liveOffline = false,
+  cameraName,
   onLiveStatusChange,
   onLoadedMetadata,
   onGoLive
@@ -386,7 +391,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* ---------------------------------------------------- */}
 
       {/* Mode = LIVE: Pulsing LIVE badge at top left */}
-      {mode === 'live' && isLive && cameraId && (
+      {mode === 'live' && isLive && cameraId && !liveOffline && (
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
           <div className="flex items-center gap-2 bg-orange-600 text-white px-3.5 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md">
             <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
@@ -438,9 +443,28 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* ---------------------------------------------------- */}
       {/* 2. VIDEO STREAMS (LIVE OR S3 ARCHIVE)               */}
       {/* ---------------------------------------------------- */}
-      {mode === 'live' && cameraId ? (
+      {mode === 'live' && cameraId && !liveOffline ? (
         <div className="w-full h-full" onClick={toggleFullscreen}>
           <LivePlayer cameraId={cameraId} enableAi={enableAi} showBbox={showBbox} onLiveStatusChange={onLiveStatusChange} />
+        </div>
+      ) : mode === 'live' && liveOffline ? (
+        <div className="flex flex-col items-center justify-center text-center px-6 py-8 gap-4 pointer-events-none">
+          <div className="w-[4.25rem] h-[4.25rem] rounded-2xl bg-white/[0.06] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] flex items-center justify-center">
+            <VideoOff className="text-slate-300" size={30} strokeWidth={1.6} />
+          </div>
+          <div className="max-w-sm">
+            <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-slate-500 mb-2">
+              {t('playback.stoppedBadge')}
+            </p>
+            <h2 className="text-white text-lg sm:text-xl font-semibold tracking-tight">
+              {cameraName
+                ? t('playback.liveOfflineNamedTitle', { name: cameraName })
+                : t('playback.liveOfflineTitle')}
+            </h2>
+            <p className="text-slate-400 text-sm leading-relaxed mt-2">
+              {t('playback.liveOfflineSubtitle')}
+            </p>
+          </div>
         </div>
       ) : mode === 'archive' && activeRecording ? (
         <video
@@ -483,7 +507,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* ---------------------------------------------------- */}
 
       {/* CASE A: LIVE MODE -> Clean minimal bottom bar (Full Solid Orange-600 bar + Fullscreen) */}
-      {mode === 'live' && cameraId && (
+      {mode === 'live' && cameraId && !liveOffline && (
         <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-auto">
           {/* Full Solid Red-Orange (orange-600) Pinned Live Progress Bar */}
           <div className="w-full h-1 bg-orange-600 shadow-[0_0_8px_rgba(234,88,12,0.8)]" />

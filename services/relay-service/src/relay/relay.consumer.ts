@@ -88,4 +88,28 @@ export class RelayConsumer {
       data,
     });
   }
+
+  @EventPattern('camera.stopped')
+  handleCameraStopped(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'camera.stopped',
+      data,
+    });
+  }
+
+  @EventPattern('camera.started')
+  handleCameraStarted(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'camera.started',
+      data,
+    });
+  }
+
+  @EventPattern('camera.updated')
+  handleCameraUpdated(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'camera.updated',
+      data,
+    });
+  }
 }

@@ -121,7 +121,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 			latestDur = latestRec.DurationSeconds
 		}
 
-		if !globalSettings.NvrStatus || !cam.IsActive {
+		if !globalSettings.NvrStatus || !cam.IsActive || cam.IsStopped {
 			status = "disabled"
 		} else {
 			segDuration := cam.SegmentDuration

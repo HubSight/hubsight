@@ -183,6 +183,20 @@ func (_u *CameraUpdate) SetNillableIsActive(v *bool) *CameraUpdate {
 	return _u
 }
 
+// SetIsStopped sets the "is_stopped" field.
+func (_u *CameraUpdate) SetIsStopped(v bool) *CameraUpdate {
+	_u.mutation.SetIsStopped(v)
+	return _u
+}
+
+// SetNillableIsStopped sets the "is_stopped" field if the given value is not nil.
+func (_u *CameraUpdate) SetNillableIsStopped(v *bool) *CameraUpdate {
+	if v != nil {
+		_u.SetIsStopped(*v)
+	}
+	return _u
+}
+
 // SetEnableAi sets the "enable_ai" field.
 func (_u *CameraUpdate) SetEnableAi(v bool) *CameraUpdate {
 	_u.mutation.SetEnableAi(v)
@@ -370,6 +384,9 @@ func (_u *CameraUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(camera.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsStopped(); ok {
+		_spec.SetField(camera.FieldIsStopped, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.EnableAi(); ok {
 		_spec.SetField(camera.FieldEnableAi, field.TypeBool, value)
@@ -602,6 +619,20 @@ func (_u *CameraUpdateOne) SetNillableIsActive(v *bool) *CameraUpdateOne {
 	return _u
 }
 
+// SetIsStopped sets the "is_stopped" field.
+func (_u *CameraUpdateOne) SetIsStopped(v bool) *CameraUpdateOne {
+	_u.mutation.SetIsStopped(v)
+	return _u
+}
+
+// SetNillableIsStopped sets the "is_stopped" field if the given value is not nil.
+func (_u *CameraUpdateOne) SetNillableIsStopped(v *bool) *CameraUpdateOne {
+	if v != nil {
+		_u.SetIsStopped(*v)
+	}
+	return _u
+}
+
 // SetEnableAi sets the "enable_ai" field.
 func (_u *CameraUpdateOne) SetEnableAi(v bool) *CameraUpdateOne {
 	_u.mutation.SetEnableAi(v)
@@ -819,6 +850,9 @@ func (_u *CameraUpdateOne) sqlSave(ctx context.Context) (_node *Camera, err erro
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(camera.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsStopped(); ok {
+		_spec.SetField(camera.FieldIsStopped, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.EnableAi(); ok {
 		_spec.SetField(camera.FieldEnableAi, field.TypeBool, value)

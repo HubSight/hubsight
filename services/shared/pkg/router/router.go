@@ -90,6 +90,10 @@ func New() *gin.Engine {
 				adminOnly.POST("/cameras", device.AddDeviceHandler)
 				adminOnly.PUT("/cameras/:id", device.UpdateDeviceHandler)
 				adminOnly.DELETE("/cameras/:id", device.DeleteDeviceHandler)
+				adminOnly.POST("/cameras/:id/stop", device.StopDeviceHandler)
+				adminOnly.POST("/cameras/:id/start", device.StartDeviceHandler)
+				adminOnly.POST("/devices/:id/stop", device.StopDeviceHandler)
+				adminOnly.POST("/devices/:id/start", device.StartDeviceHandler)
 
 				// NVR recorder monitor endpoint
 				adminOnly.GET("/recorder/status", nvr.NvrStatusHandler)
