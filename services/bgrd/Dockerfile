@@ -29,6 +29,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 FROM alpine:3.21
 WORKDIR /app
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /app/dist/bgrd /app/bgrd
 CMD ["/app/bgrd"]
+

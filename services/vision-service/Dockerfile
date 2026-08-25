@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # =============================================================================
-# Stage 1: proto-builder — compile .proto → .py (grpcio-tools is huge, keep isolated)
+# Stage 1: proto-builder — compile .proto → .py (grpcio-tools isolated)
 # =============================================================================
 FROM python:3.11-slim AS proto-builder
 
@@ -18,19 +18,29 @@ RUN mkdir -p pb && \
         --python_out=./pb \
         --grpc_python_out=./pb \
         ./proto/*.proto && \
-    touch ./pb/__init__.py && \
-    sed -i 's/import core_pb2 as core__pb2/from . import core_pb2 as core__pb2/' pb/core_pb2_grpc.py
+        touch ./pb/__init__.py && \
+        sed -i 's/import core_pb2 as core__pb2/from . import core_pb2 as core__pb2/' pb/core_pb2_grpc.py
 
 # =============================================================================
-# Stage 2: model-fetcher — bake YOLO weights + InsightFace models into a cache layer
-# (isolated so model download doesn't bust dependency cache when requirements change)
+# Stage 2: model-fetcher — bake YOLO weights + InsightFace models into cache layer
 # =============================================================================
 FROM python:3.11-slim AS model-fetcher
 
 WORKDIR /app
 
-# Install the minimal set needed to download model weights
+# Minimal system libraries for CV2 during model download
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libglib2.0-0 \
+    libgl1 \
+    libxcb1 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install headless OpenCV first to avoid GUI/X11 dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install opencv-python-headless && \
     pip install numpy onnxruntime insightface requests onnx
 
 # Pull InsightFace buffalo_s model weights at build time (no internet needed at runtime)
@@ -41,10 +51,10 @@ app = FaceAnalysis(name='buffalo_s', root='/root/.insightface', providers=['CPUE
 app.prepare(ctx_id=-1, det_size=(320, 320)); \
 print('InsightFace buffalo_s downloaded OK')"
 
-# Pull YOLO weights at build time — use the CPU-only torch variant to minimise download size
+# Pull YOLO weights at build time — use CPU-only torch variant to minimise download size
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --extra-index-url https://download.pytorch.org/whl/cpu \
-    torch torchvision ultralytics
+    torch torchvision ultralytics lapx
 RUN python -c "\
 from ultralytics import YOLO; import numpy as np; \
 m = YOLO('yolo26n.pt'); \
@@ -58,27 +68,28 @@ FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
-# Minimal system libraries needed at runtime (no build-time dev headers)
+# Minimal system libraries needed at runtime
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     libgl1 \
     libxcb1 \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install ALL Python runtime dependencies with pip cache (no grpcio-tools in runtime!)
-# Pin opencv-python-headless to prevent ultralytics pulling the GUI variant
+
+# Install Python runtime dependencies with pip cache
 COPY services/vision-service/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-deps grpcio protobuf && \
-    OPENCV_HEADLESS=1 pip install \
+    pip install opencv-python-headless && \
+    pip install \
         --extra-index-url https://download.pytorch.org/whl/cpu \
         -r requirements.txt
 
 # Bake in pre-fetched YOLO model weights (eliminates internet download at startup)
 COPY --from=model-fetcher /app/yolo26n.pt ./yolo26n.pt
-COPY --from=model-fetcher /app/bytetrack.yaml ./bytetrack.yaml
 
 # Bake in pre-fetched InsightFace models (eliminates network call at startup)
 COPY --from=model-fetcher /root/.insightface /root/.insightface
@@ -94,3 +105,4 @@ ENV YOLO_OFFLINE=1
 ENV ULTRALYTICS_SETTINGS_DIR=/tmp/Ultralytics
 
 CMD ["python", "-u", "main.py"]
+

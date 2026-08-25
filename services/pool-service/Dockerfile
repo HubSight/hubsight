@@ -4,12 +4,7 @@ WORKDIR /app
 
 ENV CGO_ENABLED=0 GOOS=linux
 
-# 1. Install Protoc and Go plugins
-RUN apk add --no-cache protoc protobuf-dev
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0 && \
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-
-# 2. Layer cache for dependencies
+# 1. Layer cache for dependencies
 COPY go.work go.work.sum* ./
 COPY services/shared/go.mod services/shared/go.sum* ./services/shared/
 COPY services/pool-service/go.mod services/pool-service/go.sum* ./services/pool-service/
@@ -23,15 +18,8 @@ COPY services/seed/go.mod services/seed/go.sum* ./services/seed/
 RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/pool-service && go mod download
 
-# 3. Copy source and build with compiler cache mount
+# 2. Copy source and build with compiler cache mount
 COPY services/shared ./services/shared
-
-# Compile Protobuf
-RUN mkdir -p services/shared/pkg/pb && \
-    protoc --go_out=services/shared/pkg/pb --go_opt=paths=source_relative \
-           --go-grpc_out=services/shared/pkg/pb --go-grpc_opt=paths=source_relative \
-           -I=services/shared/proto services/shared/proto/*.proto
-
 COPY services/pool-service ./services/pool-service
 
 WORKDIR /app/services/pool-service
@@ -41,8 +29,9 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 FROM alpine:3.21
 WORKDIR /app
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /app/dist/pool /app/pool
 EXPOSE 8085
 ENV PORT=8085
 CMD ["/app/pool"]
+

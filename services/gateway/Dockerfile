@@ -49,7 +49,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Stage 3: Final Production Image
 FROM alpine:3.21
 WORKDIR /app
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=backend-builder /app/dist/gateway /app/gateway
 COPY --from=frontend-builder /app/dist /app/public
@@ -57,3 +57,4 @@ COPY --from=frontend-builder /app/dist /app/public
 EXPOSE 8080
 ENV PORT=8080
 CMD ["/app/gateway"]
+
