@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class PersonDetector:
     def __init__(self, mq_client, face_engine=None, conf_threshold=0.45, iou_threshold=0.5, no_person_timeout=4.0):
         # We load a custom YOLO model assumed to support person(0), smoke(1), fire(2), weapon(3)
-        model_name = 'yolo-cctv.pt' if os.path.exists('yolo-cctv.pt') else 'yolo26n.pt'
+        model_name = 'yolo-cctv.pt' if os.path.exists('yolo-cctv.pt') else 'yolo11n.pt'
         self.model = YOLO(model_name)
         self.mq_client = mq_client
         self.face_engine = face_engine or FaceEngine()

@@ -57,9 +57,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     torch torchvision ultralytics lapx
 RUN python -c "\
 from ultralytics import YOLO; import numpy as np; \
-m = YOLO('yolo26n.pt'); \
+m = YOLO('yolo11n.pt'); \
 m.track(np.zeros((384,640,3), dtype=np.uint8), classes=[0], imgsz=(384,640), tracker='bytetrack.yaml', verbose=False); \
-print('YOLO yolo26n.pt cached OK')"
+print('YOLO yolo11n.pt cached OK')"
 
 # =============================================================================
 # Stage 3: runtime — lean production image
@@ -82,14 +82,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 COPY services/vision-service/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-deps grpcio protobuf && \
-    pip install opencv-python-headless && \
     pip install \
         --extra-index-url https://download.pytorch.org/whl/cpu \
         -r requirements.txt && \
-    pip uninstall -y opencv-python
+    pip uninstall -y opencv-python && \
+    pip install --force-reinstall opencv-python-headless && \
+    pip uninstall -y polars polars-runtime-32 sympy mpmath
 
 # Bake in pre-fetched YOLO model weights (eliminates internet download at startup)
-COPY --from=model-fetcher /app/yolo26n.pt ./yolo26n.pt
+COPY --from=model-fetcher /app/yolo11n.pt ./yolo11n.pt
 
 # Bake in pre-fetched InsightFace models (eliminates network call at startup)
 COPY --from=model-fetcher /root/.insightface /root/.insightface
