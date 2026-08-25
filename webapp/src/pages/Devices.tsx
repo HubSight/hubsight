@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Plus, Video } from 'lucide-react';
+import { Camera, Video } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import type { DeviceType, DeviceFormData } from '../types/device';
 import { DeviceCard } from '../components/device/DeviceCard';
 import { DeviceModal } from '../components/device/DeviceModal';
+import { DeviceScanModal, type ScanCandidate } from '../components/device/DeviceScanModal';
+import { AddDeviceSplitButton } from '../components/device/AddDeviceSplitButton';
 import { BRAND_PRESETS, parseRtspUrl } from '../constants/devicePresets';
 import { useTranslation } from '../i18n';
 import { DevicesSkeleton } from '../components/common/Skeleton';
@@ -36,6 +38,7 @@ const Devices = () => {
   const [devices, setDevices] = useState<DeviceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showScan, setShowScan] = useState(false);
   const [editingDeviceId, setEditingDeviceId] = useState<string | null>(null);
   const [formData, setFormData] = useState<DeviceFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,6 +118,23 @@ const Devices = () => {
       setEditingDeviceId(null);
       setFormData(initialFormData);
     }
+    setShowModal(true);
+  };
+
+  const handleConfigureScanned = (c: ScanCandidate) => {
+    setShowScan(false);
+    setError('');
+    setEditingDeviceId(null);
+    setFormData({
+      ...initialFormData,
+      name: `Camera ${c.ip}`,
+      brand: c.brand || 'generic',
+      host: c.rtsp_url,
+      builderIp: c.ip,
+      builderPort: c.port || 554,
+      builderPath: c.path || '/stream',
+      rtspPort: c.port || 554,
+    });
     setShowModal(true);
   };
 
@@ -217,24 +237,11 @@ const Devices = () => {
           </div>
         </div>
 
-        {/* Add Device Button */}
-        {devices.length > 0 ? (
-          <button
-            className="btn btn-primary px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
-            onClick={() => handleOpenModal()}
-          >
-            <Plus size={16} />
-            <span>{t('devices.addDevice')}</span>
-          </button>
-        ) : (
-          <button
-            className="hidden sm:flex btn btn-primary px-4 py-2 text-xs sm:text-sm font-semibold items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
-            onClick={() => handleOpenModal()}
-          >
-            <Plus size={16} />
-            <span>{t('devices.addDevice')}</span>
-          </button>
-        )}
+        <AddDeviceSplitButton
+          className={`shrink-0 ${devices.length === 0 ? 'hidden sm:inline-flex' : ''}`}
+          onManual={() => handleOpenModal()}
+          onScan={() => setShowScan(true)}
+        />
       </div>
 
       {/* Device Content Area */}
@@ -253,13 +260,11 @@ const Devices = () => {
               <p className="text-slate-500 text-xs sm:text-sm mb-6 max-w-md leading-relaxed">
                 {t('devices.noDevicesSubtitle')}
               </p>
-              <button
-                className="btn btn-primary w-full sm:w-auto px-7 py-3 min-h-[46px] rounded-xl flex items-center justify-center gap-2 text-sm font-semibold active:scale-[0.99] transition-all cursor-pointer touch-manipulation"
-                onClick={() => handleOpenModal()}
-              >
-                <Plus size={18} />
-                <span>{t('devices.addFirstDevice')}</span>
-              </button>
+              <AddDeviceSplitButton
+                size="lg"
+                onManual={() => handleOpenModal()}
+                onScan={() => setShowScan(true)}
+              />
             </div>
 
             {/* Quick feature highlights / Preset info on desktop */}
@@ -308,6 +313,13 @@ const Devices = () => {
           </div>
         )}
       </div>
+
+      <DeviceScanModal
+        isOpen={showScan}
+        onClose={() => setShowScan(false)}
+        onImported={fetchDevices}
+        onConfigure={handleConfigureScanned}
+      />
 
       {/* Add / Edit Modal */}
       {showModal && (

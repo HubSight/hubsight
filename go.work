@@ -5,6 +5,7 @@ use (
 	./services/bgrd
 	./services/core
 	./services/gateway
+	./services/hawkeyes
 	./services/pool-service
 	./services/recorder
 	./services/seed

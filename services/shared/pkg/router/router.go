@@ -76,6 +76,9 @@ func New() *gin.Engine {
 				adminOnly.DELETE("/members/:id/faces", member.BatchDeleteMemberFacesHandler)
 				adminOnly.DELETE("/members/:id/faces/:face_id", member.DeleteMemberFaceHandler)
 
+				adminOnly.POST("/devices/scan", device.StartDeviceScanHandler)
+				adminOnly.GET("/devices/scan/:id", device.GetDeviceScanHandler)
+				adminOnly.POST("/devices/scan/:id/cancel", device.CancelDeviceScanHandler)
 				adminOnly.POST("/devices", device.AddDeviceHandler)
 				adminOnly.PUT("/devices/:id", device.UpdateDeviceHandler)
 				adminOnly.DELETE("/devices/:id", device.DeleteDeviceHandler)

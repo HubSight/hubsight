@@ -15,6 +15,7 @@ COPY services/bgrd/go.mod services/bgrd/go.sum* ./services/bgrd/
 COPY services/gateway/go.mod services/gateway/go.sum* ./services/gateway/
 COPY services/pool-service/go.mod services/pool-service/go.sum* ./services/pool-service/
 COPY services/seed/go.mod services/seed/go.sum* ./services/seed/
+COPY services/hawkeyes/go.mod services/hawkeyes/go.sum* ./services/hawkeyes/
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/auth && go mod download

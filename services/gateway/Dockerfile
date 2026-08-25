@@ -34,6 +34,7 @@ COPY services/pool-service/go.mod services/pool-service/go.sum* ./services/pool-
 COPY services/recorder/go.mod services/recorder/go.sum* ./services/recorder/
 COPY services/bgrd/go.mod services/bgrd/go.sum* ./services/bgrd/
 COPY services/seed/go.mod services/seed/go.sum* ./services/seed/
+COPY services/hawkeyes/go.mod services/hawkeyes/go.sum* ./services/hawkeyes/
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/gateway && go mod download
