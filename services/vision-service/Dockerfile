@@ -78,7 +78,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-
 # Install Python runtime dependencies with pip cache
 COPY services/vision-service/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -105,4 +104,3 @@ ENV YOLO_OFFLINE=1
 ENV ULTRALYTICS_SETTINGS_DIR=/tmp/Ultralytics
 
 CMD ["python", "-u", "main.py"]
-
