@@ -1,14 +1,8 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
 opencv-python-headless
-ultralytics
-lapx
+onnxruntime>=1.20.0
 pika
 python-dotenv
 requests
 insightface>=0.7.3
-onnxruntime>=1.20.0
 numpy>=1.26.0
 scikit-learn
-

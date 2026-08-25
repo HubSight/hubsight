@@ -22,13 +22,13 @@ RUN mkdir -p pb && \
         sed -i 's/import core_pb2 as core__pb2/from . import core_pb2 as core__pb2/' pb/core_pb2_grpc.py
 
 # =============================================================================
-# Stage 2: model-fetcher — bake YOLO weights + InsightFace models into cache layer
+# Stage 2: model-fetcher — export YOLO ONNX + bake InsightFace models
+# Torch lives ONLY in this stage. Runtime never installs it.
 # =============================================================================
 FROM python:3.11-slim AS model-fetcher
 
 WORKDIR /app
 
-# Minimal system libraries for CV2 during model download
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
@@ -38,10 +38,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install headless OpenCV first to avoid GUI/X11 dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install opencv-python-headless && \
-    pip install numpy onnxruntime insightface requests onnx
+    pip install opencv-python-headless numpy onnxruntime insightface requests onnx
 
 # Pull InsightFace buffalo_s model weights at build time (no internet needed at runtime)
 RUN python -c "\
@@ -51,24 +49,21 @@ app = FaceAnalysis(name='buffalo_s', root='/root/.insightface', providers=['CPUE
 app.prepare(ctx_id=-1, det_size=(320, 320)); \
 print('InsightFace buffalo_s downloaded OK')"
 
-# Pull YOLO weights at build time — use CPU-only torch variant to minimise download size
+# Torch + ultralytics are used only to export ONNX, then discarded with this stage
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --extra-index-url https://download.pytorch.org/whl/cpu \
-    torch torchvision ultralytics lapx
-RUN python -c "\
-from ultralytics import YOLO; import numpy as np; \
-m = YOLO('yolo26n.pt'); \
-m.track(np.zeros((384,640,3), dtype=np.uint8), classes=[0], imgsz=(384,640), tracker='bytetrack.yaml', verbose=False); \
-print('YOLO yolo26n.pt cached OK')"
+    torch torchvision ultralytics onnx
+
+COPY services/vision-service/export_yolo_onnx.py ./export_yolo_onnx.py
+RUN python export_yolo_onnx.py
 
 # =============================================================================
-# Stage 3: runtime — lean production image
+# Stage 3: runtime — no torch / ultralytics / lapx
 # =============================================================================
 FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
-# Minimal system libraries needed at runtime
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
@@ -78,36 +73,24 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python runtime dependencies
-# Key: install opencv-python-headless FIRST, then install requirements which tries to
-# install opencv-python. We then uninstall opencv-python to keep headless.
-# All done in ONE RUN layer + --no-cache-dir to prevent bloat.
 COPY services/vision-service/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir grpcio protobuf && \
     pip install --no-cache-dir opencv-python-headless && \
-    pip install --no-cache-dir \
-        --extra-index-url https://download.pytorch.org/whl/cpu \
-        -r requirements.txt && \
-    pip uninstall -y opencv-python polars polars-runtime-32 sympy mpmath 2>/dev/null || true && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip uninstall -y opencv-python 2>/dev/null || true && \
     find /usr/local/lib/python3.11/site-packages -name "*.dist-info" -path "*opencv_python-*" -exec rm -rf {} + 2>/dev/null || true && \
     find /usr/local/lib/python3.11/site-packages -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
     pip cache purge 2>/dev/null || true
 
-# Bake in pre-fetched YOLO model weights (eliminates internet download at startup)
-COPY --from=model-fetcher /app/yolo26n.pt ./yolo26n.pt
-
-# Bake in pre-fetched InsightFace models (eliminates network call at startup)
+COPY --from=model-fetcher /app/*.onnx ./
 COPY --from=model-fetcher /root/.insightface /root/.insightface
-
-# Copy compiled protobuf stubs from proto-builder stage
 COPY --from=proto-builder /app/pb ./pb
+COPY services/vision-service/main.py ./main.py
+COPY services/vision-service/src ./src
 
-# Copy application source (done last — changes here don't bust dependency/model cache layers)
-COPY services/vision-service .
-
-# Prevent ultralytics from trying to connect to the internet at runtime
-ENV YOLO_OFFLINE=1
-ENV ULTRALYTICS_SETTINGS_DIR=/tmp/Ultralytics
+ENV OMP_NUM_THREADS=2
+ENV OPENBLAS_NUM_THREADS=2
+ENV ORT_INTRA_OP_NUM_THREADS=2
 
 CMD ["python", "-u", "main.py"]

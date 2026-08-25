@@ -30,6 +30,7 @@ class FaceEngine:
         self.quality_gate = FaceQualityGate()
         self.app = None
         self.lock = threading.Lock()
+        self.infer_lock = threading.Lock()
         
         # In-memory vector matrix: shape (N, 512) normalized
         self.embedding_matrix = np.empty((0, 512), dtype=np.float32)
@@ -102,7 +103,8 @@ class FaceEngine:
                 offset_x, offset_y = px1, py1
 
         try:
-            faces = self.app.get(crop)
+            with self.infer_lock:
+                faces = self.app.get(crop)
             results = []
             for face in faces:
                 # Map bbox back to original frame coordinates
