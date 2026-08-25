@@ -9,6 +9,7 @@ import (
 	"cctv/shared/ent/notification"
 	"cctv/shared/ent/predicate"
 	"cctv/shared/ent/pushsubscription"
+	"cctv/shared/ent/recognitionlog"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/session"
 	"cctv/shared/ent/setting"
@@ -37,6 +38,7 @@ const (
 	TypeMemberFace       = "MemberFace"
 	TypeNotification     = "Notification"
 	TypePushSubscription = "PushSubscription"
+	TypeRecognitionLog   = "RecognitionLog"
 	TypeRecording        = "Recording"
 	TypeSession          = "Session"
 	TypeSetting          = "Setting"
@@ -62,6 +64,7 @@ type CameraMutation struct {
 	extra_args          *string
 	is_active           *bool
 	enable_ai           *bool
+	show_bbox           *bool
 	created_at          *time.Time
 	updated_at          *time.Time
 	clearedFields       map[string]struct{}
@@ -613,6 +616,42 @@ func (m *CameraMutation) ResetEnableAi() {
 	m.enable_ai = nil
 }
 
+// SetShowBbox sets the "show_bbox" field.
+func (m *CameraMutation) SetShowBbox(b bool) {
+	m.show_bbox = &b
+}
+
+// ShowBbox returns the value of the "show_bbox" field in the mutation.
+func (m *CameraMutation) ShowBbox() (r bool, exists bool) {
+	v := m.show_bbox
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShowBbox returns the old "show_bbox" field's value of the Camera entity.
+// If the Camera object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CameraMutation) OldShowBbox(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShowBbox is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShowBbox requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShowBbox: %w", err)
+	}
+	return oldValue.ShowBbox, nil
+}
+
+// ResetShowBbox resets all changes to the "show_bbox" field.
+func (m *CameraMutation) ResetShowBbox() {
+	m.show_bbox = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *CameraMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -773,7 +812,7 @@ func (m *CameraMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CameraMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.name != nil {
 		fields = append(fields, camera.FieldName)
 	}
@@ -806,6 +845,9 @@ func (m *CameraMutation) Fields() []string {
 	}
 	if m.enable_ai != nil {
 		fields = append(fields, camera.FieldEnableAi)
+	}
+	if m.show_bbox != nil {
+		fields = append(fields, camera.FieldShowBbox)
 	}
 	if m.created_at != nil {
 		fields = append(fields, camera.FieldCreatedAt)
@@ -843,6 +885,8 @@ func (m *CameraMutation) Field(name string) (ent.Value, bool) {
 		return m.IsActive()
 	case camera.FieldEnableAi:
 		return m.EnableAi()
+	case camera.FieldShowBbox:
+		return m.ShowBbox()
 	case camera.FieldCreatedAt:
 		return m.CreatedAt()
 	case camera.FieldUpdatedAt:
@@ -878,6 +922,8 @@ func (m *CameraMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldIsActive(ctx)
 	case camera.FieldEnableAi:
 		return m.OldEnableAi(ctx)
+	case camera.FieldShowBbox:
+		return m.OldShowBbox(ctx)
 	case camera.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case camera.FieldUpdatedAt:
@@ -967,6 +1013,13 @@ func (m *CameraMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnableAi(v)
+		return nil
+	case camera.FieldShowBbox:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShowBbox(v)
 		return nil
 	case camera.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -1090,6 +1143,9 @@ func (m *CameraMutation) ResetField(name string) error {
 		return nil
 	case camera.FieldEnableAi:
 		m.ResetEnableAi()
+		return nil
+	case camera.FieldShowBbox:
+		m.ResetShowBbox()
 		return nil
 	case camera.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -4276,6 +4332,813 @@ func (m *PushSubscriptionMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *PushSubscriptionMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown PushSubscription edge %s", name)
+}
+
+// RecognitionLogMutation represents an operation that mutates the RecognitionLog nodes in the graph.
+type RecognitionLogMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *string
+	camera_id      *string
+	_type          *string
+	category       *string
+	member_id      *string
+	track_id       *int
+	addtrack_id    *int
+	message_key    *string
+	message_params *map[string]string
+	created_at     *time.Time
+	clearedFields  map[string]struct{}
+	done           bool
+	oldValue       func(context.Context) (*RecognitionLog, error)
+	predicates     []predicate.RecognitionLog
+}
+
+var _ ent.Mutation = (*RecognitionLogMutation)(nil)
+
+// recognitionlogOption allows management of the mutation configuration using functional options.
+type recognitionlogOption func(*RecognitionLogMutation)
+
+// newRecognitionLogMutation creates new mutation for the RecognitionLog entity.
+func newRecognitionLogMutation(c config, op Op, opts ...recognitionlogOption) *RecognitionLogMutation {
+	m := &RecognitionLogMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRecognitionLog,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRecognitionLogID sets the ID field of the mutation.
+func withRecognitionLogID(id string) recognitionlogOption {
+	return func(m *RecognitionLogMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RecognitionLog
+		)
+		m.oldValue = func(ctx context.Context) (*RecognitionLog, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RecognitionLog.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRecognitionLog sets the old RecognitionLog of the mutation.
+func withRecognitionLog(node *RecognitionLog) recognitionlogOption {
+	return func(m *RecognitionLogMutation) {
+		m.oldValue = func(context.Context) (*RecognitionLog, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RecognitionLogMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RecognitionLogMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of RecognitionLog entities.
+func (m *RecognitionLogMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RecognitionLogMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RecognitionLogMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RecognitionLog.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCameraID sets the "camera_id" field.
+func (m *RecognitionLogMutation) SetCameraID(s string) {
+	m.camera_id = &s
+}
+
+// CameraID returns the value of the "camera_id" field in the mutation.
+func (m *RecognitionLogMutation) CameraID() (r string, exists bool) {
+	v := m.camera_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCameraID returns the old "camera_id" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldCameraID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCameraID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCameraID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCameraID: %w", err)
+	}
+	return oldValue.CameraID, nil
+}
+
+// ResetCameraID resets all changes to the "camera_id" field.
+func (m *RecognitionLogMutation) ResetCameraID() {
+	m.camera_id = nil
+}
+
+// SetType sets the "type" field.
+func (m *RecognitionLogMutation) SetType(s string) {
+	m._type = &s
+}
+
+// GetType returns the value of the "type" field in the mutation.
+func (m *RecognitionLogMutation) GetType() (r string, exists bool) {
+	v := m._type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldType returns the old "type" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
+	}
+	return oldValue.Type, nil
+}
+
+// ResetType resets all changes to the "type" field.
+func (m *RecognitionLogMutation) ResetType() {
+	m._type = nil
+}
+
+// SetCategory sets the "category" field.
+func (m *RecognitionLogMutation) SetCategory(s string) {
+	m.category = &s
+}
+
+// Category returns the value of the "category" field in the mutation.
+func (m *RecognitionLogMutation) Category() (r string, exists bool) {
+	v := m.category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategory returns the old "category" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldCategory(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategory: %w", err)
+	}
+	return oldValue.Category, nil
+}
+
+// ResetCategory resets all changes to the "category" field.
+func (m *RecognitionLogMutation) ResetCategory() {
+	m.category = nil
+}
+
+// SetMemberID sets the "member_id" field.
+func (m *RecognitionLogMutation) SetMemberID(s string) {
+	m.member_id = &s
+}
+
+// MemberID returns the value of the "member_id" field in the mutation.
+func (m *RecognitionLogMutation) MemberID() (r string, exists bool) {
+	v := m.member_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMemberID returns the old "member_id" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldMemberID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMemberID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMemberID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMemberID: %w", err)
+	}
+	return oldValue.MemberID, nil
+}
+
+// ClearMemberID clears the value of the "member_id" field.
+func (m *RecognitionLogMutation) ClearMemberID() {
+	m.member_id = nil
+	m.clearedFields[recognitionlog.FieldMemberID] = struct{}{}
+}
+
+// MemberIDCleared returns if the "member_id" field was cleared in this mutation.
+func (m *RecognitionLogMutation) MemberIDCleared() bool {
+	_, ok := m.clearedFields[recognitionlog.FieldMemberID]
+	return ok
+}
+
+// ResetMemberID resets all changes to the "member_id" field.
+func (m *RecognitionLogMutation) ResetMemberID() {
+	m.member_id = nil
+	delete(m.clearedFields, recognitionlog.FieldMemberID)
+}
+
+// SetTrackID sets the "track_id" field.
+func (m *RecognitionLogMutation) SetTrackID(i int) {
+	m.track_id = &i
+	m.addtrack_id = nil
+}
+
+// TrackID returns the value of the "track_id" field in the mutation.
+func (m *RecognitionLogMutation) TrackID() (r int, exists bool) {
+	v := m.track_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackID returns the old "track_id" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldTrackID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackID: %w", err)
+	}
+	return oldValue.TrackID, nil
+}
+
+// AddTrackID adds i to the "track_id" field.
+func (m *RecognitionLogMutation) AddTrackID(i int) {
+	if m.addtrack_id != nil {
+		*m.addtrack_id += i
+	} else {
+		m.addtrack_id = &i
+	}
+}
+
+// AddedTrackID returns the value that was added to the "track_id" field in this mutation.
+func (m *RecognitionLogMutation) AddedTrackID() (r int, exists bool) {
+	v := m.addtrack_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTrackID clears the value of the "track_id" field.
+func (m *RecognitionLogMutation) ClearTrackID() {
+	m.track_id = nil
+	m.addtrack_id = nil
+	m.clearedFields[recognitionlog.FieldTrackID] = struct{}{}
+}
+
+// TrackIDCleared returns if the "track_id" field was cleared in this mutation.
+func (m *RecognitionLogMutation) TrackIDCleared() bool {
+	_, ok := m.clearedFields[recognitionlog.FieldTrackID]
+	return ok
+}
+
+// ResetTrackID resets all changes to the "track_id" field.
+func (m *RecognitionLogMutation) ResetTrackID() {
+	m.track_id = nil
+	m.addtrack_id = nil
+	delete(m.clearedFields, recognitionlog.FieldTrackID)
+}
+
+// SetMessageKey sets the "message_key" field.
+func (m *RecognitionLogMutation) SetMessageKey(s string) {
+	m.message_key = &s
+}
+
+// MessageKey returns the value of the "message_key" field in the mutation.
+func (m *RecognitionLogMutation) MessageKey() (r string, exists bool) {
+	v := m.message_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMessageKey returns the old "message_key" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldMessageKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMessageKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMessageKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMessageKey: %w", err)
+	}
+	return oldValue.MessageKey, nil
+}
+
+// ResetMessageKey resets all changes to the "message_key" field.
+func (m *RecognitionLogMutation) ResetMessageKey() {
+	m.message_key = nil
+}
+
+// SetMessageParams sets the "message_params" field.
+func (m *RecognitionLogMutation) SetMessageParams(value map[string]string) {
+	m.message_params = &value
+}
+
+// MessageParams returns the value of the "message_params" field in the mutation.
+func (m *RecognitionLogMutation) MessageParams() (r map[string]string, exists bool) {
+	v := m.message_params
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMessageParams returns the old "message_params" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldMessageParams(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMessageParams is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMessageParams requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMessageParams: %w", err)
+	}
+	return oldValue.MessageParams, nil
+}
+
+// ClearMessageParams clears the value of the "message_params" field.
+func (m *RecognitionLogMutation) ClearMessageParams() {
+	m.message_params = nil
+	m.clearedFields[recognitionlog.FieldMessageParams] = struct{}{}
+}
+
+// MessageParamsCleared returns if the "message_params" field was cleared in this mutation.
+func (m *RecognitionLogMutation) MessageParamsCleared() bool {
+	_, ok := m.clearedFields[recognitionlog.FieldMessageParams]
+	return ok
+}
+
+// ResetMessageParams resets all changes to the "message_params" field.
+func (m *RecognitionLogMutation) ResetMessageParams() {
+	m.message_params = nil
+	delete(m.clearedFields, recognitionlog.FieldMessageParams)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RecognitionLogMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RecognitionLogMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RecognitionLog entity.
+// If the RecognitionLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecognitionLogMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RecognitionLogMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the RecognitionLogMutation builder.
+func (m *RecognitionLogMutation) Where(ps ...predicate.RecognitionLog) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RecognitionLogMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RecognitionLogMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RecognitionLog, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RecognitionLogMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RecognitionLogMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RecognitionLog).
+func (m *RecognitionLogMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RecognitionLogMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.camera_id != nil {
+		fields = append(fields, recognitionlog.FieldCameraID)
+	}
+	if m._type != nil {
+		fields = append(fields, recognitionlog.FieldType)
+	}
+	if m.category != nil {
+		fields = append(fields, recognitionlog.FieldCategory)
+	}
+	if m.member_id != nil {
+		fields = append(fields, recognitionlog.FieldMemberID)
+	}
+	if m.track_id != nil {
+		fields = append(fields, recognitionlog.FieldTrackID)
+	}
+	if m.message_key != nil {
+		fields = append(fields, recognitionlog.FieldMessageKey)
+	}
+	if m.message_params != nil {
+		fields = append(fields, recognitionlog.FieldMessageParams)
+	}
+	if m.created_at != nil {
+		fields = append(fields, recognitionlog.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RecognitionLogMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case recognitionlog.FieldCameraID:
+		return m.CameraID()
+	case recognitionlog.FieldType:
+		return m.GetType()
+	case recognitionlog.FieldCategory:
+		return m.Category()
+	case recognitionlog.FieldMemberID:
+		return m.MemberID()
+	case recognitionlog.FieldTrackID:
+		return m.TrackID()
+	case recognitionlog.FieldMessageKey:
+		return m.MessageKey()
+	case recognitionlog.FieldMessageParams:
+		return m.MessageParams()
+	case recognitionlog.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RecognitionLogMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case recognitionlog.FieldCameraID:
+		return m.OldCameraID(ctx)
+	case recognitionlog.FieldType:
+		return m.OldType(ctx)
+	case recognitionlog.FieldCategory:
+		return m.OldCategory(ctx)
+	case recognitionlog.FieldMemberID:
+		return m.OldMemberID(ctx)
+	case recognitionlog.FieldTrackID:
+		return m.OldTrackID(ctx)
+	case recognitionlog.FieldMessageKey:
+		return m.OldMessageKey(ctx)
+	case recognitionlog.FieldMessageParams:
+		return m.OldMessageParams(ctx)
+	case recognitionlog.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown RecognitionLog field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RecognitionLogMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case recognitionlog.FieldCameraID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCameraID(v)
+		return nil
+	case recognitionlog.FieldType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetType(v)
+		return nil
+	case recognitionlog.FieldCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategory(v)
+		return nil
+	case recognitionlog.FieldMemberID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMemberID(v)
+		return nil
+	case recognitionlog.FieldTrackID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackID(v)
+		return nil
+	case recognitionlog.FieldMessageKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMessageKey(v)
+		return nil
+	case recognitionlog.FieldMessageParams:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMessageParams(v)
+		return nil
+	case recognitionlog.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RecognitionLog field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RecognitionLogMutation) AddedFields() []string {
+	var fields []string
+	if m.addtrack_id != nil {
+		fields = append(fields, recognitionlog.FieldTrackID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RecognitionLogMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case recognitionlog.FieldTrackID:
+		return m.AddedTrackID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RecognitionLogMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case recognitionlog.FieldTrackID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTrackID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RecognitionLog numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RecognitionLogMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(recognitionlog.FieldMemberID) {
+		fields = append(fields, recognitionlog.FieldMemberID)
+	}
+	if m.FieldCleared(recognitionlog.FieldTrackID) {
+		fields = append(fields, recognitionlog.FieldTrackID)
+	}
+	if m.FieldCleared(recognitionlog.FieldMessageParams) {
+		fields = append(fields, recognitionlog.FieldMessageParams)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RecognitionLogMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RecognitionLogMutation) ClearField(name string) error {
+	switch name {
+	case recognitionlog.FieldMemberID:
+		m.ClearMemberID()
+		return nil
+	case recognitionlog.FieldTrackID:
+		m.ClearTrackID()
+		return nil
+	case recognitionlog.FieldMessageParams:
+		m.ClearMessageParams()
+		return nil
+	}
+	return fmt.Errorf("unknown RecognitionLog nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RecognitionLogMutation) ResetField(name string) error {
+	switch name {
+	case recognitionlog.FieldCameraID:
+		m.ResetCameraID()
+		return nil
+	case recognitionlog.FieldType:
+		m.ResetType()
+		return nil
+	case recognitionlog.FieldCategory:
+		m.ResetCategory()
+		return nil
+	case recognitionlog.FieldMemberID:
+		m.ResetMemberID()
+		return nil
+	case recognitionlog.FieldTrackID:
+		m.ResetTrackID()
+		return nil
+	case recognitionlog.FieldMessageKey:
+		m.ResetMessageKey()
+		return nil
+	case recognitionlog.FieldMessageParams:
+		m.ResetMessageParams()
+		return nil
+	case recognitionlog.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RecognitionLog field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RecognitionLogMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RecognitionLogMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RecognitionLogMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RecognitionLogMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RecognitionLogMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RecognitionLogMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RecognitionLogMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown RecognitionLog unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RecognitionLogMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown RecognitionLog edge %s", name)
 }
 
 // RecordingMutation represents an operation that mutates the Recording nodes in the graph.

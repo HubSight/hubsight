@@ -22,6 +22,8 @@ type Tx struct {
 	Notification *NotificationClient
 	// PushSubscription is the client for interacting with the PushSubscription builders.
 	PushSubscription *PushSubscriptionClient
+	// RecognitionLog is the client for interacting with the RecognitionLog builders.
+	RecognitionLog *RecognitionLogClient
 	// Recording is the client for interacting with the Recording builders.
 	Recording *RecordingClient
 	// Session is the client for interacting with the Session builders.
@@ -166,6 +168,7 @@ func (tx *Tx) init() {
 	tx.MemberFace = NewMemberFaceClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
 	tx.PushSubscription = NewPushSubscriptionClient(tx.config)
+	tx.RecognitionLog = NewRecognitionLogClient(tx.config)
 	tx.Recording = NewRecordingClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)

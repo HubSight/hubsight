@@ -92,6 +92,24 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
         </label>
       </div>
 
+      {formData.enable_ai && (
+        <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <div>
+            <label className="block text-sm font-medium text-slate-800">{t('device.showBbox')}</label>
+            <p className="text-[11px] text-slate-500 mt-0.5">{t('device.showBboxDesc')}</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={formData.show_bbox !== false}
+              onChange={(e) => onChange({ show_bbox: e.target.checked })}
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-600"></div>
+          </label>
+        </div>
+      )}
+
       <DeviceBrandDropdown selectedBrand={formData.brand} onSelectBrand={handleBrandSelect} />
 
       {/* URL Builder or Manual Input */}

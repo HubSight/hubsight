@@ -68,6 +68,18 @@ func (f PushSubscriptionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PushSubscriptionMutation", m)
 }
 
+// The RecognitionLogFunc type is an adapter to allow the use of ordinary
+// function as RecognitionLog mutator.
+type RecognitionLogFunc func(context.Context, *ent.RecognitionLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RecognitionLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RecognitionLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RecognitionLogMutation", m)
+}
+
 // The RecordingFunc type is an adapter to allow the use of ordinary
 // function as Recording mutator.
 type RecordingFunc func(context.Context, *ent.RecordingMutation) (ent.Value, error)

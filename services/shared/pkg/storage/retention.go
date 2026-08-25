@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"cctv/shared/ent"
+	"cctv/shared/ent/recognitionlog"
 	"cctv/shared/ent/recording"
 	"cctv/shared/pkg/database"
 	"github.com/minio/minio-go/v7"
@@ -37,6 +38,14 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 	retentionPeriod := time.Duration(globalSettings.RetentionDays) * 24 * time.Hour
 	cutoff := time.Now().Add(-retentionPeriod)
 	log.Printf("[Retention Worker] Scanning for archives older than %d days (cutoff: %s)...", globalSettings.RetentionDays, cutoff.Format(time.RFC3339))
+
+	if n, err := database.Client.RecognitionLog.Delete().
+		Where(recognitionlog.CreatedAtLT(cutoff)).
+		Exec(ctx); err != nil {
+		log.Printf("[Retention Worker] Warning: failed to purge old recognition logs: %v", err)
+	} else if n > 0 {
+		log.Printf("[Retention Worker] Purged %d recognition logs older than %d days.", n, globalSettings.RetentionDays)
+	}
 
 	oldRecordings, err := database.Client.Recording.Query().
 		Where(recording.StartAtLT(cutoff)).

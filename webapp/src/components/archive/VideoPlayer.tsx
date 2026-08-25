@@ -21,6 +21,7 @@ interface VideoPlayerProps {
   mode: 'live' | 'archive';
   cameraId: string | null;
   enableAi?: boolean;
+  showBbox?: boolean;
   activeRecording: Recording | null;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   containerRef?: React.RefObject<HTMLDivElement | null>;
@@ -36,6 +37,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   mode,
   cameraId,
   enableAi,
+  showBbox,
   activeRecording,
   videoRef,
   containerRef: externalContainerRef,
@@ -438,7 +440,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* ---------------------------------------------------- */}
       {mode === 'live' && cameraId ? (
         <div className="w-full h-full" onClick={toggleFullscreen}>
-          <LivePlayer cameraId={cameraId} enableAi={enableAi} onLiveStatusChange={onLiveStatusChange} />
+          <LivePlayer cameraId={cameraId} enableAi={enableAi} showBbox={showBbox} onLiveStatusChange={onLiveStatusChange} />
         </div>
       ) : mode === 'archive' && activeRecording ? (
         <video

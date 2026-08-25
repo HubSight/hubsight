@@ -244,6 +244,8 @@ const vi = {
   'device.displayNamePlaceholder': 'Vd: Cửa trước, Phòng khách, Sân vườn...',
   'device.enableAi': 'Bật nhận diện AI',
   'device.enableAiDesc': 'Cho phép CV Service xử lý luồng này',
+  'device.showBbox': 'Hiển thị bounding box',
+  'device.showBboxDesc': 'Vẽ khung nhận diện lên luồng live khi AI đang bật',
   'device.brandPreset': 'Nhà sản xuất (Cấu hình sẵn)',
   'device.manualUrlEntry': 'Nhập URL RTSP thủ công',
   'device.urlBuilderFor': 'Trình tạo URL cho {brand}',
@@ -474,6 +476,21 @@ const vi = {
   'lang.vi': 'Tiếng Việt',
   'lang.en': 'English',
   'lang.switch': 'Ngôn ngữ',
+
+  // === Recognition logs (Playback sidebar) ===
+  'log.title': 'Nhật ký nhận diện',
+  'log.empty': 'Chưa có nhận diện trên camera này',
+  'log.loading': 'Đang tải nhật ký...',
+  'log.error': 'Không tải được nhật ký nhận diện',
+  'log.memberIdentified': '{name} xuất hiện tại camera {camera}',
+  'log.guestIdentified': '{name} (khách) xuất hiện tại camera {camera}',
+  'log.strangerDetected': 'Người lạ xuất hiện tại camera {camera}',
+  'log.fireDetected': 'Phát hiện lửa tại camera {camera}',
+  'log.smokeDetected': 'Phát hiện khói tại camera {camera}',
+  'log.weaponDetected': 'Phát hiện vũ khí tại camera {camera}',
+  'log.fallDetected': 'Phát hiện té ngã tại camera {camera}',
+  'log.accidentDetected': 'Phát hiện tai nạn tại camera {camera}',
+  'log.suspiciousLoitering': 'Hành vi đáng ngờ (đứng lâu) tại camera {camera}',
 } as const;
 
 export type TranslationKey = keyof typeof vi;

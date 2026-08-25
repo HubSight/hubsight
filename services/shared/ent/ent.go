@@ -8,6 +8,7 @@ import (
 	"cctv/shared/ent/memberface"
 	"cctv/shared/ent/notification"
 	"cctv/shared/ent/pushsubscription"
+	"cctv/shared/ent/recognitionlog"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/session"
 	"cctv/shared/ent/setting"
@@ -86,6 +87,7 @@ func checkColumn(t, c string) error {
 			memberface.Table:       memberface.ValidColumn,
 			notification.Table:     notification.ValidColumn,
 			pushsubscription.Table: pushsubscription.ValidColumn,
+			recognitionlog.Table:   recognitionlog.ValidColumn,
 			recording.Table:        recording.ValidColumn,
 			session.Table:          session.ValidColumn,
 			setting.Table:          setting.ValidColumn,

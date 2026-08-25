@@ -12,6 +12,7 @@ import (
 	"cctv/shared/pkg/notification"
 	"cctv/shared/pkg/nvr"
 	"cctv/shared/pkg/pool"
+	"cctv/shared/pkg/recognitionlog"
 	"cctv/shared/pkg/recording"
 
 	"github.com/gin-contrib/cors"
@@ -45,6 +46,7 @@ func New() *gin.Engine {
 			internal.GET("/pool/cameras", device.ListPoolCamerasHandler)
 			internal.GET("/face-embeddings", member.ListAllEmbeddingsInternalHandler)
 			internal.POST("/notifications/ingest", notification.IngestVisionEventHandler)
+			internal.POST("/recognition-logs/ingest", recognitionlog.IngestHandler)
 		}
 
 		// Protected domain routes (Validated via auth-service)
@@ -107,6 +109,8 @@ func New() *gin.Engine {
 			protected.GET("/archive/:id/thumbnail", recording.ThumbnailHandler)
 
 			// Notification endpoints
+			protected.GET("/cameras/:id/recognition-logs", recognitionlog.ListHandler)
+
 			protected.GET("/notifications", notification.ListNotificationsHandler)
 			protected.PATCH("/notifications/:id/read", notification.MarkReadHandler)
 			protected.POST("/notifications/read-all", notification.MarkAllReadHandler)
@@ -114,11 +118,11 @@ func New() *gin.Engine {
 			protected.POST("/notifications/subscribe-push", notification.SubscribePushHandler)
 			protected.GET("/notifications/vapid-key", notification.GetVapidPublicKeyHandler)
 
-			// Live streaming endpoints (WebRTC signaling + on-demand AI viewer tracking)
+			// Live streaming endpoints (WebRTC signaling)
 			protected.POST("/live/:id/webrtc", live.WebRTCHandler)
 			protected.GET("/live-status/:id", live.LiveStatusHandler)
-			// Heartbeat: frontend calls this every 15s while watching live.
-			// Vision-service only runs CV for cameras with active viewers.
+			// Optional live-viewer heartbeat (NVR monitor fallback only).
+			// Does NOT start/stop vision-service — CV + logs + push run 24/7 when enable_ai.
 			protected.POST("/live/:id/ai/heartbeat", live.AIHeartbeatHandler)
 			protected.POST("/live/:id/ai/stop", live.AIStopHandler)
 		}

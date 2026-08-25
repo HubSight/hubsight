@@ -32,6 +32,10 @@ func (Camera) Fields() []ent.Field {
 		field.String("extra_args").Default(""),
 		field.Bool("is_active").Default(true),
 		field.Bool("enable_ai").Default(false),
+		field.Bool("show_bbox").
+			Default(true).
+			StructTag(`json:"show_bbox"`).
+			Comment("Draw live bounding boxes when enable_ai is true"),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

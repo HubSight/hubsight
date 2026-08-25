@@ -5,6 +5,7 @@ export interface CameraItem {
   brand: string;
   is_active: boolean;
   enable_ai?: boolean;
+  show_bbox?: boolean;
 }
 
 export interface Recording {

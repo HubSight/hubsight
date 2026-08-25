@@ -1,7 +1,6 @@
 import os
 import cv2
 import time
-import requests
 import threading
 import logging
 
@@ -17,30 +16,13 @@ class StreamManager:
         self.active_streams = {}  # cam_id -> {'thread': t, 'stop_event': e, 'host': url, 'name': name}
 
     def ensure_go2rtc_stream(self, cam_id, rtsp_url):
-        try:
-            src_direct = rtsp_url
-            if "#" not in src_direct:
-                src_direct = f"{src_direct}#backchannel=0#transport=tcp"
-            elif "transport=" not in src_direct:
-                src_direct = f"{src_direct}#transport=tcp"
-            src_ffmpeg = f"ffmpeg:{rtsp_url}#audio=opus"
-            
-            url = f"{self.webrtc_api_url}/api/streams"
-            params = [("name", f"cam_{cam_id}_cv"), ("src", src_direct), ("src", src_ffmpeg)]
-            resp = requests.put(url, params=params, timeout=3)
-            if resp.status_code in (200, 201):
-                logger.debug(f"[{cam_id}] Registered Connection #0 in go2rtc successfully")
-        except Exception as e:
-            logger.warning(f"[{cam_id}] Could not register stream in go2rtc: {e}")
+        # Connection #0 (cam_{id}_cv) is owned by pool-service (640p / 10FPS / no audio).
+        # Vision must not PUT/overwrite that profile.
+        return
 
     def remove_go2rtc_stream(self, cam_id):
-        try:
-            url = f"{self.webrtc_api_url}/api/streams"
-            params = [("name", f"cam_{cam_id}_cv")]
-            requests.delete(url, params=params, timeout=3)
-            logger.debug(f"[{cam_id}] Removed Connection #0 from go2rtc")
-        except Exception as e:
-            logger.warning(f"[{cam_id}] Could not remove stream from go2rtc: {e}")
+        # Pool-service unregisters Connection #0 when AI is disabled. Do not DELETE here.
+        return
 
     def _stream_worker(self, cam_id, cam_name, rtsp_url, stop_event):
         self.ensure_go2rtc_stream(cam_id, rtsp_url)

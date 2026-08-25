@@ -6,8 +6,9 @@ import (
 )
 
 // viewerTracker tracks active live-stream viewers per camera using
-// a heartbeat mechanism. CV processing is only triggered for cameras
-// that currently have at least one active viewer, saving server resources.
+// a heartbeat mechanism. This is a live-viewership counter only
+// (NVR monitor fallback). It MUST NOT gate vision-service, recognition
+// logs, or Web Push — those run 24/7 for every enable_ai camera.
 //
 // Each viewer is identified by a session-local UUID generated on the
 // client side. A viewer is considered active as long as it sends a

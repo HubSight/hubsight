@@ -16,6 +16,7 @@ import (
 	"cctv/shared/ent/memberface"
 	"cctv/shared/ent/notification"
 	"cctv/shared/ent/pushsubscription"
+	"cctv/shared/ent/recognitionlog"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/session"
 	"cctv/shared/ent/setting"
@@ -42,6 +43,8 @@ type Client struct {
 	Notification *NotificationClient
 	// PushSubscription is the client for interacting with the PushSubscription builders.
 	PushSubscription *PushSubscriptionClient
+	// RecognitionLog is the client for interacting with the RecognitionLog builders.
+	RecognitionLog *RecognitionLogClient
 	// Recording is the client for interacting with the Recording builders.
 	Recording *RecordingClient
 	// Session is the client for interacting with the Session builders.
@@ -66,6 +69,7 @@ func (c *Client) init() {
 	c.MemberFace = NewMemberFaceClient(c.config)
 	c.Notification = NewNotificationClient(c.config)
 	c.PushSubscription = NewPushSubscriptionClient(c.config)
+	c.RecognitionLog = NewRecognitionLogClient(c.config)
 	c.Recording = NewRecordingClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Setting = NewSettingClient(c.config)
@@ -167,6 +171,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MemberFace:       NewMemberFaceClient(cfg),
 		Notification:     NewNotificationClient(cfg),
 		PushSubscription: NewPushSubscriptionClient(cfg),
+		RecognitionLog:   NewRecognitionLogClient(cfg),
 		Recording:        NewRecordingClient(cfg),
 		Session:          NewSessionClient(cfg),
 		Setting:          NewSettingClient(cfg),
@@ -195,6 +200,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MemberFace:       NewMemberFaceClient(cfg),
 		Notification:     NewNotificationClient(cfg),
 		PushSubscription: NewPushSubscriptionClient(cfg),
+		RecognitionLog:   NewRecognitionLogClient(cfg),
 		Recording:        NewRecordingClient(cfg),
 		Session:          NewSessionClient(cfg),
 		Setting:          NewSettingClient(cfg),
@@ -229,7 +235,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Camera, c.Member, c.MemberFace, c.Notification, c.PushSubscription,
-		c.Recording, c.Session, c.Setting, c.User,
+		c.RecognitionLog, c.Recording, c.Session, c.Setting, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -240,7 +246,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Camera, c.Member, c.MemberFace, c.Notification, c.PushSubscription,
-		c.Recording, c.Session, c.Setting, c.User,
+		c.RecognitionLog, c.Recording, c.Session, c.Setting, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -259,6 +265,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Notification.mutate(ctx, m)
 	case *PushSubscriptionMutation:
 		return c.PushSubscription.mutate(ctx, m)
+	case *RecognitionLogMutation:
+		return c.RecognitionLog.mutate(ctx, m)
 	case *RecordingMutation:
 		return c.Recording.mutate(ctx, m)
 	case *SessionMutation:
@@ -985,6 +993,139 @@ func (c *PushSubscriptionClient) mutate(ctx context.Context, m *PushSubscription
 	}
 }
 
+// RecognitionLogClient is a client for the RecognitionLog schema.
+type RecognitionLogClient struct {
+	config
+}
+
+// NewRecognitionLogClient returns a client for the RecognitionLog from the given config.
+func NewRecognitionLogClient(c config) *RecognitionLogClient {
+	return &RecognitionLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `recognitionlog.Hooks(f(g(h())))`.
+func (c *RecognitionLogClient) Use(hooks ...Hook) {
+	c.hooks.RecognitionLog = append(c.hooks.RecognitionLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `recognitionlog.Intercept(f(g(h())))`.
+func (c *RecognitionLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RecognitionLog = append(c.inters.RecognitionLog, interceptors...)
+}
+
+// Create returns a builder for creating a RecognitionLog entity.
+func (c *RecognitionLogClient) Create() *RecognitionLogCreate {
+	mutation := newRecognitionLogMutation(c.config, OpCreate)
+	return &RecognitionLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RecognitionLog entities.
+func (c *RecognitionLogClient) CreateBulk(builders ...*RecognitionLogCreate) *RecognitionLogCreateBulk {
+	return &RecognitionLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RecognitionLogClient) MapCreateBulk(slice any, setFunc func(*RecognitionLogCreate, int)) *RecognitionLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RecognitionLogCreateBulk{err: fmt.Errorf("calling to RecognitionLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RecognitionLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RecognitionLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RecognitionLog.
+func (c *RecognitionLogClient) Update() *RecognitionLogUpdate {
+	mutation := newRecognitionLogMutation(c.config, OpUpdate)
+	return &RecognitionLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RecognitionLogClient) UpdateOne(_m *RecognitionLog) *RecognitionLogUpdateOne {
+	mutation := newRecognitionLogMutation(c.config, OpUpdateOne, withRecognitionLog(_m))
+	return &RecognitionLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RecognitionLogClient) UpdateOneID(id string) *RecognitionLogUpdateOne {
+	mutation := newRecognitionLogMutation(c.config, OpUpdateOne, withRecognitionLogID(id))
+	return &RecognitionLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RecognitionLog.
+func (c *RecognitionLogClient) Delete() *RecognitionLogDelete {
+	mutation := newRecognitionLogMutation(c.config, OpDelete)
+	return &RecognitionLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RecognitionLogClient) DeleteOne(_m *RecognitionLog) *RecognitionLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RecognitionLogClient) DeleteOneID(id string) *RecognitionLogDeleteOne {
+	builder := c.Delete().Where(recognitionlog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RecognitionLogDeleteOne{builder}
+}
+
+// Query returns a query builder for RecognitionLog.
+func (c *RecognitionLogClient) Query() *RecognitionLogQuery {
+	return &RecognitionLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRecognitionLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RecognitionLog entity by its id.
+func (c *RecognitionLogClient) Get(ctx context.Context, id string) (*RecognitionLog, error) {
+	return c.Query().Where(recognitionlog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RecognitionLogClient) GetX(ctx context.Context, id string) *RecognitionLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RecognitionLogClient) Hooks() []Hook {
+	return c.hooks.RecognitionLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *RecognitionLogClient) Interceptors() []Interceptor {
+	return c.inters.RecognitionLog
+}
+
+func (c *RecognitionLogClient) mutate(ctx context.Context, m *RecognitionLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RecognitionLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RecognitionLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RecognitionLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RecognitionLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RecognitionLog mutation op: %q", m.Op())
+	}
+}
+
 // RecordingClient is a client for the Recording schema.
 type RecordingClient struct {
 	config
@@ -1568,11 +1709,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Camera, Member, MemberFace, Notification, PushSubscription, Recording, Session,
-		Setting, User []ent.Hook
+		Camera, Member, MemberFace, Notification, PushSubscription, RecognitionLog,
+		Recording, Session, Setting, User []ent.Hook
 	}
 	inters struct {
-		Camera, Member, MemberFace, Notification, PushSubscription, Recording, Session,
-		Setting, User []ent.Interceptor
+		Camera, Member, MemberFace, Notification, PushSubscription, RecognitionLog,
+		Recording, Session, Setting, User []ent.Interceptor
 	}
 )

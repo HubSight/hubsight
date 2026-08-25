@@ -30,7 +30,8 @@ const initialFormData: DeviceFormData = {
   videoCodec: 'copy',
   audioMode: 'auto',
   extraArgs: '',
-  enable_ai: false
+  enable_ai: false,
+  show_bbox: true
 };
 
 const Devices = () => {
@@ -112,7 +113,8 @@ const Devices = () => {
         videoCodec: dev.video_codec || 'copy',
         audioMode: dev.audio_mode || 'auto',
         extraArgs: dev.extra_args || '',
-        enable_ai: dev.enable_ai || false
+        enable_ai: dev.enable_ai || false,
+        show_bbox: dev.show_bbox !== false
       });
     } else {
       setEditingDeviceId(null);
@@ -175,7 +177,8 @@ const Devices = () => {
       audio_mode: formData.audioMode,
       extra_args: formData.extraArgs.trim(),
       is_active: true,
-      enable_ai: formData.enable_ai
+      enable_ai: formData.enable_ai,
+      show_bbox: formData.show_bbox !== false
     };
 
     try {

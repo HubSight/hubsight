@@ -120,6 +120,11 @@ func EnableAi(v bool) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldEnableAi, v))
 }
 
+// ShowBbox applies equality check predicate on the "show_bbox" field. It's identical to ShowBboxEQ.
+func ShowBbox(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldShowBbox, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Camera {
 	return predicate.Camera(sql.FieldEQ(FieldCreatedAt, v))
@@ -683,6 +688,16 @@ func EnableAiEQ(v bool) predicate.Camera {
 // EnableAiNEQ applies the NEQ predicate on the "enable_ai" field.
 func EnableAiNEQ(v bool) predicate.Camera {
 	return predicate.Camera(sql.FieldNEQ(FieldEnableAi, v))
+}
+
+// ShowBboxEQ applies the EQ predicate on the "show_bbox" field.
+func ShowBboxEQ(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldEQ(FieldShowBbox, v))
+}
+
+// ShowBboxNEQ applies the NEQ predicate on the "show_bbox" field.
+func ShowBboxNEQ(v bool) predicate.Camera {
+	return predicate.Camera(sql.FieldNEQ(FieldShowBbox, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

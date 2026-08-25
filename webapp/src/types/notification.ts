@@ -1,10 +1,10 @@
 export interface NotificationItem {
   id: string;
   camera_id?: string;
-  type: 'person_identified' | 'stranger_detected' | 'system';
+  type: string;
   title: string;
   body: string;
-  category: 'family' | 'guest' | 'stranger' | 'system';
+  category: 'family' | 'guest' | 'stranger' | 'system' | 'risk' | 'fall' | 'suspicious' | string;
   member_id?: string;
   thumbnail_url?: string;
   is_read: boolean;

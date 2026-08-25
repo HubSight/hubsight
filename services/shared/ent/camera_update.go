@@ -197,6 +197,20 @@ func (_u *CameraUpdate) SetNillableEnableAi(v *bool) *CameraUpdate {
 	return _u
 }
 
+// SetShowBbox sets the "show_bbox" field.
+func (_u *CameraUpdate) SetShowBbox(v bool) *CameraUpdate {
+	_u.mutation.SetShowBbox(v)
+	return _u
+}
+
+// SetNillableShowBbox sets the "show_bbox" field if the given value is not nil.
+func (_u *CameraUpdate) SetNillableShowBbox(v *bool) *CameraUpdate {
+	if v != nil {
+		_u.SetShowBbox(*v)
+	}
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *CameraUpdate) SetCreatedAt(v time.Time) *CameraUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -359,6 +373,9 @@ func (_u *CameraUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.EnableAi(); ok {
 		_spec.SetField(camera.FieldEnableAi, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ShowBbox(); ok {
+		_spec.SetField(camera.FieldShowBbox, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(camera.FieldCreatedAt, field.TypeTime, value)
@@ -599,6 +616,20 @@ func (_u *CameraUpdateOne) SetNillableEnableAi(v *bool) *CameraUpdateOne {
 	return _u
 }
 
+// SetShowBbox sets the "show_bbox" field.
+func (_u *CameraUpdateOne) SetShowBbox(v bool) *CameraUpdateOne {
+	_u.mutation.SetShowBbox(v)
+	return _u
+}
+
+// SetNillableShowBbox sets the "show_bbox" field if the given value is not nil.
+func (_u *CameraUpdateOne) SetNillableShowBbox(v *bool) *CameraUpdateOne {
+	if v != nil {
+		_u.SetShowBbox(*v)
+	}
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *CameraUpdateOne) SetCreatedAt(v time.Time) *CameraUpdateOne {
 	_u.mutation.SetCreatedAt(v)
@@ -791,6 +822,9 @@ func (_u *CameraUpdateOne) sqlSave(ctx context.Context) (_node *Camera, err erro
 	}
 	if value, ok := _u.mutation.EnableAi(); ok {
 		_spec.SetField(camera.FieldEnableAi, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ShowBbox(); ok {
+		_spec.SetField(camera.FieldShowBbox, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(camera.FieldCreatedAt, field.TypeTime, value)

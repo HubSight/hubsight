@@ -22,6 +22,7 @@ var (
 		{Name: "extra_args", Type: field.TypeString, Default: ""},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "enable_ai", Type: field.TypeBool, Default: false},
+		{Name: "show_bbox", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -108,6 +109,31 @@ var (
 		Name:       "push_subscriptions",
 		Columns:    PushSubscriptionsColumns,
 		PrimaryKey: []*schema.Column{PushSubscriptionsColumns[0]},
+	}
+	// RecognitionLogsColumns holds the columns for the "recognition_logs" table.
+	RecognitionLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "camera_id", Type: field.TypeString},
+		{Name: "type", Type: field.TypeString},
+		{Name: "category", Type: field.TypeString, Default: "member"},
+		{Name: "member_id", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "track_id", Type: field.TypeInt, Nullable: true, Default: 0},
+		{Name: "message_key", Type: field.TypeString},
+		{Name: "message_params", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// RecognitionLogsTable holds the schema information for the "recognition_logs" table.
+	RecognitionLogsTable = &schema.Table{
+		Name:       "recognition_logs",
+		Columns:    RecognitionLogsColumns,
+		PrimaryKey: []*schema.Column{RecognitionLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "recognitionlog_camera_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RecognitionLogsColumns[1], RecognitionLogsColumns[8]},
+			},
+		},
 	}
 	// RecordingsColumns holds the columns for the "recordings" table.
 	RecordingsColumns = []*schema.Column{
@@ -200,6 +226,7 @@ var (
 		MemberFacesTable,
 		NotificationsTable,
 		PushSubscriptionsTable,
+		RecognitionLogsTable,
 		RecordingsTable,
 		SessionsTable,
 		SettingsTable,

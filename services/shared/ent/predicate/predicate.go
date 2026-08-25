@@ -21,6 +21,9 @@ type Notification func(*sql.Selector)
 // PushSubscription is the predicate function for pushsubscription builders.
 type PushSubscription func(*sql.Selector)
 
+// RecognitionLog is the predicate function for recognitionlog builders.
+type RecognitionLog func(*sql.Selector)
+
 // Recording is the predicate function for recording builders.
 type Recording func(*sql.Selector)
 

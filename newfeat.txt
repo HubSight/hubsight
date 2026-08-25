@@ -1,0 +1,29 @@
+Tính năng log nhận diện và right sidebar logging trong Playback
+
+- Dựa trên các tính năng cốt lõi đã xây dựng của vision-service
+
+Điều kiện:
+- Camera đang hoạt động bình thường, đã BẬT chức năng AI trong Devices
+
+Hành vi:
+- Vision-service sẽ duy trì nhận dạng từ camera stram liên tục kể cả khi web không được mở
+- Nâng cấp các phương pháp nhận diện để phát hiện các sự việc, hiện tượng theo yêu cầu bên người
+- Bounding box là option có thể bật tắt trong Device settings, follow theo AI settings: Bật AI -> Hiển thị bounding box
+- Những thứ sẽ được nhận dạng:
+    + các loại member đã huấn luyện
+    + risk events (fire signal, accident)
+    + té ngã
+    + người lạ
+    + các hành vi đáng ngờ khác (AI tự nhận định)
+- Thêm right sidebar vào Playback
+    + logs lại tất cả những nhận dạng ở trên vào right sidebar theo thời gian thực ở web và sử dụng ngôn ngữ tự nhiên
+    + có API để load log lúc sidebar được mở lần đâu
+    + logs sẽ được service ghi liên tục kể cả khi web không được mở
+    + phân loại log trên UI bằng màu sắc (không dùng icons)
+    + right sidebar tự ẩn hoàn toàn khi camera không bật settings AI trong Devices và tự động mở khi settings này được bật
+- Những thứ vẫn sẽ được gửi cảnh báo trong Notification area (push notifications)
+    + risk events
+    + té ngã, tai nạn
+    + người lạ
+    + các hành vi đáng ngờ khác
+- Nâng cấp chất lượng luồng stream trong pool dành cho CV service từ 5FPS lên 10FPS để đảm bảo chất lượng chính xác cho việc nhận diện

@@ -246,6 +246,8 @@ const en: Record<TranslationKey, string> = {
   'device.displayNamePlaceholder': 'e.g. Front Door, Living Room, Backyard...',
   'device.enableAi': 'Enable AI Detection',
   'device.enableAiDesc': 'Allow CV Service to process this stream',
+  'device.showBbox': 'Show bounding boxes',
+  'device.showBboxDesc': 'Draw recognition boxes on the live stream while AI is enabled',
   'device.brandPreset': 'Device Brand (Brand Preset)',
   'device.manualUrlEntry': 'Manual RTSP URL Entry',
   'device.urlBuilderFor': 'Standard URL Builder for {brand}',
@@ -476,6 +478,21 @@ const en: Record<TranslationKey, string> = {
   'lang.vi': 'Tiếng Việt',
   'lang.en': 'English',
   'lang.switch': 'Language',
+
+  // === Recognition logs (Playback sidebar) ===
+  'log.title': 'Recognition log',
+  'log.empty': 'No recognitions on this camera yet',
+  'log.loading': 'Loading logs...',
+  'log.error': 'Failed to load recognition logs',
+  'log.memberIdentified': '{name} appeared at camera {camera}',
+  'log.guestIdentified': '{name} (guest) appeared at camera {camera}',
+  'log.strangerDetected': 'A stranger appeared at camera {camera}',
+  'log.fireDetected': 'Fire detected at camera {camera}',
+  'log.smokeDetected': 'Smoke detected at camera {camera}',
+  'log.weaponDetected': 'Weapon detected at camera {camera}',
+  'log.fallDetected': 'A fall was detected at camera {camera}',
+  'log.accidentDetected': 'An accident was detected at camera {camera}',
+  'log.suspiciousLoitering': 'Suspicious loitering at camera {camera}',
 };
 
 export default en;

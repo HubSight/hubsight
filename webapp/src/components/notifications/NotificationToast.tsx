@@ -17,8 +17,8 @@ const playNotificationChime = (category: string) => {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
-    if (category === 'stranger') {
-      // Urgent double beep for stranger
+    if (category === 'stranger' || category === 'risk' || category === 'fall' || category === 'suspicious') {
+      // Urgent double beep for alerts
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(440, ctx.currentTime);
       osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);

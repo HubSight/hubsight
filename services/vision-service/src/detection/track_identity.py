@@ -29,6 +29,7 @@ class TrackIdentity:
         self.box_history = []  # list of (timestamp, norm_box (x1, y1, x2, y2), aspect_ratio)
         self.is_fallen = False
         self.last_abnormal_alert = 0.0
+        self.loiter_alerted = False
 
     def update_pose_history(self, norm_box):
         x1, y1, x2, y2 = norm_box
@@ -40,21 +41,37 @@ class TrackIdentity:
         # Keep last 5 seconds of boxes
         self.box_history = [b for b in self.box_history if now - b[0] <= 5.0]
 
-    def check_abnormal_behavior(self):
+    def check_abnormal_behavior(self, now=None):
         """Detect sudden posture anomaly (e.g. falling down or lying on the ground)."""
         if len(self.box_history) < 3:
             return None
-        
+
+        now = now if now is not None else time.time()
         current_ar = self.box_history[-1][2]
-        # Check if person suddenly became horizontal (w > h, aspect ratio > 1.15)
-        # and was previously more upright in the history window
+        # Require a prior upright posture in the 5s window to reduce sitting/couch FPs.
         if current_ar >= 1.15:
             past_standing = any(b[2] < 0.7 for b in self.box_history[:-1])
-            if past_standing or not self.is_fallen:
+            if past_standing and not self.is_fallen:
+                if now - self.last_abnormal_alert < 30.0:
+                    self.is_fallen = True
+                    return None
                 self.is_fallen = True
+                self.last_abnormal_alert = now
                 return "fall_detected"
         else:
             self.is_fallen = False
+        return None
+
+    def check_loitering(self, now=None):
+        """Stranger / unverified person remaining in frame for >= 45s."""
+        if self.loiter_alerted:
+            return None
+        if self.state in ("family", "guest"):
+            return None
+        now = now if now is not None else time.time()
+        if now - self.created_at >= 45.0:
+            self.loiter_alerted = True
+            return "loitering"
         return None
 
     def update_match(self, member_id, name, role, similarity, is_good):

@@ -65,6 +65,14 @@ export class RelayConsumer {
     });
   }
 
+  @EventPattern('vision.log.new')
+  handleVisionLogNew(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'vision.log.new',
+      data,
+    });
+  }
+
   @EventPattern('nvr.status.update')
   handleNvrStatusUpdate(@Payload() data: any) {
     return this.relayService.broadcastEvent({

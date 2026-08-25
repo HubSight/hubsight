@@ -1,22 +1,140 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX, Sparkles } from 'lucide-react';
 import { useTranslation } from '../../i18n';
-import axiosClient from '../../api/axiosClient';
+import { useSocket } from '../../context/SocketContext';
+
+interface OverlayBox {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  state?: string;
+  name?: string;
+}
+
+const BOX_COLORS: Record<string, string> = {
+  family: '#10b981',
+  guest: '#3b82f6',
+  stranger: '#ef4444',
+  danger: '#f97316',
+  fall: '#f43f5e',
+  verifying: '#94a3b8',
+};
 
 interface LivePlayerProps {
   cameraId: string;
   enableAi?: boolean;
+  showBbox?: boolean;
   onLiveStatusChange?: (isLive: boolean) => void;
 }
 
-export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLiveStatusChange }) => {
+export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, showBbox, onLiveStatusChange }) => {
   const { t } = useTranslation();
+  const { socket } = useSocket();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const overlayRef = useRef<HTMLCanvasElement>(null);
+  const overlayWrapRef = useRef<HTMLDivElement>(null);
+  const boxesRef = useRef<OverlayBox[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
   const [streamError, setStreamError] = useState<string | null>(null);
   const [hasAudioTrack, setHasAudioTrack] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+
+  const drawBoxes = useCallback(() => {
+    const canvas = overlayRef.current;
+    const video = videoRef.current;
+    const wrap = overlayWrapRef.current;
+    if (!canvas || !video || !wrap) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const cssW = wrap.clientWidth;
+    const cssH = wrap.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(cssW * dpr));
+    canvas.height = Math.max(1, Math.round(cssH * dpr));
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    if (!showBbox || !enableAi || boxesRef.current.length === 0) return;
+
+    const vidW = video.videoWidth || 0;
+    const vidH = video.videoHeight || 0;
+    let ox = 0;
+    let oy = 0;
+    let dw = cssW;
+    let dh = cssH;
+    if (vidW > 0 && vidH > 0) {
+      const scale = Math.min(cssW / vidW, cssH / vidH);
+      dw = vidW * scale;
+      dh = vidH * scale;
+      ox = (cssW - dw) / 2;
+      oy = (cssH - dh) / 2;
+    }
+
+    ctx.lineWidth = 2;
+    ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+    for (const box of boxesRef.current) {
+      const color = BOX_COLORS[box.state || 'verifying'] || BOX_COLORS.verifying;
+      const x = ox + box.x1 * dw;
+      const y = oy + box.y1 * dh;
+      const w = (box.x2 - box.x1) * dw;
+      const h = (box.y2 - box.y1) * dh;
+      ctx.strokeStyle = color;
+      ctx.strokeRect(x, y, w, h);
+      const label = box.name || box.state || '';
+      if (label) {
+        const pad = 4;
+        const textW = ctx.measureText(label).width;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, Math.max(0, y - 18), textW + pad * 2, 18);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(label, x + pad, Math.max(12, y - 5));
+      }
+    }
+  }, [enableAi, showBbox]);
+
+  useEffect(() => {
+    if (!socket || !cameraId) return;
+    const apply = (data: { camera_id?: string; boxes?: OverlayBox[] }) => {
+      if (!data || data.camera_id !== cameraId) return;
+      boxesRef.current = data.boxes || [];
+      drawBoxes();
+    };
+    const clear = (data: { camera_id?: string }) => {
+      if (!data || data.camera_id !== cameraId) return;
+      boxesRef.current = [];
+      drawBoxes();
+    };
+    socket.on('vision.person.entered', apply);
+    socket.on('vision.person.update', apply);
+    socket.on('vision.person.left', clear);
+    return () => {
+      socket.off('vision.person.entered', apply);
+      socket.off('vision.person.update', apply);
+      socket.off('vision.person.left', clear);
+    };
+  }, [socket, cameraId, drawBoxes]);
+
+  useEffect(() => {
+    if (!showBbox || !enableAi) {
+      boxesRef.current = [];
+      drawBoxes();
+    } else {
+      drawBoxes();
+    }
+  }, [showBbox, enableAi, drawBoxes]);
+
+  useEffect(() => {
+    const wrap = overlayWrapRef.current;
+    if (!wrap || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => drawBoxes());
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [drawBoxes]);
 
   const toggleMute = () => {
     const video = videoRef.current;
@@ -49,12 +167,6 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
     }
   };
 
-  // ── Stable viewer ID for AI heartbeat ────────────────────────────────────
-  // One UUID per LivePlayer mount; reused across heartbeats so the backend
-  // counts this as a single viewer regardless of how many pings are sent.
-  const viewerIdRef = useRef<string>(
-    Math.random().toString(36).slice(2) + Date.now().toString(36)
-  );
   const liveEdgeSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Debug Trace State ────────────────────────────────────────────────────
@@ -195,44 +307,6 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
     }
   }, []);
 
-  // ── On-demand AI heartbeat ────────────────────────────────────────────────
-  // Registers this viewer with the backend every 15s so the vision-service
-  // knows to keep CV processing alive. Sends an explicit stop on unmount.
-  // Multiple tabs/users watching the same camera share ONE CV thread.
-  useEffect(() => {
-    if (!cameraId) return;
-    const viewerId = viewerIdRef.current;
-    const baseUrl = import.meta.env.VITE_API_URL || '/api';
-
-    const ping = () => {
-      axiosClient
-        .post(`/live/${cameraId}/ai/heartbeat?viewer_id=${viewerId}`)
-        .catch(() => {/* silently ignore – non-critical */});
-    };
-
-    // Ping immediately then every 15s
-    ping();
-    const interval = setInterval(ping, 15_000);
-
-    const stop = () => {
-      clearInterval(interval);
-      // Best-effort stop: use sendBeacon for reliability on page unload
-      const url = `${baseUrl}/live/${cameraId}/ai/stop?viewer_id=${viewerId}`;
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(url);
-      } else {
-        axiosClient.post(`/live/${cameraId}/ai/stop?viewer_id=${viewerId}`).catch(() => {});
-      }
-    };
-
-    // Also handle hard page close / navigation
-    window.addEventListener('beforeunload', stop);
-    return () => {
-      window.removeEventListener('beforeunload', stop);
-      stop();
-    };
-  }, [cameraId]);
-
   // ──────────────────────────────────────────────────────────────────────────
   // Lightweight render FPS tracker for Trace monitor
   // ──────────────────────────────────────────────────────────────────────────
@@ -371,7 +445,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
   }, [cameraId, onLiveStatusChange, t, startStatsPoll, stopStatsPoll]);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none">
+    <div ref={overlayWrapRef} className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none">
       <video
         ref={videoRef}
         controls={false}
@@ -379,6 +453,10 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, onLi
         playsInline
         muted
         className="w-full h-full object-contain pointer-events-none"
+      />
+      <canvas
+        ref={overlayRef}
+        className="absolute inset-0 w-full h-full pointer-events-none z-20"
       />
       {isInitializing && !streamError && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-3 text-white z-10">

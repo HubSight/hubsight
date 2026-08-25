@@ -2,6 +2,9 @@ package live
 
 import (
 	"bytes"
+	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/pb"
+	"cctv/shared/pkg/pool"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,9 +12,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"cctv/shared/pkg/database"
-	"cctv/shared/pkg/pb"
-	"cctv/shared/pkg/pool"
 
 	"github.com/gin-gonic/gin"
 )
@@ -157,11 +157,10 @@ func LiveStatusHandler(c *gin.Context) {
 	})
 }
 
-// AIHeartbeatHandler registers or refreshes a viewer for on-demand CV processing.
-// The frontend calls this every 15 seconds while the user is watching a live stream.
-// The viewer_id must be a stable UUID generated per browser session.
-// When the first viewer registers for a camera, the vision-service will automatically
-// pick it up on its next poll cycle and begin AI detection.
+// AIHeartbeatHandler registers or refreshes a live viewer session.
+// Kept as a no-op-safe counter for NVR monitor fallback. Vision-service,
+// recognition logs, and Web Push are independent of this heartbeat and
+// run 24/7 for every camera with enable_ai=true.
 func AIHeartbeatHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {

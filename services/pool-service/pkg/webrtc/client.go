@@ -45,8 +45,8 @@ func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL s
 
 	var srcFfmpeg string
 	if purpose == "cv" {
-		// 640p 5FPS, no audio for CV
-		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#video=h264#width=640#framerate=5#audio=none", rtspURL)
+		// 640p 10FPS, no audio for CV (recognition accuracy)
+		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#video=h264#width=640#framerate=10#audio=none", rtspURL)
 	} else {
 		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#audio=opus", rtspURL)
 	}

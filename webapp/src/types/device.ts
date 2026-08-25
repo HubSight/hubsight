@@ -11,6 +11,7 @@ export interface DeviceType {
   extra_args: string;
   is_active: boolean;
   enable_ai: boolean;
+  show_bbox: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +35,7 @@ export interface DeviceFormData {
   audioMode: string;
   extraArgs: string;
   enable_ai: boolean;
+  show_bbox: boolean;
 }
 
 // Backward compatibility aliases

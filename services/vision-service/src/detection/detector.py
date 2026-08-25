@@ -14,6 +14,37 @@ from src.recognition.face_engine import FaceEngine
 
 logger = logging.getLogger(__name__)
 
+ALERT_TYPES = {
+    "stranger_detected",
+    "fire_detected",
+    "smoke_detected",
+    "weapon_detected",
+    "fall_detected",
+    "accident_detected",
+    "suspicious",
+}
+
+TYPE_TO_NOTIF_ROLE = {
+    "stranger_detected": "stranger",
+    "fire_detected": "danger",
+    "smoke_detected": "danger",
+    "weapon_detected": "danger",
+    "fall_detected": "fall",
+    "accident_detected": "accident",
+    "suspicious": "suspicious",
+}
+
+TYPE_TO_MESSAGE_KEY = {
+    "member_identified": "log.memberIdentified",
+    "stranger_detected": "log.strangerDetected",
+    "fire_detected": "log.fireDetected",
+    "smoke_detected": "log.smokeDetected",
+    "weapon_detected": "log.weaponDetected",
+    "fall_detected": "log.fallDetected",
+    "accident_detected": "log.accidentDetected",
+    "suspicious": "log.suspiciousLoitering",
+}
+
 
 class PersonDetector:
     def __init__(self, mq_client, face_engine=None, conf_threshold=0.45, iou_threshold=0.5, no_person_timeout=4.0):
@@ -35,6 +66,8 @@ class PersonDetector:
         self.use_danger_classes = os.path.basename(model_name).startswith("yolo-cctv")
         self.danger_classes = {1: "smoke", 2: "fire", 3: "weapon"} if self.use_danger_classes else {}
         self.allowed_classes = {0} | set(self.danger_classes.keys())
+        if not self.use_danger_classes:
+            logger.info("Fire/smoke/weapon classes disabled (yolo-cctv.onnx not present; using %s)", model_name)
 
         self.camera_states = {}
         self._state_lock = threading.Lock()
@@ -48,6 +81,7 @@ class PersonDetector:
                     "motion_gate": MotionGate(),
                     "last_boxes": [],
                     "tracks": {},  # track_id -> TrackIdentity
+                    "last_danger_time": 0.0,
                     "tracker": ByteTrack(
                         track_high_thresh=self.conf_threshold,
                         track_low_thresh=0.1,
@@ -104,7 +138,15 @@ class PersonDetector:
                 last_alert = cam["tracks"].get(danger_key, 0) if isinstance(cam["tracks"].get(danger_key), float) else 0
                 if current_time - last_alert > 10.0:
                     cam["tracks"][danger_key] = current_time
-                    self._send_notification(camera_id, camera_name, f"{danger_type}_detected", danger_type.upper(), "danger", "")
+                    cam["last_danger_time"] = current_time
+                    self._emit_event(
+                        camera_id, camera_name,
+                        n_type=f"{danger_type}_detected",
+                        category="risk",
+                        name=danger_type.upper(),
+                        member_id="",
+                        track_id=track_id or 0,
+                    )
                 continue
 
             if cls_id == 0:
@@ -118,6 +160,7 @@ class PersonDetector:
                         cam["tracks"][track_id] = TrackIdentity(track_id)
                     track_state_obj = cam["tracks"][track_id]
                     track_state_obj.last_seen = current_time
+                    track_state_obj.update_pose_history(person_norm)
 
                     if (not track_state_obj.is_locked or (current_time - track_state_obj.last_face_infer) > 2.0):
                         if (current_time - track_state_obj.last_face_infer) >= 0.25:
@@ -131,13 +174,35 @@ class PersonDetector:
                                     track_state_obj.update_match(mid, name, role, sim, best_face.get("is_good", False))
 
                                     if not was_locked and track_state_obj.is_locked:
-                                        if track_state_obj.state == "stranger":
-                                            self._send_notification(
-                                                camera_id, camera_name, "stranger_detected",
-                                                track_state_obj.name or "Người lạ", "stranger", "",
-                                            )
+                                        self._emit_identity_lock(camera_id, camera_name, track_state_obj)
+
+                    fall_evt = track_state_obj.check_abnormal_behavior(current_time)
+                    if fall_evt == "fall_detected":
+                        recent_danger = current_time - cam.get("last_danger_time", 0) <= 10.0
+                        n_type = "accident_detected" if recent_danger else "fall_detected"
+                        category = "risk" if recent_danger else "fall"
+                        self._emit_event(
+                            camera_id, camera_name,
+                            n_type=n_type,
+                            category=category,
+                            name=track_state_obj.name or "",
+                            member_id=track_state_obj.member_id or "",
+                            track_id=track_id,
+                        )
+
+                    if track_state_obj.check_loitering(current_time):
+                        self._emit_event(
+                            camera_id, camera_name,
+                            n_type="suspicious",
+                            category="suspicious",
+                            name=track_state_obj.name or "",
+                            member_id=track_state_obj.member_id or "",
+                            track_id=track_id,
+                        )
 
                 state_cat = track_state_obj.state if track_state_obj else "verifying"
+                if track_state_obj and track_state_obj.is_fallen:
+                    state_cat = "fall"
                 name_label = track_state_obj.name if track_state_obj else ""
                 role_label = track_state_obj.role if track_state_obj else ""
 
@@ -171,6 +236,64 @@ class PersonDetector:
 
         return person_detected, boxes
 
+    def _emit_identity_lock(self, camera_id, camera_name, track):
+        if track.state == "stranger":
+            self._emit_event(
+                camera_id, camera_name,
+                n_type="stranger_detected",
+                category="stranger",
+                name=track.name or "Người lạ",
+                member_id="",
+                track_id=track.track_id,
+            )
+            return
+        if track.state == "family":
+            self._emit_event(
+                camera_id, camera_name,
+                n_type="member_identified",
+                category="member",
+                name=track.name or "",
+                member_id=track.member_id or "",
+                track_id=track.track_id,
+            )
+            return
+        if track.state == "guest":
+            self._emit_event(
+                camera_id, camera_name,
+                n_type="member_identified",
+                category="guest",
+                name=track.name or "",
+                member_id=track.member_id or "",
+                track_id=track.track_id,
+                message_key="log.guestIdentified",
+            )
+
+    def _emit_event(self, camera_id, camera_name, n_type, category, name, member_id, track_id, message_key=None):
+        cam_label = str(camera_name) if camera_name else f"Camera {camera_id}"
+        key = message_key or TYPE_TO_MESSAGE_KEY.get(n_type, "log.strangerDetected")
+        params = {"name": str(name or ""), "camera": cam_label, "detail": n_type}
+        self._ingest_log(camera_id, cam_label, n_type, category, member_id, track_id, key, params)
+        if n_type in ALERT_TYPES:
+            role = TYPE_TO_NOTIF_ROLE.get(n_type, "system")
+            self._send_notification(camera_id, cam_label, n_type, name or n_type, role, member_id)
+
+    def _ingest_log(self, camera_id, camera_name, n_type, category, member_id, track_id, message_key, params):
+        try:
+            payload = {
+                "camera_id": str(camera_id),
+                "camera_name": str(camera_name),
+                "type": n_type,
+                "category": category,
+                "member_id": str(member_id) if member_id else "",
+                "track_id": int(track_id) if track_id else 0,
+                "message_key": message_key,
+                "message_params": params or {},
+            }
+            core_url = os.getenv("CORE_SERVICE_URL", "http://core-service:8080")
+            requests.post(f"{core_url}/api/internal/recognition-logs/ingest", json=payload, timeout=1.5)
+        except Exception as e:
+            logger.error(f"Failed to ingest recognition log: {e}")
+
     def _send_notification(self, camera_id, camera_name, n_type, name, role, member_id):
         try:
             payload = {
@@ -179,7 +302,7 @@ class PersonDetector:
                 "type": n_type,
                 "name": name,
                 "role": role,
-                "member_id": str(member_id),
+                "member_id": str(member_id) if member_id else "",
                 "thumbnail_url": "",
             }
             core_url = os.getenv("CORE_SERVICE_URL", "http://core-service:8080")

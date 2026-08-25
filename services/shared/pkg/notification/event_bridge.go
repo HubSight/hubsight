@@ -31,7 +31,7 @@ func IngestVisionEvent(ctx context.Context, cameraID, cameraName, eventType, nam
 
 	// Deduplicate: Don't create notification if same person at same camera was notified in last 60 seconds
 	dedupKey := fmt.Sprintf("%s:%s:%s", cameraID, name, role)
-	
+
 	debounceLock.Lock()
 	lastSent, exists := lastNotifMap[dedupKey]
 	if exists && now.Sub(lastSent) < 60*time.Second {
@@ -56,6 +56,26 @@ func IngestVisionEvent(ctx context.Context, cameraID, cameraName, eventType, nam
 		category = "stranger"
 		title = "⚠️ Cảnh báo: Phát hiện người lạ"
 		body = fmt.Sprintf("Phát hiện người chưa xác định tại camera %s lúc %s", cameraName, timeStr)
+	case "danger":
+		category = "risk"
+		label := name
+		if label == "" {
+			label = "nguy hiểm"
+		}
+		title = fmt.Sprintf("⚠️ Cảnh báo rủi ro: %s", label)
+		body = fmt.Sprintf("Phát hiện %s tại camera %s lúc %s", label, cameraName, timeStr)
+	case "fall":
+		category = "fall"
+		title = "⚠️ Cảnh báo: Phát hiện té ngã"
+		body = fmt.Sprintf("Phát hiện té ngã tại camera %s lúc %s", cameraName, timeStr)
+	case "accident":
+		category = "risk"
+		title = "⚠️ Cảnh báo: Tai nạn"
+		body = fmt.Sprintf("Phát hiện tai nạn tại camera %s lúc %s", cameraName, timeStr)
+	case "suspicious":
+		category = "suspicious"
+		title = "⚠️ Hành vi đáng ngờ"
+		body = fmt.Sprintf("Phát hiện hành vi đáng ngờ tại camera %s lúc %s", cameraName, timeStr)
 	default:
 		category = "system"
 		title = fmt.Sprintf("👁️ Phát hiện người tại %s", cameraName)

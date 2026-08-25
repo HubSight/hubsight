@@ -8,6 +8,7 @@ import (
 	"cctv/shared/ent/memberface"
 	"cctv/shared/ent/notification"
 	"cctv/shared/ent/pushsubscription"
+	"cctv/shared/ent/recognitionlog"
 	"cctv/shared/ent/recording"
 	"cctv/shared/ent/schema"
 	"cctv/shared/ent/session"
@@ -66,12 +67,16 @@ func init() {
 	cameraDescEnableAi := cameraFields[11].Descriptor()
 	// camera.DefaultEnableAi holds the default value on creation for the enable_ai field.
 	camera.DefaultEnableAi = cameraDescEnableAi.Default.(bool)
+	// cameraDescShowBbox is the schema descriptor for show_bbox field.
+	cameraDescShowBbox := cameraFields[12].Descriptor()
+	// camera.DefaultShowBbox holds the default value on creation for the show_bbox field.
+	camera.DefaultShowBbox = cameraDescShowBbox.Default.(bool)
 	// cameraDescCreatedAt is the schema descriptor for created_at field.
-	cameraDescCreatedAt := cameraFields[12].Descriptor()
+	cameraDescCreatedAt := cameraFields[13].Descriptor()
 	// camera.DefaultCreatedAt holds the default value on creation for the created_at field.
 	camera.DefaultCreatedAt = cameraDescCreatedAt.Default.(func() time.Time)
 	// cameraDescUpdatedAt is the schema descriptor for updated_at field.
-	cameraDescUpdatedAt := cameraFields[13].Descriptor()
+	cameraDescUpdatedAt := cameraFields[14].Descriptor()
 	// camera.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	camera.DefaultUpdatedAt = cameraDescUpdatedAt.Default.(func() time.Time)
 	// camera.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -214,6 +219,40 @@ func init() {
 	pushsubscriptionDescID := pushsubscriptionFields[0].Descriptor()
 	// pushsubscription.DefaultID holds the default value on creation for the id field.
 	pushsubscription.DefaultID = pushsubscriptionDescID.Default.(func() string)
+	recognitionlogFields := schema.RecognitionLog{}.Fields()
+	_ = recognitionlogFields
+	// recognitionlogDescCameraID is the schema descriptor for camera_id field.
+	recognitionlogDescCameraID := recognitionlogFields[1].Descriptor()
+	// recognitionlog.CameraIDValidator is a validator for the "camera_id" field. It is called by the builders before save.
+	recognitionlog.CameraIDValidator = recognitionlogDescCameraID.Validators[0].(func(string) error)
+	// recognitionlogDescType is the schema descriptor for type field.
+	recognitionlogDescType := recognitionlogFields[2].Descriptor()
+	// recognitionlog.TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	recognitionlog.TypeValidator = recognitionlogDescType.Validators[0].(func(string) error)
+	// recognitionlogDescCategory is the schema descriptor for category field.
+	recognitionlogDescCategory := recognitionlogFields[3].Descriptor()
+	// recognitionlog.DefaultCategory holds the default value on creation for the category field.
+	recognitionlog.DefaultCategory = recognitionlogDescCategory.Default.(string)
+	// recognitionlogDescMemberID is the schema descriptor for member_id field.
+	recognitionlogDescMemberID := recognitionlogFields[4].Descriptor()
+	// recognitionlog.DefaultMemberID holds the default value on creation for the member_id field.
+	recognitionlog.DefaultMemberID = recognitionlogDescMemberID.Default.(string)
+	// recognitionlogDescTrackID is the schema descriptor for track_id field.
+	recognitionlogDescTrackID := recognitionlogFields[5].Descriptor()
+	// recognitionlog.DefaultTrackID holds the default value on creation for the track_id field.
+	recognitionlog.DefaultTrackID = recognitionlogDescTrackID.Default.(int)
+	// recognitionlogDescMessageKey is the schema descriptor for message_key field.
+	recognitionlogDescMessageKey := recognitionlogFields[6].Descriptor()
+	// recognitionlog.MessageKeyValidator is a validator for the "message_key" field. It is called by the builders before save.
+	recognitionlog.MessageKeyValidator = recognitionlogDescMessageKey.Validators[0].(func(string) error)
+	// recognitionlogDescCreatedAt is the schema descriptor for created_at field.
+	recognitionlogDescCreatedAt := recognitionlogFields[8].Descriptor()
+	// recognitionlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	recognitionlog.DefaultCreatedAt = recognitionlogDescCreatedAt.Default.(func() time.Time)
+	// recognitionlogDescID is the schema descriptor for id field.
+	recognitionlogDescID := recognitionlogFields[0].Descriptor()
+	// recognitionlog.DefaultID holds the default value on creation for the id field.
+	recognitionlog.DefaultID = recognitionlogDescID.Default.(func() string)
 	recordingFields := schema.Recording{}.Fields()
 	_ = recordingFields
 	// recordingDescCreatedAt is the schema descriptor for created_at field.

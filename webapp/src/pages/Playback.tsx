@@ -6,6 +6,7 @@ import type { CameraItem, Recording } from '../types/recording';
 import TimelineControl from '../components/TimelineControl';
 import { VideoPlayer } from '../components/archive/VideoPlayer';
 import { ArchiveSidebar } from '../components/archive/ArchiveSidebar';
+import { RecognitionLogSidebar } from '../components/archive/RecognitionLogSidebar';
 import { PlaybackSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 
@@ -212,6 +213,9 @@ const Playback = () => {
   };
 
   const currentCamId = selectedCam || null;
+  const selectedCamera = cameras.find((c) => c.id === selectedCam);
+  const enableAi = Boolean(selectedCamera?.enable_ai);
+  const showBbox = enableAi && selectedCamera?.show_bbox !== false;
 
   const sidebarProps = {
     cameras,
@@ -243,44 +247,53 @@ const Playback = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} className="h-full bg-slate-50/50 playback-scrollbar">
-      <div className="flex-1 flex flex-col min-w-0 max-w-[1920px] mx-auto pb-8">
-        {/* 1. YouTube-style Video Player (Sticky on mobile top, static on desktop) */}
-        <div className="sticky top-0 z-30 w-full bg-black shadow-md md:static md:shadow-none">
-          <VideoPlayer
-            mode={mode}
-            cameraId={currentCamId}
-            enableAi={cameras.find((c) => c.id === selectedCam)?.enable_ai}
-            activeRecording={activeRecording}
-            videoRef={videoRef}
-            containerRef={playerContainerRef}
-            isLive={isLiveStreaming}
-            onLiveStatusChange={setIsLiveStreaming}
-            onLoadedMetadata={handleLoadedMetadata}
-            onGoLive={handleGoLive}
-          />
-        </div>
-
-        {/* Wrapper for items below video */}
-        <div className="flex flex-col shrink-0 px-4 lg:px-6 mt-4 gap-4">
-          {/* 2. Horizontal Settings Toolbar */}
-          <ArchiveSidebar {...sidebarProps} />
-
-          {/* 3. Interactive Timeline */}
-          <div
-            className={`pb-6 shrink-0 ${
-              !selectedCam ? 'opacity-50 pointer-events-none' : ''
-            }`}
-          >
-            <TimelineControl
-              recordings={recordings}
-              currentDate={dateStr}
-              activeRecording={activeRecording}
+      <div className="flex-1 flex flex-col lg:flex-row min-w-0 max-w-[1920px] mx-auto pb-8 lg:gap-4">
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* 1. YouTube-style Video Player (Sticky on mobile top, static on desktop) */}
+          <div className="sticky top-0 z-30 w-full bg-black shadow-md md:static md:shadow-none">
+            <VideoPlayer
               mode={mode}
-              onSeek={handleSeek}
+              cameraId={currentCamId}
+              enableAi={enableAi}
+              showBbox={showBbox}
+              activeRecording={activeRecording}
+              videoRef={videoRef}
+              containerRef={playerContainerRef}
+              isLive={isLiveStreaming}
+              onLiveStatusChange={setIsLiveStreaming}
+              onLoadedMetadata={handleLoadedMetadata}
               onGoLive={handleGoLive}
             />
           </div>
+
+          {/* Wrapper for items below video */}
+          <div className="flex flex-col shrink-0 px-4 lg:px-6 mt-4 gap-4">
+            {/* 2. Horizontal Settings Toolbar */}
+            <ArchiveSidebar {...sidebarProps} />
+
+            {/* 3. Interactive Timeline */}
+            <div
+              className={`pb-6 shrink-0 ${
+                !selectedCam ? 'opacity-50 pointer-events-none' : ''
+              }`}
+            >
+              <TimelineControl
+                recordings={recordings}
+                currentDate={dateStr}
+                activeRecording={activeRecording}
+                mode={mode}
+                onSeek={handleSeek}
+                onGoLive={handleGoLive}
+              />
+            </div>
+          </div>
         </div>
+
+        {enableAi && selectedCam && (
+          <div className="px-4 lg:px-0 lg:pr-6 mt-4 lg:mt-0 w-full lg:w-80 shrink-0">
+            <RecognitionLogSidebar cameraId={selectedCam} />
+          </div>
+        )}
       </div>
     </PullToRefresh>
   );
