@@ -6,6 +6,7 @@ import { MemberCard } from '../components/members/MemberCard';
 import { MemberModal } from '../components/members/MemberModal';
 import { MemberFaceGalleryModal } from '../components/members/MemberFaceGalleryModal';
 import { Pagination } from '../components/common/Pagination';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { useTranslation } from '../i18n';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 
@@ -27,6 +28,8 @@ const Members: React.FC = () => {
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [galleryMember, setGalleryMember] = useState<MemberItem | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Debounce search query input by 300ms before sending to backend
   useEffect(() => {
@@ -89,13 +92,21 @@ const Members: React.FC = () => {
     setIsGalleryOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('members.confirmDelete'))) return;
+  const handleDelete = (id: string) => {
+    setPendingDeleteId(id);
+  };
+
+  const executeDelete = async () => {
+    if (!pendingDeleteId) return;
     try {
-      await axiosClient.delete(`/members/${id}`);
+      setIsDeleting(true);
+      await axiosClient.delete(`/members/${pendingDeleteId}`);
+      setPendingDeleteId(null);
       fetchMembers();
     } catch (err) {
       console.error('Failed to delete member:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -301,6 +312,18 @@ const Members: React.FC = () => {
             setGalleryMember(null);
           }}
           onUpdate={fetchMembers}
+        />
+
+        <ConfirmDialog
+          isOpen={!!pendingDeleteId}
+          title={t('members.confirmDeleteTitle')}
+          message={t('members.confirmDelete')}
+          confirmLabel={t('delete')}
+          isLoading={isDeleting}
+          onConfirm={executeDelete}
+          onCancel={() => {
+            if (!isDeleting) setPendingDeleteId(null);
+          }}
         />
       </div>
     </PullToRefresh>

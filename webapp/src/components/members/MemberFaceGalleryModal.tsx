@@ -19,6 +19,7 @@ import type { MemberItem, FaceItem } from '../../types/member';
 import { useTranslation } from '../../i18n';
 import axiosClient from '../../api/axiosClient';
 import { useTimezone } from '../../context/TimezoneContext';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface MemberFaceGalleryModalProps {
   member: MemberItem | null;
@@ -56,6 +57,9 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedFaceIds, setSelectedFaceIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<
+    { kind: 'single'; faceId: string; imageUrl: string } | { kind: 'batch' } | null
+  >(null);
 
   const fetchFaces = async (pageNum: number, sort: string, append = false) => {
     if (!member) return;
@@ -101,7 +105,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
   // Handle ESC to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isUploading && !isDeleting) {
+      if (e.key === 'Escape' && !isUploading && !isDeleting && !pendingDelete) {
         onClose();
       }
     };
@@ -109,7 +113,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isUploading, isDeleting, onClose]);
+  }, [isOpen, isUploading, isDeleting, pendingDelete, onClose]);
 
   // Infinite Scroll Observer
   useEffect(() => {
@@ -133,6 +137,25 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
 
   if (!isOpen || !member) return null;
 
+  const enrollErrorMessage = (code?: string, fallback?: string) => {
+    switch (code) {
+      case 'NO_FACE':
+        return t('gallery.errNoFace');
+      case 'MULTI_FACE':
+        return t('gallery.errMultiFace');
+      case 'LOW_QUALITY':
+        return t('gallery.errLowQuality');
+      case 'VISION_UNAVAILABLE':
+        return t('gallery.errVisionDown');
+      case 'TOO_LARGE':
+        return t('gallery.errTooLarge');
+      case 'BAD_TYPE':
+        return t('gallery.errBadType');
+      default:
+        return fallback || t('members.uploadFaceFailed');
+    }
+  };
+
   const handleMultipleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -143,50 +166,28 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
       setUploadProgress({ current: 0, total: files.length });
 
       let addedCount = 0;
+      const skipped: string[] = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setUploadProgress({ current: i + 1, total: files.length });
 
-        // Upload to S3
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
-
-        const uploadRes = await axiosClient.post(
-          `/upload/image?folder=faces/${member.id}`,
-          uploadFormData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
-        );
-
-        const s3PresignedUrl = uploadRes.data?.url;
-        if (!s3PresignedUrl) continue;
-
-        // Generate normalized 512D embedding
-        const mockEmbedding = Array.from({ length: 512 }, () => (Math.random() - 0.5) * 2);
-        const norm = Math.hypot(...mockEmbedding);
-        const normalizedEmb = mockEmbedding.map((v) => v / norm);
-
-        // Quality score simulation based on file
-        const quality = 0.85 + Math.random() * 0.13;
-        const yaw = (Math.random() - 0.5) * 20;
-        const pitch = (Math.random() - 0.5) * 15;
-
-        const res = await axiosClient.post(`/members/${member.id}/faces`, {
-          embedding: normalizedEmb,
-          sample_image_url: s3PresignedUrl,
-          quality_score: quality,
-          yaw: yaw,
-          pitch: pitch,
-          blur_score: 120 + Math.random() * 50,
-        });
-
-        if (res.data) {
-          addedCount++;
-          // If no avatar yet, auto-set first face photo as avatar
-          if (!currentAvatarUrl && i === 0) {
-            setCurrentAvatarUrl(s3PresignedUrl);
-            await axiosClient.put(`/members/${member.id}`, { avatar_url: s3PresignedUrl });
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const res = await axiosClient.post(`/members/${member.id}/faces/enroll`, formData, {
+            timeout: 20000,
+          });
+          if (res.data) {
+            addedCount++;
+            if (!currentAvatarUrl && res.data.sample_image_url) {
+              setCurrentAvatarUrl(res.data.sample_image_url);
+            }
           }
+        } catch (err: any) {
+          const code = err?.response?.data?.code as string | undefined;
+          const reason = enrollErrorMessage(code, err?.response?.data?.error);
+          skipped.push(`${file.name}: ${reason}`);
         }
       }
 
@@ -194,6 +195,19 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         setPage(1);
         await fetchFaces(1, sortBy, false);
         onUpdate();
+      }
+
+      const parts: string[] = [];
+      if (addedCount > 0) {
+        parts.push(t('gallery.enrollSummary', { ok: addedCount, total: files.length }));
+      }
+      if (skipped.length > 0) {
+        parts.push(t('gallery.enrollSkipped', { count: skipped.length, reasons: skipped.join('; ') }));
+      }
+      if (addedCount === 0 && skipped.length > 0) {
+        setError(parts.join(' — '));
+      } else if (skipped.length > 0) {
+        setError(parts.join(' — '));
       }
     } catch (err: any) {
       console.error('Failed to upload face photos:', err);
@@ -217,38 +231,39 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     }
   };
 
-  const handleDeleteFace = async (faceId: string) => {
-    if (!window.confirm(t('gallery.confirmDeletePhoto'))) return;
+  const handleDeleteFace = (faceId: string, imageUrl: string) => {
+    setPendingDelete({ kind: 'single', faceId, imageUrl });
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedFaceIds.size === 0) return;
+    setPendingDelete({ kind: 'batch' });
+  };
+
+  const executePendingDelete = async () => {
+    if (!pendingDelete) return;
     try {
-      await axiosClient.delete(`/members/${member.id}/faces/${faceId}`);
-      setFaces((prev) => prev.filter((f) => f.id !== faceId));
-      setTotalFaces((prev) => prev - 1);
-      if (selectedPhotoIndex !== null) setSelectedPhotoIndex(null);
-      onUpdate();
+      setIsDeleting(true);
+      if (pendingDelete.kind === 'single') {
+        await axiosClient.delete(`/members/${member.id}/faces/${pendingDelete.faceId}`);
+        setFaces((prev) => prev.filter((f) => f.id !== pendingDelete.faceId));
+        setTotalFaces((prev) => prev - 1);
+        if (selectedPhotoIndex !== null) setSelectedPhotoIndex(null);
+        onUpdate();
+      } else {
+        await axiosClient.delete(`/members/${member.id}/faces`, {
+          data: { face_ids: Array.from(selectedFaceIds) },
+        });
+        setSelectedFaceIds(new Set());
+        setSelectionMode(false);
+        setPage(1);
+        await fetchFaces(1, sortBy, false);
+        onUpdate();
+      }
+      setPendingDelete(null);
     } catch (err: any) {
       console.error('Failed to delete face:', err);
       setError(err?.response?.data?.error || t('common.errorOccurred'));
-    }
-  };
-
-  const handleBatchDelete = async () => {
-    if (selectedFaceIds.size === 0) return;
-    if (!window.confirm(`Xoá ${selectedFaceIds.size} ảnh đã chọn?`)) return;
-
-    try {
-      setIsDeleting(true);
-      await axiosClient.delete(`/members/${member.id}/faces`, {
-        data: { face_ids: Array.from(selectedFaceIds) },
-      });
-
-      setSelectedFaceIds(new Set());
-      setSelectionMode(false);
-      setPage(1);
-      await fetchFaces(1, sortBy, false);
-      onUpdate();
-    } catch (err: any) {
-      console.error(err);
-      setError('Lỗi khi xoá nhiều ảnh.');
     } finally {
       setIsDeleting(false);
     }
@@ -378,7 +393,10 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
             </div>
             <div className={`text-xs font-bold text-center ${isUploading || isDeleting ? 'text-slate-500' : 'text-slate-700 group-hover:text-orange-600'}`}>
               {isUploading
-                ? `${t('gallery.uploadingProgress')} (${uploadProgress?.current}/${uploadProgress?.total})`
+                ? t('gallery.uploadingProgress', {
+                    current: uploadProgress?.current ?? 0,
+                    total: uploadProgress?.total ?? 0,
+                  })
                 : t('gallery.uploadPhotos')}
             </div>
             <p className="text-[11px] text-slate-400 text-center max-w-md">
@@ -512,7 +530,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteFace(f.id);
+                              handleDeleteFace(f.id, f.sample_image_url);
                             }}
                             className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-600/90 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-sm cursor-pointer"
                             title={t('gallery.deletePhoto')}
@@ -619,7 +637,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
               </button>
             )}
             <button
-              onClick={() => handleDeleteFace(selectedFace.id)}
+              onClick={() => handleDeleteFace(selectedFace.id, selectedFace.sample_image_url)}
               className="p-2 rounded-xl bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer"
               title={t('common.delete')}
             >
@@ -693,6 +711,27 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!pendingDelete}
+        title={
+          pendingDelete?.kind === 'batch'
+            ? t('gallery.confirmDeletePhotosTitle', { count: selectedFaceIds.size })
+            : t('gallery.confirmDeletePhotoTitle')
+        }
+        message={
+          pendingDelete?.kind === 'batch'
+            ? t('gallery.confirmDeletePhotos', { count: selectedFaceIds.size })
+            : t('gallery.confirmDeletePhoto')
+        }
+        imageUrl={pendingDelete?.kind === 'single' ? pendingDelete.imageUrl : undefined}
+        confirmLabel={t('gallery.deletePhoto')}
+        isLoading={isDeleting}
+        onConfirm={executePendingDelete}
+        onCancel={() => {
+          if (!isDeleting) setPendingDelete(null);
+        }}
+      />
     </div>,
     document.body
   );

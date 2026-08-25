@@ -1,8 +1,12 @@
 package member
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -489,8 +493,185 @@ func GetPresignedUploadURLHandler(c *gin.Context) {
 	})
 }
 
-// AddMemberFaceHandler adds a new face sample embedding
+const maxEnrollBytes = 10 << 20 // 10MB
+
+type visionEnrollResponse struct {
+	OK           bool      `json:"ok"`
+	Code         string    `json:"code"`
+	Message      string    `json:"message"`
+	CropJPEGB64  string    `json:"crop_jpeg_b64"`
+	Embedding    []float64 `json:"embedding"`
+	QualityScore float64   `json:"quality_score"`
+	Yaw          float64   `json:"yaw"`
+	Pitch        float64   `json:"pitch"`
+	BlurScore    float64   `json:"blur_score"`
+}
+
+func allowedEnrollContentType(ct, filename string) bool {
+	ct = strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
+	switch ct {
+	case "image/jpeg", "image/jpg", "image/png", "image/webp":
+		return true
+	}
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".webp":
+		return true
+	}
+	return false
+}
+
+func callVisionEnroll(ctx context.Context, imageBytes []byte, contentType string) (*visionEnrollResponse, int, error) {
+	base := strings.TrimRight(os.Getenv("VISION_SERVICE_URL"), "/")
+	if base == "" {
+		base = "http://vision-service:8090"
+	}
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/internal/enroll", bytes.NewReader(imageBytes))
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+	var parsed visionEnrollResponse
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("invalid vision enroll response: %w", err)
+	}
+	return &parsed, resp.StatusCode, nil
+}
+
+// EnrollMemberFaceHandler detects a face, stores only the cropped JPEG, and saves the real ArcFace vector.
+func EnrollMemberFaceHandler(c *gin.Context) {
+	memberID := c.Param("id")
+	if memberID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid member ID", "code": "BAD_REQUEST"})
+		return
+	}
+
+	if _, err := database.Client.Member.Get(c.Request.Context(), memberID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found", "code": "NOT_FOUND"})
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required", "code": "BAD_REQUEST"})
+		return
+	}
+	if file.Size > maxEnrollBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image exceeds 10MB", "code": "TOO_LARGE"})
+		return
+	}
+	if !allowedEnrollContentType(file.Header.Get("Content-Type"), file.Filename) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Only JPEG, PNG, or WebP images are allowed", "code": "BAD_TYPE"})
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to open image file", "code": "DECODE_ERROR"})
+		return
+	}
+	defer src.Close()
+	raw, err := io.ReadAll(io.LimitReader(src, maxEnrollBytes+1))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read image file", "code": "DECODE_ERROR"})
+		return
+	}
+	if int64(len(raw)) > maxEnrollBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image exceeds 10MB", "code": "TOO_LARGE"})
+		return
+	}
+
+	vision, status, err := callVisionEnroll(c.Request.Context(), raw, file.Header.Get("Content-Type"))
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Vision service unavailable", "code": "VISION_UNAVAILABLE"})
+		return
+	}
+	if vision == nil || !vision.OK || len(vision.Embedding) != 512 || vision.CropJPEGB64 == "" {
+		code := "VISION_UNAVAILABLE"
+		msg := "Face enrollment failed"
+		if vision != nil {
+			if vision.Code != "" {
+				code = vision.Code
+			}
+			if vision.Message != "" {
+				msg = vision.Message
+			}
+		}
+		httpStatus := http.StatusUnprocessableEntity
+		if status == http.StatusServiceUnavailable || code == "VISION_UNAVAILABLE" {
+			httpStatus = http.StatusServiceUnavailable
+		}
+		c.JSON(httpStatus, gin.H{"error": msg, "code": code})
+		return
+	}
+
+	cropBytes, err := base64.StdEncoding.DecodeString(vision.CropJPEGB64)
+	if err != nil || len(cropBytes) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid cropped image from vision", "code": "INTERNAL"})
+		return
+	}
+
+	objName := fmt.Sprintf("faces/%s/%s.jpg", memberID, nanoid.New())
+	sampleURL, err := storage.UploadObject(c.Request.Context(), objName, bytes.NewReader(cropBytes), int64(len(cropBytes)), "image/jpeg")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload cropped face: " + err.Error(), "code": "STORAGE"})
+		return
+	}
+
+	face, err := database.Client.MemberFace.Create().
+		SetMemberID(memberID).
+		SetEmbedding(vision.Embedding).
+		SetSampleImageURL(sampleURL).
+		SetQualityScore(vision.QualityScore).
+		SetYaw(vision.Yaw).
+		SetPitch(vision.Pitch).
+		SetBlurScore(vision.BlurScore).
+		Save(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save member face: " + err.Error(), "code": "INTERNAL"})
+		return
+	}
+
+	m, err := database.Client.Member.Get(c.Request.Context(), memberID)
+	if err == nil && (m.AvatarURL == "" || m.AvatarURL == "/placeholder.jpg") {
+		_ = database.Client.Member.UpdateOneID(memberID).SetAvatarURL(sampleURL).Exec(c.Request.Context())
+	}
+
+	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "add_face", "member_id": memberID, "face_id": face.ID})
+
+	c.JSON(http.StatusCreated, FaceItemDTO{
+		ID:             face.ID,
+		MemberID:       face.MemberID,
+		SampleImageURL: face.SampleImageURL,
+		QualityScore:   face.QualityScore,
+		Yaw:            face.Yaw,
+		Pitch:          face.Pitch,
+		BlurScore:      face.BlurScore,
+		CreatedAt:      face.CreatedAt,
+	})
+}
+
+// AddMemberFaceHandler is internal-only. Browsers must use /faces/enroll so embeddings cannot be spoofed.
 func AddMemberFaceHandler(c *gin.Context) {
+	expected := os.Getenv("M2M_SECRET")
+	if expected == "" || c.GetHeader("X-Service-Key") != expected {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Use POST /api/members/:id/faces/enroll to add face samples", "code": "USE_ENROLL"})
+		return
+	}
+
 	memberID := c.Param("id")
 	if memberID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid member ID"})

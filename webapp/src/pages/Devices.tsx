@@ -8,6 +8,7 @@ import { BRAND_PRESETS, parseRtspUrl } from '../constants/devicePresets';
 import { useTranslation } from '../i18n';
 import { DevicesSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 const initialFormData: DeviceFormData = {
   name: '',
@@ -39,6 +40,8 @@ const Devices = () => {
   const [formData, setFormData] = useState<DeviceFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchDevices = async () => {
     try {
@@ -170,16 +173,22 @@ const Devices = () => {
     }
   };
 
-  const handleDeleteDevice = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this device? Recording will be stopped.')) {
-      return;
-    }
+  const handleDeleteDevice = (id: string) => {
+    setPendingDeleteId(id);
+  };
+
+  const executeDeleteDevice = async () => {
+    if (!pendingDeleteId) return;
     try {
-      await axiosClient.delete(`/cameras/${id}`);
+      setIsDeleting(true);
+      await axiosClient.delete(`/cameras/${pendingDeleteId}`);
+      setPendingDeleteId(null);
       fetchDevices();
     } catch (err) {
       console.error('Failed to delete device', err);
-      alert('Failed to delete device');
+      setError(t('common.errorOccurred'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -313,6 +322,18 @@ const Devices = () => {
           onAddFfmpegTag={handleAddFfmpegTag}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!pendingDeleteId}
+        title={t('devices.confirmDeleteTitle')}
+        message={t('devices.confirmDelete')}
+        confirmLabel={t('devices.deleteDevice')}
+        isLoading={isDeleting}
+        onConfirm={executeDeleteDevice}
+        onCancel={() => {
+          if (!isDeleting) setPendingDeleteId(null);
+        }}
+      />
     </PullToRefresh>
   );
 };

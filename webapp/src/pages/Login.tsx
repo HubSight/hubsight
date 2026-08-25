@@ -58,16 +58,25 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full flex items-center justify-center bg-slate-100 p-4 sm:p-6 pt-safe pb-safe pl-safe pr-safe font-sans text-slate-800 overflow-y-auto select-none">
-      
-      {/* 1. Clean Subtle Gridlines */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-60 z-0"
-        style={{
-          backgroundImage: `linear-gradient(to right, rgba(148, 163, 184, 0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.25) 1px, transparent 1px)`,
-          backgroundSize: '32px 32px'
-        }}
-      />
+    <div className="relative min-h-[100dvh] w-full flex items-center justify-center bg-slate-900 p-4 sm:p-6 pt-safe pb-safe pl-safe pr-safe font-sans text-slate-800 overflow-y-auto select-none">
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden>
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-[1.03]"
+          style={{
+            backgroundImage: 'url(/bg-auth.svg)',
+            filter: 'brightness(0.62) saturate(0.82) contrast(1.08)',
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/35 via-slate-900/15 to-orange-950/25" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse at 58% 42%, transparent 28%, rgba(15, 23, 42, 0.38) 72%, rgba(15, 23, 42, 0.62) 100%)',
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-slate-900/20" />
+      </div>
 
       {/* Language Switch Top Right */}
       <div className="absolute top-overlay-safe right-overlay-safe z-20">

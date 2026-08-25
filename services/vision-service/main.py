@@ -7,6 +7,7 @@ from src.messaging.rabbitmq_client import RabbitMQClient
 from src.detection.detector import PersonDetector
 from src.recognition.face_engine import FaceEngine
 from src.streaming.stream_manager import StreamManager
+from src.api.enroll_server import start_enroll_server
 
 import pb.core_pb2 as core_pb2
 import pb.core_pb2_grpc as core_pb2_grpc
@@ -21,6 +22,7 @@ CORE_GRPC_URL = os.getenv("CORE_GRPC_URL", "core-service:50053")
 PROCESS_FPS = int(os.getenv("PROCESS_FPS", "0"))
 GO2RTC_RTSP_BASE = os.getenv("GO2RTC_RTSP_BASE", "rtsp://webrtc-service:8554")
 WEBRTC_API_URL = os.getenv("WEBRTC_API_URL", "http://webrtc-service:1984")
+ENROLL_HTTP_PORT = int(os.getenv("ENROLL_HTTP_PORT", "8090"))
 
 def get_ai_cameras():
     """Query core-service gRPC for AI-enabled active cameras."""
@@ -76,6 +78,7 @@ def main():
     # 2. Initialize AI Engines
     face_engine = FaceEngine()
     detector = PersonDetector(mq_client=mq_client, face_engine=face_engine)
+    start_enroll_server(face_engine, port=ENROLL_HTTP_PORT)
     
     # 3. Initialize Stream Manager
     stream_mgr = StreamManager(

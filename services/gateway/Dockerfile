@@ -49,6 +49,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 # Stage 3: Final Production Image
 FROM scratch
+WORKDIR /app
 COPY --from=backend-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=backend-builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=backend-builder /app/dist/gateway /app/gateway

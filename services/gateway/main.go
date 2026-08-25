@@ -13,6 +13,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func resolvePublicDir() string {
+	candidates := []string{}
+	if exe, err := os.Executable(); err == nil {
+		candidates = append(candidates, filepath.Join(filepath.Dir(exe), "public"))
+	}
+	if wd, err := os.Getwd(); err == nil {
+		candidates = append(candidates, filepath.Join(wd, "public"))
+	}
+	candidates = append(candidates, "/app/public", "./public")
+	for _, dir := range candidates {
+		if info, err := os.Stat(filepath.Join(dir, "index.html")); err == nil && !info.IsDir() {
+			return dir
+		}
+	}
+	if len(candidates) > 0 {
+		return candidates[0]
+	}
+	return "./public"
+}
+
 func createReverseProxy(targetURL string) (*httputil.ReverseProxy, *url.URL) {
 	target, err := url.Parse(targetURL)
 	if err != nil {
@@ -127,9 +147,11 @@ func main() {
 	})
 
 	// 4. Serve Frontend Static Files & SPA Fallback
+	publicDir := resolvePublicDir()
+	log.Printf("Serving SPA from %s", publicDir)
+
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
-		publicDir := "./public"
 
 		// If the request is for an API route that wasn't matched, return 404 JSON
 		if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/relay") || strings.HasPrefix(path, "/webrtc") {
@@ -145,7 +167,12 @@ func main() {
 		}
 
 		// Fallback to index.html for SPA routing (React/Vite)
-		c.File(filepath.Join(publicDir, "index.html"))
+		index := filepath.Join(publicDir, "index.html")
+		if _, err := os.Stat(index); err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "frontend not found", "public_dir": publicDir})
+			return
+		}
+		c.File(index)
 	})
 
 	log.Printf("API Gateway listening on :%s (Auth: %s, Core: %s, Relay: %s, WebRTC: %s)",

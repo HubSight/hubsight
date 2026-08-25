@@ -70,6 +70,7 @@ func New() *gin.Engine {
 				adminOnly.POST("/members", member.CreateMemberHandler)
 				adminOnly.PUT("/members/:id", member.UpdateMemberHandler)
 				adminOnly.DELETE("/members/:id", member.DeleteMemberHandler)
+				adminOnly.POST("/members/:id/faces/enroll", member.EnrollMemberFaceHandler)
 				adminOnly.POST("/members/:id/faces", member.AddMemberFaceHandler)
 				adminOnly.GET("/members/:id/faces", member.ListMemberFacesHandler)
 				adminOnly.DELETE("/members/:id/faces", member.BatchDeleteMemberFacesHandler)
