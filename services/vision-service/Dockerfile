@@ -78,16 +78,21 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python runtime dependencies with pip cache
+# Install Python runtime dependencies
+# Key: install opencv-python-headless FIRST, then install requirements which tries to
+# install opencv-python. We then uninstall opencv-python to keep headless.
+# All done in ONE RUN layer + --no-cache-dir to prevent bloat.
 COPY services/vision-service/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps grpcio protobuf && \
-    pip install \
+    pip install --no-cache-dir grpcio protobuf && \
+    pip install --no-cache-dir opencv-python-headless && \
+    pip install --no-cache-dir \
         --extra-index-url https://download.pytorch.org/whl/cpu \
         -r requirements.txt && \
-    pip uninstall -y opencv-python && \
-    pip install --force-reinstall opencv-python-headless && \
-    pip uninstall -y polars polars-runtime-32 sympy mpmath
+    pip uninstall -y opencv-python polars polars-runtime-32 sympy mpmath 2>/dev/null || true && \
+    find /usr/local/lib/python3.11/site-packages -name "*.dist-info" -path "*opencv_python-*" -exec rm -rf {} + 2>/dev/null || true && \
+    find /usr/local/lib/python3.11/site-packages -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    pip cache purge 2>/dev/null || true
 
 # Bake in pre-fetched YOLO model weights (eliminates internet download at startup)
 COPY --from=model-fetcher /app/yolo26n.pt ./yolo26n.pt
