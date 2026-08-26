@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"cctv/shared/ent"
@@ -14,17 +15,21 @@ import (
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/mq"
 
+	"firebase.google.com/go/v4/messaging"
 	webpush "github.com/SherClockHolmes/webpush-go"
 	"github.com/gin-gonic/gin"
 )
 
+type SubscribePushKeys struct {
+	P256dh string `json:"p256dh"`
+	Auth   string `json:"auth"`
+}
+
 type SubscribePushInput struct {
-	Endpoint string `json:"endpoint" binding:"required"`
-	Keys     struct {
-		P256dh string `json:"p256dh" binding:"required"`
-		Auth   string `json:"auth" binding:"required"`
-	} `json:"keys" binding:"required"`
-	UserAgent string `json:"user_agent"`
+	Token     string             `json:"token"`
+	Endpoint  string             `json:"endpoint"`
+	Keys      *SubscribePushKeys `json:"keys"`
+	UserAgent string             `json:"user_agent"`
 }
 
 type NotificationDTO struct {
@@ -147,7 +152,47 @@ func ClearAllNotificationsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": n})
 }
 
-// SubscribePushHandler registers a Web Push subscription
+func currentUserID(c *gin.Context) string {
+	userObj, exists := c.Get("user")
+	if !exists {
+		return ""
+	}
+	if u, ok := userObj.(*ent.User); ok && u != nil {
+		return u.ID
+	}
+	return ""
+}
+
+func upsertPushSubscription(ctx context.Context, endpoint, p256dh, auth, userAgent, userID string) error {
+	exists, _ := database.Client.PushSubscription.Query().
+		Where(pushsubscription.Endpoint(endpoint)).
+		First(ctx)
+
+	if exists != nil {
+		upd := database.Client.PushSubscription.UpdateOneID(exists.ID).
+			SetP256dh(p256dh).
+			SetAuth(auth).
+			SetUserAgent(userAgent)
+		if userID != "" {
+			upd.SetUserID(userID)
+		}
+		_, err := upd.Save(ctx)
+		return err
+	}
+
+	create := database.Client.PushSubscription.Create().
+		SetEndpoint(endpoint).
+		SetP256dh(p256dh).
+		SetAuth(auth).
+		SetUserAgent(userAgent)
+	if userID != "" {
+		create.SetUserID(userID)
+	}
+	_, err := create.Save(ctx)
+	return err
+}
+
+// SubscribePushHandler registers an FCM token (preferred) or a native Web Push subscription.
 func SubscribePushHandler(c *gin.Context) {
 	var input SubscribePushInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -155,58 +200,118 @@ func SubscribePushHandler(c *gin.Context) {
 		return
 	}
 
+	token := strings.TrimSpace(input.Token)
+	endpoint := strings.TrimSpace(input.Endpoint)
+	p256dh := ""
+	auth := ""
+	if input.Keys != nil {
+		p256dh = input.Keys.P256dh
+		auth = input.Keys.Auth
+	}
+
+	switch {
+	case token != "":
+		endpoint = fcmEndpointFromToken(token)
+		p256dh = fcmPlaceholder
+		auth = fcmPlaceholder
+	case endpoint != "" && p256dh != "" && auth != "":
+		// Native Web Push subscription (endpoint + VAPID keys).
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "FCM token or Web Push endpoint+keys is required"})
+		return
+	}
+
 	ctx := c.Request.Context()
-
-	// Check if already subscribed
-	exists, _ := database.Client.PushSubscription.Query().
-		Where(pushsubscription.Endpoint(input.Endpoint)).
-		First(ctx)
-
-	if exists != nil {
-		// Update existing
-		_, err := database.Client.PushSubscription.UpdateOneID(exists.ID).
-			SetP256dh(input.Keys.P256dh).
-			SetAuth(input.Keys.Auth).
-			SetUserAgent(input.UserAgent).
-			Save(ctx)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update subscription"})
-			return
-		}
-	} else {
-		// Create new
-		_, err := database.Client.PushSubscription.Create().
-			SetEndpoint(input.Endpoint).
-			SetP256dh(input.Keys.P256dh).
-			SetAuth(input.Keys.Auth).
-			SetUserAgent(input.UserAgent).
-			Save(ctx)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save subscription"})
-			return
-		}
+	if err := upsertPushSubscription(ctx, endpoint, p256dh, auth, input.UserAgent, currentUserID(c)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save subscription"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "subscribed"})
 }
 
-// GetVapidPublicKeyHandler returns the public key for Web Push subscription
-func GetVapidPublicKeyHandler(c *gin.Context) {
-	// Standard public key for HubSight Web Push
-	publicKey := os.Getenv("VAPID_PUBLIC_KEY")
-	if publicKey == "" {
-		publicKey = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U"
-	}
+func vapidPublicKey() string {
+	return strings.TrimSpace(os.Getenv("VAPID_PUBLIC_KEY"))
+}
 
+func firebaseWebConfig() gin.H {
+	projectID := firstNonEmpty(os.Getenv("FIREBASE_WEB_PROJECT_ID"), os.Getenv("FIREBASE_PROJECT_ID"))
+	return gin.H{
+		"apiKey":            os.Getenv("FIREBASE_WEB_API_KEY"),
+		"authDomain":        os.Getenv("FIREBASE_WEB_AUTH_DOMAIN"),
+		"projectId":         projectID,
+		"storageBucket":     os.Getenv("FIREBASE_WEB_STORAGE_BUCKET"),
+		"messagingSenderId": os.Getenv("FIREBASE_WEB_MESSAGING_SENDER_ID"),
+		"appId":             os.Getenv("FIREBASE_WEB_APP_ID"),
+	}
+}
+
+// GetPushConfigHandler returns public Firebase web config + VAPID public key.
+func GetPushConfigHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"publicKey": publicKey,
+		"vapidPublicKey": vapidPublicKey(),
+		"firebase":       firebaseWebConfig(),
 	})
 }
 
+// GetVapidPublicKeyHandler returns the public key for Web Push subscription
+func GetVapidPublicKeyHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"publicKey": vapidPublicKey(),
+	})
+}
+
+func deleteSubscription(id string) {
+	_ = database.Client.PushSubscription.DeleteOneID(id).Exec(context.Background())
+}
+
+func dispatchFCM(ctx context.Context, sub *ent.PushSubscription, dto NotificationDTO) {
+	token := fcmTokenFromEndpoint(sub.Endpoint)
+	if token == "" {
+		return
+	}
+	err := sendFCMToToken(ctx, token, dto)
+	if err == nil {
+		return
+	}
+	if messaging.IsUnregistered(err) {
+		log.Printf("[FCM] Token expired, removing %s", sub.ID)
+		deleteSubscription(sub.ID)
+		return
+	}
+	log.Printf("[FCM] Error sending to %s: %v", sub.ID, err)
+}
+
+func dispatchNativeWebPush(sub *ent.PushSubscription, payloadBytes []byte, publicKey, privateKey, subscriber string) {
+	s := &webpush.Subscription{
+		Endpoint: sub.Endpoint,
+		Keys: webpush.Keys{
+			P256dh: sub.P256dh,
+			Auth:   sub.Auth,
+		},
+	}
+
+	resp, err := webpush.SendNotification(payloadBytes, s, &webpush.Options{
+		Subscriber:      subscriber,
+		VAPIDPublicKey:  publicKey,
+		VAPIDPrivateKey: privateKey,
+		TTL:             3600,
+	})
+	if err != nil {
+		log.Printf("[WebPush] Error sending to %s: %v", sub.Endpoint, err)
+		return
+	}
+	if resp != nil {
+		if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
+			log.Printf("[WebPush] Subscription expired (%d), removing %s", resp.StatusCode, sub.ID)
+			deleteSubscription(sub.ID)
+		}
+		_ = resp.Body.Close()
+	}
+}
+
 func dispatchWebPushToSubscribers(dto NotificationDTO) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	subs, err := database.Client.PushSubscription.Query().All(ctx)
@@ -214,14 +319,8 @@ func dispatchWebPushToSubscribers(dto NotificationDTO) {
 		return
 	}
 
-	publicKey := os.Getenv("VAPID_PUBLIC_KEY")
-	if publicKey == "" {
-		publicKey = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U"
-	}
-	privateKey := os.Getenv("VAPID_PRIVATE_KEY")
-	if privateKey == "" {
-		privateKey = "UUxI1x-d-Yv64R_x1A-nO_m7y_3eP6k0G7Q5U-3f8wA"
-	}
+	publicKey := vapidPublicKey()
+	privateKey := strings.TrimSpace(os.Getenv("VAPID_PRIVATE_KEY"))
 	subscriber := os.Getenv("VAPID_SUBSCRIBER")
 	if subscriber == "" {
 		subscriber = "mailto:admin@quoctran.space"
@@ -233,31 +332,15 @@ func dispatchWebPushToSubscribers(dto NotificationDTO) {
 	}
 
 	for _, sub := range subs {
-		s := &webpush.Subscription{
-			Endpoint: sub.Endpoint,
-			Keys: webpush.Keys{
-				P256dh: sub.P256dh,
-				Auth:   sub.Auth,
-			},
-		}
-
-		resp, err := webpush.SendNotification(payloadBytes, s, &webpush.Options{
-			Subscriber:      subscriber,
-			VAPIDPublicKey:  publicKey,
-			VAPIDPrivateKey: privateKey,
-			TTL:             3600,
-		})
-		if err != nil {
-			log.Printf("[WebPush] Error sending to %s: %v", sub.Endpoint, err)
+		if isFCMEndpoint(sub.Endpoint) {
+			dispatchFCM(ctx, sub, dto)
 			continue
 		}
-		if resp != nil {
-			if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
-				log.Printf("[WebPush] Subscription expired (%d), removing %s", resp.StatusCode, sub.ID)
-				_ = database.Client.PushSubscription.DeleteOneID(sub.ID).Exec(context.Background())
-			}
-			_ = resp.Body.Close()
+		if publicKey == "" || privateKey == "" {
+			log.Printf("[WebPush] Skipping native subscription %s: VAPID keys are not configured", sub.ID)
+			continue
 		}
+		dispatchNativeWebPush(sub, payloadBytes, publicKey, privateKey, subscriber)
 	}
 }
 

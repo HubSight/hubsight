@@ -13,6 +13,7 @@ import { NotificationDrawer } from '../components/notifications/NotificationDraw
 import { useSocket } from '../context/SocketContext';
 import axiosClient from '../api/axiosClient';
 import { clearPwaRefreshToken } from '../utils/pwa';
+import { getPushNotificationPermission, subscribeToWebPush } from '../utils/push';
 
 const MainLayout = () => {
   const { user, checkAuth } = useAuth();
@@ -37,6 +38,13 @@ const MainLayout = () => {
       })
       .catch(() => {});
   }, []);
+
+  // Refresh FCM / Web Push token silently when permission is already granted.
+  useEffect(() => {
+    if (!user) return;
+    if (getPushNotificationPermission() !== 'granted') return;
+    void subscribeToWebPush({ requestPermission: false });
+  }, [user]);
 
   // Listen for new notifications via socket
   useEffect(() => {

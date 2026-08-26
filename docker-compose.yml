@@ -51,6 +51,20 @@ services:
       FACES_S3_PUBLIC: "true"
       VISION_SERVICE_URL: "http://vision-service:8090"
       HAWKEYES_SERVICE_URL: "http://hawkeyes-service:8091"
+      # FCM Web Push (VAPID). Web config is public; service-account credentials stay on core-service.
+      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}"
+      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-}"
+      VAPID_SUBSCRIBER: "${VAPID_SUBSCRIBER:-mailto:admin@quoctran.space}"
+      FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID:-}"
+      FIREBASE_CLIENT_EMAIL: "${FIREBASE_CLIENT_EMAIL:-}"
+      FIREBASE_PRIVATE_KEY: "${FIREBASE_PRIVATE_KEY:-}"
+      FIREBASE_CREDENTIALS_JSON: "${FIREBASE_CREDENTIALS_JSON:-}"
+      FIREBASE_WEB_API_KEY: "${FIREBASE_WEB_API_KEY:-}"
+      FIREBASE_WEB_AUTH_DOMAIN: "${FIREBASE_WEB_AUTH_DOMAIN:-}"
+      FIREBASE_WEB_PROJECT_ID: "${FIREBASE_WEB_PROJECT_ID:-}"
+      FIREBASE_WEB_STORAGE_BUCKET: "${FIREBASE_WEB_STORAGE_BUCKET:-}"
+      FIREBASE_WEB_MESSAGING_SENDER_ID: "${FIREBASE_WEB_MESSAGING_SENDER_ID:-}"
+      FIREBASE_WEB_APP_ID: "${FIREBASE_WEB_APP_ID:-}"
     depends_on:
       - auth-service
       - pool-service

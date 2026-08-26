@@ -1,4 +1,7 @@
 packages:
   - '.'
+allowBuilds:
+  '@firebase/util': false
+  protobufjs: false
 minimumReleaseAgeExclude:
   - dayjs@1.11.23

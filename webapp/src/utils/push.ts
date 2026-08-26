@@ -1,4 +1,10 @@
+import { getToken } from 'firebase/messaging';
 import axiosClient from '../api/axiosClient';
+import {
+  getFirebaseMessaging,
+  isFirebaseWebConfigValid,
+  type PushConfig,
+} from '../lib/firebase';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -12,7 +18,12 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export const isPushNotificationSupported = (): boolean => {
-  return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+  return (
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window &&
+    'Notification' in window
+  );
 };
 
 export const getPushNotificationPermission = (): NotificationPermission => {
@@ -20,57 +31,106 @@ export const getPushNotificationPermission = (): NotificationPermission => {
   return Notification.permission;
 };
 
-export const subscribeToWebPush = async (): Promise<boolean> => {
+async function fetchPushConfig(): Promise<PushConfig> {
+  const res = await axiosClient.get('/notifications/push-config');
+  return (res.data || {}) as PushConfig;
+}
+
+async function registerFcmToken(vapidPublicKey: string, config: PushConfig['firebase']): Promise<boolean> {
+  if (!isFirebaseWebConfigValid(config)) {
+    return false;
+  }
+
+  const messaging = await getFirebaseMessaging(config);
+  if (!messaging) {
+    return false;
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const token = await getToken(messaging, {
+    vapidKey: vapidPublicKey,
+    serviceWorkerRegistration: registration,
+  });
+  if (!token) {
+    return false;
+  }
+
+  await axiosClient.post('/notifications/subscribe-push', {
+    token,
+    user_agent: navigator.userAgent,
+  });
+  console.info('FCM web push token registered with backend.');
+  return true;
+}
+
+async function registerNativeWebPush(vapidPublicKey: string): Promise<boolean> {
+  const registration = await navigator.serviceWorker.ready;
+  const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: convertedVapidKey as unknown as BufferSource,
+    });
+  }
+
+  const subJson = subscription.toJSON();
+  if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) {
+    throw new Error('Invalid push subscription format');
+  }
+
+  await axiosClient.post('/notifications/subscribe-push', {
+    endpoint: subJson.endpoint,
+    keys: {
+      p256dh: subJson.keys.p256dh,
+      auth: subJson.keys.auth,
+    },
+    user_agent: navigator.userAgent,
+  });
+  console.info('Native Web Push subscription registered with backend.');
+  return true;
+}
+
+export const subscribeToWebPush = async (
+  opts: { requestPermission?: boolean } = {},
+): Promise<boolean> => {
   if (!isPushNotificationSupported()) {
     console.warn('Web Push is not supported in this browser environment');
     return false;
   }
 
   try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
+    const shouldAsk = opts.requestPermission !== false;
+    if (Notification.permission === 'default' && shouldAsk) {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        return false;
+      }
+    }
+    if (Notification.permission !== 'granted') {
       return false;
     }
 
-    const reg = await navigator.serviceWorker.ready;
-    if (!reg) {
-      console.warn('Service worker is not ready for push registration');
-      return false;
-    }
-
-    // Get VAPID public key from backend
-    const keyRes = await axiosClient.get('/notifications/vapid-key');
-    const vapidPublicKey = keyRes.data?.publicKey;
+    const config = await fetchPushConfig();
+    const vapidPublicKey = config.vapidPublicKey;
     if (!vapidPublicKey) {
       throw new Error('No VAPID public key received');
     }
 
-    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
-    let subscription = await reg.pushManager.getSubscription();
-    if (!subscription) {
-      subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: convertedVapidKey as unknown as BufferSource,
-      });
+    if (isFirebaseWebConfigValid(config.firebase)) {
+      try {
+        const ok = await registerFcmToken(vapidPublicKey, config.firebase);
+        if (ok) {
+          return true;
+        }
+        console.warn('FCM token was empty; falling back to native Web Push');
+      } catch (err) {
+        console.warn('FCM getToken failed; falling back to native Web Push', err);
+      }
     }
 
-    const subJson = subscription.toJSON();
-    if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) {
-      throw new Error('Invalid push subscription format');
-    }
-
-    await axiosClient.post('/notifications/subscribe-push', {
-      endpoint: subJson.endpoint,
-      keys: {
-        p256dh: subJson.keys.p256dh,
-        auth: subJson.keys.auth,
-      },
-      user_agent: navigator.userAgent,
-    });
-
-    console.info('Web Push subscription successfully registered with backend.');
-    return true;
+    return await registerNativeWebPush(vapidPublicKey);
   } catch (err) {
     console.error('Failed to subscribe to Web Push:', err);
     return false;

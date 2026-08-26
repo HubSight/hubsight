@@ -49,6 +49,10 @@ func New() *gin.Engine {
 			internal.POST("/recognition-logs/ingest", recognitionlog.IngestHandler)
 		}
 
+		// Public Web Push / FCM config (VAPID public key + Firebase web config).
+		// These values are designed to be embedded in the client and service worker.
+		api.GET("/notifications/push-config", notification.GetPushConfigHandler)
+
 		// Protected domain routes (Validated via auth-service)
 		protected := api.Group("/")
 		protected.Use(auth.Middleware())
