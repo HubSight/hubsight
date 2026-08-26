@@ -12,9 +12,10 @@ COPY services/auth/go.mod services/auth/go.sum* ./services/auth/
 COPY services/recorder/go.mod services/recorder/go.sum* ./services/recorder/
 COPY services/bgrd/go.mod services/bgrd/go.sum* ./services/bgrd/
 COPY services/gateway/go.mod services/gateway/go.sum* ./services/gateway/
-COPY services/pool-service/go.mod services/pool-service/go.sum* ./services/pool-service/
+COPY services/pool/go.mod services/pool/go.sum* ./services/pool/
 COPY services/seed/go.mod services/seed/go.sum* ./services/seed/
 COPY services/hawkeyes/go.mod services/hawkeyes/go.sum* ./services/hawkeyes/
+COPY services/push/go.mod services/push/go.sum* ./services/push/
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/hawkeyes && go mod download

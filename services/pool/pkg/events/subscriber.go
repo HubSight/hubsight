@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"cctv/pool-service/pkg/pool"
+	"cctv/pool/pkg/pool"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )

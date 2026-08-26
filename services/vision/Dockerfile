@@ -54,7 +54,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --extra-index-url https://download.pytorch.org/whl/cpu \
     torch torchvision ultralytics onnx
 
-COPY services/vision-service/export_yolo_onnx.py ./export_yolo_onnx.py
+COPY services/vision/export_yolo_onnx.py ./export_yolo_onnx.py
 RUN python export_yolo_onnx.py
 
 # =============================================================================
@@ -73,7 +73,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY services/vision-service/requirements.txt .
+COPY services/vision/requirements.txt .
 # insightface pulls opencv-python (GUI). Uninstall it, then reinstall headless LAST
 # so cv2 is actually present at runtime. Fail the build if import cv2 breaks.
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -89,8 +89,8 @@ COPY --from=model-fetcher /app/*.onnx ./
 COPY --from=model-fetcher /app/yolo-fire-smoke.names.json ./
 COPY --from=model-fetcher /root/.insightface /root/.insightface
 COPY --from=proto-builder /app/pb ./pb
-COPY services/vision-service/main.py ./main.py
-COPY services/vision-service/src ./src
+COPY services/vision/main.py ./main.py
+COPY services/vision/src ./src
 
 ENV OMP_NUM_THREADS=2
 ENV OPENBLAS_NUM_THREADS=2

@@ -16,7 +16,7 @@ foreach ($service in $services) {
 
 # 2. NodeJS (pnpm)
 Write-Host "`n[2/3] Installing Node.js dependencies (pnpm)..." -ForegroundColor Yellow
-$nodeApps = @("webapp", "services\relay-service")
+$nodeApps = @("webapp", "services\relay")
 foreach ($app in $nodeApps) {
     if (Test-Path $app) {
         Write-Host "Installing Node deps for $app..."
@@ -28,7 +28,7 @@ foreach ($app in $nodeApps) {
 
 # 3. Python (Vision Service)
 Write-Host "`n[3/3] Installing Python dependencies (vision-service)..." -ForegroundColor Yellow
-$visionDir = "services\vision-service"
+$visionDir = "services\vision"
 if (Test-Path $visionDir) {
     Push-Location $visionDir
     if (-not (Test-Path ".venv")) {

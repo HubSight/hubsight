@@ -12,7 +12,7 @@ for dir in services/*/; do
 done
 
 echo -e "\n\e[33m[2/3] Installing Node.js dependencies (pnpm)...\e[0m"
-for app in "webapp" "services/relay-service"; do
+for app in "webapp" "services/relay"; do
     if [ -d "$app" ]; then
         echo "Installing Node deps for ${app}..."
         (cd "$app" && pnpm install)
@@ -20,7 +20,7 @@ for app in "webapp" "services/relay-service"; do
 done
 
 echo -e "\n\e[33m[3/3] Installing Python dependencies (vision-service)...\e[0m"
-VISION_DIR="services/vision-service"
+VISION_DIR="services/vision"
 if [ -d "$VISION_DIR" ]; then
     (
         cd "$VISION_DIR"

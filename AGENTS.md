@@ -22,6 +22,7 @@ HubSight is a microservices-based CCTV surveillance and playback platform using 
 - **`webrtc-service` (go2rtc)**: Handles raw stream encoding/decoding and media transport (UDP/TCP port `8555`).
 - **`mq-service` (RabbitMQ)**: Internal message broker for Pub/Sub. Used extensively to broadcast state changes across isolated services (e.g., Vision emitting detections -> Relay broadcasting to UI).
 - **`nvr-service` & `bgrd-service`**: Background chunking, recording, retention tasks via `asynq` and Redis (Valkey).
+- **`push-service`**: Offline FCM / Web Push worker. Consumes `push_queue`; does not expose HTTP.
 
 ## 2. Core Business Logic & Workflows
 
@@ -36,7 +37,7 @@ Connections to `go2rtc` streams are tightly managed to save resources:
 2. **Face Extraction**: Uses internal gRPC to fetch face vectors (`pgvector`) from `core-service`.
 3. **Ingestion**: If a person/face is locked, it posts to `core-service` (`/api/internal/notifications/ingest`).
 4. **Relay**: `core-service` saves to DB, then publishes to RabbitMQ. `relay-service` pushes to Socket.IO clients.
-5. **Web Push**: A background goroutine also triggers offline Web Push notifications to subscribed devices.
+5. **Web Push**: `core-service` also publishes `notification.new` to `push_queue`. `push-service` sends FCM / VAPID Web Push to stored subscriptions.
 
 ## 3. Data Schema & Stack
 

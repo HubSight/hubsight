@@ -3,7 +3,7 @@ package events
 import (
 	"log"
 
-	"cctv/pool-service/pkg/pool"
+	"cctv/pool/pkg/pool"
 	"cctv/shared/pkg/mq"
 )
 

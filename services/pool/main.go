@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"cctv/pool-service/pkg/events"
-	"cctv/pool-service/pkg/pool"
-	"cctv/pool-service/pkg/webrtc"
+	"cctv/pool/pkg/events"
+	"cctv/pool/pkg/pool"
+	"cctv/pool/pkg/webrtc"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/pb"
 	"github.com/gin-contrib/cors"

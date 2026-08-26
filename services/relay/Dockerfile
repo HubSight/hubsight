@@ -10,11 +10,11 @@ ENV CI=true
 RUN corepack enable && corepack prepare pnpm@latest --activate && \
     apk add --no-cache protoc
 
-COPY services/relay-service/package.json services/relay-service/pnpm-lock.yaml* services/relay-service/pnpm-workspace.yaml* services/relay-service/.npmrc* ./
+COPY services/relay/package.json services/relay/pnpm-lock.yaml* services/relay/pnpm-workspace.yaml* services/relay/.npmrc* ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-COPY services/relay-service .
+COPY services/relay .
 COPY services/shared/proto ./proto
 
 # Generate TypeScript definitions from proto files using ts-proto
@@ -34,7 +34,7 @@ ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY services/relay-service/package.json services/relay-service/pnpm-lock.yaml* services/relay-service/pnpm-workspace.yaml* services/relay-service/.npmrc* ./
+COPY services/relay/package.json services/relay/pnpm-lock.yaml* services/relay/pnpm-workspace.yaml* services/relay/.npmrc* ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --prod --frozen-lockfile
 

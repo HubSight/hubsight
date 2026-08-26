@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"cctv/pool-service/pkg/webrtc"
+	"cctv/pool/pkg/webrtc"
 )
 
 type Manager struct {

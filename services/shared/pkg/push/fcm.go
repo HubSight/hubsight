@@ -1,4 +1,4 @@
-package notification
+package push
 
 import (
 	"context"
@@ -9,14 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"cctv/shared/pkg/notification"
+
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
 	"google.golang.org/api/option"
-)
-
-const (
-	fcmEndpointPrefix = "fcm:"
-	fcmPlaceholder    = "fcm"
 )
 
 var (
@@ -24,18 +21,6 @@ var (
 	fcmClient *messaging.Client
 	fcmErr    error
 )
-
-func isFCMEndpoint(endpoint string) bool {
-	return strings.HasPrefix(endpoint, fcmEndpointPrefix)
-}
-
-func fcmTokenFromEndpoint(endpoint string) string {
-	return strings.TrimPrefix(endpoint, fcmEndpointPrefix)
-}
-
-func fcmEndpointFromToken(token string) string {
-	return fcmEndpointPrefix + token
-}
 
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
@@ -104,15 +89,15 @@ func getFCMClient(ctx context.Context) (*messaging.Client, error) {
 	return fcmClient, nil
 }
 
-var errFCMNotConfigured = &fcmConfigError{}
-
 type fcmConfigError struct{}
 
 func (e *fcmConfigError) Error() string {
 	return "firebase credentials are not configured"
 }
 
-func buildFCMMessage(token string, dto NotificationDTO) *messaging.Message {
+var errFCMNotConfigured = &fcmConfigError{}
+
+func buildFCMMessage(token string, dto notification.NotificationDTO) *messaging.Message {
 	playbackPath := "/playback"
 	if dto.CameraID != "" {
 		playbackPath += "?camera_id=" + dto.CameraID
@@ -147,7 +132,7 @@ func buildFCMMessage(token string, dto NotificationDTO) *messaging.Message {
 	}
 }
 
-func sendFCMToToken(ctx context.Context, token string, dto NotificationDTO) error {
+func sendFCMToToken(ctx context.Context, token string, dto notification.NotificationDTO) error {
 	client, err := getFCMClient(ctx)
 	if err != nil {
 		return err

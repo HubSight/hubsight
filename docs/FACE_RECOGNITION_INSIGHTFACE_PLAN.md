@@ -65,7 +65,7 @@ Tạo bảng `members` và `member_faces` trong Ent / PostgreSQL để quản l�
 
 ---
 
-## 3. Thiết kế Backend & Vision Service (`services/vision-service`)
+## 3. Thiết kế Backend & Vision Service (`services/vision`)
 
 ### 3.1 Cập nhật `requirements.txt`
 
@@ -167,7 +167,7 @@ class FaceEngine:
 | Giai đoạn | Nội dung công việc | Thời gian ước tính |
 | :--- | :--- | :--- |
 | **Giai đoạn 1** | Cập nhật Ent Schema (`members`, `member_faces`), viết API CRUD quản lý thành viên trong `core-service`. | 1 ngày |
-| **Giai đoạn 2** | Tích hợp `InsightFace` (model `buffalo_s`) vào `services/vision-service`, xây dựng logic so khớp Cosine Similarity và đồng bộ RabbitMQ. | 1.5 ngày |
+| **Giai đoạn 2** | Tích hợp `InsightFace` (model `buffalo_s`) vào `services/vision`, xây dựng logic so khớp Cosine Similarity và đồng bộ RabbitMQ. | 1.5 ngày |
 | **Giai đoạn 3** | Xây dựng giao diện Quản lý Thành viên (Upload ảnh, chụp từ camera, gán tên) trên Web frontend. | 1 ngày |
 | **Giai đoạn 4** | Nâng cấp AI Canvas Overlay trong `LivePlayer.tsx` hiển thị Bounding Box xanh (người nhà) và cam/đỏ (người lạ). | 0.5 ngày |
 | **Giai đoạn 5** | Tối ưu hoá Tracking, kiểm thử độ trễ, khả năng nhận diện góc nghiêng/thiếu sáng và đóng gói Docker. | 1 ngày |

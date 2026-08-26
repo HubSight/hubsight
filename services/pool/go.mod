@@ -1,4 +1,4 @@
-module cctv/pool-service
+module cctv/pool
 
 go 1.25.0
 
