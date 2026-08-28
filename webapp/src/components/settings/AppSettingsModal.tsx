@@ -105,7 +105,6 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
   const isRunningPwa = isPwa();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div
         className="fixed inset-0"
@@ -113,10 +112,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-md bg-white border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
       <div className="relative w-full md:max-w-md bg-white md:border border-slate-200/90 rounded-none md:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col h-full md:h-auto md:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
         <div className="flex items-center justify-between px-6 pb-5 pt-[max(env(safe-area-inset-top),1.25rem)] md:pt-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200/60 flex items-center justify-center text-orange-600">
@@ -136,7 +133,6 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5 overflow-y-auto">
         <div className="p-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] space-y-5 overflow-y-auto">
           {/* PWA Mode Info Badge */}
           <div
