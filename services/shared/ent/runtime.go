@@ -331,6 +331,10 @@ func init() {
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userDescPushPreferences is the schema descriptor for push_preferences field.
+	userDescPushPreferences := userFields[11].Descriptor()
+	// user.DefaultPushPreferences holds the default value on creation for the push_preferences field.
+	user.DefaultPushPreferences = userDescPushPreferences.Default.(map[string]bool)
 	// userDescID is the schema descriptor for id field.
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.

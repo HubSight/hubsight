@@ -4,6 +4,7 @@ package ent
 
 import (
 	"cctv/shared/ent/predicate"
+	"cctv/shared/ent/pushsubscription"
 	"cctv/shared/ent/session"
 	"cctv/shared/ent/user"
 	"context"
@@ -167,6 +168,18 @@ func (_u *UserUpdate) ClearLastLoginAt() *UserUpdate {
 	return _u
 }
 
+// SetPushPreferences sets the "push_preferences" field.
+func (_u *UserUpdate) SetPushPreferences(v map[string]bool) *UserUpdate {
+	_u.mutation.SetPushPreferences(v)
+	return _u
+}
+
+// ClearPushPreferences clears the value of the "push_preferences" field.
+func (_u *UserUpdate) ClearPushPreferences() *UserUpdate {
+	_u.mutation.ClearPushPreferences()
+	return _u
+}
+
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
 func (_u *UserUpdate) AddSessionIDs(ids ...string) *UserUpdate {
 	_u.mutation.AddSessionIDs(ids...)
@@ -180,6 +193,21 @@ func (_u *UserUpdate) AddSessions(v ...*Session) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddSessionIDs(ids...)
+}
+
+// AddPushSubscriptionIDs adds the "push_subscriptions" edge to the PushSubscription entity by IDs.
+func (_u *UserUpdate) AddPushSubscriptionIDs(ids ...string) *UserUpdate {
+	_u.mutation.AddPushSubscriptionIDs(ids...)
+	return _u
+}
+
+// AddPushSubscriptions adds the "push_subscriptions" edges to the PushSubscription entity.
+func (_u *UserUpdate) AddPushSubscriptions(v ...*PushSubscription) *UserUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPushSubscriptionIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -206,6 +234,27 @@ func (_u *UserUpdate) RemoveSessions(v ...*Session) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSessionIDs(ids...)
+}
+
+// ClearPushSubscriptions clears all "push_subscriptions" edges to the PushSubscription entity.
+func (_u *UserUpdate) ClearPushSubscriptions() *UserUpdate {
+	_u.mutation.ClearPushSubscriptions()
+	return _u
+}
+
+// RemovePushSubscriptionIDs removes the "push_subscriptions" edge to PushSubscription entities by IDs.
+func (_u *UserUpdate) RemovePushSubscriptionIDs(ids ...string) *UserUpdate {
+	_u.mutation.RemovePushSubscriptionIDs(ids...)
+	return _u
+}
+
+// RemovePushSubscriptions removes "push_subscriptions" edges to PushSubscription entities.
+func (_u *UserUpdate) RemovePushSubscriptions(v ...*PushSubscription) *UserUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePushSubscriptionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -314,6 +363,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.LastLoginAtCleared() {
 		_spec.ClearField(user.FieldLastLoginAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.PushPreferences(); ok {
+		_spec.SetField(user.FieldPushPreferences, field.TypeJSON, value)
+	}
+	if _u.mutation.PushPreferencesCleared() {
+		_spec.ClearField(user.FieldPushPreferences, field.TypeJSON)
+	}
 	if _u.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -352,6 +407,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PushSubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PushSubscriptionsTable,
+			Columns: []string{user.PushSubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pushsubscription.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPushSubscriptionsIDs(); len(nodes) > 0 && !_u.mutation.PushSubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PushSubscriptionsTable,
+			Columns: []string{user.PushSubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pushsubscription.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PushSubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PushSubscriptionsTable,
+			Columns: []string{user.PushSubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pushsubscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -517,6 +617,18 @@ func (_u *UserUpdateOne) ClearLastLoginAt() *UserUpdateOne {
 	return _u
 }
 
+// SetPushPreferences sets the "push_preferences" field.
+func (_u *UserUpdateOne) SetPushPreferences(v map[string]bool) *UserUpdateOne {
+	_u.mutation.SetPushPreferences(v)
+	return _u
+}
+
+// ClearPushPreferences clears the value of the "push_preferences" field.
+func (_u *UserUpdateOne) ClearPushPreferences() *UserUpdateOne {
+	_u.mutation.ClearPushPreferences()
+	return _u
+}
+
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
 func (_u *UserUpdateOne) AddSessionIDs(ids ...string) *UserUpdateOne {
 	_u.mutation.AddSessionIDs(ids...)
@@ -530,6 +642,21 @@ func (_u *UserUpdateOne) AddSessions(v ...*Session) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddSessionIDs(ids...)
+}
+
+// AddPushSubscriptionIDs adds the "push_subscriptions" edge to the PushSubscription entity by IDs.
+func (_u *UserUpdateOne) AddPushSubscriptionIDs(ids ...string) *UserUpdateOne {
+	_u.mutation.AddPushSubscriptionIDs(ids...)
+	return _u
+}
+
+// AddPushSubscriptions adds the "push_subscriptions" edges to the PushSubscription entity.
+func (_u *UserUpdateOne) AddPushSubscriptions(v ...*PushSubscription) *UserUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPushSubscriptionIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -556,6 +683,27 @@ func (_u *UserUpdateOne) RemoveSessions(v ...*Session) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSessionIDs(ids...)
+}
+
+// ClearPushSubscriptions clears all "push_subscriptions" edges to the PushSubscription entity.
+func (_u *UserUpdateOne) ClearPushSubscriptions() *UserUpdateOne {
+	_u.mutation.ClearPushSubscriptions()
+	return _u
+}
+
+// RemovePushSubscriptionIDs removes the "push_subscriptions" edge to PushSubscription entities by IDs.
+func (_u *UserUpdateOne) RemovePushSubscriptionIDs(ids ...string) *UserUpdateOne {
+	_u.mutation.RemovePushSubscriptionIDs(ids...)
+	return _u
+}
+
+// RemovePushSubscriptions removes "push_subscriptions" edges to PushSubscription entities.
+func (_u *UserUpdateOne) RemovePushSubscriptions(v ...*PushSubscription) *UserUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePushSubscriptionIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -694,6 +842,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if _u.mutation.LastLoginAtCleared() {
 		_spec.ClearField(user.FieldLastLoginAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.PushPreferences(); ok {
+		_spec.SetField(user.FieldPushPreferences, field.TypeJSON, value)
+	}
+	if _u.mutation.PushPreferencesCleared() {
+		_spec.ClearField(user.FieldPushPreferences, field.TypeJSON)
+	}
 	if _u.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -732,6 +886,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PushSubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PushSubscriptionsTable,
+			Columns: []string{user.PushSubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pushsubscription.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPushSubscriptionsIDs(); len(nodes) > 0 && !_u.mutation.PushSubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PushSubscriptionsTable,
+			Columns: []string{user.PushSubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pushsubscription.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PushSubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PushSubscriptionsTable,
+			Columns: []string{user.PushSubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pushsubscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

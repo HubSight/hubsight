@@ -12,9 +12,12 @@ import {
   Loader2,
   Lock,
   Smartphone,
-  Globe
+  Globe,
+  Bell
 } from 'lucide-react';
 import { isPwa } from '../../utils/pwa';
+import { useAuth } from '../../context/AuthContext';
+import axiosClient from '../../api/axiosClient';
 
 interface AppSettingsModalProps {
   onClose: () => void;
@@ -35,9 +38,40 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
     lockApp,
   } = useAppLock();
 
+  const { user, setUser } = useAuth();
+
   const [loadingBio, setLoadingBio] = useState(false);
   const [bioError, setBioError] = useState('');
   const [bioSuccess, setBioSuccess] = useState('');
+
+  const handleTogglePushPref = async (key: string, checked: boolean) => {
+    if (!user) return;
+    
+    // Default to true if undefined
+    const currentPrefs = user.push_preferences || {
+      family: true,
+      guest: true,
+      stranger: true,
+      system: true,
+    };
+    
+    const newPrefs = {
+      ...currentPrefs,
+      [key]: checked,
+    };
+    // If toggling family, toggle guest as well for simplicity
+    if (key === 'family') {
+      newPrefs.guest = checked;
+    }
+    
+    setUser({ ...user, push_preferences: newPrefs });
+
+    try {
+      await axiosClient.put('/auth/preferences', { push_preferences: newPrefs });
+    } catch (err) {
+      console.error('Failed to update push preferences', err);
+    }
+  };
 
   const handleToggleBiometric = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const shouldEnable = e.target.checked;
@@ -72,6 +106,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div
         className="fixed inset-0"
         onClick={onClose}
@@ -79,8 +114,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
       />
 
       <div className="relative w-full max-w-md bg-white border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
+      <div className="relative w-full md:max-w-md bg-white md:border border-slate-200/90 rounded-none md:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col h-full md:h-auto md:max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-6 pb-5 pt-[max(env(safe-area-inset-top),1.25rem)] md:pt-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200/60 flex items-center justify-center text-orange-600">
               <Shield size={20} />
@@ -100,6 +137,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
 
         {/* Content */}
         <div className="p-6 space-y-5 overflow-y-auto">
+        <div className="p-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] space-y-5 overflow-y-auto">
           {/* PWA Mode Info Badge */}
           <div
             className={`p-3 rounded-2xl border flex items-center gap-3 text-xs ${isRunningPwa
@@ -156,6 +194,84 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Setting: Push Preferences */}
+          <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-4">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <Bell size={16} className="text-orange-600 shrink-0" />
+                <span>{t('settings.pushTitle')}</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {t('settings.pushSubtitle')}
+              </p>
+            </div>
+            
+            <div className="space-y-3 pt-1">
+              {/* Family & Guests */}
+              <div className="flex items-center justify-between">
+                <div className="pr-3">
+                  <label className="text-sm font-semibold text-slate-700 block">
+                    {t('settings.pushFamily')}
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {t('settings.pushFamilyDesc')}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={user?.push_preferences?.family ?? true}
+                    onChange={(e) => handleTogglePushPref('family', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-600"></div>
+                </label>
+              </div>
+              
+              {/* Strangers & Security Alerts */}
+              <div className="flex items-center justify-between">
+                <div className="pr-3">
+                  <label className="text-sm font-semibold text-slate-700 block">
+                    {t('settings.pushStranger')}
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {t('settings.pushStrangerDesc')}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={user?.push_preferences?.stranger ?? true}
+                    onChange={(e) => handleTogglePushPref('stranger', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-600"></div>
+                </label>
+              </div>
+
+              {/* System */}
+              <div className="flex items-center justify-between">
+                <div className="pr-3">
+                  <label className="text-sm font-semibold text-slate-700 block">
+                    {t('settings.pushSystem')}
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {t('settings.pushSystemDesc')}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={user?.push_preferences?.system ?? true}
+                    onChange={(e) => handleTogglePushPref('system', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-600"></div>
+                </label>
+              </div>
             </div>
           </div>
 

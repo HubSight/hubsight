@@ -4,6 +4,7 @@ package ent
 
 import (
 	"cctv/shared/ent/pushsubscription"
+	"cctv/shared/ent/user"
 	"context"
 	"errors"
 	"fmt"
@@ -92,6 +93,11 @@ func (_c *PushSubscriptionCreate) SetNillableID(v *string) *PushSubscriptionCrea
 		_c.SetID(*v)
 	}
 	return _c
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_c *PushSubscriptionCreate) SetUser(v *User) *PushSubscriptionCreate {
+	return _c.SetUserID(v.ID)
 }
 
 // Mutation returns the PushSubscriptionMutation object of the builder.
@@ -214,10 +220,6 @@ func (_c *PushSubscriptionCreate) createSpec() (*PushSubscription, *sqlgraph.Cre
 		_node.ID = id
 		_spec.ID.Value = id
 	}
-	if value, ok := _c.mutation.UserID(); ok {
-		_spec.SetField(pushsubscription.FieldUserID, field.TypeString, value)
-		_node.UserID = value
-	}
 	if value, ok := _c.mutation.Endpoint(); ok {
 		_spec.SetField(pushsubscription.FieldEndpoint, field.TypeString, value)
 		_node.Endpoint = value
@@ -237,6 +239,23 @@ func (_c *PushSubscriptionCreate) createSpec() (*PushSubscription, *sqlgraph.Cre
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(pushsubscription.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   pushsubscription.UserTable,
+			Columns: []string{pushsubscription.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UserID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

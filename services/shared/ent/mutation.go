@@ -3770,13 +3770,14 @@ type PushSubscriptionMutation struct {
 	op            Op
 	typ           string
 	id            *string
-	user_id       *string
 	endpoint      *string
 	p256dh        *string
 	auth          *string
 	user_agent    *string
 	created_at    *time.Time
 	clearedFields map[string]struct{}
+	user          *string
+	cleareduser   bool
 	done          bool
 	oldValue      func(context.Context) (*PushSubscription, error)
 	predicates    []predicate.PushSubscription
@@ -3888,12 +3889,12 @@ func (m *PushSubscriptionMutation) IDs(ctx context.Context) ([]string, error) {
 
 // SetUserID sets the "user_id" field.
 func (m *PushSubscriptionMutation) SetUserID(s string) {
-	m.user_id = &s
+	m.user = &s
 }
 
 // UserID returns the value of the "user_id" field in the mutation.
 func (m *PushSubscriptionMutation) UserID() (r string, exists bool) {
-	v := m.user_id
+	v := m.user
 	if v == nil {
 		return
 	}
@@ -3919,7 +3920,7 @@ func (m *PushSubscriptionMutation) OldUserID(ctx context.Context) (v string, err
 
 // ClearUserID clears the value of the "user_id" field.
 func (m *PushSubscriptionMutation) ClearUserID() {
-	m.user_id = nil
+	m.user = nil
 	m.clearedFields[pushsubscription.FieldUserID] = struct{}{}
 }
 
@@ -3931,7 +3932,7 @@ func (m *PushSubscriptionMutation) UserIDCleared() bool {
 
 // ResetUserID resets all changes to the "user_id" field.
 func (m *PushSubscriptionMutation) ResetUserID() {
-	m.user_id = nil
+	m.user = nil
 	delete(m.clearedFields, pushsubscription.FieldUserID)
 }
 
@@ -4115,6 +4116,33 @@ func (m *PushSubscriptionMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
+// ClearUser clears the "user" edge to the User entity.
+func (m *PushSubscriptionMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[pushsubscription.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *PushSubscriptionMutation) UserCleared() bool {
+	return m.UserIDCleared() || m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *PushSubscriptionMutation) UserIDs() (ids []string) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *PushSubscriptionMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
 // Where appends a list predicates to the PushSubscriptionMutation builder.
 func (m *PushSubscriptionMutation) Where(ps ...predicate.PushSubscription) {
 	m.predicates = append(m.predicates, ps...)
@@ -4150,7 +4178,7 @@ func (m *PushSubscriptionMutation) Type() string {
 // AddedFields().
 func (m *PushSubscriptionMutation) Fields() []string {
 	fields := make([]string, 0, 6)
-	if m.user_id != nil {
+	if m.user != nil {
 		fields = append(fields, pushsubscription.FieldUserID)
 	}
 	if m.endpoint != nil {
@@ -4342,19 +4370,28 @@ func (m *PushSubscriptionMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PushSubscriptionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, pushsubscription.EdgeUser)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *PushSubscriptionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case pushsubscription.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PushSubscriptionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -4366,25 +4403,42 @@ func (m *PushSubscriptionMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PushSubscriptionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, pushsubscription.EdgeUser)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *PushSubscriptionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case pushsubscription.EdgeUser:
+		return m.cleareduser
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *PushSubscriptionMutation) ClearEdge(name string) error {
+	switch name {
+	case pushsubscription.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
 	return fmt.Errorf("unknown PushSubscription unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *PushSubscriptionMutation) ResetEdge(name string) error {
+	switch name {
+	case pushsubscription.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
 	return fmt.Errorf("unknown PushSubscription edge %s", name)
 }
 
@@ -7313,26 +7367,30 @@ func (m *SettingMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *string
-	username        *string
-	full_name       *string
-	password_hash   *string
-	role            *user.Role
-	is_active       *bool
-	locale          *user.Locale
-	timezone        *string
-	created_at      *time.Time
-	updated_at      *time.Time
-	last_login_at   *time.Time
-	clearedFields   map[string]struct{}
-	sessions        map[string]struct{}
-	removedsessions map[string]struct{}
-	clearedsessions bool
-	done            bool
-	oldValue        func(context.Context) (*User, error)
-	predicates      []predicate.User
+	op                        Op
+	typ                       string
+	id                        *string
+	username                  *string
+	full_name                 *string
+	password_hash             *string
+	role                      *user.Role
+	is_active                 *bool
+	locale                    *user.Locale
+	timezone                  *string
+	created_at                *time.Time
+	updated_at                *time.Time
+	last_login_at             *time.Time
+	push_preferences          *map[string]bool
+	clearedFields             map[string]struct{}
+	sessions                  map[string]struct{}
+	removedsessions           map[string]struct{}
+	clearedsessions           bool
+	push_subscriptions        map[string]struct{}
+	removedpush_subscriptions map[string]struct{}
+	clearedpush_subscriptions bool
+	done                      bool
+	oldValue                  func(context.Context) (*User, error)
+	predicates                []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -7812,6 +7870,55 @@ func (m *UserMutation) ResetLastLoginAt() {
 	delete(m.clearedFields, user.FieldLastLoginAt)
 }
 
+// SetPushPreferences sets the "push_preferences" field.
+func (m *UserMutation) SetPushPreferences(value map[string]bool) {
+	m.push_preferences = &value
+}
+
+// PushPreferences returns the value of the "push_preferences" field in the mutation.
+func (m *UserMutation) PushPreferences() (r map[string]bool, exists bool) {
+	v := m.push_preferences
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPushPreferences returns the old "push_preferences" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldPushPreferences(ctx context.Context) (v map[string]bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPushPreferences is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPushPreferences requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPushPreferences: %w", err)
+	}
+	return oldValue.PushPreferences, nil
+}
+
+// ClearPushPreferences clears the value of the "push_preferences" field.
+func (m *UserMutation) ClearPushPreferences() {
+	m.push_preferences = nil
+	m.clearedFields[user.FieldPushPreferences] = struct{}{}
+}
+
+// PushPreferencesCleared returns if the "push_preferences" field was cleared in this mutation.
+func (m *UserMutation) PushPreferencesCleared() bool {
+	_, ok := m.clearedFields[user.FieldPushPreferences]
+	return ok
+}
+
+// ResetPushPreferences resets all changes to the "push_preferences" field.
+func (m *UserMutation) ResetPushPreferences() {
+	m.push_preferences = nil
+	delete(m.clearedFields, user.FieldPushPreferences)
+}
+
 // AddSessionIDs adds the "sessions" edge to the Session entity by ids.
 func (m *UserMutation) AddSessionIDs(ids ...string) {
 	if m.sessions == nil {
@@ -7866,6 +7973,60 @@ func (m *UserMutation) ResetSessions() {
 	m.removedsessions = nil
 }
 
+// AddPushSubscriptionIDs adds the "push_subscriptions" edge to the PushSubscription entity by ids.
+func (m *UserMutation) AddPushSubscriptionIDs(ids ...string) {
+	if m.push_subscriptions == nil {
+		m.push_subscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.push_subscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPushSubscriptions clears the "push_subscriptions" edge to the PushSubscription entity.
+func (m *UserMutation) ClearPushSubscriptions() {
+	m.clearedpush_subscriptions = true
+}
+
+// PushSubscriptionsCleared reports if the "push_subscriptions" edge to the PushSubscription entity was cleared.
+func (m *UserMutation) PushSubscriptionsCleared() bool {
+	return m.clearedpush_subscriptions
+}
+
+// RemovePushSubscriptionIDs removes the "push_subscriptions" edge to the PushSubscription entity by IDs.
+func (m *UserMutation) RemovePushSubscriptionIDs(ids ...string) {
+	if m.removedpush_subscriptions == nil {
+		m.removedpush_subscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.push_subscriptions, ids[i])
+		m.removedpush_subscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPushSubscriptions returns the removed IDs of the "push_subscriptions" edge to the PushSubscription entity.
+func (m *UserMutation) RemovedPushSubscriptionsIDs() (ids []string) {
+	for id := range m.removedpush_subscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PushSubscriptionsIDs returns the "push_subscriptions" edge IDs in the mutation.
+func (m *UserMutation) PushSubscriptionsIDs() (ids []string) {
+	for id := range m.push_subscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPushSubscriptions resets all changes to the "push_subscriptions" edge.
+func (m *UserMutation) ResetPushSubscriptions() {
+	m.push_subscriptions = nil
+	m.clearedpush_subscriptions = false
+	m.removedpush_subscriptions = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -7900,7 +8061,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.username != nil {
 		fields = append(fields, user.FieldUsername)
 	}
@@ -7931,6 +8092,9 @@ func (m *UserMutation) Fields() []string {
 	if m.last_login_at != nil {
 		fields = append(fields, user.FieldLastLoginAt)
 	}
+	if m.push_preferences != nil {
+		fields = append(fields, user.FieldPushPreferences)
+	}
 	return fields
 }
 
@@ -7959,6 +8123,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case user.FieldLastLoginAt:
 		return m.LastLoginAt()
+	case user.FieldPushPreferences:
+		return m.PushPreferences()
 	}
 	return nil, false
 }
@@ -7988,6 +8154,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUpdatedAt(ctx)
 	case user.FieldLastLoginAt:
 		return m.OldLastLoginAt(ctx)
+	case user.FieldPushPreferences:
+		return m.OldPushPreferences(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -8067,6 +8235,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastLoginAt(v)
 		return nil
+	case user.FieldPushPreferences:
+		v, ok := value.(map[string]bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPushPreferences(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -8100,6 +8275,9 @@ func (m *UserMutation) ClearedFields() []string {
 	if m.FieldCleared(user.FieldLastLoginAt) {
 		fields = append(fields, user.FieldLastLoginAt)
 	}
+	if m.FieldCleared(user.FieldPushPreferences) {
+		fields = append(fields, user.FieldPushPreferences)
+	}
 	return fields
 }
 
@@ -8116,6 +8294,9 @@ func (m *UserMutation) ClearField(name string) error {
 	switch name {
 	case user.FieldLastLoginAt:
 		m.ClearLastLoginAt()
+		return nil
+	case user.FieldPushPreferences:
+		m.ClearPushPreferences()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -8155,15 +8336,21 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldLastLoginAt:
 		m.ResetLastLoginAt()
 		return nil
+	case user.FieldPushPreferences:
+		m.ResetPushPreferences()
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.sessions != nil {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.push_subscriptions != nil {
+		edges = append(edges, user.EdgePushSubscriptions)
 	}
 	return edges
 }
@@ -8178,15 +8365,24 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgePushSubscriptions:
+		ids := make([]ent.Value, 0, len(m.push_subscriptions))
+		for id := range m.push_subscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.removedpush_subscriptions != nil {
+		edges = append(edges, user.EdgePushSubscriptions)
 	}
 	return edges
 }
@@ -8201,15 +8397,24 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgePushSubscriptions:
+		ids := make([]ent.Value, 0, len(m.removedpush_subscriptions))
+		for id := range m.removedpush_subscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedsessions {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.clearedpush_subscriptions {
+		edges = append(edges, user.EdgePushSubscriptions)
 	}
 	return edges
 }
@@ -8220,6 +8425,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeSessions:
 		return m.clearedsessions
+	case user.EdgePushSubscriptions:
+		return m.clearedpush_subscriptions
 	}
 	return false
 }
@@ -8238,6 +8445,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgeSessions:
 		m.ResetSessions()
+		return nil
+	case user.EdgePushSubscriptions:
+		m.ResetPushSubscriptions()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

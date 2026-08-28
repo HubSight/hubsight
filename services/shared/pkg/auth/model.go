@@ -28,6 +28,7 @@ type UpdateTimezoneRequest struct {
 }
 
 type UpdatePreferencesRequest struct {
-	Locale   *string `json:"locale,omitempty"`
-	Timezone *string `json:"timezone,omitempty"`
+	Locale          *string         `json:"locale,omitempty"`
+	Timezone        *string         `json:"timezone,omitempty"`
+	PushPreferences map[string]bool `json:"push_preferences,omitempty"`
 }

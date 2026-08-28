@@ -73,7 +73,7 @@ func dispatchNativeWebPush(sub *ent.PushSubscription, payloadBytes []byte, publi
 
 // DispatchToSubscribers sends one notification to every stored FCM / Web Push subscription.
 func DispatchToSubscribers(ctx context.Context, dto notification.NotificationDTO) {
-	subs, err := database.Client.PushSubscription.Query().All(ctx)
+	subs, err := database.Client.PushSubscription.Query().WithUser().All(ctx)
 	if err != nil {
 		log.Printf("[Push] Failed to load subscriptions: %v", err)
 		return
@@ -96,6 +96,20 @@ func DispatchToSubscribers(ctx context.Context, dto notification.NotificationDTO
 	}
 
 	for _, sub := range subs {
+		// Check user push preferences if linked to a user
+		if sub.Edges.User != nil {
+			prefs := sub.Edges.User.PushPreferences
+			prefKey := dto.Category
+			// Map alert types to the "stranger" setting umbrella
+			if prefKey == "risk" || prefKey == "suspicious" || prefKey == "fall" {
+				prefKey = "stranger"
+			}
+
+			if enabled, exists := prefs[prefKey]; exists && !enabled {
+				continue // User disabled push notifications for this category
+			}
+		}
+
 		if notification.IsFCMEndpoint(sub.Endpoint) {
 			dispatchFCM(ctx, sub, dto)
 			continue

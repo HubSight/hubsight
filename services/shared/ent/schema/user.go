@@ -33,6 +33,14 @@ func (User) Fields() []ent.Field {
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 		field.Time("last_login_at").Optional(),
+		field.JSON("push_preferences", map[string]bool{}).
+			Default(map[string]bool{
+				"family":   true,
+				"guest":    true,
+				"stranger": true,
+				"system":   true,
+			}).
+			Optional(),
 	}
 }
 
@@ -40,5 +48,6 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("sessions", Session.Type),
+		edge.To("push_subscriptions", PushSubscription.Type),
 	}
 }

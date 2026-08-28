@@ -11,6 +11,7 @@ interface User {
   is_active: boolean;
   created_at: string;
   last_login_at: string;
+  push_preferences?: Record<string, boolean>;
 }
 
 interface AuthContextType {

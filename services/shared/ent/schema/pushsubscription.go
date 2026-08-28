@@ -6,6 +6,7 @@ import (
 	"cctv/shared/pkg/nanoid"
 
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -39,5 +40,10 @@ func (PushSubscription) Fields() []ent.Field {
 
 // Edges of the PushSubscription.
 func (PushSubscription) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("user", User.Type).
+			Ref("push_subscriptions").
+			Field("user_id").
+			Unique(),
+	}
 }

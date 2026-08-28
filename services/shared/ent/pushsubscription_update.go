@@ -5,6 +5,7 @@ package ent
 import (
 	"cctv/shared/ent/predicate"
 	"cctv/shared/ent/pushsubscription"
+	"cctv/shared/ent/user"
 	"context"
 	"errors"
 	"fmt"
@@ -118,9 +119,20 @@ func (_u *PushSubscriptionUpdate) SetNillableCreatedAt(v *time.Time) *PushSubscr
 	return _u
 }
 
+// SetUser sets the "user" edge to the User entity.
+func (_u *PushSubscriptionUpdate) SetUser(v *User) *PushSubscriptionUpdate {
+	return _u.SetUserID(v.ID)
+}
+
 // Mutation returns the PushSubscriptionMutation object of the builder.
 func (_u *PushSubscriptionUpdate) Mutation() *PushSubscriptionMutation {
 	return _u.mutation
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *PushSubscriptionUpdate) ClearUser() *PushSubscriptionUpdate {
+	_u.mutation.ClearUser()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -182,12 +194,6 @@ func (_u *PushSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 			}
 		}
 	}
-	if value, ok := _u.mutation.UserID(); ok {
-		_spec.SetField(pushsubscription.FieldUserID, field.TypeString, value)
-	}
-	if _u.mutation.UserIDCleared() {
-		_spec.ClearField(pushsubscription.FieldUserID, field.TypeString)
-	}
 	if value, ok := _u.mutation.Endpoint(); ok {
 		_spec.SetField(pushsubscription.FieldEndpoint, field.TypeString, value)
 	}
@@ -202,6 +208,35 @@ func (_u *PushSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(pushsubscription.FieldCreatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   pushsubscription.UserTable,
+			Columns: []string{pushsubscription.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   pushsubscription.UserTable,
+			Columns: []string{pushsubscription.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -313,9 +348,20 @@ func (_u *PushSubscriptionUpdateOne) SetNillableCreatedAt(v *time.Time) *PushSub
 	return _u
 }
 
+// SetUser sets the "user" edge to the User entity.
+func (_u *PushSubscriptionUpdateOne) SetUser(v *User) *PushSubscriptionUpdateOne {
+	return _u.SetUserID(v.ID)
+}
+
 // Mutation returns the PushSubscriptionMutation object of the builder.
 func (_u *PushSubscriptionUpdateOne) Mutation() *PushSubscriptionMutation {
 	return _u.mutation
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *PushSubscriptionUpdateOne) ClearUser() *PushSubscriptionUpdateOne {
+	_u.mutation.ClearUser()
+	return _u
 }
 
 // Where appends a list predicates to the PushSubscriptionUpdate builder.
@@ -407,12 +453,6 @@ func (_u *PushSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *PushSu
 			}
 		}
 	}
-	if value, ok := _u.mutation.UserID(); ok {
-		_spec.SetField(pushsubscription.FieldUserID, field.TypeString, value)
-	}
-	if _u.mutation.UserIDCleared() {
-		_spec.ClearField(pushsubscription.FieldUserID, field.TypeString)
-	}
 	if value, ok := _u.mutation.Endpoint(); ok {
 		_spec.SetField(pushsubscription.FieldEndpoint, field.TypeString, value)
 	}
@@ -427,6 +467,35 @@ func (_u *PushSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *PushSu
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(pushsubscription.FieldCreatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   pushsubscription.UserTable,
+			Columns: []string{pushsubscription.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   pushsubscription.UserTable,
+			Columns: []string{pushsubscription.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &PushSubscription{config: _u.config}
 	_spec.Assign = _node.assignValues

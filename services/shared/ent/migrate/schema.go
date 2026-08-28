@@ -98,18 +98,26 @@ var (
 	// PushSubscriptionsColumns holds the columns for the "push_subscriptions" table.
 	PushSubscriptionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
-		{Name: "user_id", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "endpoint", Type: field.TypeString, Unique: true},
 		{Name: "p256dh", Type: field.TypeString},
 		{Name: "auth", Type: field.TypeString},
 		{Name: "user_agent", Type: field.TypeString, Default: ""},
 		{Name: "created_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeString, Nullable: true, Default: ""},
 	}
 	// PushSubscriptionsTable holds the schema information for the "push_subscriptions" table.
 	PushSubscriptionsTable = &schema.Table{
 		Name:       "push_subscriptions",
 		Columns:    PushSubscriptionsColumns,
 		PrimaryKey: []*schema.Column{PushSubscriptionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "push_subscriptions_users_push_subscriptions",
+				Columns:    []*schema.Column{PushSubscriptionsColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// RecognitionLogsColumns holds the columns for the "recognition_logs" table.
 	RecognitionLogsColumns = []*schema.Column{
@@ -213,6 +221,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
+		{Name: "push_preferences", Type: field.TypeJSON, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -237,6 +246,7 @@ var (
 
 func init() {
 	MemberFacesTable.ForeignKeys[0].RefTable = MembersTable
+	PushSubscriptionsTable.ForeignKeys[0].RefTable = UsersTable
 	RecordingsTable.ForeignKeys[0].RefTable = CamerasTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
 }

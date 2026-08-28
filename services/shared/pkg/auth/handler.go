@@ -1,12 +1,13 @@
 package auth
 
 import (
-	"net/http"
-	"time"
-	"github.com/gin-gonic/gin"
 	"cctv/shared/ent"
 	"cctv/shared/ent/user"
 	"cctv/shared/pkg/database"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func LoginHandler(c *gin.Context) {
@@ -23,12 +24,12 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	c.SetCookie("session", token, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
-	
+
 	resp := gin.H{"status": "ok"}
 	if req.IsPWA && refreshToken != "" {
 		resp["refresh_token"] = refreshToken
 	}
-	
+
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -68,7 +69,7 @@ func MeHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, user)
 }
 
@@ -78,7 +79,7 @@ func ChangePasswordHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	
+
 	u := userObj.(*ent.User)
 
 	var req ChangePasswordRequest
@@ -201,6 +202,9 @@ func UpdatePreferencesHandler(c *gin.Context) {
 	}
 	if req.Timezone != nil && *req.Timezone != "" {
 		updateQuery.SetTimezone(*req.Timezone)
+	}
+	if req.PushPreferences != nil {
+		updateQuery.SetPushPreferences(req.PushPreferences)
 	}
 
 	updated, err := updateQuery.Save(c.Request.Context())

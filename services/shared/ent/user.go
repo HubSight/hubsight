@@ -4,6 +4,7 @@ package ent
 
 import (
 	"cctv/shared/ent/user"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -37,6 +38,8 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// LastLoginAt holds the value of the "last_login_at" field.
 	LastLoginAt time.Time `json:"last_login_at,omitempty"`
+	// PushPreferences holds the value of the "push_preferences" field.
+	PushPreferences map[string]bool `json:"push_preferences,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -47,9 +50,11 @@ type User struct {
 type UserEdges struct {
 	// Sessions holds the value of the sessions edge.
 	Sessions []*Session `json:"sessions,omitempty"`
+	// PushSubscriptions holds the value of the push_subscriptions edge.
+	PushSubscriptions []*PushSubscription `json:"push_subscriptions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -61,11 +66,22 @@ func (e UserEdges) SessionsOrErr() ([]*Session, error) {
 	return nil, &NotLoadedError{edge: "sessions"}
 }
 
+// PushSubscriptionsOrErr returns the PushSubscriptions value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PushSubscriptionsOrErr() ([]*PushSubscription, error) {
+	if e.loadedTypes[1] {
+		return e.PushSubscriptions, nil
+	}
+	return nil, &NotLoadedError{edge: "push_subscriptions"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldPushPreferences:
+			values[i] = new([]byte)
 		case user.FieldIsActive:
 			values[i] = new(sql.NullBool)
 		case user.FieldID, user.FieldUsername, user.FieldFullName, user.FieldPasswordHash, user.FieldRole, user.FieldLocale, user.FieldTimezone:
@@ -153,6 +169,14 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.LastLoginAt = value.Time
 			}
+		case user.FieldPushPreferences:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field push_preferences", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.PushPreferences); err != nil {
+					return fmt.Errorf("unmarshal field push_preferences: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -169,6 +193,11 @@ func (_m *User) Value(name string) (ent.Value, error) {
 // QuerySessions queries the "sessions" edge of the User entity.
 func (_m *User) QuerySessions() *SessionQuery {
 	return NewUserClient(_m.config).QuerySessions(_m)
+}
+
+// QueryPushSubscriptions queries the "push_subscriptions" edge of the User entity.
+func (_m *User) QueryPushSubscriptions() *PushSubscriptionQuery {
+	return NewUserClient(_m.config).QueryPushSubscriptions(_m)
 }
 
 // Update returns a builder for updating this User.
@@ -223,6 +252,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_login_at=")
 	builder.WriteString(_m.LastLoginAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("push_preferences=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PushPreferences))
 	builder.WriteByte(')')
 	return builder.String()
 }
