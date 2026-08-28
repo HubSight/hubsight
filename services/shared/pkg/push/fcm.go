@@ -129,6 +129,9 @@ func buildFCMMessage(token string, dto notification.NotificationDTO) *messaging.
 			},
 			Data: data,
 		},
+		FCMOptions: &messaging.FCMOptions{
+			AnalyticsLabel: "hubsight_alerts",
+		},
 	}
 }
 
