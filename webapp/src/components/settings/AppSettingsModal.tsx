@@ -114,7 +114,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
 
       <div className="relative w-full md:max-w-md bg-white md:border border-slate-200/90 rounded-none md:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col h-full md:h-auto md:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pb-5 pt-[max(env(safe-area-inset-top),1.25rem)] md:pt-5 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between pb-5 pt-[max(env(safe-area-inset-top),1.25rem)] md:pt-5 pl-[max(env(safe-area-inset-left),1.5rem)] pr-[max(env(safe-area-inset-right),1.5rem)] md:px-6 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200/60 flex items-center justify-center text-orange-600">
               <Shield size={20} />
@@ -133,7 +133,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
         </div>
 
         {/* Content */}
-        <div className="p-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] space-y-5 overflow-y-auto">
+        <div className="pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-6 pl-[max(env(safe-area-inset-left),1.5rem)] pr-[max(env(safe-area-inset-right),1.5rem)] md:p-6 space-y-5 overflow-y-auto">
           {/* PWA Mode Info Badge */}
           <div
             className={`p-3 rounded-2xl border flex items-center gap-3 text-xs ${isRunningPwa

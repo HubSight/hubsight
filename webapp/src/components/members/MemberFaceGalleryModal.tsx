@@ -313,7 +313,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
       <div className="bg-white w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+        <div className="px-5 pb-4 pt-[max(env(safe-area-inset-top),1rem)] pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="relative shrink-0">
               {currentAvatarUrl ? (
@@ -380,7 +380,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         />
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-50/40">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pl-[max(env(safe-area-inset-left),1rem)] pr-[max(env(safe-area-inset-right),1rem)] space-y-5 bg-slate-50/40">
           {error && (
             <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium flex items-center justify-between">
               <span>{error}</span>
@@ -654,7 +654,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/70 text-xs text-slate-500 shrink-0">
+        <div className="px-5 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] border-t border-slate-100 flex items-center justify-between bg-slate-50/70 text-xs text-slate-500 shrink-0">
           <div className="flex items-center gap-2 font-medium">
             <Sparkles size={13} className="text-orange-500" />
             <span>{t('gallery.vectorCount')}: {totalFaces * 512} floats</span>
