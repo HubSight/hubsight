@@ -4,17 +4,22 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
+	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
 )
 
 func main() {
-	godotenv.Load("../../.env")
-	dbUrl := os.Getenv("DATABASE_URL")
-	database.Connect(dbUrl)
-	deleted, _ := database.Client.PushSubscription.Delete().Exec(context.Background())
+	cfg := config.Load()
+
+	if err := database.Connect(cfg.DatabaseURL); err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer database.Close()
+
+	deleted, err := database.Client.PushSubscription.Delete().Exec(context.Background())
+	if err != nil {
+		log.Fatalf("failed to delete push subscriptions: %v", err)
+	}
 	fmt.Printf("Deleted %d push subscriptions\n", deleted)
 }

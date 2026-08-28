@@ -16,79 +16,17 @@ webrtc:
     - stun:8555
     - rtc.quoctran.space:8555
     - 138.2.87.35:8555
+
+# Leave this as a bare key. go2rtc's config patcher cannot parse flow-style
+# `streams: {}` and rejects every `PUT /api/streams` with HTTP 400, so no camera
+# ever gets registered. pool-service / core-service populate this at runtime.
 streams:
-  test:
-    - rtsp://localhost:8554/test#backchannel=0#transport=tcp
-    - ffmpeg:test#audio=opus
-  cam_XbXVEFntLOe5bNHVUtm3R:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R#audio=opus
-  cam_XbXVEFntLOe5bNHVUtm3R_cv:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:rtsp://138.2.87.35:8554/bunny#video=h264#framerate=10#audio=none
-  cam_XbXVEFntLOe5bNHVUtm3R_live_1:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R_live_1#audio=opus
-  cam_XbXVEFntLOe5bNHVUtm3R_live_2:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R_live_2#audio=opus
-  cam_XbXVEFntLOe5bNHVUtm3R_live_3:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R_live_3#audio=opus
-  cam_XbXVEFntLOe5bNHVUtm3R_nvr:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R_nvr#audio=opus
   cam_HnT19ndxWGhXb5Y5oEeZQ_nvr:
     - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_nvr#audio=opus
   cam_HnT19ndxWGhXb5Y5oEeZQ_live_2:
     - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_2#audio=opus
   cam_HnT19ndxWGhXb5Y5oEeZQ_cv:
     - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
     - ffmpeg:rtsp://host.docker.internal:8556/facetime#video=h264#framerate=10#audio=none
   cam_HnT19ndxWGhXb5Y5oEeZQ_live_3:
     - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_3#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_4:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_4#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_5:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_5#audio=opus
-  cam_XbXVEFntLOe5bNHVUtm3R_live_4:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R_live_4#audio=opus
-  cam_XbXVEFntLOe5bNHVUtm3R_live_5:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-    - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R_live_5#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_6:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_6#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_7:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_7#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_8:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_8#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_9:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_9#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_10:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_10#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_11:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_11#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_12:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_12#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_13:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_13#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_14:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_14#audio=opus
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_15:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:cam_HnT19ndxWGhXb5Y5oEeZQ_live_15#audio=opus

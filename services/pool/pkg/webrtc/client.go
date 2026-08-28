@@ -34,7 +34,7 @@ func NewGo2RTCClient() *Go2RTCClient {
 	}
 }
 
-// RegisterStream registers or updates dual-source profiles (direct RTSP + FFmpeg Opus) in go2rtc
+// RegisterStream registers or updates stream profiles in go2rtc
 func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL string, purpose string) error {
 	srcDirect := rtspURL
 	if !strings.Contains(srcDirect, "#") {
@@ -43,24 +43,24 @@ func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL s
 		srcDirect = fmt.Sprintf("%s#transport=tcp", srcDirect)
 	}
 
-	var srcFfmpeg string
+	var putURL string
 	if purpose == "cv" {
-		// Transcode once from the already-pulled RTSP producer (no second camera socket).
-		// Keep source resolution (only drop to 10 FPS). 640p shrinks faces too much for ArcFace.
-		// Pull the camera URL, not the stream name — self-ffmpeg on a not-yet-open producer fails with "unknown error".
-		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#video=h264#framerate=10#audio=none", rtspURL)
+		// CV profile: 10 FPS, no audio to save processing
+		srcFfmpeg := fmt.Sprintf("ffmpeg:%s#video=h264#framerate=10#audio=none", rtspURL)
+		putURL = fmt.Sprintf("%s/api/streams?name=%s&src=%s&src=%s",
+			c.BaseURL,
+			url.QueryEscape(streamName),
+			url.QueryEscape(srcDirect),
+			url.QueryEscape(srcFfmpeg),
+		)
 	} else {
-		// Audio-only producer. go2rtc mixes this Opus with H264 from the RTSP source.
-		// Do NOT set #video=copy here — that would send video through ffmpeg's muxer (~1s+ delay).
-		srcFfmpeg = fmt.Sprintf("ffmpeg:%s#audio=opus", streamName)
+		// Live/NVR profile: Pure direct RTSP passthrough with TCP transport (0% CPU, 0 delay, no crash loop)
+		putURL = fmt.Sprintf("%s/api/streams?name=%s&src=%s",
+			c.BaseURL,
+			url.QueryEscape(streamName),
+			url.QueryEscape(srcDirect),
+		)
 	}
-
-	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s&src=%s",
-		c.BaseURL,
-		url.QueryEscape(streamName),
-		url.QueryEscape(srcDirect),
-		url.QueryEscape(srcFfmpeg),
-	)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, putURL, nil)
 	if err != nil {

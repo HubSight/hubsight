@@ -44,4 +44,7 @@ logs/
 npm_cache
 .pnpm-store
 
-__pycache__
+# Python
+**/__pycache__/
+**/.venv/
+*.pyc

@@ -7,7 +7,7 @@ import axiosClient from '../../api/axiosClient';
 const releasePoolStream = (cameraId: string, streamName: string) => {
   const baseUrl = import.meta.env.VITE_API_URL || '/api';
   const url = `${baseUrl}/live/${cameraId}/release?stream_name=${encodeURIComponent(streamName)}`;
-  fetch(url, { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
+  fetch(url, { method: 'POST', credentials: 'include', keepalive: true }).catch(() => { });
 };
 
 interface OverlayBox {
@@ -69,10 +69,14 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
     const cssW = wrap.clientWidth;
     const cssH = wrap.clientHeight;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.max(1, Math.round(cssW * dpr));
-    canvas.height = Math.max(1, Math.round(cssH * dpr));
-    canvas.style.width = `${cssW}px`;
-    canvas.style.height = `${cssH}px`;
+    const targetW = Math.max(1, Math.round(cssW * dpr));
+    const targetH = Math.max(1, Math.round(cssH * dpr));
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+      canvas.style.width = `${cssW}px`;
+      canvas.style.height = `${cssH}px`;
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
 
@@ -200,7 +204,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
       video.volume = targetVol;
       setVolume(targetVol);
       setIsMuted(false);
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     } else {
       video.muted = true;
       setIsMuted(true);
@@ -218,7 +222,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
       video.muted = false;
       video.volume = newVolume;
       setIsMuted(false);
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     }
   };
 
@@ -239,18 +243,19 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
     packetsLost: 0,
     jitter: 0,
   });
-  const traceStateRef = useRef({ 
-    frames: 0, 
-    lastTime: performance.now(), 
+  const traceStateRef = useRef({
+    frames: 0,
+    lastTime: performance.now(),
     lastDecoded: 0,
     lastDropped: 0,
-    lastPacketsLost: 0 
+    lastPacketsLost: 0,
+    initialized: false
   });
 
   // ──────────────────────────────────────────────────────────────────────────
   // WebRTC Stats Polling
   // ──────────────────────────────────────────────────────────────────────────
-  
+
   const startStatsPoll = useCallback((video: HTMLVideoElement, pc: RTCPeerConnection) => {
     if (liveEdgeSyncRef.current) clearInterval(liveEdgeSyncRef.current);
     liveEdgeSyncRef.current = setInterval(async () => {
@@ -285,7 +290,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         const now = performance.now();
         const state = traceStateRef.current;
         const dt = now - state.lastTime;
-        
+
         if (dt >= 1000) {
           const renderFps = Math.round((state.frames * 1000) / dt);
           let decodeFps = 0;
@@ -295,26 +300,50 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
           let codec = 'Unknown';
           let protocol = 'Unknown';
 
-          if (inboundVideo) {
-            const newDecoded = inboundVideo.framesDecoded || 0;
-            decodeFps = Math.round(((newDecoded - state.lastDecoded) * 1000) / dt);
-            
-            const newDropped = inboundVideo.framesDropped || 0;
-            const newPacketsLost = inboundVideo.packetsLost || 0;
-            
-            if (state.lastDecoded === 0) {
-              // Initial tick: ignore cumulative drops that happened before polling started
+          const quality = typeof video.getVideoPlaybackQuality === 'function' ? video.getVideoPlaybackQuality() : null;
+          if (quality) {
+            const newDecoded = quality.totalVideoFrames || 0;
+            decodeFps = Math.max(0, Math.round(((newDecoded - state.lastDecoded) * 1000) / dt));
+            const newDropped = quality.droppedVideoFrames || 0;
+
+            if (!state.initialized) {
               dropped = 0;
               pLost = 0;
+              state.initialized = true;
+            } else {
+              dropped = Math.max(0, newDropped - state.lastDropped);
+              if (inboundVideo) {
+                const newPacketsLost = inboundVideo.packetsLost || 0;
+                pLost = Math.max(0, newPacketsLost - state.lastPacketsLost);
+                state.lastPacketsLost = newPacketsLost;
+              }
+            }
+            state.lastDecoded = newDecoded;
+            state.lastDropped = newDropped;
+
+            if (inboundVideo) {
+              jitter = Math.round((inboundVideo.jitter || 0) * 1000);
+            }
+          } else if (inboundVideo) {
+            const newDecoded = inboundVideo.framesDecoded || 0;
+            decodeFps = Math.max(0, Math.round(((newDecoded - state.lastDecoded) * 1000) / dt));
+
+            const newDropped = inboundVideo.framesDropped || 0;
+            const newPacketsLost = inboundVideo.packetsLost || 0;
+
+            if (!state.initialized) {
+              dropped = 0;
+              pLost = 0;
+              state.initialized = true;
             } else {
               dropped = Math.max(0, newDropped - state.lastDropped);
               pLost = Math.max(0, newPacketsLost - state.lastPacketsLost);
             }
-            
+
             state.lastDecoded = newDecoded;
             state.lastDropped = newDropped;
             state.lastPacketsLost = newPacketsLost;
-            
+
             jitter = Math.round((inboundVideo.jitter || 0) * 1000);
           }
 
@@ -416,40 +445,41 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         pc.addTransceiver('video', { direction: 'recvonly' });
         pc.addTransceiver('audio', { direction: 'recvonly' });
 
+        // Dedicated stream: lets us keep a silent audio track OUT of the <video>
+        // element. Attaching a muted / never-unmuting audio track makes Chrome
+        // stall video frames waiting on A/V sync — multi-second lag, green stats.
         const mediaStream = new MediaStream();
         video.srcObject = mediaStream;
 
         const applyLowDelay = (receiver: RTCRtpReceiver) => {
           const r = receiver as RTCRtpReceiver & { jitterBufferTarget?: number; playoutDelayHint?: number };
-          // 80ms absorbs one missed packet without the hitch of a 0ms buffer.
-          try { r.jitterBufferTarget = 80; } catch { /* Safari / older Chromium */ }
-          try { r.playoutDelayHint = 0.08; } catch { /* not supported */ }
+          // ~120ms absorbs normal RTP / TCP-burst jitter without visible judder,
+          // while keeping glass-to-glass latency well under 1s. A 0ms buffer
+          // presents every packet the instant it lands -> constant micro-stutter.
+          try { r.jitterBufferTarget = 120; } catch { /* Safari / older Chromium */ }
+          try { r.playoutDelayHint = 0.12; } catch { /* not supported */ }
         };
 
         const attachTrack = (track: MediaStreamTrack) => {
-          if (!mediaStream.getTracks().includes(track)) {
-            mediaStream.addTrack(track);
+          if (!mediaStream.getTracks().includes(track)) mediaStream.addTrack(track);
+        };
+
+        const handleTrack = (track: MediaStreamTrack) => {
+          if (track.kind === 'audio') {
+            setHasAudioTrack(true);
+            // Only attach audio once it is actually producing samples. A muted
+            // track that never unmutes (source has no audio, or non-Opus codec)
+            // would freeze the video pipeline on A/V sync.
+            if (!track.muted) { attachTrack(track); return; }
+            track.addEventListener('unmute', () => attachTrack(track), { once: true });
+            return;
           }
+          attachTrack(track);
         };
 
         pc.ontrack = (event) => {
           if (!isActive) return;
           if (event.receiver) applyLowDelay(event.receiver);
-
-          const handleTrack = (track: MediaStreamTrack) => {
-            if (track.kind === 'audio') {
-              setHasAudioTrack(true);
-              // Do not attach a silent/pending audio track to <video>: Chrome holds
-              // video frames to A/V-sync, which shows up as multi-second delay with green stats.
-              if (!track.muted) {
-                attachTrack(track);
-                return;
-              }
-              track.addEventListener('unmute', () => attachTrack(track), { once: true });
-              return;
-            }
-            attachTrack(track);
-          };
 
           if (event.track) handleTrack(event.track);
           event.streams?.[0]?.getTracks().forEach(handleTrack);
@@ -457,17 +487,9 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
           setIsInitializing(false);
           onLiveStatusChange?.(true);
 
-          video.volume = 1.0;
-          video.muted = false;
-          setVolume(1.0);
-          setIsMuted(false);
-
-          video.play().catch(err => {
-            console.warn('Unmuted autoplay prevented by browser policy, falling back to muted initial playback:', err);
-            video.muted = true;
-            setIsMuted(true);
-            video.play().catch(e => console.warn('Autoplay failed:', e));
-          });
+          video.muted = true;
+          setIsMuted(true);
+          video.play().catch(e => console.warn('Autoplay failed:', e));
           startStatsPoll(video, pc!);
         };
 
@@ -511,7 +533,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
             if (!poolStreamName) return;
             axiosClient
               .post(`/live/${cameraId}/heartbeat?stream_name=${encodeURIComponent(poolStreamName)}`)
-              .catch(() => {});
+              .catch(() => { });
           }, 15_000);
         }
 
@@ -635,11 +657,10 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
             e.stopPropagation();
             setShowTrace(!showTrace);
           }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur shadow-lg transition-all cursor-pointer border ${
-            showTrace 
-              ? 'bg-orange-500/80 text-white border-orange-400' 
-              : 'bg-black/40 text-white/90 hover:bg-black/60 border-white/20 hover:border-white/40'
-          }`}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur shadow-lg transition-all cursor-pointer border ${showTrace
+            ? 'bg-orange-500/80 text-white border-orange-400'
+            : 'bg-black/40 text-white/90 hover:bg-black/60 border-white/20 hover:border-white/40'
+            }`}
           title={t('playback.toggleTrace')}
         >
           <Activity size={14} className="inline-block mr-1.5 -mt-0.5" />
@@ -648,7 +669,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
       </div>
 
       {/* Pure White Volume Control - Positioned on the Bottom Right */}
-      <div 
+      <div
         className="absolute bottom-2.5 right-14 sm:right-16 z-30 flex items-center gap-2 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -695,7 +716,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
               title={t('playback.volumePercent', { percent: Math.round((isMuted ? 0 : volume) * 100) })}
             />
           </div>
-          
+
           <span className="text-[11px] font-mono text-white min-w-[32px] text-right select-none">
             {isMuted ? 'Mute' : `${Math.round(volume * 100)}%`}
           </span>

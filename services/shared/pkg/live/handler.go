@@ -86,13 +86,11 @@ func WebRTCHandler(c *gin.Context) {
 	} else if !strings.Contains(srcDirect, "transport=") {
 		srcDirect = fmt.Sprintf("%s#transport=tcp", srcDirect)
 	}
-	srcFfmpeg := fmt.Sprintf("ffmpeg:%s#audio=opus", camName)
 
-	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s&src=%s",
+	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s",
 		webrtcURL,
 		url.QueryEscape(camName),
 		url.QueryEscape(srcDirect),
-		url.QueryEscape(srcFfmpeg),
 	)
 	putReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPut, putURL, nil)
 	if err == nil {
