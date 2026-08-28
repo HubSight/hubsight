@@ -166,6 +166,15 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     }
   };
 
+  const handleTestPush = async () => {
+    try {
+      await axiosClient.post('/notifications/test');
+    } catch (err) {
+      console.error('Failed to trigger test push:', err);
+    }
+  };
+
+
   const handleEnablePush = async () => {
     setIsSubscribingPush(true);
     const success = await subscribeToWebPush();
@@ -210,7 +219,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
         <div
           ref={drawerRef}
-          className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200/90 flex flex-col pt-safe pb-safe animate-in slide-in-from-right duration-300 pointer-events-auto"
+          className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200/90 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-right duration-300 pointer-events-auto"
         >
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
@@ -291,6 +300,14 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleTestPush}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
+                title="Test Push Notification"
+              >
+                <Bell size={14} />
+                Test Push
+              </button>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}

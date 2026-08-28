@@ -129,6 +129,7 @@ func New() *gin.Engine {
 			protected.DELETE("/notifications/:id", notification.DeleteNotificationHandler)
 			protected.POST("/notifications/subscribe-push", notification.SubscribePushHandler)
 			protected.GET("/notifications/vapid-key", notification.GetVapidPublicKeyHandler)
+			protected.POST("/notifications/test", notification.TestPushHandler)
 
 			// Live streaming endpoints (WebRTC signaling)
 			protected.POST("/live/:id/webrtc", live.WebRTCHandler)

@@ -14,6 +14,7 @@ import { useSocket } from '../context/SocketContext';
 import axiosClient from '../api/axiosClient';
 import { clearPwaRefreshToken } from '../utils/pwa';
 import { getPushNotificationPermission, subscribeToWebPush } from '../utils/push';
+import { Toaster } from 'react-hot-toast';
 
 const MainLayout = () => {
   const { user, checkAuth } = useAuth();
@@ -96,12 +97,13 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-safe pr-safe">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* App Lock Screen Overlay */}
       <AppLockScreen />
 
       {/* Floating Realtime Notification Toast */}
       <NotificationToast />
+      <Toaster position="top-right" />
 
       {/* Notification Drawer */}
       <NotificationDrawer
@@ -111,7 +113,7 @@ const MainLayout = () => {
       />
 
       {/* Mobile Header (In flex-flow on mobile: shrink-0, hidden on desktop) */}
-      <header className="md:hidden shrink-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-30 pt-safe shadow-xs">
+      <header className="md:hidden shrink-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-30 pt-[env(safe-area-inset-top)] shadow-xs">
         <div className="h-14 flex items-center justify-between px-4">
           <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
             <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
@@ -154,7 +156,7 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col pt-safe pb-safe overflow-hidden
+        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden
         transition-all duration-300 ease-in-out md:relative md:py-6
         ${isMobileMenuOpen ? 'translate-x-0 w-[270px]' : '-translate-x-full w-[270px] md:translate-x-0'}
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
@@ -353,7 +355,7 @@ const MainLayout = () => {
       </button>
 
       {/* Main Content Area (Natural flex flow below Mobile Header) */}
-      <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden relative pb-safe md:pb-0">
+      <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden relative pb-[env(safe-area-inset-bottom)] md:pb-0">
         <Outlet />
       </main>
 

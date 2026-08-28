@@ -340,3 +340,22 @@ func IngestVisionEventHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
+
+// TestPushHandler triggers a dummy test notification for verifying Web Push.
+func TestPushHandler(c *gin.Context) {
+	_, err := CreateAndDispatchNotification(
+		c.Request.Context(),
+		"", // cameraID
+		"system",
+		"Test Push Notification",
+		"This is a test notification triggered from the UI.",
+		"system",
+		"",
+		"",
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
