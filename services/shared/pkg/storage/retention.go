@@ -5,10 +5,8 @@ import (
 	"log"
 	"time"
 
-	"cctv/shared/ent"
-	"cctv/shared/ent/recognitionlog"
-	"cctv/shared/ent/recording"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"github.com/minio/minio-go/v7"
 )
 
@@ -28,9 +26,9 @@ var CurrentRetentionStats RetentionStats
 
 // CleanupOldArchives scans for and deletes all recordings older than retention days from S3 and Ent DB
 func CleanupOldArchives(ctx context.Context) (int, int64, error) {
-	globalSettings, err := database.Client.Setting.Query().Only(ctx)
-	if err != nil {
-		globalSettings = &ent.Setting{
+	var globalSettings models.Setting
+	if err := database.DB.WithContext(ctx).First(&globalSettings).Error; err != nil {
+		globalSettings = models.Setting{
 			RetentionDays: 4,
 		}
 	}
@@ -39,18 +37,20 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 	cutoff := time.Now().Add(-retentionPeriod)
 	log.Printf("[Retention Worker] Scanning for archives older than %d days (cutoff: %s)...", globalSettings.RetentionDays, cutoff.Format(time.RFC3339))
 
-	if n, err := database.Client.RecognitionLog.Delete().
-		Where(recognitionlog.CreatedAtLT(cutoff)).
-		Exec(ctx); err != nil {
-		log.Printf("[Retention Worker] Warning: failed to purge old recognition logs: %v", err)
-	} else if n > 0 {
-		log.Printf("[Retention Worker] Purged %d recognition logs older than %d days.", n, globalSettings.RetentionDays)
+	res := database.DB.WithContext(ctx).
+		Where("created_at < ?", cutoff).
+		Delete(&models.RecognitionLog{})
+	if res.Error != nil {
+		log.Printf("[Retention Worker] Warning: failed to purge old recognition logs: %v", res.Error)
+	} else if res.RowsAffected > 0 {
+		log.Printf("[Retention Worker] Purged %d recognition logs older than %d days.", res.RowsAffected, globalSettings.RetentionDays)
 	}
 
-	oldRecordings, err := database.Client.Recording.Query().
-		Where(recording.StartAtLT(cutoff)).
-		Order(ent.Asc(recording.FieldStartAt)).
-		All(ctx)
+	var oldRecordings []models.Recording
+	err := database.DB.WithContext(ctx).
+		Where("start_at < ?", cutoff).
+		Order("start_at ASC").
+		Find(&oldRecordings).Error
 
 	if err != nil {
 		log.Printf("[Retention Worker] Error querying old recordings: %v", err)
@@ -79,7 +79,7 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 		}
 
 		// 2. Delete metadata row from Database
-		if err := database.Client.Recording.DeleteOne(rec).Exec(ctx); err != nil {
+		if err := database.DB.WithContext(ctx).Delete(&models.Recording{}, "id = ?", rec.ID).Error; err != nil {
 			log.Printf("[Retention Worker] Warning: Failed to remove DB record for %s (ID: %s): %v", rec.FilePath, rec.ID, err)
 			continue
 		}
@@ -104,9 +104,10 @@ func CleanupOldArchives(ctx context.Context) (int, int64, error) {
 func CleanupAllArchives(ctx context.Context) (int, int64, error) {
 	log.Printf("[Retention Worker] Manual trigger: Scanning for ALL archives to delete...")
 
-	allRecordings, err := database.Client.Recording.Query().
-		Order(ent.Asc(recording.FieldStartAt)).
-		All(ctx)
+	var allRecordings []models.Recording
+	err := database.DB.WithContext(ctx).
+		Order("start_at ASC").
+		Find(&allRecordings).Error
 
 	if err != nil {
 		log.Printf("[Retention Worker] Error querying all recordings: %v", err)
@@ -130,7 +131,7 @@ func CleanupAllArchives(ctx context.Context) (int, int64, error) {
 		}
 
 		// 2. Delete metadata row from Database
-		if err := database.Client.Recording.DeleteOne(rec).Exec(ctx); err != nil {
+		if err := database.DB.WithContext(ctx).Delete(&models.Recording{}, "id = ?", rec.ID).Error; err != nil {
 			log.Printf("[Retention Worker] Warning: Failed to remove DB record for %s (ID: %s): %v", rec.FilePath, rec.ID, err)
 			continue
 		}

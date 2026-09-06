@@ -5,14 +5,15 @@ import (
 	"log"
 	"net"
 
-	"cctv/shared/ent/memberface"
 	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/nvr"
 	"cctv/shared/pkg/pb"
 	"cctv/shared/pkg/router"
 	"cctv/shared/pkg/storage"
+
 	"google.golang.org/grpc"
 )
 
@@ -84,8 +85,8 @@ type grpcCoreServer struct {
 }
 
 func (s *grpcCoreServer) GetCameras(ctx context.Context, req *pb.GetCamerasRequest) (*pb.GetCamerasResponse, error) {
-	cams, err := database.Client.Camera.Query().All(ctx)
-	if err != nil {
+	var cams []models.Camera
+	if err := database.DB.WithContext(ctx).Find(&cams).Error; err != nil {
 		return nil, err
 	}
 
@@ -110,10 +111,11 @@ func (s *grpcCoreServer) GetCameras(ctx context.Context, req *pb.GetCamerasReque
 }
 
 func (s *grpcCoreServer) GetFaces(ctx context.Context, req *pb.GetFacesRequest) (*pb.GetFacesResponse, error) {
-	faces, err := database.Client.MemberFace.Query().
-		Where(memberface.IsActive(true)).
-		WithMember().
-		All(ctx)
+	var faces []models.MemberFace
+	err := database.DB.WithContext(ctx).
+		Where("is_active = ?", true).
+		Preload("Member").
+		Find(&faces).Error
 
 	if err != nil {
 		return nil, err
@@ -121,7 +123,7 @@ func (s *grpcCoreServer) GetFaces(ctx context.Context, req *pb.GetFacesRequest) 
 
 	var pbFaces []*pb.FaceVector
 	for _, f := range faces {
-		if f.Edges.Member != nil && f.Edges.Member.IsActive {
+		if f.Member != nil && f.Member.IsActive {
 			// Convert float64 to float32
 			float32Embeds := make([]float32, len(f.Embedding))
 			for i, v := range f.Embedding {
@@ -130,8 +132,8 @@ func (s *grpcCoreServer) GetFaces(ctx context.Context, req *pb.GetFacesRequest) 
 			pbFaces = append(pbFaces, &pb.FaceVector{
 				FaceId:    f.ID,
 				MemberId:  f.MemberID,
-				Name:      f.Edges.Member.Name,
-				Role:      string(f.Edges.Member.Role),
+				Name:      f.Member.Name,
+				Role:      string(f.Member.Role),
 				Embedding: float32Embeds,
 			})
 		}

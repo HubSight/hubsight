@@ -8,10 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"cctv/shared/ent"
-	"cctv/shared/ent/notification"
-	"cctv/shared/ent/pushsubscription"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 
 	"github.com/gin-gonic/gin"
@@ -51,19 +49,20 @@ type ListNotificationsResponse struct {
 func ListNotificationsHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	items, err := database.Client.Notification.Query().
-		Order(ent.Desc(notification.FieldCreatedAt)).
+	var items []*models.Notification
+	if err := database.DB.WithContext(ctx).
+		Order("created_at DESC").
 		Limit(50).
-		All(ctx)
-
-	if err != nil {
+		Find(&items).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notifications: " + err.Error()})
 		return
 	}
 
-	unreadCount, _ := database.Client.Notification.Query().
-		Where(notification.IsRead(false)).
-		Count(ctx)
+	var unreadCount int64
+	_ = database.DB.WithContext(ctx).
+		Model(&models.Notification{}).
+		Where("is_read = ?", false).
+		Count(&unreadCount).Error
 
 	dtos := make([]NotificationDTO, 0, len(items))
 	for _, item := range items {
@@ -82,7 +81,7 @@ func ListNotificationsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ListNotificationsResponse{
-		UnreadCount:   unreadCount,
+		UnreadCount:   int(unreadCount),
 		Notifications: dtos,
 	})
 }
@@ -95,9 +94,9 @@ func MarkReadHandler(c *gin.Context) {
 		return
 	}
 
-	err := database.Client.Notification.UpdateOneID(id).
-		SetIsRead(true).
-		Exec(c.Request.Context())
+	err := database.DB.WithContext(c.Request.Context()).
+		Model(&models.Notification{ID: id}).
+		Update("is_read", true).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark read: " + err.Error()})
@@ -109,10 +108,10 @@ func MarkReadHandler(c *gin.Context) {
 
 // MarkAllReadHandler marks all notifications as read
 func MarkAllReadHandler(c *gin.Context) {
-	_, err := database.Client.Notification.Update().
-		Where(notification.IsRead(false)).
-		SetIsRead(true).
-		Save(c.Request.Context())
+	err := database.DB.WithContext(c.Request.Context()).
+		Model(&models.Notification{}).
+		Where("is_read = ?", false).
+		Update("is_read", true).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark all read: " + err.Error()})
@@ -130,7 +129,9 @@ func DeleteNotificationHandler(c *gin.Context) {
 		return
 	}
 
-	err := database.Client.Notification.DeleteOneID(id).Exec(c.Request.Context())
+	err := database.DB.WithContext(c.Request.Context()).
+		Where("id = ?", id).
+		Delete(&models.Notification{}).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete notification: " + err.Error()})
 		return
@@ -141,12 +142,15 @@ func DeleteNotificationHandler(c *gin.Context) {
 
 // ClearAllNotificationsHandler deletes every in-app notification.
 func ClearAllNotificationsHandler(c *gin.Context) {
-	n, err := database.Client.Notification.Delete().Exec(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear notifications: " + err.Error()})
+	res := database.DB.WithContext(c.Request.Context()).
+		Where("1 = 1").
+		Delete(&models.Notification{})
+
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear notifications: " + res.Error.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": n})
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": res.RowsAffected})
 }
 
 func currentUserID(c *gin.Context) string {
@@ -154,39 +158,35 @@ func currentUserID(c *gin.Context) string {
 	if !exists {
 		return ""
 	}
-	if u, ok := userObj.(*ent.User); ok && u != nil {
+	if u, ok := userObj.(*models.User); ok && u != nil {
 		return u.ID
 	}
 	return ""
 }
 
 func upsertPushSubscription(ctx context.Context, endpoint, p256dh, auth, userAgent, userID string) error {
-	exists, _ := database.Client.PushSubscription.Query().
-		Where(pushsubscription.Endpoint(endpoint)).
-		First(ctx)
-
-	if exists != nil {
-		upd := database.Client.PushSubscription.UpdateOneID(exists.ID).
-			SetP256dh(p256dh).
-			SetAuth(auth).
-			SetUserAgent(userAgent)
-		if userID != "" {
-			upd.SetUserID(userID)
+	var sub models.PushSubscription
+	err := database.DB.WithContext(ctx).Where("endpoint = ?", endpoint).First(&sub).Error
+	if err == nil {
+		updates := map[string]any{
+			"p256dh":     p256dh,
+			"auth":       auth,
+			"user_agent": userAgent,
 		}
-		_, err := upd.Save(ctx)
-		return err
+		if userID != "" {
+			updates["user_id"] = userID
+		}
+		return database.DB.WithContext(ctx).Model(&models.PushSubscription{ID: sub.ID}).Updates(updates).Error
 	}
 
-	create := database.Client.PushSubscription.Create().
-		SetEndpoint(endpoint).
-		SetP256dh(p256dh).
-		SetAuth(auth).
-		SetUserAgent(userAgent)
-	if userID != "" {
-		create.SetUserID(userID)
+	create := models.PushSubscription{
+		Endpoint:  endpoint,
+		P256dh:    p256dh,
+		Auth:      auth,
+		UserAgent: userAgent,
+		UserID:    userID,
 	}
-	_, err := create.Save(ctx)
-	return err
+	return database.DB.WithContext(ctx).Create(&create).Error
 }
 
 // SubscribePushHandler registers an FCM token (preferred) or a native Web Push subscription.
@@ -268,19 +268,18 @@ func GetVapidPublicKeyHandler(c *gin.Context) {
 }
 
 // CreateAndDispatchNotification saves the inbox row and publishes MQ events.
-// Offline FCM / Web Push is handled by push-service via push_queue.
-func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, body, category, memberID, thumbURL string) (*ent.Notification, error) {
-	n, err := database.Client.Notification.Create().
-		SetCameraID(cameraID).
-		SetType(nType).
-		SetTitle(title).
-		SetBody(body).
-		SetCategory(category).
-		SetMemberID(memberID).
-		SetThumbnailURL(thumbURL).
-		Save(ctx)
+func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, body, category, memberID, thumbURL string) (*models.Notification, error) {
+	n := models.Notification{
+		CameraID:     cameraID,
+		Type:         nType,
+		Title:        title,
+		Body:         body,
+		Category:     category,
+		MemberID:     memberID,
+		ThumbnailURL: thumbURL,
+	}
 
-	if err != nil {
+	if err := database.DB.WithContext(ctx).Create(&n).Error; err != nil {
 		return nil, err
 	}
 
@@ -302,7 +301,7 @@ func CreateAndDispatchNotification(ctx context.Context, cameraID, nType, title, 
 	_ = mq.PublishToQueue("push_queue", "notification.new", dto)
 	log.Printf("[Notification] Created in DB (ID: %s) & published: %s (%s)", n.ID, title, category)
 
-	return n, nil
+	return &n, nil
 }
 
 type IngestVisionEventInput struct {

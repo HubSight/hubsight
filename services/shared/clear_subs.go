@@ -7,6 +7,7 @@ import (
 
 	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 )
 
 func main() {
@@ -17,9 +18,9 @@ func main() {
 	}
 	defer database.Close()
 
-	deleted, err := database.Client.PushSubscription.Delete().Exec(context.Background())
-	if err != nil {
-		log.Fatalf("failed to delete push subscriptions: %v", err)
+	res := database.DB.WithContext(context.Background()).Where("1 = 1").Delete(&models.PushSubscription{})
+	if res.Error != nil {
+		log.Fatalf("failed to delete push subscriptions: %v", res.Error)
 	}
-	fmt.Printf("Deleted %d push subscriptions\n", deleted)
+	fmt.Printf("Deleted %d push subscriptions\n", res.RowsAffected)
 }

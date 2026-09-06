@@ -9,11 +9,9 @@ import (
 	"runtime"
 	"time"
 
-	"cctv/shared/ent"
-	"cctv/shared/ent/camera"
-	"cctv/shared/ent/recording"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/live"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/storage"
 	"github.com/gin-gonic/gin"
@@ -38,34 +36,30 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 	}
 
 	// 2. Storage / Quota stats
-	var storageSum []struct {
-		Sum int64 `json:"sum"`
-	}
-	_ = database.Client.Recording.Query().
-		Aggregate(ent.Sum(recording.FieldSizeBytes)).
-		Scan(ctx, &storageSum)
+	var totalUsedBytes int64
+	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).
+		Select("COALESCE(SUM(size_bytes), 0)").
+		Scan(&totalUsedBytes).Error
 
-	var totalUsedBytes int64 = 0
-	if len(storageSum) > 0 {
-		totalUsedBytes = storageSum[0].Sum
-	}
-
-	totalRecordingsCount, _ := database.Client.Recording.Query().Count(ctx)
+	var totalRecordingsCount int64
+	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).Count(&totalRecordingsCount).Error
 
 	var oldestSegmentAt *time.Time
-	if oldestRec, err := database.Client.Recording.Query().Order(ent.Asc(recording.FieldStartAt)).First(ctx); err == nil {
+	var oldestRec models.Recording
+	if err := database.DB.WithContext(ctx).Order("start_at ASC").First(&oldestRec).Error; err == nil {
 		oldestSegmentAt = &oldestRec.StartAt
 	}
 
 	var newestSegmentAt *time.Time
-	if newestRec, err := database.Client.Recording.Query().Order(ent.Desc(recording.FieldEndAt)).First(ctx); err == nil {
+	var newestRec models.Recording
+	if err := database.DB.WithContext(ctx).Order("end_at DESC").First(&newestRec).Error; err == nil {
 		newestSegmentAt = &newestRec.EndAt
 	}
 
 	// Get global settings
-	globalSettings, err := database.Client.Setting.Query().Only(ctx)
-	if err != nil {
-		globalSettings = &ent.Setting{
+	var globalSettings models.Setting
+	if err := database.DB.WithContext(ctx).First(&globalSettings).Error; err != nil {
+		globalSettings = models.Setting{
 			NvrStatus:      true,
 			StorageQuotaGB: 50,
 			RetentionDays:  4,
@@ -82,7 +76,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 		UsedBytes:           totalUsedBytes,
 		QuotaBytes:          quotaBytes,
 		UsedPercentage:      usedPercent,
-		TotalSegmentsCount:  totalRecordingsCount,
+		TotalSegmentsCount:  int(totalRecordingsCount),
 		OldestSegmentAt:     oldestSegmentAt,
 		NewestSegmentAt:     newestSegmentAt,
 		RetentionDays:       globalSettings.RetentionDays,
@@ -91,8 +85,8 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 	}
 
 	// 3. Per-Camera Recorder Status
-	cameras, err := database.Client.Camera.Query().All(ctx)
-	if err != nil {
+	var cameras []models.Camera
+	if err := database.DB.WithContext(ctx).Find(&cameras).Error; err != nil {
 		return nil, err
 	}
 
@@ -101,21 +95,23 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 
 	for _, cam := range cameras {
 		// Query latest segment for this camera
-		latestRec, _ := database.Client.Recording.Query().
-			Where(recording.HasCameraWith(camera.ID(cam.ID))).
-			Order(ent.Desc(recording.FieldEndAt)).
-			First(ctx)
+		var latestRec models.Recording
+		hasLatest := database.DB.WithContext(ctx).
+			Where("camera_id = ?", cam.ID).
+			Order("end_at DESC").
+			First(&latestRec).Error == nil
 
-		camSegCount, _ := database.Client.Recording.Query().
-			Where(recording.HasCameraWith(camera.ID(cam.ID))).
-			Count(ctx)
+		var camSegCount int64
+		_ = database.DB.WithContext(ctx).Model(&models.Recording{}).
+			Where("camera_id = ?", cam.ID).
+			Count(&camSegCount).Error
 
 		status := "inactive"
 		var latestAt *time.Time
 		var latestSize int64 = 0
 		var latestDur int = 0
 
-		if latestRec != nil {
+		if hasLatest {
 			latestAt = &latestRec.EndAt
 			latestSize = latestRec.SizeBytes
 			latestDur = latestRec.DurationSeconds
@@ -131,7 +127,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 
 			// If the camera is active and NVR engine is ON
 			maxExpectedAge := time.Duration(segDuration*2+90) * time.Second
-			if latestRec == nil || now.Sub(latestRec.EndAt) <= maxExpectedAge {
+			if !hasLatest || now.Sub(latestRec.EndAt) <= maxExpectedAge {
 				status = "recording"
 			} else {
 				status = "stalled"
@@ -153,7 +149,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 			LatestSegmentAt:       latestAt,
 			LatestSegmentSize:     latestSize,
 			LatestSegmentDuration: latestDur,
-			TotalSegments:         camSegCount,
+			TotalSegments:         int(camSegCount),
 		})
 	}
 
@@ -224,7 +220,7 @@ func StartNvrStatusBroadcaster() {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			if database.Client == nil {
+			if database.DB == nil {
 				continue
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

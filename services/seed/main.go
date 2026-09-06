@@ -8,10 +8,10 @@ import (
 	"log"
 	"os"
 
-	"cctv/shared/ent/user"
 	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
-	_ "github.com/lib/pq"
+	"cctv/shared/pkg/models"
+
 	"golang.org/x/crypto/argon2"
 )
 
@@ -62,11 +62,12 @@ func main() {
 	ctx := context.Background()
 
 	// 1. Update admin full_name
-	_ = database.Client.User.Update().
-		Where(user.Username("admin")).
-		SetFullName("Administrator").
-		SetRole(user.RoleAdmin).
-		Exec(ctx)
+	_ = database.DB.WithContext(ctx).Model(&models.User{}).
+		Where("username = ?", "admin").
+		Updates(map[string]interface{}{
+			"full_name": "Administrator",
+			"role":      models.RoleAdmin,
+		}).Error
 
 	// 2. Prepare CSV data
 	csvRecords := [][]string{
@@ -79,36 +80,37 @@ func main() {
 			log.Fatalf("Failed to hash password for %s: %v", u.Username, err)
 		}
 
-		exists, err := database.Client.User.Query().
-			Where(user.Username(u.Username)).
-			Exist(ctx)
-		if err != nil {
+		var count int64
+		if err := database.DB.WithContext(ctx).Model(&models.User{}).
+			Where("username = ?", u.Username).
+			Count(&count).Error; err != nil {
 			log.Fatalf("Database query error for %s: %v", u.Username, err)
 		}
 
-		if exists {
+		if count > 0 {
 			// Update existing user with full_name, role, password
-			err = database.Client.User.Update().
-				Where(user.Username(u.Username)).
-				SetFullName(u.FullName).
-				SetPasswordHash(hash).
-				SetRole(user.RoleViewer).
-				SetIsActive(true).
-				Exec(ctx)
+			err = database.DB.WithContext(ctx).Model(&models.User{}).
+				Where("username = ?", u.Username).
+				Updates(map[string]interface{}{
+					"full_name":     u.FullName,
+					"password_hash": hash,
+					"role":          models.RoleViewer,
+					"is_active":     true,
+				}).Error
 			if err != nil {
 				log.Fatalf("Failed to update user %s: %v", u.Username, err)
 			}
 			log.Printf("Updated user: %s (%s) - Role: viewer", u.Username, u.FullName)
 		} else {
 			// Create new user
-			_, err = database.Client.User.Create().
-				SetUsername(u.Username).
-				SetFullName(u.FullName).
-				SetPasswordHash(hash).
-				SetRole(user.RoleViewer).
-				SetIsActive(true).
-				Save(ctx)
-			if err != nil {
+			newUser := models.User{
+				Username:     u.Username,
+				FullName:     u.FullName,
+				PasswordHash: hash,
+				Role:         models.RoleViewer,
+				IsActive:     true,
+			}
+			if err := database.DB.WithContext(ctx).Create(&newUser).Error; err != nil {
 				log.Fatalf("Failed to create user %s: %v", u.Username, err)
 			}
 			log.Printf("Created user: %s (%s) - Role: viewer", u.Username, u.FullName)

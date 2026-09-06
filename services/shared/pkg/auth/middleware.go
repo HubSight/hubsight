@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"cctv/shared/ent"
+	"cctv/shared/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,8 +39,8 @@ func Middleware() gin.HandlerFunc {
 		if err == nil && resp.StatusCode == http.StatusOK {
 			defer resp.Body.Close()
 			var valResp struct {
-				Valid bool      `json:"valid"`
-				User  *ent.User `json:"user"`
+				Valid bool         `json:"valid"`
+				User  *models.User `json:"user"`
 			}
 			if err := json.NewDecoder(resp.Body).Decode(&valResp); err == nil && valResp.Valid && valResp.User != nil {
 				c.Set("user", valResp.User)
@@ -70,7 +70,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 			return
 		}
 
-		u, ok := userObj.(*ent.User)
+		u, ok := userObj.(*models.User)
 		if !ok || u == nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 )
 
@@ -50,19 +51,17 @@ func (m *RecorderManager) Start(ctx context.Context) {
 }
 
 func (m *RecorderManager) reconcile(parentCtx context.Context) {
-	cameras, err := database.Client.Camera.Query().All(parentCtx)
-	if err != nil {
+	var cameras []models.Camera
+	if err := database.DB.WithContext(parentCtx).Find(&cameras).Error; err != nil {
 		log.Printf("Failed to fetch cameras: %v", err)
 		return
 	}
 
-	globalSettings, err := database.Client.Setting.Query().Only(parentCtx)
-	if err != nil {
-		globalSettings = nil
-	}
+	var globalSettings models.Setting
+	hasSettings := database.DB.WithContext(parentCtx).First(&globalSettings).Error == nil
 
 	isNvrEnabled := true
-	if globalSettings != nil {
+	if hasSettings {
 		isNvrEnabled = globalSettings.NvrStatus
 	}
 

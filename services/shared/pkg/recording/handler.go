@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"cctv/shared/ent"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/storage"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +40,7 @@ func TimelineHandler(c *gin.Context) {
 	}
 
 	if recordings == nil {
-		recordings = []*ent.Recording{}
+		recordings = []*models.Recording{}
 	}
 
 	c.JSON(http.StatusOK, recordings)
@@ -119,13 +119,13 @@ func ThumbnailHandler(c *gin.Context) {
 		return
 	}
 
-	if rec.ThumbnailPath == "" {
+	if rec.ThumbnailPath == nil || *rec.ThumbnailPath == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Thumbnail not found"})
 		return
 	}
 
 	expiry := time.Hour * 2
-	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, rec.ThumbnailPath, expiry, nil)
+	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, *rec.ThumbnailPath, expiry, nil)
 	if err != nil {
 		log.Printf("Failed to generate thumbnail presigned URL: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get thumbnail"})

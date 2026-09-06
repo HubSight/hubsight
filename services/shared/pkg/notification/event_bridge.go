@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 )
 
 var (
@@ -21,7 +22,8 @@ func IngestVisionEvent(ctx context.Context, cameraID, cameraName, eventType, nam
 
 	// If cameraName is empty, attempt lookup from DB
 	if cameraName == "" && cameraID != "" {
-		if cam, err := database.Client.Camera.Get(ctx, cameraID); err == nil && cam != nil {
+		var cam models.Camera
+		if err := database.DB.WithContext(ctx).First(&cam, "id = ?", cameraID).Error; err == nil {
 			cameraName = cam.Name
 		}
 	}

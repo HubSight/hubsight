@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"cctv/shared/ent"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/notification"
 
 	"firebase.google.com/go/v4/messaging"
@@ -23,10 +23,10 @@ func vapidPublicKey() string {
 }
 
 func deleteSubscription(id string) {
-	_ = database.Client.PushSubscription.DeleteOneID(id).Exec(context.Background())
+	_ = database.DB.WithContext(context.Background()).Delete(&models.PushSubscription{}, "id = ?", id).Error
 }
 
-func dispatchFCM(ctx context.Context, sub *ent.PushSubscription, dto notification.NotificationDTO) {
+func dispatchFCM(ctx context.Context, sub *models.PushSubscription, dto notification.NotificationDTO) {
 	token := notification.FCMTokenFromEndpoint(sub.Endpoint)
 	if token == "" {
 		return
@@ -43,7 +43,7 @@ func dispatchFCM(ctx context.Context, sub *ent.PushSubscription, dto notificatio
 	log.Printf("[Push] FCM error sending to %s: %v", sub.ID, err)
 }
 
-func dispatchNativeWebPush(sub *ent.PushSubscription, payloadBytes []byte, publicKey, privateKey, subscriber string) {
+func dispatchNativeWebPush(sub *models.PushSubscription, payloadBytes []byte, publicKey, privateKey, subscriber string) {
 	s := &webpush.Subscription{
 		Endpoint: sub.Endpoint,
 		Keys: webpush.Keys{
@@ -73,7 +73,8 @@ func dispatchNativeWebPush(sub *ent.PushSubscription, payloadBytes []byte, publi
 
 // DispatchToSubscribers sends one notification to every stored FCM / Web Push subscription.
 func DispatchToSubscribers(ctx context.Context, dto notification.NotificationDTO) {
-	subs, err := database.Client.PushSubscription.Query().WithUser().All(ctx)
+	var subs []models.PushSubscription
+	err := database.DB.WithContext(ctx).Preload("User").Find(&subs).Error
 	if err != nil {
 		log.Printf("[Push] Failed to load subscriptions: %v", err)
 		return
@@ -97,8 +98,8 @@ func DispatchToSubscribers(ctx context.Context, dto notification.NotificationDTO
 
 	for _, sub := range subs {
 		// Check user push preferences if linked to a user
-		if sub.Edges.User != nil {
-			prefs := sub.Edges.User.PushPreferences
+		if sub.User != nil {
+			prefs := sub.User.PushPreferences
 			prefKey := dto.Category
 			// Map alert types to the "stranger" setting umbrella
 			if prefKey == "risk" || prefKey == "suspicious" || prefKey == "fall" {
@@ -111,13 +112,13 @@ func DispatchToSubscribers(ctx context.Context, dto notification.NotificationDTO
 		}
 
 		if notification.IsFCMEndpoint(sub.Endpoint) {
-			dispatchFCM(ctx, sub, dto)
+			dispatchFCM(ctx, &sub, dto)
 			continue
 		}
 		if publicKey == "" || privateKey == "" {
 			log.Printf("[Push] Skipping native subscription %s: VAPID keys are not configured", sub.ID)
 			continue
 		}
-		dispatchNativeWebPush(sub, payloadBytes, publicKey, privateKey, subscriber)
+		dispatchNativeWebPush(&sub, payloadBytes, publicKey, privateKey, subscriber)
 	}
 }

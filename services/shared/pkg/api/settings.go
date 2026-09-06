@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
-	"cctv/shared/ent"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/storage"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type SettingsRequest struct {
@@ -16,20 +18,25 @@ type SettingsRequest struct {
 	RetentionDays  *int  `json:"retention_days"`
 }
 
-func getOrCreateSettings(ctx context.Context) (*ent.Setting, error) {
-	set, err := database.Client.Setting.Query().Only(ctx)
+func getOrCreateSettings(ctx context.Context) (*models.Setting, error) {
+	var s models.Setting
+	err := database.DB.WithContext(ctx).First(&s).Error
 	if err == nil {
-		return set, nil
+		return &s, nil
 	}
-	if !ent.IsNotFound(err) {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
-	return database.Client.Setting.Create().
-		SetNvrStatus(true).
-		SetStorageQuotaGB(50).
-		SetRetentionDays(4).
-		Save(ctx)
+	s = models.Setting{
+		NvrStatus:      true,
+		StorageQuotaGB: 50,
+		RetentionDays:  4,
+	}
+	if err := database.DB.WithContext(ctx).Create(&s).Error; err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
 // GetSettings handles GET /api/settings
@@ -61,24 +68,31 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	update := database.Client.Setting.UpdateOne(current)
+	updates := map[string]interface{}{}
 	if req.NvrStatus != nil {
-		update = update.SetNvrStatus(*req.NvrStatus)
+		updates["nvr_status"] = *req.NvrStatus
 	}
 	if req.StorageQuotaGb != nil {
-		update = update.SetStorageQuotaGB(*req.StorageQuotaGb)
+		updates["storage_quota_gb"] = *req.StorageQuotaGb
 	}
 	if req.RetentionDays != nil {
-		update = update.SetRetentionDays(*req.RetentionDays)
+		updates["retention_days"] = *req.RetentionDays
 	}
 
-	set, err := update.Save(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update settings"})
+	if len(updates) > 0 {
+		if err := database.DB.WithContext(ctx).Model(&models.Setting{}).Where("id = ?", current.ID).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update settings"})
+			return
+		}
+	}
+
+	var updated models.Setting
+	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", current.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload settings"})
 		return
 	}
 
-	c.JSON(http.StatusOK, set)
+	c.JSON(http.StatusOK, updated)
 }
 
 // CleanupStorage handles POST /api/settings/storage/cleanup

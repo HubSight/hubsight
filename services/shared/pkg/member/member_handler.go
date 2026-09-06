@@ -16,17 +16,14 @@ import (
 	"strings"
 	"time"
 
-	"cctv/shared/ent"
-	"cctv/shared/ent/member"
-	"cctv/shared/ent/memberface"
-	entnotif "cctv/shared/ent/notification"
-	"cctv/shared/ent/recognitionlog"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/nanoid"
 	"cctv/shared/pkg/storage"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type CreateMemberInput struct {
@@ -88,29 +85,31 @@ type PaginatedMembersResponse struct {
 func ListMembersHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	query := database.Client.Member.Query().Where(member.IsActive(true))
+	query := database.DB.WithContext(ctx).Model(&models.Member{}).Where("is_active = ?", true)
 
 	// Global category counts
-	familyCount, _ := database.Client.Member.Query().
-		Where(member.IsActive(true), member.RoleEQ(member.RoleFamily)).
-		Count(ctx)
-	guestCount, _ := database.Client.Member.Query().
-		Where(member.IsActive(true), member.RoleNEQ(member.RoleFamily)).
-		Count(ctx)
+	var familyCount int64
+	var guestCount int64
+	_ = database.DB.WithContext(ctx).Model(&models.Member{}).
+		Where("is_active = ? AND role = ?", true, models.MemberRoleFamily).
+		Count(&familyCount).Error
+	_ = database.DB.WithContext(ctx).Model(&models.Member{}).
+		Where("is_active = ? AND role <> ?", true, models.MemberRoleFamily).
+		Count(&guestCount).Error
 
 	// Optional search filter
 	if search := strings.TrimSpace(c.Query("search")); search != "" {
-		query = query.Where(member.NameContainsFold(search))
+		query = query.Where("name ILIKE ?", "%"+search+"%")
 	}
 
 	// Optional role filter
 	if role := strings.TrimSpace(c.Query("role")); role != "" && role != "all" {
 		if role == "family" {
-			query = query.Where(member.RoleEQ(member.RoleFamily))
+			query = query.Where("role = ?", models.MemberRoleFamily)
 		} else if role == "neighbor" {
-			query = query.Where(member.RoleNEQ(member.RoleFamily))
+			query = query.Where("role <> ?", models.MemberRoleFamily)
 		} else {
-			query = query.Where(member.RoleEQ(member.Role(role)))
+			query = query.Where("role = ?", role)
 		}
 	}
 
@@ -128,20 +127,21 @@ func ListMembersHandler(c *gin.Context) {
 			limit = 10
 		}
 
-		total, err := query.Count(ctx)
-		if err != nil {
+		var total int64
+		if err := query.Count(&total).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count members: " + err.Error()})
 			return
 		}
 
-		members, err := query.
-			WithFaces(func(q *ent.MemberFaceQuery) {
-				q.Where(memberface.IsActive(true)).Order(ent.Desc(memberface.FieldCreatedAt))
+		var members []models.Member
+		err := query.
+			Preload("Faces", func(db *gorm.DB) *gorm.DB {
+				return db.Where("is_active = ?", true).Order("created_at DESC")
 			}).
-			Order(ent.Asc(member.FieldCreatedAt)).
+			Order("created_at ASC").
 			Offset((page - 1) * limit).
 			Limit(limit).
-			All(ctx)
+			Find(&members).Error
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch members: " + err.Error()})
@@ -161,13 +161,13 @@ func ListMembersHandler(c *gin.Context) {
 				Role:      string(m.Role),
 				AvatarURL: avatarURL,
 				IsActive:  m.IsActive,
-				FaceCount: len(m.Edges.Faces),
+				FaceCount: len(m.Faces),
 				CreatedAt: m.CreatedAt,
 				UpdatedAt: m.UpdatedAt,
 			}
 
-			faces := make([]FaceItemDTO, 0, len(m.Edges.Faces))
-			for _, f := range m.Edges.Faces {
+			faces := make([]FaceItemDTO, 0, len(m.Faces))
+			for _, f := range m.Faces {
 				sampleURL := f.SampleImageURL
 				if strings.HasPrefix(sampleURL, "blob:") {
 					sampleURL = ""
@@ -187,30 +187,31 @@ func ListMembersHandler(c *gin.Context) {
 			result = append(result, dto)
 		}
 
-		totalPages := (total + limit - 1) / limit
+		totalPages := (int(total) + limit - 1) / limit
 		if totalPages <= 0 {
 			totalPages = 1
 		}
 
 		c.JSON(http.StatusOK, PaginatedMembersResponse{
 			Data:        result,
-			Total:       total,
+			Total:       int(total),
 			Page:        page,
 			Limit:       limit,
 			TotalPages:  totalPages,
-			FamilyCount: familyCount,
-			GuestCount:  guestCount,
+			FamilyCount: int(familyCount),
+			GuestCount:  int(guestCount),
 		})
 		return
 	}
 
 	// Legacy / Unpaginated Fallback: Return raw array
-	members, err := query.
-		WithFaces(func(q *ent.MemberFaceQuery) {
-			q.Where(memberface.IsActive(true)).Order(ent.Desc(memberface.FieldCreatedAt))
+	var members []models.Member
+	err := query.
+		Preload("Faces", func(db *gorm.DB) *gorm.DB {
+			return db.Where("is_active = ?", true).Order("created_at DESC")
 		}).
-		Order(ent.Asc(member.FieldCreatedAt)).
-		All(ctx)
+		Order("created_at ASC").
+		Find(&members).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch members: " + err.Error()})
@@ -230,13 +231,13 @@ func ListMembersHandler(c *gin.Context) {
 			Role:      string(m.Role),
 			AvatarURL: avatarURL,
 			IsActive:  m.IsActive,
-			FaceCount: len(m.Edges.Faces),
+			FaceCount: len(m.Faces),
 			CreatedAt: m.CreatedAt,
 			UpdatedAt: m.UpdatedAt,
 		}
 
-		faces := make([]FaceItemDTO, 0, len(m.Edges.Faces))
-		for _, f := range m.Edges.Faces {
+		faces := make([]FaceItemDTO, 0, len(m.Faces))
+		for _, f := range m.Faces {
 			sampleURL := f.SampleImageURL
 			if strings.HasPrefix(sampleURL, "blob:") {
 				sampleURL = ""
@@ -267,14 +268,14 @@ func CreateMemberHandler(c *gin.Context) {
 		return
 	}
 
-	role := member.RoleFamily
+	role := models.MemberRoleFamily
 	switch input.Role {
 	case "guest":
-		role = member.RoleGuest
+		role = models.MemberRoleGuest
 	case "neighbor":
-		role = member.RoleNeighbor
+		role = models.MemberRoleNeighbor
 	case "staff":
-		role = member.RoleStaff
+		role = models.MemberRoleStaff
 	}
 
 	avatarURL := input.AvatarURL
@@ -282,13 +283,13 @@ func CreateMemberHandler(c *gin.Context) {
 		avatarURL = ""
 	}
 
-	m, err := database.Client.Member.Create().
-		SetName(input.Name).
-		SetRole(role).
-		SetAvatarURL(avatarURL).
-		Save(c.Request.Context())
-
-	if err != nil {
+	m := models.Member{
+		Name:      input.Name,
+		Role:      role,
+		AvatarURL: avatarURL,
+		IsActive:  true,
+	}
+	if err := database.DB.WithContext(c.Request.Context()).Create(&m).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create member: " + err.Error()})
 		return
 	}
@@ -321,20 +322,26 @@ func UpdateMemberHandler(c *gin.Context) {
 		return
 	}
 
-	updater := database.Client.Member.UpdateOneID(id)
+	var old models.Member
+	if err := database.DB.WithContext(c.Request.Context()).First(&old, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found"})
+		return
+	}
+
+	updates := map[string]interface{}{}
 	if input.Name != "" {
-		updater.SetName(input.Name)
+		updates["name"] = input.Name
 	}
 	if input.Role != "" {
 		switch input.Role {
 		case "family":
-			updater.SetRole(member.RoleFamily)
+			updates["role"] = models.MemberRoleFamily
 		case "guest":
-			updater.SetRole(member.RoleGuest)
+			updates["role"] = models.MemberRoleGuest
 		case "neighbor":
-			updater.SetRole(member.RoleNeighbor)
+			updates["role"] = models.MemberRoleNeighbor
 		case "staff":
-			updater.SetRole(member.RoleStaff)
+			updates["role"] = models.MemberRoleStaff
 		}
 	}
 	if input.AvatarURL != nil {
@@ -348,22 +355,27 @@ func UpdateMemberHandler(c *gin.Context) {
 				return
 			}
 		} else {
-			updater.SetAvatarURL(avatarURL)
+			updates["avatar_url"] = avatarURL
 		}
 	}
 	if input.IsActive != nil {
-		updater.SetIsActive(*input.IsActive)
+		updates["is_active"] = *input.IsActive
 	}
 
-	old, _ := database.Client.Member.Get(c.Request.Context(), id)
+	if len(updates) > 0 {
+		if err := database.DB.WithContext(c.Request.Context()).Model(&models.Member{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update member: " + err.Error()})
+			return
+		}
+	}
 
-	m, err := updater.Save(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update member: " + err.Error()})
+	var m models.Member
+	if err := database.DB.WithContext(c.Request.Context()).First(&m, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload member: " + err.Error()})
 		return
 	}
 
-	if old != nil && old.Name != m.Name {
+	if old.Name != m.Name {
 		rewriteStoredMemberName(c.Request.Context(), m.ID, old.Name, m.Name)
 	}
 
@@ -384,10 +396,8 @@ func rewriteStoredMemberName(ctx context.Context, memberID, oldName, newName str
 	if memberID == "" || newName == "" {
 		return
 	}
-	logs, err := database.Client.RecognitionLog.Query().
-		Where(recognitionlog.MemberID(memberID)).
-		All(ctx)
-	if err != nil {
+	var logs []models.RecognitionLog
+	if err := database.DB.WithContext(ctx).Where("member_id = ?", memberID).Find(&logs).Error; err != nil {
 		log.Printf("[Member] failed to load recognition logs for rename: %v", err)
 	} else {
 		for _, l := range logs {
@@ -399,7 +409,7 @@ func rewriteStoredMemberName(ctx context.Context, memberID, oldName, newName str
 				continue
 			}
 			params["name"] = newName
-			if _, err := l.Update().SetMessageParams(params).Save(ctx); err != nil {
+			if err := database.DB.WithContext(ctx).Model(&models.RecognitionLog{}).Where("id = ?", l.ID).Update("message_params", params).Error; err != nil {
 				log.Printf("[Member] failed to rewrite log %s name: %v", l.ID, err)
 			}
 		}
@@ -408,10 +418,8 @@ func rewriteStoredMemberName(ctx context.Context, memberID, oldName, newName str
 	if oldName == "" || oldName == newName {
 		return
 	}
-	notifs, err := database.Client.Notification.Query().
-		Where(entnotif.MemberID(memberID)).
-		All(ctx)
-	if err != nil {
+	var notifs []models.Notification
+	if err := database.DB.WithContext(ctx).Where("member_id = ?", memberID).Find(&notifs).Error; err != nil {
 		log.Printf("[Member] failed to load notifications for rename: %v", err)
 		return
 	}
@@ -421,7 +429,10 @@ func rewriteStoredMemberName(ctx context.Context, memberID, oldName, newName str
 		if title == n.Title && body == n.Body {
 			continue
 		}
-		if _, err := n.Update().SetTitle(title).SetBody(body).Save(ctx); err != nil {
+		if err := database.DB.WithContext(ctx).Model(&models.Notification{}).Where("id = ?", n.ID).Updates(map[string]interface{}{
+			"title": title,
+			"body":  body,
+		}).Error; err != nil {
 			log.Printf("[Member] failed to rewrite notification %s name: %v", n.ID, err)
 		}
 	}
@@ -446,21 +457,22 @@ func reassignAvatarIfDeleted(ctx context.Context, memberID string, deletedURLs m
 	if len(deletedURLs) == 0 {
 		return
 	}
-	m, err := database.Client.Member.Get(ctx, memberID)
-	if err != nil || m.AvatarURL == "" {
+	var m models.Member
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", memberID).Error; err != nil || m.AvatarURL == "" {
 		return
 	}
 	if _, hit := deletedURLs[m.AvatarURL]; !hit {
 		return
 	}
 	nextURL := ""
-	if remaining, rerr := database.Client.MemberFace.Query().
-		Where(memberface.MemberID(memberID), memberface.IsActive(true)).
-		Order(ent.Desc(memberface.FieldCreatedAt)).
-		First(ctx); rerr == nil && remaining != nil && remaining.SampleImageURL != "" {
+	var remaining models.MemberFace
+	if err := database.DB.WithContext(ctx).
+		Where("member_id = ? AND is_active = ?", memberID, true).
+		Order("created_at DESC").
+		First(&remaining).Error; err == nil && remaining.SampleImageURL != "" {
 		nextURL = remaining.SampleImageURL
 	}
-	_ = database.Client.Member.UpdateOneID(memberID).SetAvatarURL(nextURL).Exec(ctx)
+	_ = database.DB.WithContext(ctx).Model(&models.Member{}).Where("id = ?", memberID).Update("avatar_url", nextURL).Error
 }
 
 // DeleteMemberHandler deletes a member and associated face embeddings
@@ -472,18 +484,20 @@ func DeleteMemberHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	if faces, ferr := database.Client.MemberFace.Query().Where(memberface.MemberID(id)).All(ctx); ferr == nil {
+	var faces []models.MemberFace
+	if err := database.DB.WithContext(ctx).Where("member_id = ?", id).Find(&faces).Error; err == nil {
 		for _, f := range faces {
 			deleteStoredSampleImage(ctx, f.SampleImageURL)
 		}
 	}
-	if m, merr := database.Client.Member.Get(ctx, id); merr == nil {
+	var m models.Member
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", id).Error; err == nil {
 		deleteStoredSampleImage(ctx, m.AvatarURL)
 	}
 
-	_, _ = database.Client.MemberFace.Delete().Where(memberface.MemberID(id)).Exec(ctx)
+	_ = database.DB.WithContext(ctx).Where("member_id = ?", id).Delete(&models.MemberFace{}).Error
 
-	err := database.Client.Member.DeleteOneID(id).Exec(ctx)
+	err := database.DB.WithContext(ctx).Delete(&models.Member{}, "id = ?", id).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete member: " + err.Error()})
 		return
@@ -663,15 +677,16 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	if _, err := database.Client.Member.Get(ctx, memberID); err != nil {
+	var m models.Member
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", memberID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found", "code": "NOT_FOUND"})
 		return
 	}
 
-	n, err := database.Client.MemberFace.Query().
-		Where(memberface.MemberID(memberID), memberface.IsActive(true)).
-		Count(ctx)
-	if err != nil {
+	var n int64
+	if err := database.DB.WithContext(ctx).Model(&models.MemberFace{}).
+		Where("member_id = ? AND is_active = ?", memberID, true).
+		Count(&n).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count face samples", "code": "INTERNAL"})
 		return
 	}
@@ -755,10 +770,9 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 		return
 	}
 
-	n, err = database.Client.MemberFace.Query().
-		Where(memberface.MemberID(memberID), memberface.IsActive(true)).
-		Count(ctx)
-	if err != nil {
+	if err := database.DB.WithContext(ctx).Model(&models.MemberFace{}).
+		Where("member_id = ? AND is_active = ?", memberID, true).
+		Count(&n).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count face samples", "code": "INTERNAL"})
 		return
 	}
@@ -779,23 +793,23 @@ func EnrollMemberFaceHandler(c *gin.Context) {
 		return
 	}
 
-	face, err := database.Client.MemberFace.Create().
-		SetMemberID(memberID).
-		SetEmbedding(vision.Embedding).
-		SetSampleImageURL(sampleURL).
-		SetQualityScore(vision.QualityScore).
-		SetYaw(vision.Yaw).
-		SetPitch(vision.Pitch).
-		SetBlurScore(vision.BlurScore).
-		Save(ctx)
-	if err != nil {
+	face := models.MemberFace{
+		MemberID:       memberID,
+		Embedding:      vision.Embedding,
+		SampleImageURL: sampleURL,
+		QualityScore:   vision.QualityScore,
+		Yaw:            vision.Yaw,
+		Pitch:          vision.Pitch,
+		BlurScore:      vision.BlurScore,
+		IsActive:       true,
+	}
+	if err := database.DB.WithContext(ctx).Create(&face).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save member face: " + err.Error(), "code": "INTERNAL"})
 		return
 	}
 
-	m, err := database.Client.Member.Get(ctx, memberID)
-	if err == nil && (m.AvatarURL == "" || m.AvatarURL == "/placeholder.jpg") {
-		_ = database.Client.Member.UpdateOneID(memberID).SetAvatarURL(sampleURL).Exec(ctx)
+	if m.AvatarURL == "" || m.AvatarURL == "/placeholder.jpg" {
+		_ = database.DB.WithContext(ctx).Model(&models.Member{}).Where("id = ?", memberID).Update("avatar_url", sampleURL).Error
 	}
 
 	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "add_face", "member_id": memberID, "face_id": face.ID})
@@ -837,26 +851,26 @@ func AddMemberFaceHandler(c *gin.Context) {
 		return
 	}
 
-	face, err := database.Client.MemberFace.Create().
-		SetMemberID(memberID).
-		SetEmbedding(input.Embedding).
-		SetSampleImageURL(input.SampleImageURL).
-		SetQualityScore(input.QualityScore).
-		SetYaw(input.Yaw).
-		SetPitch(input.Pitch).
-		SetBlurScore(input.BlurScore).
-		Save(c.Request.Context())
-
-	if err != nil {
+	face := models.MemberFace{
+		MemberID:       memberID,
+		Embedding:      input.Embedding,
+		SampleImageURL: input.SampleImageURL,
+		QualityScore:   input.QualityScore,
+		Yaw:            input.Yaw,
+		Pitch:          input.Pitch,
+		BlurScore:      input.BlurScore,
+		IsActive:       true,
+	}
+	if err := database.DB.WithContext(c.Request.Context()).Create(&face).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save member face: " + err.Error()})
 		return
 	}
 
 	// Update member avatar if not set yet
 	if input.SampleImageURL != "" {
-		m, err := database.Client.Member.Get(c.Request.Context(), memberID)
-		if err == nil && (m.AvatarURL == "" || m.AvatarURL == "/placeholder.jpg") {
-			_ = database.Client.Member.UpdateOneID(memberID).SetAvatarURL(input.SampleImageURL).Exec(c.Request.Context())
+		var m models.Member
+		if err := database.DB.WithContext(c.Request.Context()).First(&m, "id = ?", memberID).Error; err == nil && (m.AvatarURL == "" || m.AvatarURL == "/placeholder.jpg") {
+			_ = database.DB.WithContext(c.Request.Context()).Model(&models.Member{}).Where("id = ?", memberID).Update("avatar_url", input.SampleImageURL).Error
 		}
 	}
 
@@ -883,8 +897,8 @@ func DeleteMemberFaceHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	face, err := database.Client.MemberFace.Get(ctx, faceID)
-	if err != nil {
+	var face models.MemberFace
+	if err := database.DB.WithContext(ctx).First(&face, "id = ?", faceID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Face not found"})
 		return
 	}
@@ -892,7 +906,7 @@ func DeleteMemberFaceHandler(c *gin.Context) {
 	memberID := face.MemberID
 	deleteStoredSampleImage(ctx, face.SampleImageURL)
 
-	err = database.Client.MemberFace.DeleteOneID(faceID).Exec(ctx)
+	err := database.DB.WithContext(ctx).Delete(&models.MemberFace{}, "id = ?", faceID).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete face: " + err.Error()})
 		return
@@ -926,10 +940,11 @@ func ListAllEmbeddingsInternalHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	faces, err := database.Client.MemberFace.Query().
-		Where(memberface.IsActive(true)).
-		WithMember().
-		All(ctx)
+	var faces []models.MemberFace
+	err := database.DB.WithContext(ctx).
+		Where("is_active = ?", true).
+		Preload("Member").
+		Find(&faces).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch embeddings: " + err.Error()})
@@ -938,11 +953,11 @@ func ListAllEmbeddingsInternalHandler(c *gin.Context) {
 
 	result := make([]EmbeddingSyncDTO, 0, len(faces))
 	for _, f := range faces {
-		if f.Edges.Member != nil && f.Edges.Member.IsActive {
+		if f.Member != nil && f.Member.IsActive {
 			result = append(result, EmbeddingSyncDTO{
 				MemberID:  f.MemberID,
-				Name:      f.Edges.Member.Name,
-				Role:      string(f.Edges.Member.Role),
+				Name:      f.Member.Name,
+				Role:      string(f.Member.Role),
 				Embedding: f.Embedding,
 				FaceID:    f.ID,
 			})
@@ -975,34 +990,35 @@ func ListMemberFacesHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	query := database.Client.MemberFace.Query().
-		Where(memberface.MemberID(memberID), memberface.IsActive(true))
+	query := database.DB.WithContext(ctx).Model(&models.MemberFace{}).
+		Where("member_id = ? AND is_active = ?", memberID, true)
 
 	// Sorting
 	if sortBy == "quality_score" {
 		if order == "asc" {
-			query = query.Order(ent.Asc(memberface.FieldQualityScore))
+			query = query.Order("quality_score ASC")
 		} else {
-			query = query.Order(ent.Desc(memberface.FieldQualityScore))
+			query = query.Order("quality_score DESC")
 		}
 	} else { // default to created_at
 		if order == "asc" {
-			query = query.Order(ent.Asc(memberface.FieldCreatedAt))
+			query = query.Order("created_at ASC")
 		} else {
-			query = query.Order(ent.Desc(memberface.FieldCreatedAt))
+			query = query.Order("created_at DESC")
 		}
 	}
 
-	total, err := query.Count(ctx)
-	if err != nil {
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count faces: " + err.Error()})
 		return
 	}
 
-	faces, err := query.
+	var faces []models.MemberFace
+	err := query.
 		Offset((page - 1) * limit).
 		Limit(limit).
-		All(ctx)
+		Find(&faces).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch faces: " + err.Error()})
@@ -1027,14 +1043,14 @@ func ListMemberFacesHandler(c *gin.Context) {
 		})
 	}
 
-	totalPages := (total + limit - 1) / limit
+	totalPages := (int(total) + limit - 1) / limit
 	if totalPages == 0 {
 		totalPages = 1
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":        result,
-		"total":       total,
+		"total":       int(total),
 		"page":        page,
 		"limit":       limit,
 		"total_pages": totalPages,
@@ -1067,11 +1083,10 @@ func BatchDeleteMemberFacesHandler(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	faces, err := database.Client.MemberFace.Query().
-		Where(
-			memberface.MemberID(memberID),
-			memberface.IDIn(input.FaceIDs...),
-		).All(ctx)
+	var faces []models.MemberFace
+	err := database.DB.WithContext(ctx).
+		Where("member_id = ? AND id IN ?", memberID, input.FaceIDs).
+		Find(&faces).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load faces: " + err.Error()})
 		return
@@ -1085,11 +1100,9 @@ func BatchDeleteMemberFacesHandler(c *gin.Context) {
 		}
 	}
 
-	_, err = database.Client.MemberFace.Delete().
-		Where(
-			memberface.MemberID(memberID),
-			memberface.IDIn(input.FaceIDs...),
-		).Exec(ctx)
+	err = database.DB.WithContext(ctx).
+		Where("member_id = ? AND id IN ?", memberID, input.FaceIDs).
+		Delete(&models.MemberFace{}).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete faces: " + err.Error()})

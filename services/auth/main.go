@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"cctv/shared/ent"
 	"cctv/shared/pkg/auth"
 	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/pb"
 	"github.com/gin-gonic/gin"
@@ -138,11 +138,11 @@ type ValidateTokenRequest struct {
 }
 
 type ValidateTokenResponse struct {
-	Valid    bool      `json:"valid"`
-	User     *ent.User `json:"user,omitempty"`
-	Role     string    `json:"role,omitempty"`
-	Username string    `json:"username,omitempty"`
-	FullName string    `json:"full_name,omitempty"`
+	Valid    bool         `json:"valid"`
+	User     *models.User `json:"user,omitempty"`
+	Role     string       `json:"role,omitempty"`
+	Username string       `json:"username,omitempty"`
+	FullName string       `json:"full_name,omitempty"`
 }
 
 func handleValidateToken(c *gin.Context) {

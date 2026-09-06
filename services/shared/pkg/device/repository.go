@@ -2,9 +2,12 @@ package device
 
 import (
 	"context"
+	"time"
 
-	"cctv/shared/ent"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
+
+	"gorm.io/gorm"
 )
 
 type DeviceInput struct {
@@ -26,108 +29,130 @@ type DeviceInput struct {
 // Backward compatibility alias
 type CameraInput = DeviceInput
 
-func GetAll(ctx context.Context) ([]*ent.Camera, error) {
-	return database.Client.Camera.Query().Order(ent.Asc("id")).All(ctx)
+func GetAll(ctx context.Context) ([]*models.Camera, error) {
+	var devices []*models.Camera
+	err := database.DB.WithContext(ctx).Order("id ASC").Find(&devices).Error
+	return devices, err
 }
 
-func Create(ctx context.Context, input DeviceInput) (*ent.Camera, error) {
-	query := database.Client.Camera.Create().
-		SetName(input.Name).
-		SetHost(input.Host)
+func Create(ctx context.Context, input DeviceInput) (*models.Camera, error) {
+	cam := models.Camera{
+		Name:            input.Name,
+		Host:            input.Host,
+		Brand:           input.Brand,
+		RtspPort:        input.RtspPort,
+		RtspTransport:   input.RtspTransport,
+		SegmentDuration: input.SegmentDuration,
+		VideoCodec:      input.VideoCodec,
+		AudioMode:       input.AudioMode,
+		ExtraArgs:       input.ExtraArgs,
+		IsActive:        true,
+		ShowBbox:        true,
+	}
 
-	if input.Brand != "" {
-		query.SetBrand(input.Brand)
-	}
-	if input.RtspPort > 0 {
-		query.SetRtspPort(input.RtspPort)
-	}
-	if input.RtspTransport != "" {
-		query.SetRtspTransport(input.RtspTransport)
-	}
-	if input.SegmentDuration > 0 {
-		query.SetSegmentDuration(input.SegmentDuration)
-	}
-	if input.VideoCodec != "" {
-		query.SetVideoCodec(input.VideoCodec)
-	}
-	if input.AudioMode != "" {
-		query.SetAudioMode(input.AudioMode)
-	}
-	if input.ExtraArgs != "" {
-		query.SetExtraArgs(input.ExtraArgs)
-	}
 	if input.IsActive != nil {
-		query.SetIsActive(*input.IsActive)
+		cam.IsActive = *input.IsActive
 	}
 	if input.IsStopped != nil {
-		query.SetIsStopped(*input.IsStopped)
+		cam.IsStopped = *input.IsStopped
 	}
 	if input.EnableAi != nil {
-		query.SetEnableAi(*input.EnableAi)
+		cam.EnableAi = *input.EnableAi
 	}
 	if input.ShowBbox != nil {
-		query.SetShowBbox(*input.ShowBbox)
+		cam.ShowBbox = *input.ShowBbox
 	}
 
-	return query.Save(ctx)
+	if err := database.DB.WithContext(ctx).Create(&cam).Error; err != nil {
+		return nil, err
+	}
+	return &cam, nil
 }
 
-func Update(ctx context.Context, id string, input DeviceInput) (*ent.Camera, error) {
-	query := database.Client.Camera.UpdateOneID(id).
-		SetName(input.Name).
-		SetHost(input.Host)
+func Update(ctx context.Context, id string, input DeviceInput) (*models.Camera, error) {
+	updates := map[string]any{
+		"name":       input.Name,
+		"host":       input.Host,
+		"extra_args": input.ExtraArgs,
+		"updated_at": time.Now(),
+	}
 
 	if input.Brand != "" {
-		query.SetBrand(input.Brand)
+		updates["brand"] = input.Brand
 	}
 	if input.RtspPort > 0 {
-		query.SetRtspPort(input.RtspPort)
+		updates["rtsp_port"] = input.RtspPort
 	}
 	if input.RtspTransport != "" {
-		query.SetRtspTransport(input.RtspTransport)
+		updates["rtsp_transport"] = input.RtspTransport
 	}
 	if input.SegmentDuration > 0 {
-		query.SetSegmentDuration(input.SegmentDuration)
+		updates["segment_duration"] = input.SegmentDuration
 	}
 	if input.VideoCodec != "" {
-		query.SetVideoCodec(input.VideoCodec)
+		updates["video_codec"] = input.VideoCodec
 	}
 	if input.AudioMode != "" {
-		query.SetAudioMode(input.AudioMode)
+		updates["audio_mode"] = input.AudioMode
 	}
-	query.SetExtraArgs(input.ExtraArgs)
 	if input.IsActive != nil {
-		query.SetIsActive(*input.IsActive)
+		updates["is_active"] = *input.IsActive
 	}
 	if input.IsStopped != nil {
-		query.SetIsStopped(*input.IsStopped)
+		updates["is_stopped"] = *input.IsStopped
 	}
 	if input.EnableAi != nil {
-		query.SetEnableAi(*input.EnableAi)
+		updates["enable_ai"] = *input.EnableAi
 	}
 	if input.ShowBbox != nil {
-		query.SetShowBbox(*input.ShowBbox)
+		updates["show_bbox"] = *input.ShowBbox
 	}
 
-	return query.Save(ctx)
+	res := database.DB.WithContext(ctx).Model(&models.Camera{ID: id}).Updates(updates)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var cam models.Camera
+	if err := database.DB.WithContext(ctx).First(&cam, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &cam, nil
 }
 
 func Delete(ctx context.Context, id string) error {
-	return database.Client.Camera.DeleteOneID(id).Exec(ctx)
+	return database.DB.WithContext(ctx).Where("id = ?", id).Delete(&models.Camera{}).Error
 }
 
-func SetStopped(ctx context.Context, id string, stopped bool) (*ent.Camera, error) {
-	return database.Client.Camera.UpdateOneID(id).SetIsStopped(stopped).Save(ctx)
+func SetStopped(ctx context.Context, id string, stopped bool) (*models.Camera, error) {
+	res := database.DB.WithContext(ctx).Model(&models.Camera{ID: id}).Updates(map[string]any{
+		"is_stopped": stopped,
+		"updated_at": time.Now(),
+	})
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var cam models.Camera
+	if err := database.DB.WithContext(ctx).First(&cam, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &cam, nil
 }
 
 // IsStreaming reports whether the camera may hold pool / live / CV / NVR connections.
-func IsStreaming(dev *ent.Camera) bool {
+func IsStreaming(dev *models.Camera) bool {
 	return dev != nil && dev.IsActive && !dev.IsStopped
 }
 
-// CameraEventPayload always includes bools. ent json omitempty drops enable_ai=false
-// which made pool/vision treat an AI camera as disabled on every update.
-func CameraEventPayload(dev *ent.Camera) map[string]interface{} {
+// CameraEventPayload always includes bools.
+func CameraEventPayload(dev *models.Camera) map[string]interface{} {
 	if dev == nil {
 		return map[string]interface{}{}
 	}

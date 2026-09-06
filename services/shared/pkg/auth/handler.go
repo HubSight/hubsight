@@ -1,11 +1,11 @@
 package auth
 
 import (
-	"cctv/shared/ent"
-	"cctv/shared/ent/user"
-	"cctv/shared/pkg/database"
 	"net/http"
 	"time"
+
+	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -80,7 +80,7 @@ func ChangePasswordHandler(c *gin.Context) {
 		return
 	}
 
-	u := userObj.(*ent.User)
+	u := userObj.(*models.User)
 
 	var req ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -103,7 +103,7 @@ func VerifyPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	u, ok := userObj.(*ent.User)
+	u, ok := userObj.(*models.User)
 	if !ok || u == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -131,7 +131,7 @@ func UpdateLocaleHandler(c *gin.Context) {
 		return
 	}
 
-	u := userObj.(*ent.User)
+	u := userObj.(*models.User)
 
 	var req UpdateLocaleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -144,11 +144,15 @@ func UpdateLocaleHandler(c *gin.Context) {
 		return
 	}
 
-	updated, err := database.Client.User.UpdateOneID(u.ID).
-		SetLocale(user.Locale(req.Locale)).
-		Save(c.Request.Context())
-	if err != nil {
+	ctx := c.Request.Context()
+	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("locale", models.Locale(req.Locale)).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update locale"})
+		return
+	}
+
+	var updated models.User
+	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
 		return
 	}
 
@@ -162,7 +166,7 @@ func UpdateTimezoneHandler(c *gin.Context) {
 		return
 	}
 
-	u := userObj.(*ent.User)
+	u := userObj.(*models.User)
 
 	var req UpdateTimezoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Timezone == "" {
@@ -170,11 +174,15 @@ func UpdateTimezoneHandler(c *gin.Context) {
 		return
 	}
 
-	updated, err := database.Client.User.UpdateOneID(u.ID).
-		SetTimezone(req.Timezone).
-		Save(c.Request.Context())
-	if err != nil {
+	ctx := c.Request.Context()
+	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("timezone", req.Timezone).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update timezone in database"})
+		return
+	}
+
+	var updated models.User
+	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
 		return
 	}
 
@@ -188,7 +196,7 @@ func UpdatePreferencesHandler(c *gin.Context) {
 		return
 	}
 
-	u := userObj.(*ent.User)
+	u := userObj.(*models.User)
 
 	var req UpdatePreferencesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -196,20 +204,28 @@ func UpdatePreferencesHandler(c *gin.Context) {
 		return
 	}
 
-	updateQuery := database.Client.User.UpdateOneID(u.ID)
+	updates := make(map[string]any)
 	if req.Locale != nil && (*req.Locale == "vi" || *req.Locale == "en") {
-		updateQuery.SetLocale(user.Locale(*req.Locale))
+		updates["locale"] = models.Locale(*req.Locale)
 	}
 	if req.Timezone != nil && *req.Timezone != "" {
-		updateQuery.SetTimezone(*req.Timezone)
+		updates["timezone"] = *req.Timezone
 	}
 	if req.PushPreferences != nil {
-		updateQuery.SetPushPreferences(req.PushPreferences)
+		updates["push_preferences"] = req.PushPreferences
 	}
 
-	updated, err := updateQuery.Save(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences in database"})
+	ctx := c.Request.Context()
+	if len(updates) > 0 {
+		if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences in database"})
+			return
+		}
+	}
+
+	var updated models.User
+	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
 		return
 	}
 

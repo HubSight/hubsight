@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"cctv/shared/ent/memberface"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/storage"
 
@@ -32,7 +32,8 @@ func DeleteMemberAvatarHandler(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	if _, err := database.Client.Member.Get(ctx, memberID); err != nil {
+	var m models.Member
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", memberID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found", "code": "NOT_FOUND"})
 		return
 	}
@@ -40,8 +41,7 @@ func DeleteMemberAvatarHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete avatar: " + err.Error(), "code": "INTERNAL"})
 		return
 	}
-	m, err := database.Client.Member.Get(ctx, memberID)
-	if err != nil {
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", memberID).Error; err != nil {
 		c.JSON(http.StatusOK, gin.H{"ok": true, "avatar_url": ""})
 		return
 	}
@@ -57,8 +57,8 @@ func DeleteMemberAvatarHandler(c *gin.Context) {
 }
 
 func clearMemberAvatar(ctx context.Context, memberID string) error {
-	m, err := database.Client.Member.Get(ctx, memberID)
-	if err != nil {
+	var m models.Member
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", memberID).Error; err != nil {
 		return err
 	}
 
@@ -72,10 +72,8 @@ func clearMemberAvatar(ctx context.Context, memberID string) error {
 		}
 	}
 
-	faces, err := database.Client.MemberFace.Query().
-		Where(memberface.MemberID(memberID)).
-		All(ctx)
-	if err != nil {
+	var faces []models.MemberFace
+	if err := database.DB.WithContext(ctx).Where("member_id = ?", memberID).Find(&faces).Error; err != nil {
 		return err
 	}
 	deletedFace := false
@@ -87,14 +85,14 @@ func clearMemberAvatar(ctx context.Context, memberID string) error {
 		if sampleObj != "" && sampleObj != obj {
 			deleteStoredSampleImage(ctx, f.SampleImageURL)
 		}
-		if err := database.Client.MemberFace.DeleteOneID(f.ID).Exec(ctx); err != nil {
+		if err := database.DB.WithContext(ctx).Delete(&models.MemberFace{}, "id = ?", f.ID).Error; err != nil {
 			log.Printf("[member] failed to delete avatar face row %s: %v", f.ID, err)
 			continue
 		}
 		deletedFace = true
 	}
 
-	if err := database.Client.Member.UpdateOneID(memberID).SetAvatarURL("").Exec(ctx); err != nil {
+	if err := database.DB.WithContext(ctx).Model(&models.Member{}).Where("id = ?", memberID).Update("avatar_url", "").Error; err != nil {
 		return err
 	}
 	if deletedFace {
@@ -115,8 +113,8 @@ func UpdateMemberAvatarHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	m, err := database.Client.Member.Get(ctx, memberID)
-	if err != nil {
+	var m models.Member
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", memberID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found", "code": "NOT_FOUND"})
 		return
 	}
@@ -210,11 +208,14 @@ func UpdateMemberAvatarHandler(c *gin.Context) {
 		}
 	}
 
-	updated, err := database.Client.Member.UpdateOneID(memberID).
-		SetAvatarURL(avatarURL).
-		Save(ctx)
-	if err != nil {
+	if err := database.DB.WithContext(ctx).Model(&models.Member{}).Where("id = ?", memberID).Update("avatar_url", avatarURL).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update member avatar: " + err.Error(), "code": "INTERNAL"})
+		return
+	}
+
+	var updated models.Member
+	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", memberID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload member: " + err.Error(), "code": "INTERNAL"})
 		return
 	}
 
@@ -249,33 +250,32 @@ func withCacheBust(rawURL string) string {
 
 func upsertAvatarFace(ctx context.Context, memberID, sampleURL string, vision *visionEnrollResponse) error {
 	obj := storage.ObjectNameFromURL(sampleURL)
-	faces, err := database.Client.MemberFace.Query().
-		Where(memberface.MemberID(memberID)).
-		All(ctx)
-	if err != nil {
+	var faces []models.MemberFace
+	if err := database.DB.WithContext(ctx).Where("member_id = ?", memberID).Find(&faces).Error; err != nil {
 		return err
 	}
 	for _, f := range faces {
 		if storage.ObjectNameFromURL(f.SampleImageURL) == obj {
-			return database.Client.MemberFace.UpdateOneID(f.ID).
-				SetEmbedding(vision.Embedding).
-				SetSampleImageURL(sampleURL).
-				SetQualityScore(vision.QualityScore).
-				SetYaw(vision.Yaw).
-				SetPitch(vision.Pitch).
-				SetBlurScore(vision.BlurScore).
-				SetIsActive(true).
-				Exec(ctx)
+			return database.DB.WithContext(ctx).Model(&models.MemberFace{}).Where("id = ?", f.ID).Updates(map[string]interface{}{
+				"embedding":        vision.Embedding,
+				"sample_image_url": sampleURL,
+				"quality_score":    vision.QualityScore,
+				"yaw":              vision.Yaw,
+				"pitch":            vision.Pitch,
+				"blur_score":       vision.BlurScore,
+				"is_active":        true,
+			}).Error
 		}
 	}
-	_, err = database.Client.MemberFace.Create().
-		SetMemberID(memberID).
-		SetEmbedding(vision.Embedding).
-		SetSampleImageURL(sampleURL).
-		SetQualityScore(vision.QualityScore).
-		SetYaw(vision.Yaw).
-		SetPitch(vision.Pitch).
-		SetBlurScore(vision.BlurScore).
-		Save(ctx)
-	return err
+	face := models.MemberFace{
+		MemberID:       memberID,
+		Embedding:      vision.Embedding,
+		SampleImageURL: sampleURL,
+		QualityScore:   vision.QualityScore,
+		Yaw:            vision.Yaw,
+		Pitch:          vision.Pitch,
+		BlurScore:      vision.BlurScore,
+		IsActive:       true,
+	}
+	return database.DB.WithContext(ctx).Create(&face).Error
 }

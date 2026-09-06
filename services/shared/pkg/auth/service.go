@@ -11,10 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"cctv/shared/ent"
-	"cctv/shared/ent/session"
-	"cctv/shared/ent/user"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -74,11 +72,9 @@ func GenerateToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-func Login(ctx context.Context, username, password string, isPWA bool) (*ent.Session, string, string, error) {
-	u, err := database.Client.User.Query().
-		Where(user.Username(username)).
-		Only(ctx)
-	if err != nil {
+func Login(ctx context.Context, username, password string, isPWA bool) (*models.Session, string, string, error) {
+	var u models.User
+	if err := database.DB.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
 		return nil, "", "", errors.New("invalid credentials")
 	}
 
@@ -94,48 +90,44 @@ func Login(ctx context.Context, username, password string, isPWA bool) (*ent.Ses
 	token := GenerateToken()
 	expiresAt := time.Now().Add(24 * 7 * time.Hour) // 1 week
 
-	createSess := database.Client.Session.Create().
-		SetUser(u).
-		SetTokenHash(hashToken(token)).
-		SetExpiresAt(expiresAt).
-		SetIsPwa(isPWA)
+	sess := models.Session{
+		UserID:    u.ID,
+		TokenHash: hashToken(token),
+		ExpiresAt: expiresAt,
+		IsPwa:     isPWA,
+	}
 
 	var refreshToken string
 	if isPWA {
 		refreshToken = GenerateToken()
-		createSess.SetRefreshTokenHash(hashToken(refreshToken))
+		sess.RefreshTokenHash = hashToken(refreshToken)
 	}
 
-	sess, err := createSess.Save(ctx)
-	if err != nil {
+	if err := database.DB.WithContext(ctx).Create(&sess).Error; err != nil {
 		return nil, "", "", err
 	}
 
-	database.Client.User.UpdateOne(u).
-		SetLastLoginAt(time.Now()).
-		Exec(ctx)
+	now := time.Now()
+	_ = database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("last_login_at", &now).Error
 
-	return sess, token, refreshToken, nil
+	return &sess, token, refreshToken, nil
 }
 
-func RefreshPWASession(ctx context.Context, refreshToken string) (*ent.Session, string, string, error) {
+func RefreshPWASession(ctx context.Context, refreshToken string) (*models.Session, string, string, error) {
 	if refreshToken == "" {
 		return nil, "", "", errors.New("invalid refresh token")
 	}
 
 	rHash := hashToken(refreshToken)
-	sess, err := database.Client.Session.Query().
-		Where(
-			session.IsPwa(true),
-			session.RefreshTokenHash(rHash),
-		).
-		WithUser().
-		Only(ctx)
-	if err != nil {
+	var sess models.Session
+	if err := database.DB.WithContext(ctx).
+		Preload("User").
+		Where("is_pwa = ? AND refresh_token_hash = ?", true, rHash).
+		First(&sess).Error; err != nil {
 		return nil, "", "", errors.New("invalid refresh token")
 	}
 
-	u := sess.Edges.User
+	u := sess.User
 	if u == nil || !u.IsActive {
 		return nil, "", "", errors.New("user inactive or not found")
 	}
@@ -144,64 +136,68 @@ func RefreshPWASession(ctx context.Context, refreshToken string) (*ent.Session, 
 	newToken := GenerateToken()
 	newRefreshToken := GenerateToken()
 	newExpiresAt := time.Now().Add(24 * 7 * time.Hour)
+	now := time.Now()
 
-	updatedSess, err := database.Client.Session.UpdateOne(sess).
-		SetTokenHash(hashToken(newToken)).
-		SetRefreshTokenHash(hashToken(newRefreshToken)).
-		SetExpiresAt(newExpiresAt).
-		SetLastSeenAt(time.Now()).
-		Save(ctx)
-	if err != nil {
+	updates := map[string]any{
+		"token_hash":         hashToken(newToken),
+		"refresh_token_hash": hashToken(newRefreshToken),
+		"expires_at":         newExpiresAt,
+		"last_seen_at":       &now,
+	}
+
+	if err := database.DB.WithContext(ctx).Model(&models.Session{ID: sess.ID}).Updates(updates).Error; err != nil {
 		return nil, "", "", err
 	}
 
-	return updatedSess, newToken, newRefreshToken, nil
+	sess.TokenHash = hashToken(newToken)
+	sess.RefreshTokenHash = hashToken(newRefreshToken)
+	sess.ExpiresAt = newExpiresAt
+	sess.LastSeenAt = &now
+
+	return &sess, newToken, newRefreshToken, nil
 }
 
-func GetUserBySession(ctx context.Context, token string) (*ent.User, error) {
+func GetUserBySession(ctx context.Context, token string) (*models.User, error) {
 	tokenHash := hashToken(token)
-	sess, err := database.Client.Session.Query().
-		Where(
-			session.TokenHash(tokenHash),
-			session.ExpiresAtGT(time.Now()),
-		).
-		WithUser().
-		Only(ctx)
-	if err != nil {
+	var sess models.Session
+	if err := database.DB.WithContext(ctx).
+		Preload("User").
+		Where("token_hash = ? AND expires_at > ?", tokenHash, time.Now()).
+		First(&sess).Error; err != nil {
 		return nil, errors.New("unauthorized")
 	}
 
-	u := sess.Edges.User
+	u := sess.User
 	if u == nil || !u.IsActive {
 		return nil, errors.New("unauthorized")
 	}
 
-	// Update last_seen
-	database.Client.Session.UpdateOne(sess).
-		SetLastSeenAt(time.Now()).
-		Exec(ctx)
+	// Non-blocking update last_seen_at to avoid slowing request pipeline
+	go func(sessID string) {
+		now := time.Now()
+		_ = database.DB.Model(&models.Session{ID: sessID}).Update("last_seen_at", &now).Error
+	}(sess.ID)
 
 	return u, nil
 }
 
 func Logout(ctx context.Context, token string) error {
-	_, err := database.Client.Session.Delete().
-		Where(session.TokenHash(hashToken(token))).
-		Exec(ctx)
-	return err
+	return database.DB.WithContext(ctx).
+		Where("token_hash = ?", hashToken(token)).
+		Delete(&models.Session{}).Error
 }
 
 func CreateInitialUser(ctx context.Context, username, password string) error {
-	exists, err := database.Client.User.Query().Where(user.Username(username)).Exist(ctx)
-	if err != nil || exists {
-		// Ensure initial user is admin
-		if exists {
-			_ = database.Client.User.Update().
-				Where(user.Username(username)).
-				SetRole(user.RoleAdmin).
-				Exec(ctx)
-		}
+	var count int64
+	if err := database.DB.WithContext(ctx).Model(&models.User{}).Where("username = ?", username).Count(&count).Error; err != nil {
 		return err
+	}
+	if count > 0 {
+		// Ensure initial user is admin
+		_ = database.DB.WithContext(ctx).Model(&models.User{}).
+			Where("username = ?", username).
+			Update("role", models.RoleAdmin).Error
+		return nil
 	}
 
 	hash, err := hashPassword(password)
@@ -209,15 +205,16 @@ func CreateInitialUser(ctx context.Context, username, password string) error {
 		return err
 	}
 
-	_, err = database.Client.User.Create().
-		SetUsername(username).
-		SetPasswordHash(hash).
-		SetRole(user.RoleAdmin).
-		Save(ctx)
-	return err
+	newUser := models.User{
+		Username:     username,
+		PasswordHash: hash,
+		Role:         models.RoleAdmin,
+		IsActive:     true,
+	}
+	return database.DB.WithContext(ctx).Create(&newUser).Error
 }
 
-func ChangePassword(ctx context.Context, u *ent.User, oldPassword, newPassword string) error {
+func ChangePassword(ctx context.Context, u *models.User, oldPassword, newPassword string) error {
 	match, err := verifyPassword(oldPassword, u.PasswordHash)
 	if err != nil || !match {
 		return errors.New("incorrect old password")
@@ -228,8 +225,9 @@ func ChangePassword(ctx context.Context, u *ent.User, oldPassword, newPassword s
 		return err
 	}
 
-	_, err = database.Client.User.UpdateOne(u).
-		SetPasswordHash(hash).
-		Save(ctx)
-	return err
+	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("password_hash", hash).Error; err != nil {
+		return err
+	}
+	u.PasswordHash = hash
+	return nil
 }

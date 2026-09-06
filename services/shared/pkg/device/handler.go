@@ -1,14 +1,16 @@
 package device
 
 import (
+	"errors"
 	"net/http"
 	"os"
 
-	"cctv/shared/ent"
-	"cctv/shared/ent/camera"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func ListDevicesHandler(c *gin.Context) {
@@ -19,7 +21,7 @@ func ListDevicesHandler(c *gin.Context) {
 	}
 
 	if devices == nil {
-		devices = []*ent.Camera{}
+		devices = []*models.Camera{}
 	}
 
 	c.JSON(http.StatusOK, devices)
@@ -35,11 +37,11 @@ func ListAICamerasHandler(c *gin.Context) {
 	}
 
 	// Fetch all streaming cameras with AI enabled from database.
-	// In Connection Pool mode, CV runs continuously in background 24/7.
-	devices, err := database.Client.Camera.Query().
-		Where(camera.IsActive(true), camera.IsStopped(false), camera.EnableAi(true)).
-		Order(ent.Asc("id")).
-		All(c.Request.Context())
+	var devices []*models.Camera
+	err := database.DB.WithContext(c.Request.Context()).
+		Where("is_active = ? AND is_stopped = ? AND enable_ai = ?", true, false, true).
+		Order("id ASC").
+		Find(&devices).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch AI cameras: " + err.Error()})
@@ -47,7 +49,7 @@ func ListAICamerasHandler(c *gin.Context) {
 	}
 
 	if devices == nil {
-		devices = []*ent.Camera{}
+		devices = []*models.Camera{}
 	}
 
 	c.JSON(http.StatusOK, devices)
@@ -63,9 +65,10 @@ func ListPoolCamerasHandler(c *gin.Context) {
 	}
 
 	// Fetch all cameras from DB for pool initialization
-	devices, err := database.Client.Camera.Query().
-		Order(ent.Asc("id")).
-		All(c.Request.Context())
+	var devices []*models.Camera
+	err := database.DB.WithContext(c.Request.Context()).
+		Order("id ASC").
+		Find(&devices).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cameras for pool: " + err.Error()})
@@ -73,7 +76,7 @@ func ListPoolCamerasHandler(c *gin.Context) {
 	}
 
 	if devices == nil {
-		devices = []*ent.Camera{}
+		devices = []*models.Camera{}
 	}
 
 	c.JSON(http.StatusOK, devices)
@@ -132,6 +135,10 @@ func UpdateDeviceHandler(c *gin.Context) {
 
 	dev, err := Update(c.Request.Context(), idStr, req)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device"})
 		return
 	}
@@ -142,14 +149,11 @@ func UpdateDeviceHandler(c *gin.Context) {
 }
 
 func pickAlternativeCamera(c *gin.Context, stoppedID string) (id, name string) {
-	others, err := database.Client.Camera.Query().
-		Where(
-			camera.IDNEQ(stoppedID),
-			camera.IsActive(true),
-			camera.IsStopped(false),
-		).
-		Order(ent.Asc(camera.FieldID)).
-		All(c.Request.Context())
+	var others []models.Camera
+	err := database.DB.WithContext(c.Request.Context()).
+		Where("id <> ? AND is_active = ? AND is_stopped = ?", stoppedID, true, false).
+		Order("id ASC").
+		Find(&others).Error
 	if err != nil || len(others) == 0 {
 		return "", ""
 	}
@@ -165,7 +169,7 @@ func StopDeviceHandler(c *gin.Context) {
 
 	dev, err := SetStopped(c.Request.Context(), idStr, true)
 	if err != nil {
-		if ent.IsNotFound(err) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
 			return
 		}
@@ -200,7 +204,7 @@ func StartDeviceHandler(c *gin.Context) {
 
 	dev, err := SetStopped(c.Request.Context(), idStr, false)
 	if err != nil {
-		if ent.IsNotFound(err) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
 			return
 		}

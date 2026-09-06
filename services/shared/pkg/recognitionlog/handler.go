@@ -6,9 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"cctv/shared/ent"
-	entlog "cctv/shared/ent/recognitionlog"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +36,7 @@ type LogDTO struct {
 	CreatedAt     time.Time         `json:"created_at"`
 }
 
-func toDTO(item *ent.RecognitionLog) LogDTO {
+func toDTO(item *models.RecognitionLog) LogDTO {
 	params := item.MessageParams
 	if params == nil {
 		params = map[string]string{}
@@ -56,7 +55,6 @@ func toDTO(item *ent.RecognitionLog) LogDTO {
 }
 
 // IngestHandler persists a recognition log then broadcasts to relay.
-// Persist happens first so MQ failure cannot drop the 24/7 record.
 func IngestHandler(c *gin.Context) {
 	var input IngestInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -74,21 +72,22 @@ func IngestHandler(c *gin.Context) {
 		input.MessageParams["camera"] = input.CameraName
 	}
 
-	item, err := database.Client.RecognitionLog.Create().
-		SetCameraID(input.CameraID).
-		SetType(input.Type).
-		SetCategory(input.Category).
-		SetMemberID(input.MemberID).
-		SetTrackID(input.TrackID).
-		SetMessageKey(input.MessageKey).
-		SetMessageParams(input.MessageParams).
-		Save(c.Request.Context())
-	if err != nil {
+	item := models.RecognitionLog{
+		CameraID:      input.CameraID,
+		Type:          input.Type,
+		Category:      input.Category,
+		MemberID:      input.MemberID,
+		TrackID:       input.TrackID,
+		MessageKey:    input.MessageKey,
+		MessageParams: input.MessageParams,
+	}
+
+	if err := database.DB.WithContext(c.Request.Context()).Create(&item).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to persist recognition log: " + err.Error()})
 		return
 	}
 
-	dto := toDTO(item)
+	dto := toDTO(&item)
 	if pubErr := mq.PublishEvent("vision.log.new", dto); pubErr != nil {
 		log.Printf("[RecognitionLog] persisted %s but MQ publish failed: %v", item.ID, pubErr)
 	}
@@ -111,21 +110,21 @@ func ListHandler(c *gin.Context) {
 		}
 	}
 
-	query := database.Client.RecognitionLog.Query().
-		Where(entlog.CameraID(camID)).
-		Order(ent.Desc(entlog.FieldCreatedAt)).
+	query := database.DB.WithContext(c.Request.Context()).
+		Where("camera_id = ?", camID).
+		Order("created_at DESC").
 		Limit(limit)
 
 	if before := c.Query("before"); before != "" {
 		if ts, err := time.Parse(time.RFC3339, before); err == nil {
-			query = query.Where(entlog.CreatedAtLT(ts))
+			query = query.Where("created_at < ?", ts)
 		} else if ts, err := time.Parse(time.RFC3339Nano, before); err == nil {
-			query = query.Where(entlog.CreatedAtLT(ts))
+			query = query.Where("created_at < ?", ts)
 		}
 	}
 
-	items, err := query.All(c.Request.Context())
-	if err != nil {
+	var items []*models.RecognitionLog
+	if err := query.Find(&items).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch recognition logs: " + err.Error()})
 		return
 	}
@@ -145,12 +144,13 @@ func ClearHandler(c *gin.Context) {
 		return
 	}
 
-	n, err := database.Client.RecognitionLog.Delete().
-		Where(entlog.CameraID(camID)).
-		Exec(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear recognition logs: " + err.Error()})
+	res := database.DB.WithContext(c.Request.Context()).
+		Where("camera_id = ?", camID).
+		Delete(&models.RecognitionLog{})
+
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear recognition logs: " + res.Error.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": n})
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": res.RowsAffected})
 }

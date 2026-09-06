@@ -3,6 +3,7 @@ package live
 import (
 	"bytes"
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/pb"
 	"cctv/shared/pkg/pool"
 	"fmt"
@@ -30,8 +31,8 @@ func WebRTCHandler(c *gin.Context) {
 	}
 	camID := idStr
 
-	cam, err := database.Client.Camera.Get(c.Request.Context(), camID)
-	if err != nil {
+	var cam models.Camera
+	if err := database.DB.WithContext(c.Request.Context()).First(&cam, "id = ?", camID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Camera not found"})
 		return
 	}
@@ -143,8 +144,8 @@ func LiveStatusHandler(c *gin.Context) {
 	}
 	camID := idStr
 
-	cam, err := database.Client.Camera.Get(c.Request.Context(), camID)
-	if err != nil {
+	var cam models.Camera
+	if err := database.DB.WithContext(c.Request.Context()).First(&cam, "id = ?", camID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Camera not found"})
 		return
 	}
