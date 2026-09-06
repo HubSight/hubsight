@@ -456,13 +456,14 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         };
 
         // Playout jitter buffer — the WebRTC equivalent of VLC's network cache.
-        // ~600ms lets the player ride out the sub-second arrival gaps a lossy /
-        // remote camera path produces (with UDP ingest on the server side).
-        // Trade-off: ~600ms extra glass-to-glass latency, still below VLC's ~1s.
+        // go2rtc transcodes + re-paces the live stream (baseline H264), so it
+        // arrives smooth; ~0.8s of buffer covers residual TCP/network jitter.
+        // Raise toward 1500-2000 for very lossy WAN cameras, 0 to disable.
+        const JITTER_BUFFER_MS = 800;
         const applyJitterBuffer = (receiver: RTCRtpReceiver) => {
-          const r = receiver as RTCRtpReceiver & { jitterBufferTarget?: number; playoutDelayHint?: number };
-          try { r.jitterBufferTarget = 600; } catch { /* Safari / older Chromium */ }
-          try { r.playoutDelayHint = 0.6; } catch { /* not supported */ }
+          if (JITTER_BUFFER_MS <= 0) return;
+          const r = receiver as RTCRtpReceiver & { jitterBufferTarget?: number };
+          try { r.jitterBufferTarget = JITTER_BUFFER_MS; } catch { /* Safari / older Chromium: ignore */ }
         };
 
         const handleTrack = (track: MediaStreamTrack) => {

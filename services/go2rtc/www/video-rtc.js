@@ -519,8 +519,7 @@ export class VideoRTC extends HTMLElement {
                     .map(tr => {
                         // Playout jitter buffer (~VLC network cache). ~400ms absorbs
                         // the ~150ms arrival gaps of a lossy/remote camera path.
-                        try { tr.receiver.jitterBufferTarget = 600; } catch (e) {}
-                        try { tr.receiver.playoutDelayHint = 0.6; } catch (e) {}
+                        try { tr.receiver.jitterBufferTarget = 800; } catch (e) {}
                         return tr.receiver.track;
                     });
                 /** @type {HTMLVideoElement} */

@@ -48,3 +48,7 @@ npm_cache
 **/__pycache__/
 **/.venv/
 *.pyc
+
+# Local Docker Compose override (dev only, never deployed)
+/docker-compose.override.yml
+/services/go2rtc/go2rtc.local.yaml

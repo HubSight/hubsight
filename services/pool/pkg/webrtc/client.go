@@ -37,16 +37,13 @@ func NewGo2RTCClient() *Go2RTCClient {
 // RegisterStream registers or updates stream profiles in go2rtc
 func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL string, purpose string) error {
 	srcDirect := rtspURL
-	// Default to UDP RTP: on a lossy / high-RTT path (remote camera, VPN, internet)
-	// TCP-interleaved RTSP head-of-line-blocks on every retransmit, so go2rtc
-	// forwards multi-second bursts straight into WebRTC (measured: 3.5s freezes).
-	// UDP drops the odd packet instead — worst gap drops to ~150ms, which the
-	// client jitter buffer absorbs. Put `#transport=tcp` in the camera host to
-	// override for cameras that only support TCP.
+	// RTSP over TCP — reliable from inside a container (UDP RTP does not route
+	// back through Docker/OrbStack NAT). Put `#transport=udp` in the camera host
+	// to override for a low-loss LAN camera that benefits from it.
 	if !strings.Contains(srcDirect, "#") {
-		srcDirect = fmt.Sprintf("%s#backchannel=0#transport=udp", srcDirect)
+		srcDirect = fmt.Sprintf("%s#backchannel=0#transport=tcp", srcDirect)
 	} else if !strings.Contains(srcDirect, "transport=") {
-		srcDirect = fmt.Sprintf("%s#transport=udp", srcDirect)
+		srcDirect = fmt.Sprintf("%s#transport=tcp", srcDirect)
 	}
 
 	var putURL string
@@ -60,7 +57,7 @@ func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL s
 			url.QueryEscape(srcFfmpeg),
 		)
 	} else {
-		// Live/NVR profile: Pure direct RTSP passthrough with TCP transport (0% CPU, 0 delay, no crash loop)
+		// Live/NVR profile: pure RTSP passthrough (0% CPU, minimal latency)
 		putURL = fmt.Sprintf("%s/api/streams?name=%s&src=%s",
 			c.BaseURL,
 			url.QueryEscape(streamName),

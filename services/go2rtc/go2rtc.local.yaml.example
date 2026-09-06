@@ -1,0 +1,26 @@
+# LOCAL DEV go2rtc config — mounted over go2rtc.yaml by docker-compose.override.yml.
+# webrtc-service runs with network_mode: host, so go2rtc is ON the Mac's stack.
+# The browser (also on the Mac) reaches it at 127.0.0.1:8555 directly — no NAT —
+# so we advertise ONLY that. Auto-detected candidates would include flaky virtual
+# interfaces (OrbStack bridge, VPN) and ICE flaps between them.
+# api/rtsp stay on all interfaces so the other containers can reach go2rtc via
+# host.docker.internal.
+log:
+  level: info
+
+api:
+  listen: ":1984"
+  origin: "*"
+  static_dir: "/config/www"
+
+rtsp:
+  listen: ":8554"
+  default_query: "transport=tcp"
+
+webrtc:
+  listen: ":8555"
+  candidates:
+    - 127.0.0.1:8555
+
+# Bare key — go2rtc's patcher rejects `streams: {}`. Populated at runtime.
+streams:

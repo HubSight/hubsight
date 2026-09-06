@@ -40,7 +40,9 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/healthz/],
+        // These paths are backend-proxied by the gateway, not SPA routes — the SW
+        // must not answer them with the cached index.html (blank page otherwise).
+        navigateFallbackDenylist: [/^\/api/, /^\/healthz/, /^\/webrtc/, /^\/relay/],
         importScripts: ['/custom-sw.js'],
       },
       manifest: {
