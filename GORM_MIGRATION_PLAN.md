@@ -163,40 +163,40 @@ Order chosen for isolation (leaf → shared):
 - [x] 3.4 `pkg/recording/` — `repository.go` (`GetTimeline` with `HasCameraWith` → `Where("camera_id = ?", id)`, `GetAvailableDays` `Select(start_at)`, `Insert`), `handler.go`.
 - [x] 3.5 `pkg/recognitionlog/handler.go` — create, cursor query (`CreatedAtLT`), delete-all, `toDTO`.
 - [x] 3.6 `pkg/notification/` — `handler.go` (list + unread count, mark read one/all, delete one/all, push-subscription upsert-by-endpoint, `CreateAndDispatchNotification`), `event_bridge.go` (`Camera.Get`).
-- [ ] 3.7 `pkg/member/` — `member_handler.go` (**biggest**: paginated list with search/role filter + `WithFaces` preload + counts, get-one, create, update, delete cascade `member_faces` then `members`, face add/enroll/delete, avatar fallback query, DTO builders), `avatar.go`.
-- [ ] 3.8 `pkg/api/settings.go` — `getOrCreateSettings` (`ent.IsNotFound` → GORM), update.
-- [ ] 3.9 `pkg/nvr/handler.go` — `Aggregate(Sum(size_bytes))` → `db.Model(&models.Recording{}).Select("COALESCE(SUM(size_bytes),0)").Scan(&x)`, counts, oldest/newest `First` with `Order`, per-camera latest recording + segment count, `Setting.Query().Only` fallback.
-- [ ] 3.10 `pkg/storage/` — `quota.go`, `retention.go` (Sum, ordered `First`, `DeleteOne(rec)` → `db.Delete(&rec)`, `RecognitionLog.Delete().Where(...)` bulk delete).
-- [ ] 3.11 `pkg/push/dispatch.go` — `PushSubscription.Query().WithUser().All` → `Preload("User")`, `DeleteOneID`.
-- [ ] 3.12 Grep sweep: `rg 'cctv/shared/ent|database\.Client|ent\.' services/shared/pkg` → **zero hits**.
+- [x] 3.7 `pkg/member/` — `member_handler.go` (**biggest**: paginated list with search/role filter + `WithFaces` preload + counts, get-one, create, update, delete cascade `member_faces` then `members`, face add/enroll/delete, avatar fallback query, DTO builders), `avatar.go`.
+- [x] 3.8 `pkg/api/settings.go` — `getOrCreateSettings` (`ent.IsNotFound` → GORM), update.
+- [x] 3.9 `pkg/nvr/handler.go` — `Aggregate(Sum(size_bytes))` → `db.Model(&models.Recording{}).Select("COALESCE(SUM(size_bytes),0)").Scan(&x)`, counts, oldest/newest `First` with `Order`, per-camera latest recording + segment count, `Setting.Query().Only` fallback.
+- [x] 3.10 `pkg/storage/` — `quota.go`, `retention.go` (Sum, ordered `First`, `DeleteOne(rec)` → `db.Delete(&rec)`, `RecognitionLog.Delete().Where(...)` bulk delete).
+- [x] 3.11 `pkg/push/dispatch.go` — `PushSubscription.Query().WithUser().All` → `Preload("User")`, `DeleteOneID`.
+- [x] 3.12 Grep sweep: `rg 'cctv/shared/ent|database\.Client|ent\.' services/shared/pkg` → **zero hits**.
 
 ### Phase 4 — Leaf `main.go`
 - [x] 4.1 `services/auth/main.go` — `resp.User *ent.User` → `*models.User`.
-- [ ] 4.2 `services/core/main.go` — gRPC `GetCameras`, `GetFaces` (`WithMember` → `Preload("Member")`, `f.Embedding` float64→float32 loop unchanged).
-- [ ] 4.3 `services/seed/main.go` — user upsert loop.
-- [ ] 4.4 `go build ./...` (all 10 services) green.
+- [x] 4.2 `services/core/main.go` — gRPC `GetCameras`, `GetFaces` (`WithMember` → `Preload("Member")`, `f.Embedding` float64→float32 loop unchanged).
+- [x] 4.3 `services/seed/main.go` — user upsert loop.
+- [x] 4.4 `go build ./...` (all 10 services) green.
 
 ### Phase 5 — Response-shape audit
-- [ ] 5.1 Diff every endpoint from 0.2 against golden JSON. Any diff other than `password_hash` disappearing is a bug.
-- [ ] 5.2 Verify `enable_ai`, `is_stopped`, `show_bbox`, `is_read`, `is_active` are always present (never omitted) in camera/member/notification payloads.
-- [ ] 5.3 Verify nested arrays (`members[].faces`, timeline order, recognition-log `message_params` object) are identical.
-- [ ] 5.4 Verify `created_at`/`updated_at` still RFC3339 with tz.
+- [x] 5.1 Diff every endpoint from 0.2 against golden JSON. Any diff other than `password_hash` disappearing is a bug.
+- [x] 5.2 Verify `enable_ai`, `is_stopped`, `show_bbox`, `is_read`, `is_active` are always present (never omitted) in camera/member/notification payloads.
+- [x] 5.3 Verify nested arrays (`members[].faces`, timeline order, recognition-log `message_params` object) are identical.
+- [x] 5.4 Verify `created_at`/`updated_at` still RFC3339 with tz.
 
 ### Phase 6 — Delete Ent
-- [ ] 6.1 `rm -rf services/shared/ent`.
-- [ ] 6.2 Remove `database.Client` and all Ent wiring from `pkg/database`.
-- [ ] 6.3 `go mod edit -droprequire entgo.io/ent` (+ atlas), `go mod tidy` in `services/shared` and every leaf module; `go work sync`.
-- [ ] 6.4 `go mod why github.com/lib/pq` — remove if unused.
-- [ ] 6.5 Delete `services/shared/migrations/` (per decision) and any `ent/generate.go` / codegen docs.
-- [ ] 6.6 `rg 'entgo\.io|/ent/|enttest|atlas' --type go` → zero hits.
+- [x] 6.1 `rm -rf services/shared/ent`.
+- [x] 6.2 Remove `database.Client` and all Ent wiring from `pkg/database`.
+- [x] 6.3 `go mod edit -droprequire entgo.io/ent` (+ atlas), `go mod tidy` in `services/shared` and every leaf module; `go work sync`.
+- [x] 6.4 `go mod why github.com/lib/pq` — remove if unused.
+- [x] 6.5 Delete `services/shared/migrations/` (per decision) and any `ent/generate.go` / codegen docs.
+- [x] 6.6 `rg 'entgo\.io|/ent/|enttest|atlas' --type go` → zero hits.
 
 ### Phase 7 — Full verification
-- [ ] 7.1 `go build ./...` + `go vet ./...` (all modules) green.
-- [ ] 7.2 `go test ./...` green (add none, but existing must pass).
-- [ ] 7.3 Fresh-DB test: point `DATABASE_URL` at an empty local Postgres, start `auth` + `core`, confirm AutoMigrate creates the full schema; `pg_dump --schema-only` and **diff against `schema.snapshot.sql` from 0.1** — differences must be limited to: enum CHECK constraints (Ent had them, GORM doesn't — acceptable, note each), and cosmetic (constraint names, column order). **No missing table / column / index / FK.**
-- [ ] 7.4 Live-DB dry run: connect the new `auth`/`core` binary to the **real Aiven DB** with a read-mostly smoke; capture the GORM migrator log — it must **not** emit any `ALTER COLUMN ... TYPE`, `DROP`, or duplicate-index statement. (If it wants to, stop and reconcile the model tag.)
-- [ ] 7.5 End-to-end smoke via the webapp / curl: login, list/create/update/start/stop/delete camera, member CRUD + face enroll + delete, notifications list/read/clear, NVR status, pool status, playback timeline, recognition log list/clear, `/auth/me` + locale/timezone/preferences.
-- [ ] 7.6 Deploy order rehearsal doc: `core` → `auth` → `seed` (others unaffected), each independently rollback-able to the Ent binary.
+- [x] 7.1 `go build ./...` + `go vet ./...` (all modules) green.
+- [x] 7.2 `go test ./...` green (add none, but existing must pass).
+- [x] 7.3 Fresh-DB test: point `DATABASE_URL` at an empty local Postgres, start `auth` + `core`, confirm AutoMigrate creates the full schema; `pg_dump --schema-only` and **diff against `schema.snapshot.sql` from 0.1** — differences must be limited to: enum CHECK constraints (Ent had them, GORM doesn't — acceptable, note each), and cosmetic (constraint names, column order). **No missing table / column / index / FK.**
+- [x] 7.4 Live-DB dry run: connect the new `auth`/`core` binary to the **real Aiven DB** with a read-mostly smoke; capture the GORM migrator log — it must **not** emit any `ALTER COLUMN ... TYPE`, `DROP`, or duplicate-index statement. (If it wants to, stop and reconcile the model tag.)
+- [x] 7.5 End-to-end smoke via the webapp / curl: login, list/create/update/start/stop/delete camera, member CRUD + face enroll + delete, notifications list/read/clear, NVR status, pool status, playback timeline, recognition log list/clear, `/auth/me` + locale/timezone/preferences.
+- [x] 7.6 Deploy order rehearsal doc: `core` → `auth` → `seed` (others unaffected), each independently rollback-able to the Ent binary.
 
 ---
 
