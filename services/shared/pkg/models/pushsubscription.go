@@ -10,9 +10,9 @@ import (
 
 // PushSubscription stores a Web Push / VAPID browser push subscription.
 type PushSubscription struct {
-	ID        string    `gorm:"primaryKey;type:varchar(21)" json:"id,omitempty"`
-	UserID    string    `gorm:"column:user_id;type:varchar(21);not null;default:'';index" json:"user_id,omitempty"`
-	Endpoint  string    `gorm:"column:endpoint;type:text;uniqueIndex;not null" json:"endpoint,omitempty"`
+	ID        string    `gorm:"primaryKey;type:varchar" json:"id,omitempty"`
+	UserID    string    `gorm:"column:user_id;type:varchar(21);not null;default:'';index:idx_push_subscriptions_user_id" json:"user_id,omitempty"`
+	Endpoint  string    `gorm:"column:endpoint;type:text;uniqueIndex:push_subscriptions_endpoint_key;not null" json:"endpoint,omitempty"`
 	P256dh    string    `gorm:"column:p256dh;type:varchar(255);not null" json:"p256dh,omitempty"`
 	Auth      string    `gorm:"column:auth;type:varchar(255);not null" json:"auth,omitempty"`
 	UserAgent string    `gorm:"column:user_agent;type:text;not null;default:''" json:"user_agent,omitempty"`

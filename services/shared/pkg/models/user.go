@@ -10,19 +10,19 @@ import (
 
 // User represents an authorized system account.
 type User struct {
-	ID              string            `gorm:"primaryKey;type:varchar(21)" json:"id,omitempty"`
-	Username        string            `gorm:"column:username;type:varchar(255);uniqueIndex;not null" json:"username,omitempty"`
-	FullName        string            `gorm:"column:full_name;type:varchar(255);not null;default:''" json:"full_name,omitempty"`
-	PasswordHash    string            `gorm:"column:password_hash;not null" json:"-"` // Security fix: never leak Argon2 hash to API clients
-	Role            Role              `gorm:"column:role;type:varchar(32);not null;default:'viewer'" json:"role,omitempty"`
-	IsActive        bool              `gorm:"column:is_active;not null;default:true" json:"is_active"`
-	Locale          Locale            `gorm:"column:locale;type:varchar(16);not null;default:'vi'" json:"locale,omitempty"`
-	Timezone        string            `gorm:"column:timezone;type:varchar(64);not null;default:'Asia/Ho_Chi_Minh'" json:"timezone,omitempty"`
-	CreatedAt       time.Time         `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
-	UpdatedAt       time.Time         `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
-	LastLoginAt     *time.Time        `gorm:"column:last_login_at" json:"last_login_at,omitempty"`
-	PushPreferences map[string]bool   `gorm:"column:push_preferences;serializer:json;type:jsonb" json:"push_preferences,omitempty"`
-	Sessions        []Session         `gorm:"foreignKey:UserID;references:ID" json:"-"`
+	ID                string             `gorm:"primaryKey;type:varchar" json:"id,omitempty"`
+	Username          string             `gorm:"column:username;type:varchar(255);uniqueIndex:users_username_key;not null" json:"username,omitempty"`
+	FullName          string             `gorm:"column:full_name;type:varchar(255);not null;default:''" json:"full_name,omitempty"`
+	PasswordHash      string             `gorm:"column:password_hash;type:text;not null" json:"-"` // Security fix: never leak Argon2 hash to API clients
+	Role              Role               `gorm:"column:role;type:varchar(32);not null;default:'viewer'" json:"role,omitempty"`
+	IsActive          bool               `gorm:"column:is_active;not null;default:true" json:"is_active"`
+	Locale            Locale             `gorm:"column:locale;type:varchar(16);not null;default:'vi'" json:"locale,omitempty"`
+	Timezone          string             `gorm:"column:timezone;type:varchar(64);not null;default:'Asia/Ho_Chi_Minh'" json:"timezone,omitempty"`
+	CreatedAt         time.Time          `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
+	UpdatedAt         time.Time          `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
+	LastLoginAt       *time.Time         `gorm:"column:last_login_at" json:"last_login_at,omitempty"`
+	PushPreferences   map[string]bool    `gorm:"column:push_preferences;serializer:json;type:jsonb" json:"push_preferences,omitempty"`
+	Sessions          []Session          `gorm:"foreignKey:UserID;references:ID" json:"-"`
 	PushSubscriptions []PushSubscription `gorm:"foreignKey:UserID;references:ID" json:"-"`
 }
 
