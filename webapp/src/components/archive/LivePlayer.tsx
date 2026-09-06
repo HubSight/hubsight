@@ -451,17 +451,18 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         const mediaStream = new MediaStream();
         video.srcObject = mediaStream;
 
-        const applyLowDelay = (receiver: RTCRtpReceiver) => {
-          const r = receiver as RTCRtpReceiver & { jitterBufferTarget?: number; playoutDelayHint?: number };
-          // ~120ms absorbs normal RTP / TCP-burst jitter without visible judder,
-          // while keeping glass-to-glass latency well under 1s. A 0ms buffer
-          // presents every packet the instant it lands -> constant micro-stutter.
-          try { r.jitterBufferTarget = 120; } catch { /* Safari / older Chromium */ }
-          try { r.playoutDelayHint = 0.12; } catch { /* not supported */ }
-        };
-
         const attachTrack = (track: MediaStreamTrack) => {
           if (!mediaStream.getTracks().includes(track)) mediaStream.addTrack(track);
+        };
+
+        // Playout jitter buffer — the WebRTC equivalent of VLC's network cache.
+        // ~600ms lets the player ride out the sub-second arrival gaps a lossy /
+        // remote camera path produces (with UDP ingest on the server side).
+        // Trade-off: ~600ms extra glass-to-glass latency, still below VLC's ~1s.
+        const applyJitterBuffer = (receiver: RTCRtpReceiver) => {
+          const r = receiver as RTCRtpReceiver & { jitterBufferTarget?: number; playoutDelayHint?: number };
+          try { r.jitterBufferTarget = 600; } catch { /* Safari / older Chromium */ }
+          try { r.playoutDelayHint = 0.6; } catch { /* not supported */ }
         };
 
         const handleTrack = (track: MediaStreamTrack) => {
@@ -479,7 +480,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
 
         pc.ontrack = (event) => {
           if (!isActive) return;
-          if (event.receiver) applyLowDelay(event.receiver);
+          if (event.receiver) applyJitterBuffer(event.receiver);
 
           if (event.track) handleTrack(event.track);
           event.streams?.[0]?.getTracks().forEach(handleTrack);
@@ -678,7 +679,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
           <button
             type="button"
             onClick={toggleMute}
-            className="text-xs px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white font-medium rounded-lg border border-white/30 backdrop-blur-md shadow-lg flex items-center gap-1.5 transition-all cursor-pointer animate-pulse whitespace-nowrap"
+            className="text-xs px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white font-medium rounded-lg border border-white/30 backdrop-blur-md shadow-lg flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
             title={t('playback.unmute')}
           >
             <Volume2 size={13} className="text-white" />

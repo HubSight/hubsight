@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Play, Square, Trash2 } from 'lucide-react';
+import { Pencil, Play, Square, Trash2, RotateCw } from 'lucide-react';
 import type { DeviceType } from '../../types/device';
 import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
 import { useTranslation } from '../../i18n';
@@ -10,6 +10,7 @@ export interface DeviceCardProps {
   onDelete: (id: string) => void;
   onStop: (device: DeviceType) => void;
   onStart: (device: DeviceType) => void;
+  onRestart: (device: DeviceType) => void;
   isToggling?: boolean;
 }
 
@@ -19,6 +20,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   onDelete,
   onStop,
   onStart,
+  onRestart,
   isToggling = false,
 }) => {
   const { t } = useTranslation();
@@ -69,15 +71,26 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
                 <Play size={17} />
               </button>
             ) : (
-              <button
-                onClick={() => onStop(device)}
-                disabled={isToggling}
-                className="text-slate-400 hover:text-amber-600 active:text-amber-700 transition-colors w-9 h-9 rounded-xl hover:bg-amber-50 active:bg-amber-100 flex items-center justify-center cursor-pointer touch-manipulation disabled:opacity-40"
-                title={t('devices.stopDevice')}
-                aria-label={t('devices.stopDevice')}
-              >
-                <Square size={15} fill="currentColor" />
-              </button>
+              <>
+                <button
+                  onClick={() => onRestart(device)}
+                  disabled={isToggling}
+                  className="text-slate-400 hover:text-blue-600 active:text-blue-700 transition-colors w-9 h-9 rounded-xl hover:bg-blue-50 active:bg-blue-100 flex items-center justify-center cursor-pointer touch-manipulation disabled:opacity-40"
+                  title={t('devices.restartDevice')}
+                  aria-label={t('devices.restartDevice')}
+                >
+                  <RotateCw size={15} />
+                </button>
+                <button
+                  onClick={() => onStop(device)}
+                  disabled={isToggling}
+                  className="text-slate-400 hover:text-amber-600 active:text-amber-700 transition-colors w-9 h-9 rounded-xl hover:bg-amber-50 active:bg-amber-100 flex items-center justify-center cursor-pointer touch-manipulation disabled:opacity-40"
+                  title={t('devices.stopDevice')}
+                  aria-label={t('devices.stopDevice')}
+                >
+                  <Square size={15} fill="currentColor" />
+                </button>
+              </>
             )}
             <button
               onClick={() => onEdit(device)}

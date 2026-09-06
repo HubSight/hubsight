@@ -4,10 +4,11 @@ log:
 api:
   listen: ":1984"
   origin: "*"
+  static_dir: "/config/www"
 
 rtsp:
   listen: ":8554"
-  default_query: "transport=tcp"
+  default_query: "transport=udp"
 
 webrtc:
   listen: ":8555"
@@ -21,12 +22,5 @@ webrtc:
 # `streams: {}` and rejects every `PUT /api/streams` with HTTP 400, so no camera
 # ever gets registered. pool-service / core-service populate this at runtime.
 streams:
-  cam_HnT19ndxWGhXb5Y5oEeZQ_nvr:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_2:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-  cam_HnT19ndxWGhXb5Y5oEeZQ_cv:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
-    - ffmpeg:rtsp://host.docker.internal:8556/facetime#video=h264#framerate=10#audio=none
-  cam_HnT19ndxWGhXb5Y5oEeZQ_live_3:
-    - rtsp://host.docker.internal:8556/facetime#backchannel=0#transport=tcp
+  cam_XbXVEFntLOe5bNHVUtm3R_nvr:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=udp

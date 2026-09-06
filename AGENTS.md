@@ -65,6 +65,7 @@ Connections to `go2rtc` streams are tightly managed to save resources:
 6. **Deployment**: 
    - There is ONLY ONE deployment command: `docker compose up -d --build`.
    - Never invent alternative shell scripts or kubernetes manifests unless explicitly requested.
+7. **Connection Pool Integrity**: Any modifications to the configuration or settings of an active (running) device MUST force an immediate teardown of its Connection Pool. In the UI, saving changes for an active camera requires invoking a sequence of `stop` (to tear down `go2rtc` resources) followed by `start` (to recreate them with the fresh config), ensuring no stale streaming artifacts or ghost sessions remain in the `pool-service`.
 
 When modifying this repository, read and abide by these rules. Focus on resource efficiency (particularly streaming and AI processes) and keep the frontend strictly coupled to the gateway.
 

@@ -8,9 +8,10 @@ import { useTranslation } from '../../i18n';
 export interface DeviceGeneralTabProps {
   formData: DeviceFormData;
   onChange: (patch: Partial<DeviceFormData>) => void;
+  isStreaming?: boolean;
 }
 
-export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, onChange }) => {
+export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, onChange, isStreaming = false }) => {
   const { t } = useTranslation();
 
   const selectedPreset =
@@ -110,10 +111,12 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
         </div>
       )}
 
-      <DeviceBrandDropdown selectedBrand={formData.brand} onSelectBrand={handleBrandSelect} />
+      <div className={isStreaming ? 'opacity-70 pointer-events-none' : ''}>
+        <DeviceBrandDropdown selectedBrand={formData.brand} onSelectBrand={handleBrandSelect} />
+      </div>
 
       {/* URL Builder or Manual Input */}
-      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3.5">
+      <div className={`bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3.5 ${isStreaming ? 'opacity-70' : ''}`}>
         <div className="flex justify-between items-center">
           <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
             {formData.isManualUrl
@@ -123,7 +126,10 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
           <button
             type="button"
             onClick={handleToggleManual}
-            className="text-xs text-orange-600 hover:text-orange-700 font-medium underline cursor-pointer"
+            disabled={isStreaming}
+            className={`text-xs font-medium underline ${
+              isStreaming ? 'text-slate-400 cursor-not-allowed' : 'text-orange-600 hover:text-orange-700 cursor-pointer'
+            }`}
           >
             {formData.isManualUrl ? t('device.useParamBuilder') : t('device.directUrlEdit')}
           </button>
@@ -146,7 +152,8 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                 type="text"
                 value={formData.builderIp}
                 onChange={(e) => onChange({ builderIp: e.target.value })}
-                className="input-field w-full text-sm"
+                disabled={isStreaming}
+                className={`input-field w-full text-sm ${isStreaming ? 'bg-slate-100 text-slate-500' : ''}`}
                 placeholder="192.168.1.100"
               />
             </div>
@@ -159,7 +166,8 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                   const p = Number(e.target.value);
                   onChange({ builderPort: p, rtspPort: p });
                 }}
-                className="input-field w-full text-sm"
+                disabled={isStreaming}
+                className={`input-field w-full text-sm ${isStreaming ? 'bg-slate-100 text-slate-500' : ''}`}
                 placeholder="554"
               />
             </div>
@@ -171,7 +179,8 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                 type="text"
                 value={formData.builderUser}
                 onChange={(e) => onChange({ builderUser: e.target.value })}
-                className="input-field w-full text-sm"
+                disabled={isStreaming}
+                className={`input-field w-full text-sm ${isStreaming ? 'bg-slate-100 text-slate-500' : ''}`}
                 placeholder="e.g. admin"
               />
             </div>
@@ -183,7 +192,8 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                 type="password"
                 value={formData.builderPass}
                 onChange={(e) => onChange({ builderPass: e.target.value })}
-                className="input-field w-full text-sm"
+                disabled={isStreaming}
+                className={`input-field w-full text-sm ${isStreaming ? 'bg-slate-100 text-slate-500' : ''}`}
                 placeholder={t('device.passwordPlaceholder')}
               />
             </div>
@@ -196,7 +206,8 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                   type="text"
                   value={formData.builderPath ?? '/stream'}
                   onChange={(e) => onChange({ builderPath: e.target.value })}
-                  className="input-field w-full text-sm font-mono"
+                  disabled={isStreaming}
+                  className={`input-field w-full text-sm font-mono ${isStreaming ? 'bg-slate-100 text-slate-500' : ''}`}
                   placeholder="e.g. /stream, /live, /h264, /cam1..."
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -215,7 +226,8 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                     max="64"
                     value={formData.builderChannel}
                     onChange={(e) => onChange({ builderChannel: Number(e.target.value) || 1 })}
-                    className="input-field w-full text-sm"
+                    disabled={isStreaming}
+                    className={`input-field w-full text-sm ${isStreaming ? 'bg-slate-100 text-slate-500' : ''}`}
                   />
                 </div>
                 <div>
@@ -224,22 +236,24 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                     <button
                       type="button"
                       onClick={() => onChange({ builderIsSub: false })}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      disabled={isStreaming}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
                         !formData.builderIsSub
                           ? 'bg-orange-600 text-white shadow-sm'
                           : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                      } ${isStreaming ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {t('device.mainStream')}
                     </button>
                     <button
                       type="button"
                       onClick={() => onChange({ builderIsSub: true })}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      disabled={isStreaming}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
                         formData.builderIsSub
                           ? 'bg-orange-600 text-white shadow-sm'
                           : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                      } ${isStreaming ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {t('device.subStream')}
                     </button>
@@ -260,9 +274,9 @@ export const DeviceGeneralTab: React.FC<DeviceGeneralTabProps> = ({ formData, on
                 ? handleManualUrlChange(e.target.value)
                 : onChange({ host: e.target.value })
             }
-            readOnly={!formData.isManualUrl}
+            readOnly={!formData.isManualUrl || isStreaming}
             className={`input-field w-full font-mono text-xs ${
-              !formData.isManualUrl ? 'bg-slate-100 text-slate-600 cursor-not-allowed' : ''
+              !formData.isManualUrl || isStreaming ? 'bg-slate-100 text-slate-600 cursor-not-allowed' : ''
             }`}
             placeholder="rtsp://admin:pass@192.168.1.100:554/stream"
             required

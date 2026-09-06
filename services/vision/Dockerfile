@@ -77,13 +77,12 @@ COPY services/vision/requirements.txt .
 # insightface pulls opencv-python (GUI). Uninstall it, then reinstall headless LAST
 # so cv2 is actually present at runtime. Fail the build if import cv2 breaks.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir grpcio protobuf && \
-    pip install --no-cache-dir -r requirements.txt && \
+    pip install grpcio protobuf && \
+    pip install -r requirements.txt && \
     pip uninstall -y opencv-python opencv-python-headless 2>/dev/null || true && \
-    pip install --no-cache-dir opencv-python-headless && \
+    pip install opencv-python-headless && \
     python -c "import cv2, numpy, onnxruntime; print('cv2', cv2.__version__, 'ort', onnxruntime.__version__)" && \
-    find /usr/local/lib/python3.11/site-packages -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
-    pip cache purge 2>/dev/null || true
+    find /usr/local/lib/python3.11/site-packages -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 COPY --from=model-fetcher /app/*.onnx ./
 COPY --from=model-fetcher /app/yolo-fire-smoke.names.json ./

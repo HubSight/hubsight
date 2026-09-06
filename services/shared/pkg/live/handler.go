@@ -79,12 +79,19 @@ func WebRTCHandler(c *gin.Context) {
 		}
 	}
 
-	// Register stream directly in webrtc-service dynamically
+	// Register stream directly in webrtc-service dynamically.
+	// Default to UDP RTP — TCP-interleaved RTSP head-of-line-blocks on any loss and
+	// makes go2rtc emit multi-second bursts into WebRTC. Camera can force TCP via
+	// its rtsp_transport setting.
+	transport := "udp"
+	if strings.EqualFold(cam.RtspTransport, "tcp") {
+		transport = "tcp"
+	}
 	srcDirect := cam.Host
 	if !strings.Contains(srcDirect, "#") {
-		srcDirect = fmt.Sprintf("%s#backchannel=0#transport=tcp", srcDirect)
+		srcDirect = fmt.Sprintf("%s#backchannel=0#transport=%s", srcDirect, transport)
 	} else if !strings.Contains(srcDirect, "transport=") {
-		srcDirect = fmt.Sprintf("%s#transport=tcp", srcDirect)
+		srcDirect = fmt.Sprintf("%s#transport=%s", srcDirect, transport)
 	}
 
 	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s",

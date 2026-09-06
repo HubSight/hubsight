@@ -3,6 +3,7 @@
 **/dist
 webapp/node_modules
 webapp/dist
+npm_cache
 
 ## Go build outputs
 services/**/dist

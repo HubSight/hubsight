@@ -8,6 +8,7 @@ import { useTranslation } from '../../i18n';
 
 export interface DeviceModalProps {
   isEditing: boolean;
+  isStreaming?: boolean;
   formData: DeviceFormData;
   error: string;
   isSubmitting: boolean;
@@ -19,6 +20,7 @@ export interface DeviceModalProps {
 
 export const DeviceModal: React.FC<DeviceModalProps> = ({
   isEditing,
+  isStreaming = false,
   formData,
   error,
   isSubmitting,
@@ -94,11 +96,11 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
           )}
 
           {activeTab === 'general' && (
-            <DeviceGeneralTab formData={formData} onChange={onChange} />
+            <DeviceGeneralTab formData={formData} onChange={onChange} isStreaming={isStreaming} />
           )}
 
           {activeTab === 'rtsp' && (
-            <DeviceRtspTab formData={formData} onChange={onChange} />
+            <DeviceRtspTab formData={formData} onChange={onChange} isStreaming={isStreaming} />
           )}
 
           {activeTab === 'ffmpeg' && (

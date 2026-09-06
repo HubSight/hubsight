@@ -185,7 +185,17 @@ const Devices = () => {
 
     try {
       if (editingDeviceId) {
+        const editingDevice = devices.find((d) => d.id === editingDeviceId);
+        const isRunning = !!(editingDevice && editingDevice.is_active && !editingDevice.is_stopped);
+
         await axiosClient.put(`/cameras/${editingDeviceId}`, payload);
+
+        if (isRunning) {
+          // Immediately flush connections and recreate with new config
+          await axiosClient.post(`/cameras/${editingDeviceId}/stop`);
+          await new Promise(r => setTimeout(r, 800));
+          await axiosClient.post(`/cameras/${editingDeviceId}/start`);
+        }
       } else {
         await axiosClient.post('/cameras', payload);
       }
@@ -228,6 +238,22 @@ const Devices = () => {
       fetchDevices();
     } catch (err) {
       console.error('Failed to start device', err);
+      setError(t('common.errorOccurred'));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleRestartDevice = async (dev: DeviceType) => {
+    try {
+      setTogglingId(dev.id);
+      await axiosClient.post(`/cameras/${dev.id}/stop`);
+      // Wait for pool service to release connections
+      await new Promise(r => setTimeout(r, 800));
+      await axiosClient.post(`/cameras/${dev.id}/start`);
+      fetchDevices();
+    } catch (err) {
+      console.error('Failed to restart device', err);
       setError(t('common.errorOccurred'));
     } finally {
       setTogglingId(null);
@@ -347,6 +373,7 @@ const Devices = () => {
                 onDelete={handleDeleteDevice}
                 onStop={handleStopDevice}
                 onStart={handleStartDevice}
+                onRestart={handleRestartDevice}
                 isToggling={togglingId === dev.id}
               />
             ))}
@@ -365,6 +392,10 @@ const Devices = () => {
       {showModal && (
         <DeviceModal
           isEditing={editingDeviceId !== null}
+          isStreaming={editingDeviceId !== null ? (() => {
+            const dev = devices.find(d => d.id === editingDeviceId);
+            return dev ? (dev.is_active && !dev.is_stopped) : false;
+          })() : false}
           formData={formData}
           error={error}
           isSubmitting={isSubmitting}

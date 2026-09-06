@@ -6,9 +6,10 @@ import { useTranslation } from '../../i18n';
 export interface DeviceRtspTabProps {
   formData: DeviceFormData;
   onChange: (patch: Partial<DeviceFormData>) => void;
+  isStreaming?: boolean;
 }
 
-export const DeviceRtspTab: React.FC<DeviceRtspTabProps> = ({ formData, onChange }) => {
+export const DeviceRtspTab: React.FC<DeviceRtspTabProps> = ({ formData, onChange, isStreaming = false }) => {
   const { t } = useTranslation();
 
   const handlePortChange = (val: string) => {
@@ -31,7 +32,8 @@ export const DeviceRtspTab: React.FC<DeviceRtspTabProps> = ({ formData, onChange
           type="number"
           value={formData.rtspPort}
           onChange={(e) => handlePortChange(e.target.value)}
-          className="input-field w-full"
+          disabled={isStreaming}
+          className={`input-field w-full ${isStreaming ? 'bg-slate-100 text-slate-500' : ''}`}
           placeholder="554"
         />
         <p className="text-xs text-slate-400 mt-1">{t('device.defaultRtspPortDesc')}</p>

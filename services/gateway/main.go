@@ -39,7 +39,7 @@ func createReverseProxy(targetURL string) (*httputil.ReverseProxy, *url.URL) {
 		log.Fatalf("Invalid target URL %s: %v", targetURL, err)
 	}
 	proxy := httputil.NewSingleHostReverseProxy(target)
-	proxy.FlushInterval = 50 * time.Millisecond // Stream chunks and websockets immediately
+	proxy.FlushInterval = -1 * time.Millisecond // Zero latency: flush immediately after each write to client
 	return proxy, target
 }
 
@@ -120,15 +120,18 @@ func main() {
 	r.Any("/relay", forwardRelay)
 	r.Any("/relay/*action", forwardRelay)
 
-	// 2. WebRTC Signaling / WHEP / Stream Proxy (/webrtc/* -> webrtc-service:1984/*)
-	r.Any("/webrtc/*action", func(c *gin.Context) {
+	// 2. WebRTC Signaling / WHEP / Stream Proxy (/webrtc and /webrtc/* -> webrtc-service:1984/*)
+	forwardWebRTC := func(c *gin.Context) {
 		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/webrtc")
 		if c.Request.URL.Path == "" {
 			c.Request.URL.Path = "/"
 		}
+		c.Request.URL.RawPath = ""
 		c.Request.Host = webrtcTarget.Host
 		webrtcProxy.ServeHTTP(c.Writer, c.Request)
-	})
+	}
+	r.Any("/webrtc", forwardWebRTC)
+	r.Any("/webrtc/*action", forwardWebRTC)
 
 	// 3. REST API Dispatcher: Routes Auth, Core, and Services
 	r.Any("/api/*action", func(c *gin.Context) {

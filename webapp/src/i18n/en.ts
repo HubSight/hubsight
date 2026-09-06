@@ -248,6 +248,7 @@ const en: Record<TranslationKey, string> = {
   'devices.deleteDevice': 'Delete device',
   'devices.stopDevice': 'Stop camera',
   'devices.startDevice': 'Start camera',
+  'devices.restartDevice': 'Restart stream',
   'devices.stoppedBadge': 'Stopped',
   'devices.confirmStopTitle': 'Stop this camera?',
   'devices.confirmStop': 'Live, NVR, and AI connections for this camera close immediately. The camera is not deleted — you can start it again at any time.',
