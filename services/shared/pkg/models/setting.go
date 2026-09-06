@@ -8,8 +8,8 @@ import (
 
 // Setting holds the singleton system settings record.
 type Setting struct {
-	ID             string `gorm:"primaryKey;type:varchar(21)" json:"id,omitempty"`
-	NvrStatus      bool   `gorm:"column:nvr_status;not null;default:true" json:"nvr_status"`
+	ID             string `gorm:"primaryKey;type:varchar" json:"id,omitempty"`
+	NvrStatus      bool   `gorm:"column:nvr_status;not null;default:true" json:"nvr_status,omitempty"`
 	StorageQuotaGB int    `gorm:"column:storage_quota_gb;not null;default:50" json:"storage_quota_gb,omitempty"`
 	RetentionDays  int    `gorm:"column:retention_days;not null;default:4" json:"retention_days,omitempty"`
 }

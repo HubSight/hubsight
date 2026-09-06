@@ -124,7 +124,14 @@ func Update(ctx context.Context, id string, input DeviceInput) (*models.Camera, 
 }
 
 func Delete(ctx context.Context, id string) error {
-	return database.DB.WithContext(ctx).Where("id = ?", id).Delete(&models.Camera{}).Error
+	res := database.DB.WithContext(ctx).Where("id = ?", id).Delete(&models.Camera{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func SetStopped(ctx context.Context, id string, stopped bool) (*models.Camera, error) {

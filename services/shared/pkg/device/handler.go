@@ -109,6 +109,10 @@ func DeleteDeviceHandler(c *gin.Context) {
 	}
 
 	if err := Delete(c.Request.Context(), idStr); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete device"})
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -128,7 +129,8 @@ func ListMembersHandler(c *gin.Context) {
 		}
 
 		var total int64
-		if err := query.Count(&total).Error; err != nil {
+		countTx := query.Session(&gorm.Session{})
+		if err := countTx.Count(&total).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count members: " + err.Error()})
 			return
 		}
@@ -484,15 +486,22 @@ func DeleteMemberHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
+	var m models.Member
+	if err := database.DB.WithContext(ctx).First(&m, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Member not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete member: " + err.Error()})
+		return
+	}
+	deleteStoredSampleImage(ctx, m.AvatarURL)
+
 	var faces []models.MemberFace
 	if err := database.DB.WithContext(ctx).Where("member_id = ?", id).Find(&faces).Error; err == nil {
 		for _, f := range faces {
 			deleteStoredSampleImage(ctx, f.SampleImageURL)
 		}
-	}
-	var m models.Member
-	if err := database.DB.WithContext(ctx).First(&m, "id = ?", id).Error; err == nil {
-		deleteStoredSampleImage(ctx, m.AvatarURL)
 	}
 
 	_ = database.DB.WithContext(ctx).Where("member_id = ?", id).Delete(&models.MemberFace{}).Error
@@ -1009,7 +1018,8 @@ func ListMemberFacesHandler(c *gin.Context) {
 	}
 
 	var total int64
-	if err := query.Count(&total).Error; err != nil {
+	countTx := query.Session(&gorm.Session{})
+	if err := countTx.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count faces: " + err.Error()})
 		return
 	}

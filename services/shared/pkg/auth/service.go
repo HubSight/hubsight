@@ -172,11 +172,9 @@ func GetUserBySession(ctx context.Context, token string) (*models.User, error) {
 		return nil, errors.New("unauthorized")
 	}
 
-	// Non-blocking update last_seen_at to avoid slowing request pipeline
-	go func(sessID string) {
-		now := time.Now()
-		_ = database.DB.Model(&models.Session{ID: sessID}).Update("last_seen_at", &now).Error
-	}(sess.ID)
+	// Update last_seen_at inline with context (matches Ent behavior)
+	now := time.Now()
+	_ = database.DB.WithContext(ctx).Model(&models.Session{ID: sess.ID}).Update("last_seen_at", &now).Error
 
 	return u, nil
 }

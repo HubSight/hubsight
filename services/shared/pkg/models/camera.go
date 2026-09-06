@@ -10,7 +10,7 @@ import (
 
 // Camera represents an RTSP video device registered in the CCTV system.
 type Camera struct {
-	ID              string      `gorm:"primaryKey;type:varchar(21)" json:"id,omitempty"`
+	ID              string      `gorm:"primaryKey;type:varchar" json:"id,omitempty"`
 	Name            string      `gorm:"column:name;type:varchar(255);not null" json:"name,omitempty"`
 	Host            string      `gorm:"column:host;type:text;not null" json:"host,omitempty"`
 	Brand           string      `gorm:"column:brand;type:varchar(64);not null;default:'generic'" json:"brand,omitempty"`
