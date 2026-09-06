@@ -1,28 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Radar, X, CheckCircle2, Loader2, Camera } from 'lucide-react';
-import axiosClient from '../../api/axiosClient';
+import { api } from '../../api/client';
+import type { ScanCandidate, ScanJob } from '@hubsight/api';
 import { useTranslation } from '../../i18n';
 
-export interface ScanCandidate {
-  ip: string;
-  port: number;
-  iface: string;
-  via: string;
-  brand: string;
-  rtsp_url: string;
-  path: string;
-}
-
-interface ScanJob {
-  id: string;
-  status: 'running' | 'done' | 'canceled' | 'failed';
-  scanned: number;
-  total: number;
-  iface: string;
-  candidates: ScanCandidate[];
-  error?: string;
-}
+// Re-exported for call sites that import the candidate shape from this module.
+export type { ScanCandidate } from '@hubsight/api';
 
 interface DeviceScanModalProps {
   isOpen: boolean;
@@ -61,8 +45,7 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
         .split(/[,;\s]+/)
         .map((s) => s.trim())
         .filter(Boolean);
-      const res = await axiosClient.post('/devices/scan', { extra_cidrs: extra });
-      setJob(res.data);
+      setJob(await api.devices.startScan(extra));
     } catch (err: any) {
       setError(err?.response?.data?.error || t('devices.scanFailed'));
     }
@@ -83,8 +66,7 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
     if (!isOpen || !job?.id || job.status !== 'running') return;
     pollRef.current = window.setInterval(async () => {
       try {
-        const res = await axiosClient.get(`/devices/scan/${job.id}`);
-        setJob(res.data);
+        setJob(await api.devices.getScan(job.id));
       } catch {
         /* ignore transient */
       }
@@ -112,7 +94,7 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
     setError('');
     try {
       for (const c of picked) {
-        await axiosClient.post('/cameras', {
+        await api.cameras.create({
           name: `Camera ${c.ip}`,
           host: c.rtsp_url,
           brand: c.brand || 'generic',

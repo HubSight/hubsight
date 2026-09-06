@@ -9,7 +9,7 @@ import {
   Info,
   Radio,
 } from 'lucide-react';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import type { PoolStatusSummary } from '../types/pool';
 import { useTranslation } from '../i18n';
 import { useRealtimeEvent } from '@hubsight/realtime/react';
@@ -39,8 +39,7 @@ export const PoolMonitor = () => {
 
   const hydrateOnce = useCallback(async () => {
     try {
-      const res = await axiosClient.get('/pool/status');
-      setData(res.data);
+      setData(await api.pool.status());
     } catch (err) {
       console.error('Failed to fetch connection pool status:', err);
     } finally {

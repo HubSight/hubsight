@@ -1,5 +1,5 @@
 import { getToken } from 'firebase/messaging';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import {
   getFirebaseMessaging,
   isFirebaseWebConfigValid,
@@ -32,8 +32,7 @@ export const getPushNotificationPermission = (): NotificationPermission => {
 };
 
 async function fetchPushConfig(): Promise<PushConfig> {
-  const res = await axiosClient.get('/notifications/push-config');
-  return (res.data || {}) as PushConfig;
+  return (await api.notifications.pushConfig()) as PushConfig;
 }
 
 async function registerFcmToken(vapidPublicKey: string, config: PushConfig['firebase']): Promise<boolean> {
@@ -55,7 +54,7 @@ async function registerFcmToken(vapidPublicKey: string, config: PushConfig['fire
     return false;
   }
 
-  await axiosClient.post('/notifications/subscribe-push', {
+  await api.notifications.subscribePush({
     token,
     user_agent: navigator.userAgent,
   });
@@ -80,7 +79,7 @@ async function registerNativeWebPush(vapidPublicKey: string): Promise<boolean> {
     throw new Error('Invalid push subscription format');
   }
 
-  await axiosClient.post('/notifications/subscribe-push', {
+  await api.notifications.subscribePush({
     endpoint: subJson.endpoint,
     keys: {
       p256dh: subJson.keys.p256dh,

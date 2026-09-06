@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, ShieldCheck, HeartHandshake, Camera, User, Trash2 } from 'lucide-react';
 import type { MemberItem, MemberFormData } from '../../types/member';
 import { useTranslation } from '../../i18n';
-import axiosClient from '../../api/axiosClient';
+import { api } from '../../api/client';
 import {
   MEMBER_IMAGE_ACCEPT,
   compressImageToJpeg,
@@ -91,12 +91,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
   };
 
   const uploadMemberAvatar = async (memberId: string, file: File) => {
-    const uploadFormData = new FormData();
-    uploadFormData.append('file', file);
-    const res = await axiosClient.post(`/members/${memberId}/avatar`, uploadFormData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return res.data?.avatar_url as string | undefined;
+    return api.members.uploadAvatar(memberId, file);
   };
 
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,7 +167,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
         if (!formData.avatar_url && member?.avatar_url) {
           body.avatar_url = '';
         }
-        await axiosClient.put(`/members/${existingId}`, body);
+        await api.members.update(existingId, body);
         if (avatarFile) {
           const url = await uploadMemberAvatar(existingId, avatarFile);
           if (url) {
@@ -182,8 +177,8 @@ export const MemberModal: React.FC<MemberModalProps> = ({
           }
         }
       } else {
-        const created = await axiosClient.post('/members', payload);
-        const newId = created.data?.id as string | undefined;
+        const created = await api.members.create(payload);
+        const newId = created?.id as string | undefined;
         if (!newId) {
           throw new Error('missing member id');
         }
@@ -316,7 +311,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                         return;
                       }
                       try {
-                        await axiosClient.delete(`/members/${id}/avatar`);
+                        await api.members.removeAvatar(id);
                       } catch (err: any) {
                         setError(err?.response?.data?.error || t('common.errorOccurred'));
                       }

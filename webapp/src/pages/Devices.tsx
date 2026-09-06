@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Video } from 'lucide-react';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import type { DeviceType, DeviceFormData } from '../types/device';
 import { DeviceCard } from '../components/device/DeviceCard';
 import { DeviceModal } from '../components/device/DeviceModal';
@@ -52,8 +52,7 @@ const Devices = () => {
   const fetchDevices = async () => {
     try {
       setIsLoading(true);
-      const res = await axiosClient.get('/cameras');
-      setDevices(res.data || []);
+      setDevices(await api.cameras.list());
     } catch (err) {
       console.error('Failed to fetch devices', err);
     } finally {
@@ -188,16 +187,14 @@ const Devices = () => {
         const editingDevice = devices.find((d) => d.id === editingDeviceId);
         const isRunning = !!(editingDevice && editingDevice.is_active && !editingDevice.is_stopped);
 
-        await axiosClient.put(`/cameras/${editingDeviceId}`, payload);
+        await api.cameras.update(editingDeviceId, payload);
 
         if (isRunning) {
           // Immediately flush connections and recreate with new config
-          await axiosClient.post(`/cameras/${editingDeviceId}/stop`);
-          await new Promise(r => setTimeout(r, 800));
-          await axiosClient.post(`/cameras/${editingDeviceId}/start`);
+          await api.cameras.restart(editingDeviceId);
         }
       } else {
-        await axiosClient.post('/cameras', payload);
+        await api.cameras.create(payload);
       }
       setShowModal(false);
       fetchDevices();
@@ -220,7 +217,7 @@ const Devices = () => {
     if (!pendingStopId) return;
     try {
       setTogglingId(pendingStopId);
-      await axiosClient.post(`/cameras/${pendingStopId}/stop`);
+      await api.cameras.stop(pendingStopId);
       setPendingStopId(null);
       fetchDevices();
     } catch (err) {
@@ -234,7 +231,7 @@ const Devices = () => {
   const handleStartDevice = async (dev: DeviceType) => {
     try {
       setTogglingId(dev.id);
-      await axiosClient.post(`/cameras/${dev.id}/start`);
+      await api.cameras.start(dev.id);
       fetchDevices();
     } catch (err) {
       console.error('Failed to start device', err);
@@ -247,10 +244,7 @@ const Devices = () => {
   const handleRestartDevice = async (dev: DeviceType) => {
     try {
       setTogglingId(dev.id);
-      await axiosClient.post(`/cameras/${dev.id}/stop`);
-      // Wait for pool service to release connections
-      await new Promise(r => setTimeout(r, 800));
-      await axiosClient.post(`/cameras/${dev.id}/start`);
+      await api.cameras.restart(dev.id);
       fetchDevices();
     } catch (err) {
       console.error('Failed to restart device', err);
@@ -264,7 +258,7 @@ const Devices = () => {
     if (!pendingDeleteId) return;
     try {
       setIsDeleting(true);
-      await axiosClient.delete(`/cameras/${pendingDeleteId}`);
+      await api.cameras.remove(pendingDeleteId);
       setPendingDeleteId(null);
       fetchDevices();
     } catch (err) {

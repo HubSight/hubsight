@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import type { Recording } from '../../types/recording';
+import { api } from '../../api/client';
 import { LivePlayer } from './LivePlayer';
 import { FullscreenEnterIcon, FullscreenExitIcon } from '../common/FullscreenIcons';
 import { useTranslation } from '../../i18n';
@@ -83,8 +84,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!activeRecording) return;
-    const baseUrl = import.meta.env.VITE_API_URL || '/api';
-    const downloadUrl = `${baseUrl}/archive/${activeRecording.id}/stream?download=true`;
+    const downloadUrl = api.archive.streamUrl(activeRecording.id, { download: true });
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.target = '_blank';
@@ -469,7 +469,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ) : mode === 'archive' && activeRecording ? (
         <video
           ref={videoRef}
-          src={`${import.meta.env.VITE_API_URL || '/api'}/archive/${activeRecording.id}/stream`}
+          src={api.archive.streamUrl(activeRecording.id)}
           autoPlay
           playsInline
           onLoadedMetadata={onLoadedMetadata}

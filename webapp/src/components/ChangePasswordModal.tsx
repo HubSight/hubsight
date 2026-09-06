@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { KeyRound, Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import { AxiosError } from 'axios';
 import { useTranslation } from '../i18n';
 
@@ -61,9 +61,9 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
     setLoading(true);
 
     try {
-      await axiosClient.put('/auth/password', {
+      await api.auth.changePassword({
         old_password: oldPassword,
-        new_password: newPassword
+        new_password: newPassword,
       });
       setSuccess(t('password.success'));
       setTimeout(() => onClose(), 1200);

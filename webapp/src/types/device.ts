@@ -1,21 +1,5 @@
-export interface DeviceType {
-  id: string;
-  name: string;
-  host: string;
-  brand: string;
-  rtsp_port: number;
-  rtsp_transport: string;
-  segment_duration: number;
-  video_codec: string;
-  audio_mode: string;
-  extra_args: string;
-  is_active: boolean;
-  is_stopped: boolean;
-  enable_ai: boolean;
-  show_bbox: boolean;
-  created_at: string;
-  updated_at: string;
-}
+// `DeviceType` moved to `@hubsight/api` — re-exported for existing import paths.
+export type { DeviceType, CameraType } from '@hubsight/api';
 
 export interface DeviceFormData {
   name: string;
@@ -39,6 +23,5 @@ export interface DeviceFormData {
   show_bbox: boolean;
 }
 
-// Backward compatibility aliases
-export type CameraType = DeviceType;
+// Backward compatibility alias
 export type CameraFormData = DeviceFormData;

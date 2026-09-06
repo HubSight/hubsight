@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import { useTranslation } from '../i18n';
 
 export interface TimezoneOption {
@@ -64,7 +64,7 @@ export const TimezoneProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     if (user) {
       try {
-        await axiosClient.put('/auth/timezone', { timezone: tz });
+        await api.auth.setTimezone(tz);
         setUser({ ...user, timezone: tz });
       } catch (err) {
         console.error('Failed to persist timezone to database:', err);

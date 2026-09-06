@@ -15,6 +15,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import type { Recording } from '../types/recording';
+import { api } from '../api/client';
 import { useTranslation } from '../i18n';
 
 interface TimelineControlProps {
@@ -307,7 +308,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                       <div className="relative aspect-video w-full bg-slate-950 overflow-hidden flex items-center justify-center">
                         {rec.thumbnail_path && (
                           <img
-                            src={`${import.meta.env.VITE_API_URL || '/api'}/archive/${rec.id}/thumbnail`}
+                            src={api.archive.thumbnailUrl(rec.id)}
                             alt={meta.label}
                             onError={(e) => {
                               // If thumbnail not found or failed, hide img and show fallback icon

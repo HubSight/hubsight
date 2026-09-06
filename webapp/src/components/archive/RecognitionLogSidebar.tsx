@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
 import { useRealtimeEvent } from '@hubsight/realtime/react';
-import axiosClient from '../../api/axiosClient';
+import { api } from '../../api/client';
 import { useTimezone } from '../../context/TimezoneContext';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '../../i18n/vi';
@@ -68,8 +68,7 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
     setLoading(true);
     setError(false);
     try {
-      const res = await axiosClient.get(`/cameras/${id}/recognition-logs?limit=50`);
-      setLogs(Array.isArray(res.data) ? res.data : []);
+      setLogs(await api.cameras.recognitionLogs(id));
     } catch (err) {
       console.error('Failed to fetch recognition logs:', err);
       setError(true);
@@ -108,7 +107,7 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
     if (!cameraId) return;
     setClearing(true);
     try {
-      await axiosClient.delete(`/cameras/${cameraId}/recognition-logs`);
+      await api.cameras.clearRecognitionLogs(cameraId);
       setLogs([]);
       setConfirmClear(false);
     } catch (err) {

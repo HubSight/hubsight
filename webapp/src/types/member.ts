@@ -1,27 +1,7 @@
-export type MemberRole = 'family' | 'guest' | 'neighbor' | 'staff';
+// Domain types moved to `@hubsight/api` — re-exported here for existing import paths.
+import type { MemberRole } from '@hubsight/api';
 
-export interface FaceItem {
-  id: string;
-  member_id: string;
-  sample_image_url: string;
-  quality_score: number;
-  yaw: number;
-  pitch: number;
-  blur_score: number;
-  created_at: string;
-}
-
-export interface MemberItem {
-  id: string;
-  name: string;
-  role: MemberRole;
-  avatar_url: string;
-  is_active: boolean;
-  face_count: number;
-  faces?: FaceItem[];
-  created_at: string;
-  updated_at: string;
-}
+export type { MemberRole, FaceItem, MemberItem } from '@hubsight/api';
 
 export interface MemberFormData {
   name: string;

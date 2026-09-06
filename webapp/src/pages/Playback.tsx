@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import type { CameraItem, Recording } from '../types/recording';
 import TimelineControl from '../components/TimelineControl';
 import { VideoPlayer } from '../components/archive/VideoPlayer';
@@ -68,8 +68,7 @@ const Playback = () => {
   // Fetch cameras on mount
   const fetchCameras = useCallback(async () => {
     try {
-      const res = await axiosClient.get('/cameras');
-      const cams: CameraItem[] = res.data || [];
+      const cams: CameraItem[] = await api.cameras.list();
       setCameras(cams);
       
       const queryCamId = searchParams.get('camera_id');
@@ -124,8 +123,7 @@ const Playback = () => {
     const year = monthDate.getFullYear();
     const month = monthDate.getMonth() + 1;
     try {
-      const res = await axiosClient.get(`/archive/${camId}/available-days?year=${year}&month=${month}`);
-      setAvailableDays(res.data || []);
+      setAvailableDays(await api.archive.availableDays(camId, year, month));
     } catch (err) {
       console.error('Failed to fetch available days:', err);
     }
@@ -146,12 +144,11 @@ const Playback = () => {
     const to = dayjs(`${dateString}T23:59:59Z`).toISOString();
 
     try {
-      const res = await axiosClient.get(
-        `/archive/timeline?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
-          to
-        )}&camera_id=${camId}`
-      );
-      const recs: Recording[] = res.data || [];
+      const recs: Recording[] = await api.archive.timeline({
+        camera_id: camId,
+        from,
+        to,
+      });
       setRecordings(recs);
       if (recs.length > 0) {
         if (targetTimestampRef.current) {

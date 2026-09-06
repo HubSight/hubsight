@@ -4,10 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
 import { Camera, Lock, User, Eye, EyeOff, ArrowRight, Globe } from 'lucide-react';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import { AxiosError } from 'axios';
 import { AppFooter } from '../components/AppFooter';
-import { isPwa, setPwaRefreshToken, clearPwaRefreshToken } from '../utils/pwa';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -31,24 +30,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const runningAsPwa = isPwa();
-      const res = await axiosClient.post('/auth/login', {
-        username,
-        password,
-        is_pwa: runningAsPwa
-      });
-
-      if (runningAsPwa && res.data?.refresh_token) {
-        setPwaRefreshToken(res.data.refresh_token);
-      } else {
-        clearPwaRefreshToken();
-      }
-
+      await api.auth.login({ username, password });
       await checkAuth();
       navigate('/devices');
     } catch (error) {
       if (error instanceof AxiosError && error.response) {
-        setError(error.response.data.error || t('login.authFailed'));
+        setError(error.response.data?.error || t('login.authFailed'));
       } else {
         setError(t('login.networkError'));
       }

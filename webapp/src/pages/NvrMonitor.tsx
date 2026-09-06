@@ -12,7 +12,7 @@ import {
   Trash2,
   Zap
 } from 'lucide-react';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import type { NvrStatusResponse } from '../types/nvr';
 import { useTranslation } from '../i18n';
 import { useRealtimeEvent } from '@hubsight/realtime/react';
@@ -80,7 +80,7 @@ const NvrMonitor = () => {
       onConfirm: async () => {
         setIsUpdatingSettings(true);
         try {
-          await axiosClient.put('/settings', { nvr_status: nextStatus });
+          await api.recorder.updateSettings({ nvr_status: nextStatus });
           await fetchStatus(false);
         } catch (err) {
           console.error('Failed to update NVR status', err);
@@ -108,7 +108,7 @@ const NvrMonitor = () => {
 
         setIsUpdatingSettings(true);
         try {
-          await axiosClient.put('/settings', { storage_quota_gb: newQuota });
+          await api.recorder.updateSettings({ storage_quota_gb: newQuota });
           await fetchStatus(false);
         } catch (err) {
           console.error('Failed to update quota', err);
@@ -136,7 +136,7 @@ const NvrMonitor = () => {
         
         setIsUpdatingSettings(true);
         try {
-          await axiosClient.put('/settings', { retention_days: newDays });
+          await api.recorder.updateSettings({ retention_days: newDays });
           await fetchStatus(false);
         } catch (err) {
           console.error('Failed to update retention', err);
@@ -158,13 +158,13 @@ const NvrMonitor = () => {
       onConfirm: async () => {
         setIsUpdatingSettings(true);
         try {
-          const res = await axiosClient.post('/settings/storage/cleanup');
-          const freedGb = (res.data.freed_bytes / (1024 * 1024 * 1024)).toFixed(2);
-          
+          const result = await api.recorder.storageCleanup();
+          const freedGb = (result.freed_bytes / (1024 * 1024 * 1024)).toFixed(2);
+
           setModalConfig({
             isOpen: true,
             title: t('nvr.formatCompleteTitle'),
-            message: t('nvr.formatSuccess', { count: res.data.deleted_count, size: freedGb }),
+            message: t('nvr.formatSuccess', { count: result.deleted_count, size: freedGb }),
             type: 'alert',
             inputValue: '',
             onConfirm: () => {
@@ -193,8 +193,7 @@ const NvrMonitor = () => {
     if (showLoading) setLoading(true);
     setIsRefreshing(true);
     try {
-      const res = await axiosClient.get('/recorder/status');
-      setData(res.data);
+      setData(await api.recorder.status());
     } catch (err) {
       console.error('Failed to fetch NVR status', err);
     } finally {

@@ -4,8 +4,7 @@ import { useAppLock } from '../../context/AppLockContext';
 import { useTranslation } from '../../i18n';
 import { Fingerprint, ScanFace, KeyRound, Lock, Eye, EyeOff, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
-import { clearPwaRefreshToken } from '../../utils/pwa';
+import { api } from '../../api/client';
 
 type BioType = 'face' | 'fingerprint' | 'key';
 
@@ -121,12 +120,7 @@ export const AppLockScreen: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    clearPwaRefreshToken();
-    try {
-      await axiosClient.post('/auth/logout');
-    } catch {
-      // ignore
-    }
+    await api.auth.logout();
     await checkAuth();
     navigate('/login');
   };

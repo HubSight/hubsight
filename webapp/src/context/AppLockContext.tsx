@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import { isPwa } from '../utils/pwa';
 import {
   isPlatformAuthenticatorAvailable,
@@ -184,7 +184,7 @@ export const AppLockProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Unlock with Account Password
   const unlockWithPassword = async (password: string): Promise<boolean> => {
     try {
-      await axiosClient.post('/auth/verify-password', { password });
+      await api.auth.verifyPassword(password);
       setIsLocked(false);
       localStorage.removeItem(STORAGE_KEYS.IS_LOCKED);
       localStorage.removeItem(STORAGE_KEYS.LAST_HIDDEN_TIME);

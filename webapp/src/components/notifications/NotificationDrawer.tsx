@@ -15,7 +15,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type { NotificationItem } from '../../types/notification';
 import { useTranslation } from '../../i18n';
-import axiosClient from '../../api/axiosClient';
+import { api } from '../../api/client';
 import { subscribeToWebPush, isPushNotificationSupported, getPushNotificationPermission } from '../../utils/push';
 import { useNavigate } from 'react-router-dom';
 import { useRealtimeEvent } from '@hubsight/realtime/react';
@@ -83,10 +83,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const fetchNotifications = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await axiosClient.get('/notifications');
-      const data = res.data;
-      setNotifications(data?.notifications || []);
-      const count = data?.unread_count || 0;
+      const data = await api.notifications.list();
+      setNotifications(data.notifications);
+      const count = data.unread_count;
       setUnreadCount(count);
       onUnreadCountChange?.(count);
     } catch (err) {
@@ -110,7 +109,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
   const handleMarkAllRead = async () => {
     try {
-      await axiosClient.post('/notifications/read-all');
+      await api.notifications.markAllRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
       onUnreadCountChange?.(0);
@@ -121,7 +120,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
   const handleMarkRead = async (id: string) => {
     try {
-      await axiosClient.patch(`/notifications/${id}/read`);
+      await api.notifications.markRead(id);
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
@@ -136,7 +135,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
-      await axiosClient.delete(`/notifications/${id}`);
+      await api.notifications.remove(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
       console.error('Failed to delete notification:', err);
@@ -146,7 +145,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const handleClearAll = async () => {
     setClearing(true);
     try {
-      await axiosClient.delete('/notifications');
+      await api.notifications.clear();
       setNotifications([]);
       setUnreadCount(0);
       onUnreadCountChange?.(0);
@@ -160,7 +159,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
   const handleTestPush = async () => {
     try {
-      await axiosClient.post('/notifications/test');
+      await api.notifications.sendTest();
     } catch (err) {
       console.error('Failed to trigger test push:', err);
     }

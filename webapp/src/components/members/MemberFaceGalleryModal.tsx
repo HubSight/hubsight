@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { MemberItem, FaceItem } from '../../types/member';
 import { useTranslation } from '../../i18n';
-import axiosClient from '../../api/axiosClient';
+import { api } from '../../api/client';
 import { useTimezone } from '../../context/TimezoneContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import {
@@ -73,18 +73,20 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     if (!member) return;
     try {
       setIsLoadingFaces(true);
-      const res = await axiosClient.get(`/members/${member.id}/faces`, {
-        params: { page: pageNum, limit: 20, sort_by: sort, order: 'desc' },
+      const data = await api.members.listFaces(member.id, {
+        page: pageNum,
+        limit: 20,
+        sort_by: sort,
+        order: 'desc',
       });
-      const data = res.data;
       if (append) {
         setFaces((prev) => {
           // Avoid duplicates
-          const newFaces = data.data.filter((newF: FaceItem) => !prev.some(p => p.id === newF.id));
+          const newFaces = data.faces.filter((newF: FaceItem) => !prev.some(p => p.id === newF.id));
           return [...prev, ...newFaces];
         });
       } else {
-        setFaces(data.data);
+        setFaces(data.faces);
       }
       setTotalFaces(data.total);
       setHasMore(pageNum < data.total_pages);
@@ -208,15 +210,11 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           const prepared = file.size > MAX_RAW_IMAGE_BYTES
             ? await compressImageToJpeg(file, MAX_RAW_IMAGE_BYTES)
             : file;
-          const formData = new FormData();
-          formData.append('file', prepared);
-          const res = await axiosClient.post(`/members/${member.id}/faces/enroll`, formData, {
-            timeout: 20000,
-          });
-          if (res.data) {
+          const result = await api.members.enrollFace(member.id, prepared);
+          if (result) {
             addedCount++;
-            if (!currentAvatarUrl && res.data.sample_image_url) {
-              setCurrentAvatarUrl(res.data.sample_image_url);
+            if (!currentAvatarUrl && result.sample_image_url) {
+              setCurrentAvatarUrl(result.sample_image_url);
             }
           }
         } catch (err: any) {
@@ -261,7 +259,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     if (!imageUrl) return;
     try {
       setCurrentAvatarUrl(imageUrl);
-      await axiosClient.put(`/members/${member.id}`, { avatar_url: imageUrl });
+      await api.members.update(member.id, { avatar_url: imageUrl });
       onUpdate();
     } catch (err: any) {
       console.error('Failed to update avatar:', err);
@@ -283,15 +281,13 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
     try {
       setIsDeleting(true);
       if (pendingDelete.kind === 'single') {
-        await axiosClient.delete(`/members/${member.id}/faces/${pendingDelete.faceId}`);
+        await api.members.deleteFace(member.id, pendingDelete.faceId);
         setFaces((prev) => prev.filter((f) => f.id !== pendingDelete.faceId));
         setTotalFaces((prev) => prev - 1);
         if (selectedPhotoIndex !== null) setSelectedPhotoIndex(null);
         onUpdate();
       } else {
-        await axiosClient.delete(`/members/${member.id}/faces`, {
-          data: { face_ids: Array.from(selectedFaceIds) },
-        });
+        await api.members.deleteFaces(member.id, Array.from(selectedFaceIds));
         setSelectedFaceIds(new Set());
         setSelectionMode(false);
         setPage(1);

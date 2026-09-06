@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { isPwa } from '../../utils/pwa';
 import { useAuth } from '../../context/AuthContext';
-import axiosClient from '../../api/axiosClient';
+import { api } from '../../api/client';
 
 interface AppSettingsModalProps {
   onClose: () => void;
@@ -67,7 +67,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
     setUser({ ...user, push_preferences: newPrefs });
 
     try {
-      await axiosClient.put('/auth/preferences', { push_preferences: newPrefs });
+      await api.auth.setPreferences(newPrefs);
     } catch (err) {
       console.error('Failed to update push preferences', err);
     }

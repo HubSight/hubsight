@@ -1,18 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axiosClient from '../api/axiosClient';
-
-interface User {
-  id: string;
-  username: string;
-  full_name?: string;
-  role: 'admin' | 'viewer';
-  locale: 'vi' | 'en';
-  timezone?: string;
-  is_active: boolean;
-  created_at: string;
-  last_login_at: string;
-  push_preferences?: Record<string, boolean>;
-}
+import type { User } from '@hubsight/api';
+import { api } from '../api/client';
 
 interface AuthContextType {
   user: User | null;
@@ -34,8 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     try {
-      const res = await axiosClient.get('/auth/me');
-      setUser(res.data);
+      setUser(await api.auth.me());
     } catch {
       setUser(null);
     } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, Search, ShieldCheck, HeartHandshake } from 'lucide-react';
-import axiosClient from '../api/axiosClient';
+import { api } from '../api/client';
 import type { MemberItem } from '../types/member';
 import { MemberCard } from '../components/members/MemberCard';
 import { MemberModal } from '../components/members/MemberModal';
@@ -47,25 +47,16 @@ const Members: React.FC = () => {
   const fetchMembers = useCallback(async () => {
     try {
       setIsLoading(true);
-      const params = new URLSearchParams({
-        page: String(currentPage),
-        limit: String(pageSize),
+      const page = await api.members.list({
+        page: currentPage,
+        limit: pageSize,
+        search: debouncedSearch || undefined,
+        role: roleFilter === 'all' ? undefined : roleFilter,
       });
-      if (debouncedSearch) params.append('search', debouncedSearch);
-      if (roleFilter !== 'all') params.append('role', roleFilter);
-
-      const res = await axiosClient.get(`/members?${params.toString()}`);
-      if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-        setMembers(res.data.data || []);
-        setTotalMembers(res.data.total || 0);
-        if (res.data.family_count !== undefined) setFamilyCount(res.data.family_count);
-        if (res.data.guest_count !== undefined) setGuestCount(res.data.guest_count);
-      } else if (Array.isArray(res.data)) {
-        setMembers(res.data);
-        setTotalMembers(res.data.length);
-        setFamilyCount(res.data.filter((m: MemberItem) => m.role === 'family').length);
-        setGuestCount(res.data.filter((m: MemberItem) => m.role !== 'family').length);
-      }
+      setMembers(page.data);
+      setTotalMembers(page.total);
+      if (page.family_count !== undefined) setFamilyCount(page.family_count);
+      if (page.guest_count !== undefined) setGuestCount(page.guest_count);
     } catch (err) {
       console.error('Failed to fetch members:', err);
     } finally {
@@ -100,7 +91,7 @@ const Members: React.FC = () => {
     if (!pendingDeleteId) return;
     try {
       setIsDeleting(true);
-      await axiosClient.delete(`/members/${pendingDeleteId}`);
+      await api.members.remove(pendingDeleteId);
       setPendingDeleteId(null);
       fetchMembers();
     } catch (err) {

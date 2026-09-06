@@ -11,8 +11,7 @@ import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
 import { useRealtimeEvent } from '@hubsight/realtime/react';
-import axiosClient from '../api/axiosClient';
-import { clearPwaRefreshToken } from '../utils/pwa';
+import { api } from '../api/client';
 import { getPushNotificationPermission, subscribeToWebPush } from '../utils/push';
 import { Toaster } from 'react-hot-toast';
 
@@ -32,10 +31,9 @@ const MainLayout = () => {
 
   // Fetch initial unread count
   useEffect(() => {
-    axiosClient.get('/notifications')
-      .then((res) => {
-        setUnreadNotifCount(res.data?.unread_count || 0);
-      })
+    api.notifications
+      .list()
+      .then((res) => setUnreadNotifCount(res.unread_count))
       .catch(() => {});
   }, []);
 
@@ -72,8 +70,7 @@ const MainLayout = () => {
   }, [isUserMenuOpen]);
 
   const handleLogout = async () => {
-    clearPwaRefreshToken();
-    await axiosClient.post('/auth/logout');
+    await api.auth.logout();
     await checkAuth();
     navigate('/login');
   };
@@ -82,7 +79,7 @@ const MainLayout = () => {
     const newLocale: Locale = locale === 'vi' ? 'en' : 'vi';
     setLocale(newLocale);
     try {
-      await axiosClient.put('/auth/locale', { locale: newLocale });
+      await api.auth.setLocale(newLocale);
     } catch (err) {
       console.error('Failed to save locale preference', err);
     }
