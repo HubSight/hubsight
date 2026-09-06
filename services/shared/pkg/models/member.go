@@ -10,7 +10,7 @@ import (
 
 // Member represents a registered person profile for facial recognition.
 type Member struct {
-	ID        string       `gorm:"primaryKey;type:varchar(21)" json:"id,omitempty"`
+	ID        string       `gorm:"primaryKey;type:varchar" json:"id,omitempty"`
 	Name      string       `gorm:"column:name;type:varchar(255);not null" json:"name,omitempty"`
 	Role      MemberRole   `gorm:"column:role;type:varchar(32);not null;default:'family'" json:"role,omitempty"`
 	AvatarURL string       `gorm:"column:avatar_url;type:text;not null;default:''" json:"avatar_url,omitempty"`

@@ -11,6 +11,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // DB is the global GORM database handle.
@@ -27,7 +28,10 @@ func Connect(dbURL string) error {
 	}
 
 	// 1. Initialize GORM with pgx driver
-	gormDB, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
+	gormDB, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+		Logger:                                   logger.Default.LogMode(logger.Warn),
+	})
 	if err != nil {
 		return fmt.Errorf("failed opening connection to postgres with gorm: %w", err)
 	}

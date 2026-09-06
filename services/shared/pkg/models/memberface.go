@@ -10,8 +10,8 @@ import (
 
 // MemberFace stores a 512D facial embedding vector and sample image for face matching.
 type MemberFace struct {
-	ID             string    `gorm:"primaryKey;type:varchar(21)" json:"id,omitempty"`
-	MemberID       string    `gorm:"column:member_id;type:varchar(21);not null;index" json:"member_id,omitempty"`
+	ID             string    `gorm:"primaryKey;type:varchar" json:"id,omitempty"`
+	MemberID       string    `gorm:"column:member_id;type:varchar(21);not null;index:idx_member_faces_member_id" json:"member_id,omitempty"`
 	Embedding      []float64 `gorm:"column:embedding;serializer:json;type:jsonb;not null" json:"embedding,omitempty"`
 	SampleImageURL string    `gorm:"column:sample_image_url;type:text;not null;default:''" json:"sample_image_url,omitempty"`
 	QualityScore   float64   `gorm:"column:quality_score;not null;default:0" json:"quality_score,omitempty"`

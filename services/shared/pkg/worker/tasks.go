@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/hibiken/asynq"
 	"cctv/shared/pkg/storage"
+	"github.com/hibiken/asynq"
 )
 
 // Task names
@@ -31,13 +31,13 @@ func NewArchiveCleanupTask() (*asynq.Task, error) {
 // HandleArchiveCleanupTask handles the archive cleanup task.
 func HandleArchiveCleanupTask(ctx context.Context, t *asynq.Task) error {
 	log.Printf("[Asynq Worker] Executing task: %s", t.Type())
-	
+
 	deletedCount, freedBytes, err := storage.CleanupOldArchives(ctx)
 	if err != nil {
 		log.Printf("[Asynq Worker] Failed to execute %s: %v", t.Type(), err)
 		return err
 	}
-	
+
 	log.Printf("[Asynq Worker] Task %s completed. Deleted %d segments, freed %d bytes.", t.Type(), deletedCount, freedBytes)
 	return nil
 }

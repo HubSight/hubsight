@@ -94,12 +94,16 @@ func MarkReadHandler(c *gin.Context) {
 		return
 	}
 
-	err := database.DB.WithContext(c.Request.Context()).
+	res := database.DB.WithContext(c.Request.Context()).
 		Model(&models.Notification{ID: id}).
-		Update("is_read", true).Error
+		Update("is_read", true)
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark read: " + err.Error()})
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark read: " + res.Error.Error()})
+		return
+	}
+	if res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Notification not found"})
 		return
 	}
 
@@ -129,11 +133,15 @@ func DeleteNotificationHandler(c *gin.Context) {
 		return
 	}
 
-	err := database.DB.WithContext(c.Request.Context()).
+	res := database.DB.WithContext(c.Request.Context()).
 		Where("id = ?", id).
-		Delete(&models.Notification{}).Error
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete notification: " + err.Error()})
+		Delete(&models.Notification{})
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete notification: " + res.Error.Error()})
+		return
+	}
+	if res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Notification not found"})
 		return
 	}
 

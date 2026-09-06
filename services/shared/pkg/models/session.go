@@ -10,9 +10,9 @@ import (
 
 // Session represents an active user authentication session or refresh token grant.
 type Session struct {
-	ID               string     `gorm:"primaryKey;type:varchar(21)" json:"id,omitempty"`
-	UserID           string     `gorm:"column:user_id;type:varchar(21);not null;index" json:"user_id,omitempty"`
-	TokenHash        []byte     `gorm:"column:token_hash;type:bytea;uniqueIndex;not null" json:"-"`
+	ID               string     `gorm:"primaryKey;type:varchar" json:"id,omitempty"`
+	UserID           string     `gorm:"column:user_id;type:varchar(21);not null;index:idx_sessions_user_id" json:"user_id,omitempty"`
+	TokenHash        []byte     `gorm:"column:token_hash;type:bytea;uniqueIndex:sessions_token_hash_key;not null" json:"-"`
 	RefreshTokenHash []byte     `gorm:"column:refresh_token_hash;type:bytea" json:"-"`
 	IsPwa            bool       `gorm:"column:is_pwa;not null;default:false" json:"is_pwa"`
 	ExpiresAt        time.Time  `gorm:"column:expires_at;not null" json:"expires_at,omitempty"`
