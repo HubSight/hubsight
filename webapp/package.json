@@ -16,6 +16,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hubsight/realtime": "workspace:*",
     "axios": "^1.19.0",
     "dayjs": "^1.11.23",
     "firebase": "^12.18.0",

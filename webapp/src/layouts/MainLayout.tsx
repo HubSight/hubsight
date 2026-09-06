@@ -10,7 +10,7 @@ import { AppLockScreen } from '../components/lock/AppLockScreen';
 import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
-import { useSocket } from '../context/SocketContext';
+import { useRealtimeEvent } from '@hubsight/realtime/react';
 import axiosClient from '../api/axiosClient';
 import { clearPwaRefreshToken } from '../utils/pwa';
 import { getPushNotificationPermission, subscribeToWebPush } from '../utils/push';
@@ -18,7 +18,6 @@ import { Toaster } from 'react-hot-toast';
 
 const MainLayout = () => {
   const { user, checkAuth } = useAuth();
-  const { socket } = useSocket();
   const { t, locale, setLocale } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,17 +46,10 @@ const MainLayout = () => {
     void subscribeToWebPush({ requestPermission: false });
   }, [user]);
 
-  // Listen for new notifications via socket
-  useEffect(() => {
-    if (!socket) return;
-    const handleNewNotif = () => {
-      setUnreadNotifCount((prev) => prev + 1);
-    };
-    socket.on('notification.new', handleNewNotif);
-    return () => {
-      socket.off('notification.new', handleNewNotif);
-    };
-  }, [socket]);
+  // Bump the bell badge when the relay pushes a new notification
+  useRealtimeEvent('notification.new', () => {
+    setUnreadNotifCount((prev) => prev + 1);
+  });
 
   useEffect(() => {
     if (location.pathname === '/playback') {

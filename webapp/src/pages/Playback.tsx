@@ -10,7 +10,7 @@ import { RecognitionLogSidebar } from '../components/archive/RecognitionLogSideb
 import { PlaybackSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
-import { useSocket } from '../context/SocketContext';
+import { useRealtimeEvent } from '@hubsight/realtime/react';
 import { useTranslation } from '../i18n';
 
 type CameraStoppedEvent = {
@@ -29,7 +29,6 @@ type StoppedPrompt = {
 
 const Playback = () => {
   const { t } = useTranslation();
-  const { socket } = useSocket();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [cameras, setCameras] = useState<CameraItem[]>([]);
@@ -218,57 +217,48 @@ const Playback = () => {
     setLiveOffline(Boolean(cam?.is_stopped));
   };
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleStopped = (raw: CameraStoppedEvent) => {
-      const camId = raw?.id;
-      if (!camId) return;
-      setCameras((prev) => prev.map((c) => (c.id === camId ? { ...c, is_stopped: true } : c)));
-      if (selectedCamRef.current !== camId || modeRef.current !== 'live') return;
-      setLiveOffline(true);
-      setIsLiveStreaming(false);
-      if (raw.alternative_id) {
-        setStoppedPrompt({
-          cameraName: raw.name || '',
-          alternativeId: raw.alternative_id,
-          alternativeName: raw.alternative_name || '',
-        });
-      } else {
-        setStoppedPrompt(null);
-      }
-    };
-
-    const handleCameraState = (raw: CameraStoppedEvent) => {
-      if (!raw?.id) return;
-      setCameras((prev) =>
-        prev.map((c) =>
-          c.id === raw.id
-            ? { ...c, is_stopped: Boolean(raw.is_stopped), name: raw.name || c.name }
-            : c
-        )
-      );
-      if (selectedCamRef.current !== raw.id) return;
-      if (raw.is_stopped) {
-        if (modeRef.current === 'live') {
-          setLiveOffline(true);
-          setIsLiveStreaming(false);
-        }
-        return;
-      }
-      setLiveOffline(false);
+  const handleCameraStopped = (raw: CameraStoppedEvent) => {
+    const camId = raw?.id;
+    if (!camId) return;
+    setCameras((prev) => prev.map((c) => (c.id === camId ? { ...c, is_stopped: true } : c)));
+    if (selectedCamRef.current !== camId || modeRef.current !== 'live') return;
+    setLiveOffline(true);
+    setIsLiveStreaming(false);
+    if (raw.alternative_id) {
+      setStoppedPrompt({
+        cameraName: raw.name || '',
+        alternativeId: raw.alternative_id,
+        alternativeName: raw.alternative_name || '',
+      });
+    } else {
       setStoppedPrompt(null);
-    };
+    }
+  };
 
-    socket.on('camera.stopped', handleStopped);
-    socket.on('camera.started', handleCameraState);
-    socket.on('camera.updated', handleCameraState);
-    return () => {
-      socket.off('camera.stopped', handleStopped);
-      socket.off('camera.started', handleCameraState);
-      socket.off('camera.updated', handleCameraState);
-    };
-  }, [socket]);
+  const handleCameraState = (raw: CameraStoppedEvent) => {
+    if (!raw?.id) return;
+    setCameras((prev) =>
+      prev.map((c) =>
+        c.id === raw.id
+          ? { ...c, is_stopped: Boolean(raw.is_stopped), name: raw.name || c.name }
+          : c
+      )
+    );
+    if (selectedCamRef.current !== raw.id) return;
+    if (raw.is_stopped) {
+      if (modeRef.current === 'live') {
+        setLiveOffline(true);
+        setIsLiveStreaming(false);
+      }
+      return;
+    }
+    setLiveOffline(false);
+    setStoppedPrompt(null);
+  };
+
+  useRealtimeEvent('camera.stopped', handleCameraStopped);
+  useRealtimeEvent('camera.started', handleCameraState);
+  useRealtimeEvent('camera.updated', handleCameraState);
 
   // When user seeks on timeline, automatically switch to Archive mode
   const handleSeek = (rec: Recording, offsetSeconds: number) => {

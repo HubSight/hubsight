@@ -1,17 +1,6 @@
-export interface NotificationItem {
-  id: string;
-  camera_id?: string;
-  type: string;
-  title: string;
-  body: string;
-  category: 'family' | 'guest' | 'stranger' | 'system' | 'risk' | 'fall' | 'suspicious' | string;
-  member_id?: string;
-  thumbnail_url?: string;
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface NotificationResponse {
-  unread_count: number;
-  notifications: NotificationItem[];
-}
+// Moved to the realtime SDK — re-exported here for existing import paths.
+export type {
+  NotificationItem,
+  NotificationCategory,
+  NotificationListResponse as NotificationResponse,
+} from '@hubsight/realtime';

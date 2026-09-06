@@ -15,7 +15,7 @@ import {
 import axiosClient from '../api/axiosClient';
 import type { NvrStatusResponse } from '../types/nvr';
 import { useTranslation } from '../i18n';
-import { useSocket } from '../context/SocketContext';
+import { useRealtimeEvent } from '@hubsight/realtime/react';
 import { NvrMonitorSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import dayjs from 'dayjs';
@@ -47,7 +47,6 @@ const formatUptime = (seconds: number) => {
 
 const NvrMonitor = () => {
   const { t } = useTranslation();
-  const { socket } = useSocket();
   const [data, setData] = useState<NvrStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -210,19 +209,11 @@ const NvrMonitor = () => {
   }, []);
 
   // Real-time Event-Driven updates via RabbitMQ -> Socket.IO (0 HTTP requests)
-  useEffect(() => {
-    if (!socket) return;
-    const handleStatusUpdate = (newStatus: NvrStatusResponse) => {
-      setData(newStatus);
-      setLoading(false);
-      setIsRefreshing(false);
-    };
-
-    socket.on('nvr.status.update', handleStatusUpdate);
-    return () => {
-      socket.off('nvr.status.update', handleStatusUpdate);
-    };
-  }, [socket]);
+  useRealtimeEvent('nvr.status.update', (newStatus) => {
+    setData(newStatus);
+    setLoading(false);
+    setIsRefreshing(false);
+  });
 
   if (loading && !data) {
     return (

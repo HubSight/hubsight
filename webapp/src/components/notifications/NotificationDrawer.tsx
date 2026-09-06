@@ -18,7 +18,7 @@ import { useTranslation } from '../../i18n';
 import axiosClient from '../../api/axiosClient';
 import { subscribeToWebPush, isPushNotificationSupported, getPushNotificationPermission } from '../../utils/push';
 import { useNavigate } from 'react-router-dom';
-import { useSocket } from '../../context/SocketContext';
+import { useRealtimeEvent } from '@hubsight/realtime/react';
 import { useTimezone } from '../../context/TimezoneContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 
@@ -36,7 +36,6 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   onUnreadCountChange,
 }) => {
   const { t } = useTranslation();
-  const { socket } = useSocket();
   const { formatNotificationBody, formatDateTime } = useTimezone();
   const navigate = useNavigate();
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -103,18 +102,11 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     }
   }, [isOpen, fetchNotifications]);
 
-  // Real-time dynamic append when socket receives new notification
-  useEffect(() => {
-    if (!socket) return;
-    const handleNewNotif = (notif: NotificationItem) => {
-      setNotifications((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)]);
-      setUnreadCount((prev) => prev + 1);
-    };
-    socket.on('notification.new', handleNewNotif);
-    return () => {
-      socket.off('notification.new', handleNewNotif);
-    };
-  }, [socket]);
+  // Real-time dynamic append when the relay pushes a new notification
+  useRealtimeEvent('notification.new', (notif: NotificationItem) => {
+    setNotifications((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)]);
+    setUnreadCount((prev) => prev + 1);
+  });
 
   const handleMarkAllRead = async () => {
     try {

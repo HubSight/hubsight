@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
+import { useRealtimeEvent } from '@hubsight/realtime/react';
 import axiosClient from '../../api/axiosClient';
-import { useSocket } from '../../context/SocketContext';
 import { useTimezone } from '../../context/TimezoneContext';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '../../i18n/vi';
@@ -55,7 +55,6 @@ const CATEGORY_STYLES: Record<string, { bar: string; text: string; bg: string; b
 
 export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ cameraId, variant = 'card' }) => {
   const { t } = useTranslation();
-  const { socket } = useSocket();
   const { formatTime } = useTimezone();
   const navigate = useNavigate();
 
@@ -85,22 +84,14 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
     fetchLogs(cameraId);
   }, [cameraId, fetchLogs]);
 
-  useEffect(() => {
-    if (!socket || !cameraId) return;
-    const handleNew = (item: RecognitionLogItem) => {
-      if (!item || item.camera_id !== cameraId) return;
-      setLogs((prev) => [item, ...prev.filter((l) => l.id !== item.id)]);
-    };
-    socket.on('vision.log.new', handleNew);
-    const handleMemberUpdated = () => {
-      fetchLogs(cameraId);
-    };
-    socket.on('member.face.updated', handleMemberUpdated);
-    return () => {
-      socket.off('vision.log.new', handleNew);
-      socket.off('member.face.updated', handleMemberUpdated);
-    };
-  }, [socket, cameraId, fetchLogs]);
+  useRealtimeEvent('vision.log.new', (item) => {
+    if (!item || item.camera_id !== cameraId) return;
+    setLogs((prev) => [item, ...prev.filter((l) => l.id !== item.id)]);
+  }, [cameraId]);
+
+  useRealtimeEvent('member.face.updated', () => {
+    if (cameraId) fetchLogs(cameraId);
+  }, [cameraId, fetchLogs]);
 
   const renderMessage = (item: RecognitionLogItem) => {
     const key = item.message_key as TranslationKey;

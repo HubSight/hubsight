@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { X, ShieldCheck, HeartHandshake, AlertTriangle, Bell, ArrowRight } from 'lucide-react';
+import { useRealtimeEvent } from '@hubsight/realtime/react';
 import type { NotificationItem } from '../../types/notification';
-import { useSocket } from '../../context/SocketContext';
 import { useTimezone } from '../../context/TimezoneContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n';
@@ -44,16 +44,12 @@ const playNotificationChime = (category: string) => {
 };
 
 export const NotificationToast: React.FC = () => {
-  const { socket } = useSocket();
   const { formatNotificationBody } = useTimezone();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleNewNotif = (notif: NotificationItem) => {
-      playNotificationChime(notif.category);
+  useRealtimeEvent('notification.new', (notif: NotificationItem) => {
+    playNotificationChime(notif.category);
 
       const isFamily = notif.category === 'family';
       const isGuest = notif.category === 'guest';
@@ -154,13 +150,7 @@ export const NotificationToast: React.FC = () => {
         ),
         { duration: 6000, id: notif.id }
       );
-    };
-
-    socket.on('notification.new', handleNewNotif);
-    return () => {
-      socket.off('notification.new', handleNewNotif);
-    };
-  }, [socket, formatNotificationBody, navigate, t]);
+  });
 
   return null;
 };

@@ -12,7 +12,7 @@ import {
 import axiosClient from '../api/axiosClient';
 import type { PoolStatusSummary } from '../types/pool';
 import { useTranslation } from '../i18n';
-import { useSocket } from '../context/SocketContext';
+import { useRealtimeEvent } from '@hubsight/realtime/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -34,7 +34,6 @@ function parsePoolSummary(raw: unknown): PoolStatusSummary | null {
 
 export const PoolMonitor = () => {
   const { t } = useTranslation();
-  const { socket } = useSocket();
   const [data, setData] = useState<PoolStatusSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,19 +52,12 @@ export const PoolMonitor = () => {
     hydrateOnce();
   }, [hydrateOnce]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const handleStatusUpdate = (raw: unknown) => {
-      const summary = parsePoolSummary(raw);
-      if (!summary) return;
-      setData(summary);
-      setLoading(false);
-    };
-    socket.on('pool.status.update', handleStatusUpdate);
-    return () => {
-      socket.off('pool.status.update', handleStatusUpdate);
-    };
-  }, [socket]);
+  useRealtimeEvent('pool.status.update', (raw) => {
+    const summary = parsePoolSummary(raw);
+    if (!summary) return;
+    setData(summary);
+    setLoading(false);
+  });
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 sm:p-6 lg:p-8">
