@@ -13,10 +13,10 @@ import (
 type Status string
 
 const (
-	StatusRunning   Status = "running"
-	StatusDone      Status = "done"
-	StatusCanceled  Status = "canceled"
-	StatusFailed    Status = "failed"
+	StatusRunning  Status = "running"
+	StatusDone     Status = "done"
+	StatusCanceled Status = "canceled"
+	StatusFailed   Status = "failed"
 )
 
 type Job struct {
@@ -35,13 +35,34 @@ type Job struct {
 	mu     sync.Mutex
 }
 
-func (j *Job) snapshot() Job {
+type JobSnapshot struct {
+	ID         string           `json:"id"`
+	Status     Status           `json:"status"`
+	Scanned    int              `json:"scanned"`
+	Total      int              `json:"total"`
+	Iface      string           `json:"iface"`
+	Subnets    []netinfo.Subnet `json:"subnets"`
+	Candidates []scan.Candidate `json:"candidates"`
+	Error      string           `json:"error,omitempty"`
+	StartedAt  time.Time        `json:"started_at"`
+	FinishedAt *time.Time       `json:"finished_at,omitempty"`
+}
+
+func (j *Job) snapshot() JobSnapshot {
 	j.mu.Lock()
 	defer j.mu.Unlock()
-	cp := *j
-	cp.Candidates = append([]scan.Candidate(nil), j.Candidates...)
-	cp.Subnets = append([]netinfo.Subnet(nil), j.Subnets...)
-	return cp
+	return JobSnapshot{
+		ID:         j.ID,
+		Status:     j.Status,
+		Scanned:    j.Scanned,
+		Total:      j.Total,
+		Iface:      j.Iface,
+		Subnets:    append([]netinfo.Subnet(nil), j.Subnets...),
+		Candidates: append([]scan.Candidate(nil), j.Candidates...),
+		Error:      j.Error,
+		StartedAt:  j.StartedAt,
+		FinishedAt: j.FinishedAt,
+	}
 }
 
 type Manager struct {
@@ -103,10 +124,10 @@ func (m *Manager) Get(id string) *Job {
 	return m.jobs[id]
 }
 
-func (m *Manager) Snapshot(id string) (Job, bool) {
+func (m *Manager) Snapshot(id string) (JobSnapshot, bool) {
 	j := m.Get(id)
 	if j == nil {
-		return Job{}, false
+		return JobSnapshot{}, false
 	}
 	return j.snapshot(), true
 }

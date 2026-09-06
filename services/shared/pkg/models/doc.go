@@ -1,6 +1,6 @@
 // Package models defines plain Go domain structs and GORM ORM tags for HubSight CCTV.
 //
-// Field Mapping between GORM models and the legacy Ent (entgo.io/ent) entities:
+// Field Mapping between GORM models and the legacy database entities:
 //
 // 1. User (table "users"):
 //   - ID -> ent.FieldString("id") (varchar(21), NanoID)
