@@ -1,7 +1,7 @@
-// Domain types moved to `@hubsight/api` — re-exported here for existing import paths.
-import type { MemberRole } from '@hubsight/api';
+// Domain types re-exported from `@hubsight/sdk` for existing import paths.
+import type { MemberRole } from '@hubsight/sdk';
 
-export type { MemberRole, FaceItem, MemberItem } from '@hubsight/api';
+export type { MemberRole, FaceItem, MemberItem } from '@hubsight/sdk';
 
 export interface MemberFormData {
   name: string;

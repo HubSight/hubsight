@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOnForceLogout } from '@hubsight/realtime/react';
+import { useOnForceLogout } from '@hubsight/sdk/react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../i18n';
 import { api } from '../../api/client';

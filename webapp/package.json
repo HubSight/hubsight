@@ -16,8 +16,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@hubsight/api": "workspace:*",
-    "@hubsight/realtime": "workspace:*",
     "@hubsight/sdk": "workspace:*",
     "dayjs": "^1.11.23",
     "firebase": "^12.18.0",

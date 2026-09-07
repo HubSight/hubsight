@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, ShieldCheck, HeartHandshake, AlertTriangle, Bell, ArrowRight } from 'lucide-react';
-import { useOnNotification } from '@hubsight/realtime/react';
+import { useOnNotification } from '@hubsight/sdk/react';
 import type { NotificationItem } from '../../types/notification';
 import { useTimezone } from '../../context/TimezoneContext';
 import { useNavigate } from 'react-router-dom';
@@ -84,12 +84,12 @@ export const NotificationToast: React.FC = () => {
           {/* Left accent bar */}
           <div
             className={`absolute top-0 bottom-0 left-0 w-1.5 ${isFamily
-                ? 'bg-emerald-500'
-                : isGuest
-                  ? 'bg-blue-500'
-                  : isStranger
-                    ? 'bg-red-500'
-                    : 'bg-slate-400'
+              ? 'bg-emerald-500'
+              : isGuest
+                ? 'bg-blue-500'
+                : isStranger
+                  ? 'bg-red-500'
+                  : 'bg-slate-400'
               }`}
           />
 
@@ -97,12 +97,12 @@ export const NotificationToast: React.FC = () => {
             {/* Icon */}
             <div
               className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${isFamily
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                  : isGuest
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                    : isStranger
-                      ? 'bg-red-500/30 text-red-400 border border-red-500/50'
-                      : 'bg-slate-700 text-slate-300'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : isGuest
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  : isStranger
+                    ? 'bg-red-500/30 text-red-400 border border-red-500/50'
+                    : 'bg-slate-700 text-slate-300'
                 }`}
             >
               {isFamily ? (

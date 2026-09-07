@@ -9,7 +9,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "exports": {
@@ -41,5 +41,8 @@
     "react-dom": {
       "optional": true
     }
+  },
+  "devDependencies": {
+    "tsx": "^4.23.13"
   }
 }

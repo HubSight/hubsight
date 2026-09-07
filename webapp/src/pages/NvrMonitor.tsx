@@ -15,7 +15,7 @@ import {
 import { api } from '../api/client';
 import type { NvrStatusResponse } from '../types/nvr';
 import { useTranslation } from '../i18n';
-import { useOnNvrStatus } from '@hubsight/realtime/react';
+import { useOnNvrStatus } from '@hubsight/sdk/react';
 import { NvrMonitorSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import dayjs from 'dayjs';

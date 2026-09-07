@@ -12,6 +12,12 @@ import {
   isApiError,
   getErrorMessage,
   MemorySessionAdapter,
+  toApiError,
+  apiErrorMessage,
+  isPwa,
+  getPwaRefreshToken,
+  setPwaRefreshToken,
+  clearPwaRefreshToken,
 } from '../src/index';
 
 import { createAuthManager } from '../src/auth/manager';
@@ -242,4 +248,36 @@ test('HubSightClient factory initialization and auto-wiring', () => {
   assert.ok(client.recorder);
 
   client.destroy();
+});
+
+test('Backward compatibility helpers and PWA storage', () => {
+  const err = toApiError(new Error('Test message'));
+  assert.ok(isApiError(err));
+  assert.equal(err.message, 'Test message');
+  assert.equal(apiErrorMessage(err), 'Test message');
+
+  const existingApiErr = new HubSightApiError('Direct API error', { status: 400 });
+  assert.equal(toApiError(existingApiErr), existingApiErr);
+
+  // PWA storage functions in non-browser environment
+  assert.equal(typeof isPwa(), 'boolean');
+  assert.equal(isPwa(), false);
+
+  // When window.localStorage is present (browser environment simulation)
+  const store = new Map<string, string>();
+  const fakeStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => store.set(k, v),
+    removeItem: (k: string) => store.delete(k),
+  };
+  (globalThis as unknown as { window?: unknown }).window = { localStorage: fakeStorage };
+
+  try {
+    setPwaRefreshToken('token_123');
+    assert.equal(getPwaRefreshToken(), 'token_123');
+    clearPwaRefreshToken();
+    assert.equal(getPwaRefreshToken(), null);
+  } finally {
+    delete (globalThis as unknown as { window?: unknown }).window;
+  }
 });

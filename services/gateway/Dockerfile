@@ -8,8 +8,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Cache pnpm install layer (workspace manifests only)
 COPY webapp/package.json webapp/pnpm-lock.yaml* webapp/pnpm-workspace.yaml* webapp/.npmrc* ./
-COPY webapp/packages/realtime-sdk/package.json ./packages/realtime-sdk/package.json
-COPY webapp/packages/api-sdk/package.json ./packages/api-sdk/package.json
+COPY webapp/packages/sdk/package.json ./packages/sdk/package.json
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 

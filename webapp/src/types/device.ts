@@ -1,5 +1,5 @@
-// `DeviceType` moved to `@hubsight/api` — re-exported for existing import paths.
-export type { DeviceType, CameraType } from '@hubsight/api';
+// `DeviceType` re-exported from `@hubsight/sdk` for existing import paths.
+export type { DeviceType, CameraType } from '@hubsight/sdk';
 
 export interface DeviceFormData {
   name: string;

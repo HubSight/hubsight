@@ -18,7 +18,7 @@ import { useTranslation } from '../../i18n';
 import { api } from '../../api/client';
 import { subscribeToWebPush, isPushNotificationSupported, getPushNotificationPermission } from '../../utils/push';
 import { useNavigate } from 'react-router-dom';
-import { useOnNotification } from '@hubsight/realtime/react';
+import { useOnNotification } from '@hubsight/sdk/react';
 import { useTimezone } from '../../context/TimezoneContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 
@@ -271,8 +271,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               <button
                 onClick={() => setFilter('all')}
                 className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${filter === 'all'
-                    ? 'bg-white text-slate-800 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white text-slate-800 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
                   }`}
               >
                 {t('common.all')} ({notifications.length})
@@ -280,8 +280,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               <button
                 onClick={() => setFilter('unread')}
                 className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${filter === 'unread'
-                    ? 'bg-white text-slate-800 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white text-slate-800 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
                   }`}
               >
                 {t('notifications.unread')} ({unreadCount})
@@ -337,26 +337,26 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     key={n.id}
                     onClick={() => handleItemClick(n)}
                     className={`p-3.5 rounded-2xl border transition-all duration-150 cursor-pointer flex items-start gap-3 relative group overflow-hidden ${!n.is_read
-                        ? isFamily
-                          ? 'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/70'
-                          : isGuest
-                            ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50/70'
-                            : isStranger
-                              ? 'bg-red-50/50 border-red-200 hover:bg-red-50/80'
-                              : 'bg-orange-50/40 border-orange-200'
-                        : 'bg-white hover:bg-slate-50 border-slate-200/80'
+                      ? isFamily
+                        ? 'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/70'
+                        : isGuest
+                          ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50/70'
+                          : isStranger
+                            ? 'bg-red-50/50 border-red-200 hover:bg-red-50/80'
+                            : 'bg-orange-50/40 border-orange-200'
+                      : 'bg-white hover:bg-slate-50 border-slate-200/80'
                       }`}
                   >
                     {/* Unread indicator bar */}
                     {!n.is_read && (
                       <div
                         className={`absolute top-0 bottom-0 left-0 w-1 ${isFamily
-                            ? 'bg-emerald-500'
-                            : isGuest
-                              ? 'bg-blue-500'
-                              : isStranger
-                                ? 'bg-red-500'
-                                : 'bg-orange-500'
+                          ? 'bg-emerald-500'
+                          : isGuest
+                            ? 'bg-blue-500'
+                            : isStranger
+                              ? 'bg-red-500'
+                              : 'bg-orange-500'
                           }`}
                       />
                     )}
@@ -364,12 +364,12 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     {/* Category Icon */}
                     <div
                       className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${isFamily
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : isGuest
-                            ? 'bg-blue-100 text-blue-700'
-                            : isStranger
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-slate-100 text-slate-700'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : isGuest
+                          ? 'bg-blue-100 text-blue-700'
+                          : isStranger
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-slate-100 text-slate-700'
                         }`}
                     >
                       {isFamily ? (

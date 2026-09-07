@@ -12,7 +12,7 @@ import {
 import { api } from '../api/client';
 import type { PoolStatusSummary } from '../types/pool';
 import { useTranslation } from '../i18n';
-import { useOnPoolStatus } from '@hubsight/realtime/react';
+import { useOnPoolStatus } from '@hubsight/sdk/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -195,8 +195,8 @@ export const PoolMonitor = () => {
                           </h3>
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${cam.is_active
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-slate-200 text-slate-600'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-200 text-slate-600'
                               }`}
                           >
                             {cam.is_active ? 'Online' : 'Disabled'}

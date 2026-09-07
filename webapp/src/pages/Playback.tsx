@@ -14,7 +14,7 @@ import {
   useOnCameraStopped,
   useOnCameraStarted,
   useOnCameraUpdated,
-} from '@hubsight/realtime/react';
+} from '@hubsight/sdk/react';
 import { useTranslation } from '../i18n';
 
 type CameraStoppedEvent = {

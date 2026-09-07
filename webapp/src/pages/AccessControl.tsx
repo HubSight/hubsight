@@ -19,7 +19,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { api } from '../api/client';
-import type { User, Role, Permission } from '@hubsight/api';
+import type { User, Role, Permission } from '@hubsight/sdk';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';

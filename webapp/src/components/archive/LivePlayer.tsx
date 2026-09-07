@@ -6,7 +6,7 @@ import {
   useOnVisionPersonUpdate,
   useOnVisionPersonLeft,
   type OverlayBox,
-} from '@hubsight/realtime/react';
+} from '@hubsight/sdk/react';
 import { useTranslation } from '../../i18n';
 
 const POSE_SKELETON: [number, number][] = [

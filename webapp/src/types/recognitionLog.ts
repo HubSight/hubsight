@@ -1,6 +1,6 @@
-// Moved to the realtime SDK — re-exported here for existing import paths.
+// Re-exported from `@hubsight/sdk` for existing import paths.
 export type {
   RecognitionLogCategory,
   RecognitionLogType,
   RecognitionLogItem,
-} from '@hubsight/realtime';
+} from '@hubsight/sdk';

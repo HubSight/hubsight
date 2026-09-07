@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Radar, X, CheckCircle2, Loader2, Camera } from 'lucide-react';
 import { api } from '../../api/client';
-import type { ScanCandidate, ScanJob } from '@hubsight/api';
+import type { ScanCandidate, ScanJob } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';
 
 // Re-exported for call sites that import the candidate shape from this module.
-export type { ScanCandidate } from '@hubsight/api';
+export type { ScanCandidate } from '@hubsight/sdk';
 
 interface DeviceScanModalProps {
   isOpen: boolean;
@@ -180,9 +180,8 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
             return (
               <label
                 key={c.ip}
-                className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-colors ${
-                  on ? 'border-orange-400 bg-orange-50/40' : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+                className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-colors ${on ? 'border-orange-400 bg-orange-50/40' : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
               >
                 <input type="checkbox" className="mt-1" checked={on} onChange={() => toggle(c.ip)} />
                 <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">

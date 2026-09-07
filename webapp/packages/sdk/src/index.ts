@@ -136,3 +136,29 @@ export type {
   SubscribePushRequest,
 } from './types';
 
+// ── Backwards-compatibility helpers & aliases ───────────────────────────────
+import { getErrorMessage, isApiError, HubSightApiError } from './errors';
+import { defaultSessionStorage } from './auth/storage';
+import type { RealtimeManager } from './realtime/types';
+import type { LiveStreamState, LiveStreamStats } from './media/types';
+import type { ForceLogoutEvent } from './realtime/events';
+
+export const apiErrorMessage = getErrorMessage;
+
+export function toApiError(err: unknown, fallback?: string): HubSightApiError {
+  if (isApiError(err)) return err;
+  return new HubSightApiError(getErrorMessage(err, fallback), { cause: err });
+}
+
+export const isPwa = (): boolean => defaultSessionStorage.isPwa();
+export const getPwaRefreshToken = (): string | null => defaultSessionStorage.getToken();
+export const setPwaRefreshToken = (tok: string): void => defaultSessionStorage.setToken(tok);
+export const clearPwaRefreshToken = (): void => defaultSessionStorage.clear();
+export const defaultRefreshTokenStore = defaultSessionStorage;
+export type RefreshTokenStore = typeof defaultSessionStorage;
+
+export type RealtimeClient = RealtimeManager;
+export type LiveStatus = LiveStreamState;
+export type LiveStats = LiveStreamStats;
+export type ForceLogoutPayload = ForceLogoutEvent;
+
