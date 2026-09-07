@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User } from '@hubsight/api';
+import type { User } from '@hubsight/sdk';
 import { api } from '../api/client';
 
 interface AuthContextType {
@@ -13,18 +13,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
-  setUser: () => {},
-  checkAuth: async () => {},
+  setUser: () => { },
+  checkAuth: async () => { },
   can: () => false,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(api.auth.getUser());
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAuth = async () => {
     try {
-      setUser(await api.auth.me());
+      const u = await api.auth.me();
+      setUser(u);
     } catch {
       setUser(null);
     } finally {
@@ -34,14 +35,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     checkAuth();
+
+    const unsub = api.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsub();
+    };
   }, []);
 
   const can = (...permissions: string[]): boolean => {
-    if (!user) return false;
-    if (user.role === 'admin') return true;
-    const userPerms = user.permissions || [];
-    if (userPerms.includes('*')) return true;
-    return permissions.some((p) => userPerms.includes(p));
+    return api.auth.can(...permissions);
   };
 
   return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { KeyRound, Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '../api/client';
-import { AxiosError } from 'axios';
+import { isApiError, getErrorMessage } from '@hubsight/sdk';
 import { useTranslation } from '../i18n';
 
 interface ChangePasswordModalProps {
@@ -68,8 +68,8 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
       setSuccess(t('password.success'));
       setTimeout(() => onClose(), 1200);
     } catch (err) {
-      if (err instanceof AxiosError && err.response) {
-        setError(err.response.data.error || t('password.errDefault'));
+      if (isApiError(err)) {
+        setError(getErrorMessage(err, t('password.errDefault')));
       } else {
         setError(t('password.errNetwork'));
       }

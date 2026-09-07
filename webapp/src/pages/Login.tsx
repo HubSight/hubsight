@@ -5,7 +5,7 @@ import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
 import { Camera, Lock, User, Eye, EyeOff, ArrowRight, Globe } from 'lucide-react';
 import { api } from '../api/client';
-import { AxiosError } from 'axios';
+import { isApiError, getErrorMessage } from '@hubsight/sdk';
 import { AppFooter } from '../components/AppFooter';
 
 const Login = () => {
@@ -33,9 +33,9 @@ const Login = () => {
       await api.auth.login({ username, password });
       await checkAuth();
       navigate('/devices');
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        setError(error.response.data?.error || t('login.authFailed'));
+    } catch (err) {
+      if (isApiError(err)) {
+        setError(getErrorMessage(err, t('login.authFailed')));
       } else {
         setError(t('login.networkError'));
       }

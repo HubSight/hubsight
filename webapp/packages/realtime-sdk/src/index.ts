@@ -1,25 +1,49 @@
 /**
- * `@hubsight/realtime` — framework-agnostic core.
- *
- * - {@link createRealtimeClient}: the Socket.IO relay event bus.
- * - {@link startLiveStream}: a WebRTC live view for one camera.
- *
- * React bindings live at `@hubsight/realtime/react`.
+ * `@hubsight/realtime` — Bridge layer re-exporting from unified `@hubsight/sdk`.
  */
-export { createRealtimeClient } from './client';
+
+export {
+  resolveApiBase,
+  resolveSocketOrigin,
+  DEFAULT_API_BASE,
+  RELAY_PATH,
+  EMPTY_LIVE_STATS,
+} from '@hubsight/sdk';
+
 export type {
-  RealtimeClient,
-  RealtimeClientOptions,
-  ConnectionListener,
-  Unsubscribe,
-} from './client';
+  RealtimeManager,
+  RealtimeStatus,
+  RealtimeStatusListener,
+  RealtimeUnsubscribe,
+  RealtimeEventMap,
+  RealtimeEventName,
+  BuiltInRealtimeEvents,
+  OverlayBox,
+  VisionBoxesEvent,
+  ForceLogoutEvent,
+  CameraEvent,
+  MemberFaceUpdatedEvent,
+  MediaManager,
+  LiveStreamSession,
+  LiveStreamState,
+  LiveStreamStats,
+  CreateLiveStreamOptions,
+  MediaUnsubscribe,
+  NotificationItem,
+  NotificationCategory,
+  NotificationListResponse,
+  RecognitionLogItem,
+  RecognitionLogCategory,
+  RecognitionLogType,
+  StreamConnection,
+  CameraPool,
+  PoolStatusSummary,
+  NvrCameraStatus,
+  NvrStatusResponse,
+} from '@hubsight/sdk';
 
-export { startLiveStream } from './live-stream';
-export type { LiveStreamOptions, LiveStreamHandle, FetchLike } from './live-stream';
-
-export { createStatsPoller } from './stats';
-export type { StatsPoller } from './stats';
-
-export { resolveApiBase, resolveSocketOrigin, RELAY_PATH } from './config';
-
-export * from './types';
+// Legacy type aliases for backward compatibility
+export type RealtimeClient = import('@hubsight/sdk').RealtimeManager;
+export type LiveStatus = import('@hubsight/sdk').LiveStreamState;
+export type LiveStats = import('@hubsight/sdk').LiveStreamStats;
+export type ForceLogoutPayload = import('@hubsight/sdk').ForceLogoutEvent;

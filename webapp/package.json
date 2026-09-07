@@ -18,7 +18,7 @@
   "dependencies": {
     "@hubsight/api": "workspace:*",
     "@hubsight/realtime": "workspace:*",
-    "axios": "^1.19.0",
+    "@hubsight/sdk": "workspace:*",
     "dayjs": "^1.11.23",
     "firebase": "^12.18.0",
     "hls.js": "^1.7.0",
@@ -28,7 +28,6 @@
     "react-dom": "^19.2.8",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.18.2",
-    "socket.io-client": "^4.8.3",
     "workbox-window": "^7.3.0"
   },
   "devDependencies": {
