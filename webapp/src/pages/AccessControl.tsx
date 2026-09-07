@@ -10,13 +10,13 @@ import {
   Edit2,
   Trash2,
   CheckCircle2,
-  XCircle,
   Camera,
   Video,
   Activity,
   Sliders,
   UserCheck,
   Lock,
+  Ban,
 } from 'lucide-react';
 import { api } from '../api/client';
 import type { User, Role, Permission } from '@hubsight/api';
@@ -42,7 +42,7 @@ export const AccessControl: React.FC = () => {
   const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
   const [userToResetPassword, setUserToResetPassword] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
-  const [pendingDeleteUserId, setPendingDeleteUserId] = useState<string | null>(null);
+  const [pendingToggleBlockUser, setPendingToggleBlockUser] = useState<User | null>(null);
 
   // User form state
   const [formUsername, setFormUsername] = useState('');
@@ -75,16 +75,17 @@ export const AccessControl: React.FC = () => {
       setUsers(uList);
       setRoles(rList);
       setPermissions(pList);
-      if (rList.length > 0 && !selectedRoleId) {
-        setSelectedRoleId(rList[0].id);
-      }
+      setSelectedRoleId((prev) => {
+        if (prev && rList.some((r) => r.id === prev)) return prev;
+        return rList.length > 0 ? rList[0].id : '';
+      });
     } catch (err) {
       console.error('Failed to load access control data:', err);
       toast.error(t('common.errorOccurred'));
     } finally {
       setIsLoading(false);
     }
-  }, [t, selectedRoleId]);
+  }, [t]);
 
   useEffect(() => {
     loadData();
@@ -213,12 +214,14 @@ export const AccessControl: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!pendingDeleteUserId) return;
+  const handleToggleBlockUser = async () => {
+    if (!pendingToggleBlockUser) return;
+    const target = pendingToggleBlockUser;
+    const willBlock = target.is_active; // if active, we block; if inactive, we unblock
     try {
-      await api.users.delete(pendingDeleteUserId);
-      toast.success(t('access.deleteUserSuccess'));
-      setPendingDeleteUserId(null);
+      await api.users.block(target.id, willBlock);
+      toast.success(willBlock ? t('access.blockUserSuccess') : t('access.unblockUserSuccess'));
+      setPendingToggleBlockUser(null);
       await loadData();
     } catch (err: any) {
       const msg = err?.response?.data?.error || t('common.errorOccurred');
@@ -397,21 +400,19 @@ export const AccessControl: React.FC = () => {
           <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
             <button
               onClick={() => setActiveTab('users')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'users'
-                  ? 'bg-white text-slate-800 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${activeTab === 'users'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               {t('access.tabUsers')} ({users.length})
             </button>
             <button
               onClick={() => setActiveTab('roles')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'roles'
-                  ? 'bg-white text-slate-800 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${activeTab === 'roles'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               {t('access.tabRoles')} ({roles.length})
             </button>
@@ -521,7 +522,7 @@ export const AccessControl: React.FC = () => {
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
-                                  <XCircle size={12} />
+                                  <Ban size={12} />
                                   {t('access.inactive')}
                                 </span>
                               )}
@@ -553,11 +554,14 @@ export const AccessControl: React.FC = () => {
                                 </button>
                                 {!isSelf && !isDefaultAdmin && (
                                   <button
-                                    onClick={() => setPendingDeleteUserId(u.id)}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                    title={t('access.deleteUser')}
+                                    onClick={() => setPendingToggleBlockUser(u)}
+                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active
+                                      ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                      : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                      }`}
+                                    title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
                                   >
-                                    <Trash2 size={16} />
+                                    {u.is_active ? <Ban size={16} /> : <UserCheck size={16} />}
                                   </button>
                                 )}
                               </div>
@@ -592,11 +596,10 @@ export const AccessControl: React.FC = () => {
                     <div
                       key={r.id}
                       onClick={() => setSelectedRoleId(r.id)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                        isSelected
-                          ? 'bg-white border-orange-500 shadow-md shadow-orange-500/5 ring-2 ring-orange-500/10'
-                          : 'bg-white/80 border-slate-200/80 hover:bg-white hover:border-slate-300 shadow-xs'
-                      }`}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
+                        ? 'bg-white border-orange-500 shadow-md shadow-orange-500/5 ring-2 ring-orange-500/10'
+                        : 'bg-white/80 border-slate-200/80 hover:bg-white hover:border-slate-300 shadow-xs'
+                        }`}
                     >
                       <div className="min-w-0 flex-1 pr-3">
                         <div className="flex items-center gap-2">
@@ -713,17 +716,16 @@ export const AccessControl: React.FC = () => {
                                 <label
                                   key={perm.id}
                                   onClick={() => handleTogglePermission(perm.id)}
-                                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                                    isChecked
-                                      ? 'bg-white border-orange-500/40 shadow-xs'
-                                      : 'bg-white/60 border-slate-200/60 opacity-60 hover:opacity-100'
-                                  } ${isAdmin ? 'cursor-default' : ''}`}
+                                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${isChecked
+                                    ? 'bg-white border-orange-500/40 shadow-xs'
+                                    : 'bg-white/60 border-slate-200/60 opacity-60 hover:opacity-100'
+                                    } ${isAdmin ? 'cursor-default' : ''}`}
                                 >
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
                                     disabled={isAdmin}
-                                    onChange={() => {}}
+                                    onChange={() => { }}
                                     className="mt-0.5 h-4 w-4 rounded-md border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer disabled:cursor-default"
                                   />
                                   <div className="min-w-0 flex-1">
@@ -1004,15 +1006,20 @@ export const AccessControl: React.FC = () => {
         </div>
       )}
 
-      {/* Delete User Confirm */}
+      {/* Block / Unblock User Confirm */}
       <ConfirmDialog
-        isOpen={!!pendingDeleteUserId}
-        title={t('access.deleteUser')}
-        message={t('access.confirmDeleteUser', {
-          username: users.find((u) => u.id === pendingDeleteUserId)?.username || '',
-        })}
-        onConfirm={handleDeleteUser}
-        onCancel={() => setPendingDeleteUserId(null)}
+        isOpen={!!pendingToggleBlockUser}
+        title={pendingToggleBlockUser?.is_active ? t('access.blockUser') : t('access.unblockUser')}
+        message={
+          pendingToggleBlockUser?.is_active
+            ? t('access.confirmBlockUser', { username: pendingToggleBlockUser?.username || '' })
+            : t('access.confirmUnblockUser', { username: pendingToggleBlockUser?.username || '' })
+        }
+        confirmLabel={pendingToggleBlockUser?.is_active ? t('access.blockUser') : t('access.unblockUser')}
+        cancelLabel={t('common.cancel')}
+        variant={pendingToggleBlockUser?.is_active ? 'danger' : 'primary'}
+        onConfirm={handleToggleBlockUser}
+        onCancel={() => setPendingToggleBlockUser(null)}
       />
 
       {/* Delete Role Confirm */}

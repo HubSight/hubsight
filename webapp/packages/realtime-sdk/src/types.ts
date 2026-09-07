@@ -167,8 +167,16 @@ export interface VisionBoxesEvent {
   boxes?: OverlayBox[];
 }
 
+export interface ForceLogoutPayload {
+  userId: string;
+  reason?: string;
+  message?: string;
+  _timestamp?: string;
+}
+
 // ── The typed event map ────────────────────────────────────────────────────────
 export interface RealtimeEventMap {
+  'auth:force_logout': ForceLogoutPayload;
   'vision.person.entered': VisionBoxesEvent;
   'vision.person.update': VisionBoxesEvent;
   'vision.person.left': VisionBoxesEvent;

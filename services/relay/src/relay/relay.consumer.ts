@@ -8,7 +8,7 @@ import { EmitEventDto, BroadcastEventDto } from './relay.gateway';
 
 @Controller()
 export class RelayConsumer {
-  constructor(private readonly relayService: RelayService) {}
+  constructor(private readonly relayService: RelayService) { }
 
   @Get('health')
   getHealth() {
@@ -111,5 +111,10 @@ export class RelayConsumer {
       event: 'camera.updated',
       data,
     });
+  }
+
+  @EventPattern('user.blocked')
+  handleUserBlocked(@Payload() data: { user_id: string; username?: string; reason?: string }) {
+    return this.relayService.handleUserBlocked(data.user_id);
   }
 }

@@ -15,6 +15,7 @@ import Members from './pages/Members';
 import { PoolMonitor } from './pages/PoolMonitor';
 import { AccessControl } from './pages/AccessControl';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
+import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
@@ -52,6 +53,7 @@ const App = () => {
         <TimezoneProvider>
           <AppLockProvider>
             <RealtimeProvider baseUrl={import.meta.env.VITE_API_URL}>
+              <AuthRealtimeWatcher />
               <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<Login />} />
@@ -64,57 +66,57 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   >
-                  <Route index element={<IndexRedirect />} />
-                  <Route
-                    path="devices"
-                    element={
-                      <AdminRoute>
-                        <Devices />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="members"
-                    element={
-                      <AdminRoute>
-                        <Members />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route path="playback" element={<Playback />} />
-                  <Route
-                    path="recorder"
-                    element={
-                      <AdminRoute>
-                        <NvrMonitor />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="pool"
-                    element={
-                      <AdminRoute>
-                        <PoolMonitor />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="access"
-                    element={
-                      <AdminRoute>
-                        <AccessControl />
-                      </AdminRoute>
-                    }
-                  />
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </RealtimeProvider>
-        </AppLockProvider>
-      </TimezoneProvider>
-    </AuthProvider>
-  </I18nProvider>
-);
+                    <Route index element={<IndexRedirect />} />
+                    <Route
+                      path="devices"
+                      element={
+                        <AdminRoute>
+                          <Devices />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="members"
+                      element={
+                        <AdminRoute>
+                          <Members />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route path="playback" element={<Playback />} />
+                    <Route
+                      path="recorder"
+                      element={
+                        <AdminRoute>
+                          <NvrMonitor />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="pool"
+                      element={
+                        <AdminRoute>
+                          <PoolMonitor />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="access"
+                      element={
+                        <AdminRoute>
+                          <AccessControl />
+                        </AdminRoute>
+                      }
+                    />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </RealtimeProvider>
+          </AppLockProvider>
+        </TimezoneProvider>
+      </AuthProvider>
+    </I18nProvider>
+  );
 };
 
 export default App;

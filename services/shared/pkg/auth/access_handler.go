@@ -6,6 +6,7 @@ import (
 
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/nanoid"
 
 	"github.com/gin-gonic/gin"
@@ -302,6 +303,14 @@ func UpdateUserHandler(c *gin.Context) {
 		}
 	}
 
+	// Prevent deactivating default 'admin' account
+	if user.Username == "admin" && req.IsActive != nil && !*req.IsActive {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Cannot deactivate default admin account"})
+		return
+	}
+
+	isBlocking := req.IsActive != nil && !*req.IsActive
+
 	updates := make(map[string]any)
 	if req.FullName != nil {
 		updates["full_name"] = strings.TrimSpace(*req.FullName)
@@ -327,6 +336,19 @@ func UpdateUserHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 			return
 		}
+	}
+
+	// If user was blocked (deactivated), revoke all active sessions immediately and emit realtime kickout event
+	if isBlocking {
+		// 1. Invalidate all existing sessions in DB
+		_ = database.DB.WithContext(ctx).Where("user_id = ?", user.ID).Delete(&models.Session{}).Error
+
+		// 2. Publish realtime event to RabbitMQ relay_queue so relay-service force-disconnects active sockets
+		_ = mq.PublishEvent("user.blocked", map[string]any{
+			"user_id":  user.ID,
+			"username": user.Username,
+			"reason":   "blocked_by_admin",
+		})
 	}
 
 	_ = database.DB.WithContext(ctx).Preload("RoleInfo.Permissions").First(&user, "id = ?", id).Error
@@ -372,38 +394,9 @@ func ResetUserPasswordHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Password reset successfully"})
 }
 
-// DeleteUserHandler removes a user account and their active sessions.
+// DeleteUserHandler informs callers that user deletion has been permanently disabled.
 func DeleteUserHandler(c *gin.Context) {
-	id := c.Param("id")
-	ctx := c.Request.Context()
-
-	var user models.User
-	if err := database.DB.WithContext(ctx).First(&user, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	// Cannot delete own account
-	currUserObj, _ := c.Get("user")
-	if currUser, ok := currUserObj.(*models.User); ok && currUser.ID == user.ID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete your own account"})
-		return
-	}
-
-	// Cannot delete the default 'admin' account
-	if user.Username == "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Cannot delete default admin account"})
-		return
-	}
-
-	// Remove user sessions and push subscriptions
-	_ = database.DB.WithContext(ctx).Where("user_id = ?", user.ID).Delete(&models.Session{}).Error
-	_ = database.DB.WithContext(ctx).Where("user_id = ?", user.ID).Delete(&models.PushSubscription{}).Error
-
-	if err := database.DB.WithContext(ctx).Delete(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "User deleted successfully"})
+	c.JSON(http.StatusBadRequest, gin.H{
+		"error": "Tính năng xóa người dùng đã bị vô hiệu hóa. Vui lòng sử dụng tính năng khóa tài khoản.",
+	})
 }

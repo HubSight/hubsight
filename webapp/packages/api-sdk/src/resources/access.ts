@@ -16,9 +16,11 @@ export interface UsersResource {
   create(body: CreateUserRequest): Promise<User>;
   /** `PUT /auth/users/:id` — update user full name, assigned role, or active status. */
   update(id: string, body: UpdateUserRequest): Promise<User>;
+  /** `PUT /auth/users/:id` — block (deactivate) or unblock (activate) a user account. */
+  block(id: string, blocked: boolean): Promise<User>;
   /** `POST /auth/users/:id/reset-password` — reset a user's password. */
   resetPassword(id: string, newPassword: string): Promise<void>;
-  /** `DELETE /auth/users/:id` — delete a user account and active sessions. */
+  /** `DELETE /auth/users/:id` — disabled on backend. */
   delete(id: string): Promise<void>;
 }
 
@@ -54,6 +56,11 @@ export function createUsersResource(ctx: ResourceContext): UsersResource {
 
     async update(id, body) {
       const res = await http.put<User>(`/auth/users/${id}`, body);
+      return res.data;
+    },
+
+    async block(id, blocked) {
+      const res = await http.put<User>(`/auth/users/${id}`, { is_active: !blocked });
       return res.data;
     },
 
