@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Camera, Calendar as CalendarIcon, ChevronDown, LayoutGrid } from 'lucide-react';
 import Calendar from 'react-calendar';
 import dayjs from 'dayjs';
 import 'react-calendar/dist/Calendar.css';
@@ -31,6 +32,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
   onMonthChange
 }) => {
   const { t, locale } = useTranslation();
+  const navigate = useNavigate();
   const [showCalendar, setShowCalendar] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -57,24 +59,23 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
 
   return (
     <div className="flex flex-wrap items-center gap-4 lg:gap-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      
+
       {/* Camera Selection */}
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-1.5 text-sm text-slate-600 font-medium whitespace-nowrap">
           <Camera size={16} /> {t('playback.device')}
         </label>
-        
+
         <div className="relative" ref={dropdownRef}>
           <button
-            className={`input-field bg-slate-50 border-slate-200 min-w-[180px] py-1.5 px-3 flex justify-between items-center rounded-lg ${
-              cameras.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'
-            }`}
+            className={`input-field bg-slate-50 border-slate-200 min-w-[180px] py-1.5 px-3 flex justify-between items-center rounded-lg ${cameras.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'
+              }`}
             onClick={() => cameras.length > 0 && setIsDropdownOpen(!isDropdownOpen)}
             disabled={cameras.length === 0}
           >
             <span className="truncate text-sm pr-2 text-slate-700">
-              {cameras.length === 0 
-                ? t('playback.noDevices') 
+              {cameras.length === 0
+                ? t('playback.noDevices')
                 : cameras.find((c) => c.id === selectedCam)?.name || t('playback.selectDevice')}
             </span>
             <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -86,9 +87,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
               {cameras.map((c) => (
                 <div
                   key={c.id}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 flex items-center justify-between transition-colors ${
-                    c.id === selectedCam ? 'text-orange-600 font-medium bg-orange-50/50' : 'text-slate-700'
-                  }`}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 flex items-center justify-between transition-colors ${c.id === selectedCam ? 'text-orange-600 font-medium bg-orange-50/50' : 'text-slate-700'
+                    }`}
                   onClick={() => {
                     onSelectCam(c.id);
                     setIsDropdownOpen(false);
@@ -120,9 +120,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           <CalendarIcon size={16} /> {t('playback.date')}
         </label>
         <button
-          className={`input-field bg-slate-50 border-slate-200 min-w-[150px] py-1.5 flex justify-between items-center ${
-            !selectedCam ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'
-          }`}
+          className={`input-field bg-slate-50 border-slate-200 min-w-[150px] py-1.5 flex justify-between items-center ${!selectedCam ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'
+            }`}
           onClick={() => selectedCam && setShowCalendar(!showCalendar)}
           disabled={!selectedCam}
         >
@@ -170,6 +169,18 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           </span>
         )}
       </div>
+
+      {/* Multi-View Link */}
+      <div className="w-px h-8 bg-slate-200 hidden md:block mx-1"></div>
+      <button
+        type="button"
+        onClick={() => navigate('/multiview')}
+        title={t('multiview.switchToMultiView')}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-orange-200 bg-orange-50/70 text-orange-700 hover:bg-orange-100 text-xs font-semibold transition-colors cursor-pointer"
+      >
+        <LayoutGrid size={15} />
+        <span>{t('multiview.switchToMultiView')}</span>
+      </button>
 
     </div>
   );

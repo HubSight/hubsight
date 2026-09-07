@@ -10,6 +10,7 @@ import { LocaleSync } from './components/LocaleSync';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Playback from './pages/Playback';
+import MultiView from './pages/MultiView';
 import Devices from './pages/Devices';
 import NvrMonitor from './pages/NvrMonitor';
 import Members from './pages/Members';
@@ -84,6 +85,7 @@ const App = () => {
                         </AdminRoute>
                       }
                     />
+                    <Route path="multiview" element={<MultiView />} />
                     <Route path="playback" element={<Playback />} />
                     <Route
                       path="recorder"

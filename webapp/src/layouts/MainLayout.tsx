@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers } from 'lucide-react';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
 import { AppLockScreen } from '../components/lock/AppLockScreen';
@@ -50,7 +50,7 @@ const MainLayout = () => {
   });
 
   useEffect(() => {
-    if (location.pathname === '/playback') {
+    if (location.pathname === '/playback' || location.pathname === '/multiview') {
       setIsSidebarCollapsed(true);
     }
   }, [location.pathname]);
@@ -181,6 +181,10 @@ const MainLayout = () => {
               {t('nav.members')}
             </NavLink>
           )}
+          <NavLink to="/multiview" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <LayoutGrid size={20} />
+            {t('nav.multiview')}
+          </NavLink>
           <NavLink to="/playback" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Video size={20} />
             {t('nav.playback')}
