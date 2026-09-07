@@ -401,8 +401,8 @@ export const AccessControl: React.FC = () => {
             <button
               onClick={() => setActiveTab('users')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${activeTab === 'users'
-                  ? 'bg-white text-slate-800 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800'
                 }`}
             >
               {t('access.tabUsers')} ({users.length})
@@ -410,8 +410,8 @@ export const AccessControl: React.FC = () => {
             <button
               onClick={() => setActiveTab('roles')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${activeTab === 'roles'
-                  ? 'bg-white text-slate-800 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800'
                 }`}
             >
               {t('access.tabRoles')} ({roles.length})
@@ -556,8 +556,8 @@ export const AccessControl: React.FC = () => {
                                   <button
                                     onClick={() => setPendingToggleBlockUser(u)}
                                     className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active
-                                        ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                        : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                      ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                      : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
                                       }`}
                                     title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
                                   >
@@ -597,8 +597,8 @@ export const AccessControl: React.FC = () => {
                       key={r.id}
                       onClick={() => setSelectedRoleId(r.id)}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
-                          ? 'bg-white border-orange-500 shadow-md shadow-orange-500/5 ring-2 ring-orange-500/10'
-                          : 'bg-white/80 border-slate-200/80 hover:bg-white hover:border-slate-300 shadow-xs'
+                        ? 'bg-white border-orange-500 shadow-md shadow-orange-500/5 ring-2 ring-orange-500/10'
+                        : 'bg-white/80 border-slate-200/80 hover:bg-white hover:border-slate-300 shadow-xs'
                         }`}
                     >
                       <div className="min-w-0 flex-1 pr-3">
@@ -717,8 +717,8 @@ export const AccessControl: React.FC = () => {
                                   key={perm.id}
                                   onClick={() => handleTogglePermission(perm.id)}
                                   className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${isChecked
-                                      ? 'bg-white border-orange-500/40 shadow-xs'
-                                      : 'bg-white/60 border-slate-200/60 opacity-60 hover:opacity-100'
+                                    ? 'bg-white border-orange-500/40 shadow-xs'
+                                    : 'bg-white/60 border-slate-200/60 opacity-60 hover:opacity-100'
                                     } ${isAdmin ? 'cursor-default' : ''}`}
                                 >
                                   <input
