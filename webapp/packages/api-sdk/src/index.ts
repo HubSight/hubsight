@@ -1,41 +1,102 @@
 /**
- * `@hubsight/api` — framework-agnostic REST client for the HubSight gateway.
- *
- * ```ts
- * import { createHubSightClient } from '@hubsight/api';
- * const api = createHubSightClient({ baseUrl: '/api' });
- * const cams = await api.cameras.list();
- * ```
- *
- * React bindings live at `@hubsight/api/react`.
+ * `@hubsight/api` — Bridge layer re-exporting from unified `@hubsight/sdk`.
  */
-export { createHubSightClient } from './client';
-export type { HubSightClient, HubSightClientOptions } from './client';
 
-export { createHttpClient } from './http';
-export type { CreateHttpClientOptions } from './http';
-
-export { HubSightApiError, apiErrorMessage, toApiError } from './errors';
-
-export { resolveApiBase } from './config';
+import {
+  defaultSessionStorage,
+  getErrorMessage,
+  HubSightApiError,
+  isApiError,
+} from '@hubsight/sdk';
 
 export {
-  isPwa,
-  getPwaRefreshToken,
-  setPwaRefreshToken,
-  clearPwaRefreshToken,
-  defaultRefreshTokenStore,
-} from './pwa';
-export type { RefreshTokenStore } from './pwa';
+  createHubSightClient,
+  resolveApiBase,
+  HubSightError,
+  HubSightApiError,
+  AuthenticationError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+  HubSightNetworkError,
+  isHubSightError,
+  isApiError,
+  getErrorMessage,
+  defaultSessionStorage,
+} from '@hubsight/sdk';
 
-export type { AuthResource } from './resources/auth';
-export type { CamerasResource } from './resources/cameras';
-export type { MembersResource } from './resources/members';
-export type { NotificationsResource } from './resources/notifications';
-export type { DevicesResource } from './resources/devices';
-export type { ArchiveResource } from './resources/archive';
-export type { PoolResource } from './resources/pool';
-export type { RecorderResource } from './resources/recorder';
-export type { UsersResource, RolesResource, PermissionsResource } from './resources/access';
+export type {
+  HubSightClient,
+  HubSightClientOptions,
+  CamerasResource,
+  DevicesResource,
+  MembersResource,
+  NotificationsResource,
+  ArchiveResource,
+  AccessResource,
+  UsersResource,
+  RolesResource,
+  PermissionsResource,
+  PoolResource,
+  RecorderResource,
+  User,
+  Role,
+  Permission,
+  UserRole,
+  Locale,
+  CreateUserRequest,
+  UpdateUserRequest,
+  CreateRoleRequest,
+  UpdateRoleRequest,
+  LoginRequest,
+  LoginResponse,
+  ChangePasswordRequest,
+  CameraType,
+  CameraInput,
+  CameraItem,
+  DeviceType,
+  ScanCandidate,
+  ScanJob,
+  MemberItem,
+  MemberRole,
+  FaceItem,
+  MemberInput,
+  ListMembersParams,
+  MembersPage,
+  ListFacesParams,
+  FacesPage,
+  FaceEnrollResult,
+  NotificationItem,
+  NotificationCategory,
+  NotificationListResponse,
+  RecognitionLogItem,
+  RecognitionLogCategory,
+  RecognitionLogType,
+  StreamConnection,
+  CameraPool,
+  PoolStatusSummary,
+  NvrCameraStatus,
+  NvrStatusResponse,
+  SettingsInput,
+  StorageCleanupResult,
+  Recording,
+  TimelineParams,
+  PushConfig,
+  SubscribePushRequest,
+} from '@hubsight/sdk';
 
-export * from './types';
+// ── Backwards-compatibility helpers ──────────────────────────────────────────
+export const apiErrorMessage = getErrorMessage;
+
+export function toApiError(err: unknown, fallback?: string): HubSightApiError {
+  if (isApiError(err)) return err;
+  return new HubSightApiError(getErrorMessage(err, fallback), { cause: err });
+}
+
+export const isPwa = (): boolean => defaultSessionStorage.isPwa();
+export const getPwaRefreshToken = (): string | null => defaultSessionStorage.getToken();
+export const setPwaRefreshToken = (tok: string): void => defaultSessionStorage.setToken(tok);
+export const clearPwaRefreshToken = (): void => defaultSessionStorage.clear();
+export const defaultRefreshTokenStore = defaultSessionStorage;
+export type RefreshTokenStore = typeof defaultSessionStorage;

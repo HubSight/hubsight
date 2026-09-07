@@ -1,12 +1,16 @@
 {
-  "name": "@hubsight/realtime",
+  "name": "@hubsight/sdk",
   "version": "0.1.0",
-  "description": "HubSight Realtime SDK (Bridge layer re-exporting from unified @hubsight/sdk)",
+  "description": "Unified standard HubSight SDK — fully encapsulated HTTP, Auth lifecycle, Realtime event bus, WebRTC media streaming, and React integration",
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
   "engines": {
     "node": ">=20"
+  },
+  "scripts": {
+    "test": "tsx --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "exports": {
     ".": {
@@ -23,7 +27,8 @@
     "dist"
   ],
   "dependencies": {
-    "@hubsight/sdk": "workspace:*"
+    "axios": "^1.7.9",
+    "socket.io-client": "^4.8.1"
   },
   "peerDependencies": {
     "react": ">=18",

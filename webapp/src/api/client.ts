@@ -1,11 +1,10 @@
-import { createHubSightClient } from '@hubsight/api';
+import { createHubSightClient } from '@hubsight/sdk';
 
 /**
- * The app-wide HubSight REST client. Replaces the old `axiosClient` singleton —
- * the axios instance and the PWA 401/refresh interceptor now live in the SDK.
+ * The app-wide HubSight client.
+ * Provides unified, fully encapsulated access to Auth, Realtime, Media, and REST resources.
  *
- * Usage: `import { api } from '../api/client'` then `api.cameras.list()`, etc.
- * The raw axios instance is still reachable at `api.http` if needed.
+ * Usage: `import { api } from '../api/client'` then `api.cameras.list()`, `api.auth.me()`, etc.
  */
 export const api = createHubSightClient({
   baseUrl: import.meta.env.VITE_API_URL,

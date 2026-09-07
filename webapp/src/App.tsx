@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppLockProvider } from './context/AppLockContext';
-import { RealtimeProvider } from '@hubsight/realtime/react';
+import { HubSightProvider } from '@hubsight/sdk/react';
+import api from './api/client';
 import { TimezoneProvider } from './context/TimezoneContext';
 import { I18nProvider } from './i18n';
 import { LocaleSync } from './components/LocaleSync';
@@ -52,7 +53,7 @@ const App = () => {
         <LocaleSync />
         <TimezoneProvider>
           <AppLockProvider>
-            <RealtimeProvider baseUrl={import.meta.env.VITE_API_URL}>
+            <HubSightProvider client={api}>
               <AuthRealtimeWatcher />
               <BrowserRouter>
                 <Routes>
@@ -111,7 +112,7 @@ const App = () => {
                   </Route>
                 </Routes>
               </BrowserRouter>
-            </RealtimeProvider>
+            </HubSightProvider>
           </AppLockProvider>
         </TimezoneProvider>
       </AuthProvider>
