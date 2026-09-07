@@ -34,7 +34,9 @@ type CameraRecorderStatus struct {
 	Host                  string     `json:"host"`
 	Brand                 string     `json:"brand"`
 	IsActive              bool       `json:"is_active"`
-	Status                string     `json:"status"` // "recording", "stalled", "inactive"
+	Status                string     `json:"status"` // "recording", "stalled", "disabled"
+	NvrMode               string     `json:"nvr_mode"`
+	RecordQuality         string     `json:"record_quality"`
 	RTSPTransport         string     `json:"rtsp_transport"`
 	SegmentDuration       int        `json:"segment_duration"`
 	VideoCodec            string     `json:"video_codec"`

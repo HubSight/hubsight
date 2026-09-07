@@ -24,6 +24,8 @@ type Camera struct {
 	IsStopped       bool        `gorm:"column:is_stopped;not null;default:false" json:"is_stopped"`
 	EnableAi        bool        `gorm:"column:enable_ai;not null;default:false" json:"enable_ai"`
 	ShowBbox        bool        `gorm:"column:show_bbox;not null;default:true" json:"show_bbox"`
+	NvrMode         string      `gorm:"column:nvr_mode;type:varchar(32);not null;default:'event'" json:"nvr_mode"`
+	RecordQuality   string      `gorm:"column:record_quality;type:varchar(32);not null;default:'standard'" json:"record_quality"`
 	CreatedAt       time.Time   `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
 	UpdatedAt       time.Time   `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
 	Recordings      []Recording `gorm:"foreignKey:CameraID;references:ID" json:"-"`
@@ -56,6 +58,12 @@ func (c *Camera) BeforeCreate(tx *gorm.DB) error {
 	}
 	if c.AudioMode == "" {
 		c.AudioMode = "auto"
+	}
+	if c.NvrMode == "" {
+		c.NvrMode = "event"
+	}
+	if c.RecordQuality == "" {
+		c.RecordQuality = "standard"
 	}
 	return nil
 }

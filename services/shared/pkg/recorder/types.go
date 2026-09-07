@@ -13,6 +13,9 @@ type CameraConfig struct {
 	AudioMode       string
 	ExtraArgs       string
 	OutDir          string
+	NvrMode         string // "disabled" | "event" | "full" | "aor"
+	RecordQuality   string // "standard" | "hd"
+	EnableAI        bool
 }
 
 // ActiveRecorder holds the running state and cancellation handle for a camera

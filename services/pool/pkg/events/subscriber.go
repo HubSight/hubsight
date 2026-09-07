@@ -19,6 +19,7 @@ type CameraEventPayload struct {
 	IsActive  bool   `json:"is_active"`
 	IsStopped bool   `json:"is_stopped"`
 	EnableAI  bool   `json:"enable_ai"`
+	NvrMode   string `json:"nvr_mode"`
 }
 
 type EventMessage struct {
@@ -128,7 +129,7 @@ func (s *Subscriber) handleEvent(ctx context.Context, pattern string, data json.
 		var camData CameraEventPayload
 		if err := json.Unmarshal(data, &camData); err == nil && camData.ID != "" {
 			streaming := camData.IsActive && !camData.IsStopped
-			_ = s.manager.UpsertCamera(ctx, camData.ID, camData.Name, camData.Host, streaming, camData.EnableAI)
+			_ = s.manager.UpsertCamera(ctx, camData.ID, camData.Name, camData.Host, streaming, camData.EnableAI, camData.NvrMode)
 		}
 
 	case "camera.deleted":

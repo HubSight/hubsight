@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Layers, Globe, Sliders } from 'lucide-react';
+import { Layers, Globe, Sliders, HardDrive } from 'lucide-react';
 import type { DeviceFormData } from '../../types/device';
 import { DeviceGeneralTab } from './DeviceGeneralTab';
+import { DeviceNvrTab } from './DeviceNvrTab';
 import { DeviceRtspTab } from './DeviceRtspTab';
 import { DeviceFfmpegTab } from './DeviceFfmpegTab';
 import { useTranslation } from '../../i18n';
@@ -30,7 +31,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   onAddFfmpegTag
 }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'general' | 'rtsp' | 'ffmpeg'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'nvr' | 'rtsp' | 'ffmpeg'>('general');
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 md:p-6">
@@ -51,23 +52,32 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('general')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'general'
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'general'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <Layers size={14} />
               {t('devices.tabGeneral')}
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('rtsp')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'rtsp'
+              onClick={() => setActiveTab('nvr')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'nvr'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
+            >
+              <HardDrive size={14} />
+              {t('devices.tabNvr')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('rtsp')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'rtsp'
+                  ? 'bg-white text-orange-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               <Globe size={14} />
               {t('devices.tabRtsp')}
@@ -75,11 +85,10 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('ffmpeg')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'ffmpeg'
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'ffmpeg'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <Sliders size={14} />
               {t('devices.tabFfmpeg')}
@@ -97,6 +106,10 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
 
           {activeTab === 'general' && (
             <DeviceGeneralTab formData={formData} onChange={onChange} isStreaming={isStreaming} />
+          )}
+
+          {activeTab === 'nvr' && (
+            <DeviceNvrTab formData={formData} onChange={onChange} />
           )}
 
           {activeTab === 'rtsp' && (

@@ -67,30 +67,6 @@ const NvrMonitor = () => {
     onConfirm: () => { },
   });
 
-  const toggleNvrStatus = async (currentStatus: boolean) => {
-    const nextStatus = !currentStatus;
-    setModalConfig({
-      isOpen: true,
-      type: 'confirm',
-      title: nextStatus ? t('nvr.startEngine') : t('nvr.stopEngine'),
-      message: nextStatus
-        ? 'Are you sure you want to enable the global NVR recorder engine?'
-        : 'Are you sure you want to pause all background camera recording pipelines?',
-      inputValue: '',
-      onConfirm: async () => {
-        setIsUpdatingSettings(true);
-        try {
-          await api.recorder.updateSettings({ nvr_status: nextStatus });
-          await fetchStatus(false);
-        } catch (err) {
-          console.error('Failed to update NVR status', err);
-        } finally {
-          setIsUpdatingSettings(false);
-        }
-      }
-    });
-  };
-
   const promptUpdateQuota = (currentQuotaBytes: number) => {
     const currentGb = Math.round(currentQuotaBytes / (1024 * 1024 * 1024));
     setModalConfig({
@@ -271,25 +247,18 @@ const NvrMonitor = () => {
               {t('nvr.engineStatus')}
             </span>
             <div className="flex gap-2 items-center">
-              <button
-                onClick={() => toggleNvrStatus(!!data?.is_global_enabled)}
-                disabled={isUpdatingSettings || !data}
-                className={`text-xs px-3 py-1.5 font-semibold rounded-md transition-colors cursor-pointer ${data?.is_global_enabled
-                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                  }`}
-              >
-                {data?.is_global_enabled ? t('nvr.stopEngine') : t('nvr.startEngine')}
-              </button>
+              <span className="text-[11px] font-bold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
+                {t('nvr.alwaysActive')}
+              </span>
               <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                 <Server size={20} />
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3 mb-1">
-            <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${data?.is_global_enabled ? 'bg-emerald-500' : 'bg-red-500'}`} />
+            <span className="w-2.5 h-2.5 rounded-full animate-pulse bg-emerald-500" />
             <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">
-              {data?.is_global_enabled ? (data?.status || t('nvr.healthy')) : t('nvr.disabled')}
+              {data?.status || t('nvr.healthy')}
             </h3>
           </div>
           <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
@@ -423,6 +392,7 @@ const NvrMonitor = () => {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/30 text-xs font-semibold text-slate-500">
                   <th className="py-3.5 px-5">{t('nvr.camera')}</th>
+                  <th className="py-3.5 px-4">{t('nvr.mode')}</th>
                   <th className="py-3.5 px-4">{t('nvr.status')}</th>
                   <th className="py-3.5 px-4">{t('nvr.streamPipeline')}</th>
                   <th className="py-3.5 px-4">{t('nvr.segmentLength')}</th>
@@ -439,6 +409,32 @@ const NvrMonitor = () => {
                       <div className="font-semibold text-slate-800">{cam.name}</div>
                       <div className="text-xs text-slate-400 font-mono break-all max-w-xs truncate">
                         {cam.host}
+                      </div>
+                    </td>
+
+                    {/* NVR Mode & Quality */}
+                    <td className="py-4 px-4 text-xs">
+                      <div className="flex flex-col gap-1 items-start">
+                        {cam.nvr_mode === 'disabled' ? (
+                          <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200">
+                            {t('device.nvrModeDisabled')}
+                          </span>
+                        ) : cam.nvr_mode === 'full' ? (
+                          <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                            Full 24/7
+                          </span>
+                        ) : cam.nvr_mode === 'aor' ? (
+                          <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            AOR (1/30 FPS)
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Event-based
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-slate-500">
+                          {cam.record_quality === 'hd' ? '1080p HD' : '720p Standard'}
+                        </span>
                       </div>
                     </td>
 

@@ -38,6 +38,7 @@ type CameraPool struct {
 	Host          string                       `json:"host"`
 	IsActive      bool                         `json:"is_active"`
 	EnableAI      bool                         `json:"enable_ai"`
+	NvrMode       string                       `json:"nvr_mode"`
 	CVConnection  *StreamConnection            `json:"cv_connection"`  // Connection #0 (Always active for CV)
 	NVRConnection *StreamConnection            `json:"nvr_connection"` // Connection #1 (Active if NVR enabled globally)
 	LivePool      map[string]*StreamConnection `json:"live_pool"`      // Map of stream_name -> StreamConnection

@@ -57,21 +57,28 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 		return
 	}
 
-	var globalSettings models.Setting
-	hasSettings := database.DB.WithContext(parentCtx).First(&globalSettings).Error == nil
-
-	isNvrEnabled := true
-	if hasSettings {
-		isNvrEnabled = globalSettings.NvrStatus
-	}
-
 	currentCameraIDs := make(map[string]bool)
 
 	for _, cam := range cameras {
-		// Event-based NVR buffering and capture is STRICTLY enabled ONLY if AI is enabled for this camera
-		if !isNvrEnabled || !cam.IsActive || cam.IsStopped || !cam.EnableAi {
+		nvrMode := cam.NvrMode
+		if nvrMode == "" {
+			nvrMode = "event"
+		}
+		recordQuality := cam.RecordQuality
+		if recordQuality == "" {
+			recordQuality = "standard"
+		}
+
+		// NVR engine is always running; check camera state & per-device mode
+		if !cam.IsActive || cam.IsStopped || nvrMode == "disabled" {
 			continue
 		}
+
+		// Event-based NVR buffering and capture is STRICTLY enabled ONLY if AI is enabled for this camera (Rule #5)
+		if nvrMode == "event" && !cam.EnableAi {
+			continue
+		}
+
 		currentCameraIDs[cam.ID] = true
 
 		camConfig := CameraConfig{
@@ -84,25 +91,26 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 			AudioMode:       cam.AudioMode,
 			ExtraArgs:       cam.ExtraArgs,
 			OutDir:          m.OutDir,
+			NvrMode:         nvrMode,
+			RecordQuality:   recordQuality,
+			EnableAI:        cam.EnableAi,
 		}
 
 		activeCam, exists := m.activeRecorders[cam.ID]
 		if exists && activeCam.Config != camConfig {
-			log.Printf("Camera %s (ID: %s) configuration updated.", cam.Name, cam.ID)
-			activeCam.Config = camConfig
-			m.activeRecorders[cam.ID] = activeCam
+			log.Printf("Camera %s (ID: %s) configuration updated. Restarting recorder pipeline...", cam.Name, cam.ID)
+			if activeCam.Cancel != nil {
+				activeCam.Cancel()
+			}
+			delete(m.activeRecorders, cam.ID)
+			exists = false
 		}
 
 		if !exists {
-			log.Printf("Registered active camera for Zero-CPU NVR Buffering: %s (ID: %s)", cam.Name, cam.ID)
-
-			// Start Continuous Buffer
+			log.Printf("Starting recorder for camera %s (ID: %s) [Mode: %s, Quality: %s]", cam.Name, cam.ID, nvrMode, recordQuality)
 			camCtx, cancel := context.WithCancel(parentCtx)
-			go func(cID string) {
-				if err := StartContinuousBuffer(camCtx, cID); err != nil {
-					log.Printf("Continuous buffer exited for cam %s: %v", cID, err)
-				}
-			}(cam.ID)
+
+			m.spawnRecorder(camCtx, camConfig)
 
 			m.activeRecorders[cam.ID] = ActiveRecorder{
 				Config: camConfig,
@@ -113,12 +121,48 @@ func (m *RecorderManager) reconcile(parentCtx context.Context) {
 
 	for id, active := range m.activeRecorders {
 		if !currentCameraIDs[id] {
-			log.Printf("Camera %s is no longer active / AI disabled. Stopping continuous buffer...", id)
+			log.Printf("Camera %s recorder stopped (inactive, NVR disabled, or removed).", id)
 			if active.Cancel != nil {
 				active.Cancel()
 			}
 			delete(m.activeRecorders, id)
 		}
+	}
+}
+
+func (m *RecorderManager) spawnRecorder(ctx context.Context, cfg CameraConfig) {
+	switch cfg.NvrMode {
+	case "full":
+		// Continuous 24/7 recording
+		go func(c CameraConfig) {
+			if err := RunFFmpegProcess(ctx, c); err != nil {
+				log.Printf("[NVR Full] Recorder exited for cam %s: %v", c.CameraID, err)
+			}
+		}(cfg)
+
+	case "aor":
+		// All-Day Storage Saving Recording: 1 FPS continuous recording
+		go func(c CameraConfig) {
+			if err := RunAORRecordingProcess(ctx, c); err != nil {
+				log.Printf("[NVR AOR] Continuous 1 FPS exited for cam %s: %v", c.CameraID, err)
+			}
+		}(cfg)
+		// If AI is enabled, also maintain rolling buffer for 30 FPS event capture
+		if cfg.EnableAI {
+			go func(cID string) {
+				if err := StartContinuousBuffer(ctx, cID); err != nil {
+					log.Printf("[NVR AOR] Buffer exited for cam %s: %v", cID, err)
+				}
+			}(cfg.CameraID)
+		}
+
+	case "event":
+		// Event-based: maintain rolling buffer (AI is already verified true)
+		go func(cID string) {
+			if err := StartContinuousBuffer(ctx, cID); err != nil {
+				log.Printf("[NVR Event] Buffer exited for cam %s: %v", cID, err)
+			}
+		}(cfg.CameraID)
 	}
 }
 
@@ -195,11 +239,13 @@ func (m *RecorderManager) handleEventTrigger(ctx context.Context, camID string) 
 		return
 	}
 
-	// Basic deduplication: avoid spawning multiple ffmpegs for the same camera concurrently
-	// In a real system, you'd use a mutex and a state tracker per camera
-	// For simplicity, we just fire and forget a goroutine if it's an event
+	// Only "event" and "aor" modes need dedicated event clip stitching
+	if cam.Config.NvrMode != "event" && cam.Config.NvrMode != "aor" {
+		return
+	}
+
 	go func(cfg CameraConfig) {
-		log.Printf("[NVR] Event detected for cam %s, starting 30s capture...", cfg.CameraID)
+		log.Printf("[NVR] Event detected for cam %s (mode: %s), capturing 30s 30fps clip...", cfg.CameraID, cfg.NvrMode)
 		if err := RunEventFFmpegProcess(ctx, cfg); err != nil {
 			log.Printf("[NVR] Event capture failed for cam %s: %v", cfg.CameraID, err)
 		} else {

@@ -29,17 +29,15 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 
   return (
     <div
-      className={`bg-white border p-4 sm:p-5 transition-all shadow-sm flex flex-col justify-between ${
-        isStopped ? 'border-slate-200/80 opacity-80' : 'border-slate-200/90 hover:border-slate-300'
-      }`}
+      className={`bg-white border p-4 sm:p-5 transition-all shadow-sm flex flex-col justify-between ${isStopped ? 'border-slate-200/80 opacity-80' : 'border-slate-200/90 hover:border-slate-300'
+        }`}
     >
       <div>
         <div className="flex justify-between items-start mb-3 gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <div
-              className={`w-3 h-3 rounded-full shrink-0 ${
-                isStopped ? 'bg-slate-400' : device.is_active ? 'bg-green-500 shadow-sm' : 'bg-red-500'
-              }`}
+              className={`w-3 h-3 rounded-full shrink-0 ${isStopped ? 'bg-slate-400' : device.is_active ? 'bg-green-500 shadow-sm' : 'bg-red-500'
+                }`}
             />
             <div className="min-w-0">
               <h3 className="font-bold text-base sm:text-lg text-slate-800 truncate">{device.name}</h3>
@@ -116,6 +114,25 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-4 text-[11px]">
+          {/* NVR Mode Badge */}
+          {device.nvr_mode === 'disabled' ? (
+            <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 font-medium">
+              NVR: {t('device.nvrModeDisabled')}
+            </span>
+          ) : device.nvr_mode === 'full' ? (
+            <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200 font-medium">
+              NVR: 24/7 ({device.record_quality === 'hd' ? '1080p' : '720p'})
+            </span>
+          ) : device.nvr_mode === 'aor' ? (
+            <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 font-medium">
+              NVR: AOR (1/30 FPS)
+            </span>
+          ) : (
+            <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-medium">
+              NVR: Event ({device.record_quality === 'hd' ? '1080p' : '720p'})
+            </span>
+          )}
+
           <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
             {t('device.segmentLabel', { min: (device.segment_duration || 1800) / 60 })}
           </span>

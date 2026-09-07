@@ -14,6 +14,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/storage"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -117,7 +118,18 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 			latestDur = latestRec.DurationSeconds
 		}
 
-		if !globalSettings.NvrStatus || !cam.IsActive || cam.IsStopped {
+		nvrMode := cam.NvrMode
+		if nvrMode == "" {
+			nvrMode = "event"
+		}
+		recordQuality := cam.RecordQuality
+		if recordQuality == "" {
+			recordQuality = "standard"
+		}
+
+		if !cam.IsActive || cam.IsStopped || nvrMode == "disabled" {
+			status = "disabled"
+		} else if nvrMode == "event" && !cam.EnableAi {
 			status = "disabled"
 		} else {
 			segDuration := cam.SegmentDuration
@@ -125,7 +137,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 				segDuration = 300
 			}
 
-			// If the camera is active and NVR engine is ON
+			// If the camera is active and NVR mode is active
 			maxExpectedAge := time.Duration(segDuration*2+90) * time.Second
 			if !hasLatest || now.Sub(latestRec.EndAt) <= maxExpectedAge {
 				status = "recording"
@@ -141,6 +153,8 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 			Brand:                 cam.Brand,
 			IsActive:              cam.IsActive,
 			Status:                status,
+			NvrMode:               nvrMode,
+			RecordQuality:         recordQuality,
 			RTSPTransport:         cam.RtspTransport,
 			SegmentDuration:       cam.SegmentDuration,
 			VideoCodec:            cam.VideoCodec,
@@ -183,7 +197,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 	res := &NvrStatusResponse{
 		ServiceName:            "HubSight NVR Engine",
 		Status:                 "healthy",
-		IsGlobalEnabled:        globalSettings.NvrStatus,
+		IsGlobalEnabled:        true,
 		Timestamp:              now,
 		System:                 sysStats,
 		Storage:                storeStats,

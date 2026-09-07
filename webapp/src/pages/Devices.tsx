@@ -31,7 +31,9 @@ const initialFormData: DeviceFormData = {
   audioMode: 'auto',
   extraArgs: '',
   enable_ai: false,
-  show_bbox: true
+  show_bbox: true,
+  nvr_mode: 'event',
+  record_quality: 'standard'
 };
 
 const Devices = () => {
@@ -115,7 +117,9 @@ const Devices = () => {
         audioMode: dev.audio_mode || 'auto',
         extraArgs: dev.extra_args || '',
         enable_ai: dev.enable_ai || false,
-        show_bbox: dev.show_bbox !== false
+        show_bbox: dev.show_bbox !== false,
+        nvr_mode: dev.nvr_mode || 'event',
+        record_quality: dev.record_quality || 'standard'
       });
     } else {
       setEditingDeviceId(null);
@@ -179,7 +183,9 @@ const Devices = () => {
       extra_args: formData.extraArgs.trim(),
       is_active: true,
       enable_ai: formData.enable_ai,
-      show_bbox: formData.show_bbox !== false
+      show_bbox: formData.show_bbox !== false,
+      nvr_mode: formData.nvr_mode || 'event',
+      record_quality: formData.record_quality || 'standard'
     };
 
     try {

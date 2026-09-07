@@ -58,7 +58,12 @@ func (m *Manager) scheduleNotify() {
 }
 
 // UpsertCamera registers or updates a camera in the connection pool
-func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, isActive, enableAI bool) error {
+func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, isActive, enableAI bool, nvrMode ...string) error {
+	mode := "event"
+	if len(nvrMode) > 0 && nvrMode[0] != "" {
+		mode = nvrMode[0]
+	}
+
 	m.poolsMu.Lock()
 	p, exists := m.pools[camID]
 	if !exists {
@@ -68,6 +73,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 			Host:          host,
 			IsActive:      isActive,
 			EnableAI:      enableAI,
+			NvrMode:       mode,
 			LivePool:      make(map[string]*StreamConnection),
 			NextLiveIndex: 1, // Live index starts at 2
 		}
@@ -78,6 +84,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 		p.Host = host
 		p.IsActive = isActive
 		p.EnableAI = enableAI
+		p.NvrMode = mode
 		p.mu.Unlock()
 	}
 	m.poolsMu.Unlock()
@@ -136,8 +143,15 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 		}
 	}
 
-	// Manage Connection #1 (NVR)
-	if m.IsNVREnabled {
+	// Manage Connection #1 (NVR per device)
+	// Only connects if NVR is enabled for this camera (mode != "disabled")
+	// If mode is "event", requires enableAI=true per Rule #5
+	shouldConnectNVR := isActive && mode != "disabled"
+	if mode == "event" && !enableAI {
+		shouldConnectNVR = false
+	}
+
+	if shouldConnectNVR {
 		nvrStreamName := fmt.Sprintf("cam_%s_nvr", camID)
 		if err := m.go2rtc.RegisterStream(ctx, nvrStreamName, host, string(PurposeNVR)); err != nil {
 			log.Printf("[Pool] Warning: Failed to register Connection #1 (NVR) for cam %s: %v", camID, err)
@@ -155,14 +169,14 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 				LastUsedAt:  time.Now(),
 				Status:      "active",
 			}
-			log.Printf("[Pool] Camera %s (%s): Connection #1 (NVR) READY -> %s", camID, name, nvrStreamName)
+			log.Printf("[Pool] Camera %s (%s): Connection #1 (NVR) READY -> %s (mode: %s)", camID, name, nvrStreamName, mode)
 		}
 	} else {
-		// NVR disabled globally, remove if exists
+		// NVR disabled for this camera or AI required for event mode
 		if p.NVRConnection != nil {
 			_ = m.go2rtc.UnregisterStream(ctx, p.NVRConnection.StreamName)
 			p.NVRConnection = nil
-			log.Printf("[Pool] Camera %s NVR Connection #1 terminated due to global setting.", camID)
+			log.Printf("[Pool] Camera %s NVR Connection #1 terminated (mode: %s, AI: %v).", camID, mode, enableAI)
 		}
 	}
 

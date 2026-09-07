@@ -1,5 +1,5 @@
 // `DeviceType` re-exported from `@hubsight/sdk` for existing import paths.
-export type { DeviceType, CameraType } from '@hubsight/sdk';
+export type { DeviceType, CameraType, NvrMode, RecordQuality } from '@hubsight/sdk';
 
 export interface DeviceFormData {
   name: string;
@@ -21,6 +21,8 @@ export interface DeviceFormData {
   extraArgs: string;
   enable_ai: boolean;
   show_bbox: boolean;
+  nvr_mode: 'disabled' | 'event' | 'full' | 'aor';
+  record_quality: 'standard' | 'hd';
 }
 
 // Backward compatibility alias

@@ -117,6 +117,8 @@ export type {
   CameraInput,
   CameraItem,
   DeviceType,
+  NvrMode,
+  RecordQuality,
   ScanCandidate,
   ScanJob,
   MemberItem,

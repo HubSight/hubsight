@@ -97,6 +97,9 @@ export interface ChangePasswordRequest {
 
 // ── Cameras & Devices ────────────────────────────────────────────────────────
 
+export type NvrMode = 'disabled' | 'event' | 'full' | 'aor';
+export type RecordQuality = 'standard' | 'hd';
+
 export interface DeviceType {
   id: string;
   name: string;
@@ -112,6 +115,8 @@ export interface DeviceType {
   is_stopped: boolean;
   enable_ai: boolean;
   show_bbox: boolean;
+  nvr_mode: NvrMode;
+  record_quality: RecordQuality;
   created_at: string;
   updated_at: string;
 }
@@ -127,6 +132,8 @@ export interface CameraItem {
   is_stopped?: boolean;
   enable_ai?: boolean;
   show_bbox?: boolean;
+  nvr_mode?: NvrMode;
+  record_quality?: RecordQuality;
 }
 
 export interface CameraInput {
@@ -142,6 +149,8 @@ export interface CameraInput {
   is_active?: boolean;
   enable_ai?: boolean;
   show_bbox?: boolean;
+  nvr_mode?: NvrMode;
+  record_quality?: RecordQuality;
   [key: string]: unknown;
 }
 
@@ -341,6 +350,8 @@ export interface NvrCameraStatus {
   name: string;
   host: string;
   status: 'recording' | 'stalled' | 'disabled';
+  nvr_mode?: NvrMode;
+  record_quality?: RecordQuality;
   rtsp_transport: string;
   video_codec: string;
   audio_mode: string;

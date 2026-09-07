@@ -11,19 +11,21 @@ import (
 )
 
 type DeviceInput struct {
-	Name            string `json:"name" binding:"required"`
-	Host            string `json:"host" binding:"required"`
-	Brand           string `json:"brand"`
-	RtspPort        int    `json:"rtsp_port"`
-	RtspTransport   string `json:"rtsp_transport"`
-	SegmentDuration int    `json:"segment_duration"`
-	VideoCodec      string `json:"video_codec"`
-	AudioMode       string `json:"audio_mode"`
-	ExtraArgs       string `json:"extra_args"`
-	IsActive        *bool  `json:"is_active"`
-	IsStopped       *bool  `json:"is_stopped"`
-	EnableAi        *bool  `json:"enable_ai"`
-	ShowBbox        *bool  `json:"show_bbox"`
+	Name            string  `json:"name" binding:"required"`
+	Host            string  `json:"host" binding:"required"`
+	Brand           string  `json:"brand"`
+	RtspPort        int     `json:"rtsp_port"`
+	RtspTransport   string  `json:"rtsp_transport"`
+	SegmentDuration int     `json:"segment_duration"`
+	VideoCodec      string  `json:"video_codec"`
+	AudioMode       string  `json:"audio_mode"`
+	ExtraArgs       string  `json:"extra_args"`
+	IsActive        *bool   `json:"is_active"`
+	IsStopped       *bool   `json:"is_stopped"`
+	EnableAi        *bool   `json:"enable_ai"`
+	ShowBbox        *bool   `json:"show_bbox"`
+	NvrMode         *string `json:"nvr_mode"`
+	RecordQuality   *string `json:"record_quality"`
 }
 
 // Backward compatibility alias
@@ -48,6 +50,8 @@ func Create(ctx context.Context, input DeviceInput) (*models.Camera, error) {
 		ExtraArgs:       input.ExtraArgs,
 		IsActive:        true,
 		ShowBbox:        true,
+		NvrMode:         "event",
+		RecordQuality:   "standard",
 	}
 
 	if input.IsActive != nil {
@@ -61,6 +65,12 @@ func Create(ctx context.Context, input DeviceInput) (*models.Camera, error) {
 	}
 	if input.ShowBbox != nil {
 		cam.ShowBbox = *input.ShowBbox
+	}
+	if input.NvrMode != nil && *input.NvrMode != "" {
+		cam.NvrMode = *input.NvrMode
+	}
+	if input.RecordQuality != nil && *input.RecordQuality != "" {
+		cam.RecordQuality = *input.RecordQuality
 	}
 
 	if err := database.DB.WithContext(ctx).Create(&cam).Error; err != nil {
@@ -106,6 +116,12 @@ func Update(ctx context.Context, id string, input DeviceInput) (*models.Camera, 
 	}
 	if input.ShowBbox != nil {
 		updates["show_bbox"] = *input.ShowBbox
+	}
+	if input.NvrMode != nil && *input.NvrMode != "" {
+		updates["nvr_mode"] = *input.NvrMode
+	}
+	if input.RecordQuality != nil && *input.RecordQuality != "" {
+		updates["record_quality"] = *input.RecordQuality
 	}
 
 	res := database.DB.WithContext(ctx).Model(&models.Camera{ID: id}).Updates(updates)
@@ -178,6 +194,8 @@ func CameraEventPayload(dev *models.Camera) map[string]interface{} {
 		"is_stopped":       dev.IsStopped,
 		"enable_ai":        dev.EnableAi,
 		"show_bbox":        dev.ShowBbox,
+		"nvr_mode":         dev.NvrMode,
+		"record_quality":   dev.RecordQuality,
 		"created_at":       dev.CreatedAt,
 		"updated_at":       dev.UpdatedAt,
 	}

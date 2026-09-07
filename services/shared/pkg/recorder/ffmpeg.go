@@ -45,9 +45,14 @@ func RunFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	// RTSP Input URL
 	args = append(args, "-i", cfg.Host)
 
-	// Video Codec
-	// Recording quality: 1280x720 (720p) at 10fps to optimize storage and server processing
-	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "15")
+	// Video Codec & Quality Settings
+	// standard: 1280x720 (720p) at 15fps
+	// hd: 1920x1080 (1080p) at 30fps
+	if cfg.RecordQuality == "hd" {
+		args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1920x1080", "-r", "30", "-b:v", "3.5M")
+	} else {
+		args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", "1280x720", "-r", "15", "-b:v", "1.5M")
+	}
 
 	// Audio Handling
 	switch cfg.AudioMode {
@@ -246,5 +251,73 @@ func RunEventFFmpegProcess(ctx context.Context, cfg CameraConfig) error {
 	}
 
 	log.Printf("[Cam %s] Event clip successfully processed for %s", cfg.CameraID, outPattern)
+	return nil
+}
+
+// RunAORRecordingProcess runs continuous recording in All-Day Storage Saving (AOR) mode at 1 FPS
+func RunAORRecordingProcess(ctx context.Context, cfg CameraConfig) error {
+	err := os.MkdirAll(cfg.OutDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	segDuration := cfg.SegmentDuration
+	if segDuration <= 0 {
+		segDuration = 1800 // Default to 30 minutes
+	}
+	segmentTime := fmt.Sprintf("%d", segDuration)
+	outPattern := filepath.Join(cfg.OutDir, fmt.Sprintf("cam%s_%%Y%%m%%d_%%H%%M%%S.mp4", cfg.CameraID))
+
+	args := []string{}
+
+	// RTSP Transport
+	transport := cfg.RTSPTransport
+	if transport == "" || transport == "auto" {
+		transport = "tcp"
+	}
+	args = append(args, "-rtsp_transport", transport)
+	args = append(args, "-timeout", "5000000", "-analyzeduration", "10000000", "-probesize", "10000000")
+	args = append(args, "-i", cfg.Host)
+
+	// AOR: 1 FPS continuous video to maximize storage savings
+	resolution := "1280x720"
+	bitrate := "250k"
+	if cfg.RecordQuality == "hd" {
+		resolution = "1920x1080"
+		bitrate = "500k"
+	}
+	args = append(args, "-c:v", "libx264", "-preset", "ultrafast", "-s", resolution, "-r", "1", "-b:v", bitrate)
+
+	// Audio is disabled for 1 FPS timelapse recording
+	args = append(args, "-an")
+
+	// Output segmentation aligned to clock time
+	args = append(args,
+		"-f", "segment",
+		"-segment_time", segmentTime,
+		"-segment_atclocktime", "1",
+		"-segment_format", "mp4",
+		"-reset_timestamps", "1",
+		"-strftime", "1",
+	)
+
+	if trimmed := strings.TrimSpace(cfg.ExtraArgs); trimmed != "" {
+		args = append(args, strings.Fields(trimmed)...)
+	}
+
+	args = append(args, outPattern)
+
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
+	log.Printf("[Cam %s] Running AOR FFmpeg (1 FPS, %s): %s", cfg.CameraID, resolution, strings.Join(cmd.Args, " "))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	go MonitorSegments(ctx, cfg.CameraID, cfg.Name, cfg.OutDir, segDuration)
+
+	if err := cmd.Run(); err != nil {
+		log.Printf("[Cam %s] AOR FFmpeg exited: %v", cfg.CameraID, err)
+		return err
+	}
+
 	return nil
 }
