@@ -25,3 +25,10 @@ export {
   type SessionStorageAdapter,
   type RefreshTokenStore,
 } from './storage';
+
+export {
+  isPasskeySupported,
+  bufferToBase64Url,
+  base64UrlToBuffer,
+} from './webauthn-client';
+

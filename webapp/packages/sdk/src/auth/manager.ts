@@ -4,8 +4,17 @@ import type {
   Locale,
   LoginRequest,
   LoginResponse,
+  PasskeyItem,
+  TwoFactorSetupResponse,
+  TwoFactorVerifyRequest,
   User,
 } from '../types';
+import {
+  prepareCreationOptions,
+  serializeCreationResponse,
+  prepareRequestOptions,
+  serializeRequestResponse,
+} from './webauthn-client';
 import type { SessionStorageAdapter } from './storage';
 import type {
   AuthChangeEvent,
@@ -97,6 +106,11 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
           is_pwa: isPwa,
         });
 
+        if (res.status === '2fa_required') {
+          currentState = 'unauthenticated';
+          return res;
+        }
+
         const token = res.refresh_token;
         if (isPwa && token) {
           storage.setToken(token);
@@ -104,9 +118,18 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
           storage.clear();
         }
 
-        const session = updateSession(res.user ?? null, token);
+        let user = res.user;
+        if (!user) {
+          try {
+            user = await http.get<User>('/auth/me');
+          } catch {
+            /* best-effort */
+          }
+        }
+
+        const session = updateSession(user ?? null, token);
         emitChange('SIGNED_IN', session);
-        return res;
+        return { ...res, user };
       } catch (err) {
         currentState = currentUser ? 'authenticated' : 'unauthenticated';
         throw err;
@@ -203,6 +226,158 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
         currentUser = { ...currentUser, push_preferences: preferences };
         if (currentSession) currentSession.user = currentUser;
         emitChange('USER_UPDATED', currentSession);
+      }
+    },
+
+    // ── Two-Factor Authentication (2FA) ──────────────────────────────────────
+    async setup2FA(): Promise<TwoFactorSetupResponse> {
+      return await http.post<TwoFactorSetupResponse>('/auth/2fa/setup');
+    },
+
+    async enable2FA(code: string): Promise<void> {
+      await http.post('/auth/2fa/enable', { code });
+      if (currentUser) {
+        currentUser = { ...currentUser, two_factor_enabled: true };
+        if (currentSession) currentSession.user = currentUser;
+        emitChange('USER_UPDATED', currentSession);
+      }
+    },
+
+    async disable2FA(password?: string, code?: string): Promise<void> {
+      await http.post('/auth/2fa/disable', { password, code });
+      if (currentUser) {
+        currentUser = { ...currentUser, two_factor_enabled: false };
+        if (currentSession) currentSession.user = currentUser;
+        emitChange('USER_UPDATED', currentSession);
+      }
+    },
+
+    async regenerateRecoveryCodes(password: string): Promise<string[]> {
+      const res = await http.post<{ status: string; recovery_codes: string[] }>('/auth/2fa/recovery-codes', {
+        password,
+      });
+      return res.recovery_codes || [];
+    },
+
+    async verify2FA(payload: TwoFactorVerifyRequest): Promise<LoginResponse> {
+      currentState = 'loading';
+      const isPwa = storage.isPwa();
+
+      try {
+        const res = await http.post<LoginResponse>('/auth/2fa/verify', {
+          ...payload,
+          is_pwa: isPwa,
+        });
+
+        const token = res.refresh_token;
+        if (isPwa && token) {
+          storage.setToken(token);
+        } else {
+          storage.clear();
+        }
+
+        let user = res.user;
+        if (!user) {
+          try {
+            user = await http.get<User>('/auth/me');
+          } catch {
+            /* best-effort */
+          }
+        }
+
+        const session = updateSession(user ?? null, token);
+        emitChange('SIGNED_IN', session);
+        return { ...res, user };
+      } catch (err) {
+        currentState = currentUser ? 'authenticated' : 'unauthenticated';
+        throw err;
+      }
+    },
+
+    // ── Passkey / WebAuthn ───────────────────────────────────────────────────
+    async listPasskeys(): Promise<PasskeyItem[]> {
+      return await http.get<PasskeyItem[]>('/auth/passkeys');
+    },
+
+    async registerPasskey(name: string): Promise<PasskeyItem> {
+      const optRes = await http.post<{ publicKey: any; challenge_id: string }>(
+        '/auth/passkeys/register/options'
+      );
+      const creationOptions = prepareCreationOptions(optRes.publicKey);
+      const credential = (await navigator.credentials.create(creationOptions)) as PublicKeyCredential;
+      if (!credential) {
+        throw new Error('Passkey registration was canceled');
+      }
+
+      const serialized = serializeCreationResponse(credential);
+      const verifyRes = await http.post<{ status: string; passkey: PasskeyItem }>(
+        '/auth/passkeys/register/verify',
+        {
+          challenge_id: optRes.challenge_id,
+          name,
+          credential: serialized,
+        }
+      );
+
+      return verifyRes.passkey;
+    },
+
+    async renamePasskey(id: string, name: string): Promise<void> {
+      await http.put(`/auth/passkeys/${id}`, { name });
+    },
+
+    async deletePasskey(id: string): Promise<void> {
+      await http.delete(`/auth/passkeys/${id}`);
+    },
+
+    async loginWithPasskey(username?: string, conditional?: boolean): Promise<LoginResponse> {
+      currentState = 'loading';
+      const isPwa = storage.isPwa();
+
+      try {
+        const optRes = await http.post<{ publicKey: any; challenge_id: string }>(
+          '/auth/passkeys/login/options',
+          { username }
+        );
+        const reqOptions = prepareRequestOptions(optRes.publicKey);
+        if (conditional) {
+          (reqOptions as any).mediation = 'conditional';
+        }
+
+        const credential = (await navigator.credentials.get(reqOptions)) as PublicKeyCredential;
+        if (!credential) {
+          throw new Error('Passkey login was canceled');
+        }
+
+        const serialized = serializeRequestResponse(credential);
+        const res = await http.post<LoginResponse>('/auth/passkeys/login/verify', {
+          challenge_id: optRes.challenge_id,
+          credential: serialized,
+          is_pwa: isPwa,
+        });
+
+        const token = res.refresh_token;
+        if (isPwa && token) {
+          storage.setToken(token);
+        } else {
+          storage.clear();
+        }
+
+        let user = res.user;
+        if (!user) {
+          try {
+            user = await http.get<User>('/auth/me');
+          } catch {
+            /* best-effort */
+          }
+        }
+
+        const session = updateSession(user ?? null, token);
+        emitChange('SIGNED_IN', session);
+        return { ...res, user };
+      } catch (err) {
+        currentState = currentUser ? 'authenticated' : 'unauthenticated';
+        throw err;
       }
     },
 

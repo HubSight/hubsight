@@ -3,6 +3,9 @@ import type {
   Locale,
   LoginRequest,
   LoginResponse,
+  PasskeyItem,
+  TwoFactorSetupResponse,
+  TwoFactorVerifyRequest,
   User,
 } from '../types';
 
@@ -45,6 +48,21 @@ export interface AuthManager {
   setTimezone(timezone: string): Promise<void>;
   setPreferences(preferences: Record<string, boolean>): Promise<void>;
 
+  // Two-Factor Authentication (2FA)
+  setup2FA(): Promise<TwoFactorSetupResponse>;
+  enable2FA(code: string): Promise<void>;
+  disable2FA(password?: string, code?: string): Promise<void>;
+  regenerateRecoveryCodes(password: string): Promise<string[]>;
+  verify2FA(payload: TwoFactorVerifyRequest): Promise<LoginResponse>;
+
+  // Passkey / WebAuthn
+  listPasskeys(): Promise<PasskeyItem[]>;
+  registerPasskey(name: string): Promise<PasskeyItem>;
+  renamePasskey(id: string, name: string): Promise<void>;
+  deletePasskey(id: string): Promise<void>;
+  loginWithPasskey(username?: string, conditional?: boolean): Promise<LoginResponse>;
+
   // Internal kernel handler for realtime kickout
   handleForceLogout(reason?: string, message?: string): void;
 }
+

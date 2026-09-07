@@ -45,6 +45,7 @@ export interface User {
   locale?: Locale;
   timezone?: string;
   is_active: boolean;
+  two_factor_enabled?: boolean;
   push_preferences?: Record<string, boolean>;
   created_at?: string;
   last_login_at?: string;
@@ -87,6 +88,56 @@ export interface LoginResponse {
   user?: User;
   refresh_token?: string;
   message?: string;
+  status?: string;
+  pre_auth_token?: string;
+}
+
+// ── 2FA & MFA Types ─────────────────────────────────────────────────────────
+
+export interface TwoFactorSetupResponse {
+  secret: string;
+  url: string;
+  qr_code: string;
+  recovery_codes: string[];
+}
+
+export interface TwoFactorVerifyRequest {
+  pre_auth_token: string;
+  code?: string;
+  recovery_code?: string;
+  is_pwa?: boolean;
+}
+
+export interface TwoFactorEnableRequest {
+  code: string;
+}
+
+export interface TwoFactorDisableRequest {
+  password?: string;
+  code?: string;
+}
+
+// ── Passkey / WebAuthn Types ────────────────────────────────────────────────
+
+export interface PasskeyItem {
+  id: string;
+  user_id: string;
+  name: string;
+  transports?: string[];
+  backup_eligible?: boolean;
+  backup_state?: boolean;
+  created_at: string;
+  last_used_at?: string;
+}
+
+export interface PasskeyRegisterOptionsResponse {
+  publicKey: any;
+  challenge_id: string;
+}
+
+export interface PasskeyLoginOptionsResponse {
+  publicKey: any;
+  challenge_id: string;
 }
 
 export interface ChangePasswordRequest {

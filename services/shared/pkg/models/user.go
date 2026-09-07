@@ -24,9 +24,13 @@ type User struct {
 	CreatedAt         time.Time          `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
 	UpdatedAt         time.Time          `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
 	LastLoginAt       *time.Time         `gorm:"column:last_login_at" json:"last_login_at,omitempty"`
-	PushPreferences   map[string]bool    `gorm:"column:push_preferences;serializer:json;type:jsonb" json:"push_preferences,omitempty"`
-	Sessions          []Session          `gorm:"foreignKey:UserID;references:ID" json:"-"`
-	PushSubscriptions []PushSubscription `gorm:"foreignKey:UserID;references:ID" json:"-"`
+	PushPreferences        map[string]bool     `gorm:"column:push_preferences;serializer:json;type:jsonb" json:"push_preferences,omitempty"`
+	TwoFactorEnabled       bool                `gorm:"column:two_factor_enabled;not null;default:false" json:"two_factor_enabled"`
+	TwoFactorSecret        string              `gorm:"column:two_factor_secret;type:text;not null;default:''" json:"-"`
+	TwoFactorRecoveryCodes []string            `gorm:"column:two_factor_recovery_codes;serializer:json;type:jsonb" json:"-"`
+	Passkeys               []PasskeyCredential `gorm:"foreignKey:UserID;references:ID" json:"passkeys,omitempty"`
+	Sessions               []Session           `gorm:"foreignKey:UserID;references:ID" json:"-"`
+	PushSubscriptions      []PushSubscription  `gorm:"foreignKey:UserID;references:ID" json:"-"`
 }
 
 // TableName returns the physical table name in PostgreSQL.

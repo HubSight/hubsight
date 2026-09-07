@@ -72,26 +72,12 @@ func GenerateToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-func Login(ctx context.Context, username, password string, isPWA bool) (*models.Session, string, string, error) {
-	var u models.User
-	if err := database.DB.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
-		return nil, "", "", errors.New("invalid credentials")
-	}
-
-	if !u.IsActive {
-		return nil, "", "", errors.New("user is inactive")
-	}
-
-	match, err := verifyPassword(password, u.PasswordHash)
-	if err != nil || !match {
-		return nil, "", "", errors.New("invalid credentials")
-	}
-
+func createSessionForUser(ctx context.Context, userID string, isPWA bool) (*models.Session, string, string, error) {
 	token := GenerateToken()
 	expiresAt := time.Now().Add(24 * 7 * time.Hour) // 1 week
 
 	sess := models.Session{
-		UserID:    u.ID,
+		UserID:    userID,
 		TokenHash: hashToken(token),
 		ExpiresAt: expiresAt,
 		IsPwa:     isPWA,
@@ -108,9 +94,34 @@ func Login(ctx context.Context, username, password string, isPWA bool) (*models.
 	}
 
 	now := time.Now()
-	_ = database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("last_login_at", &now).Error
+	_ = database.DB.WithContext(ctx).Model(&models.User{ID: userID}).Update("last_login_at", &now).Error
 
 	return &sess, token, refreshToken, nil
+}
+
+func Login(ctx context.Context, username, password string, isPWA bool) (*models.Session, string, string, error) {
+	var u models.User
+	if err := database.DB.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
+		return nil, "", "", errors.New("invalid credentials")
+	}
+
+	if !u.IsActive {
+		return nil, "", "", errors.New("user is inactive")
+	}
+
+	match, err := verifyPassword(password, u.PasswordHash)
+	if err != nil || !match {
+		return nil, "", "", errors.New("invalid credentials")
+	}
+
+	// If 2FA is enabled, issue a temporary pre-auth challenge token
+	if u.TwoFactorEnabled {
+		preAuthToken := GenerateToken()
+		globalPreAuthStore.Save(preAuthToken, u.ID, isPWA, 5*time.Minute)
+		return nil, preAuthToken, "", ErrTwoFactorRequired
+	}
+
+	return createSessionForUser(ctx, u.ID, isPWA)
 }
 
 func RefreshPWASession(ctx context.Context, refreshToken string) (*models.Session, string, string, error) {

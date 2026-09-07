@@ -65,6 +65,7 @@ export {
   defaultRefreshTokenStore,
   type SessionStorageAdapter,
   type RefreshTokenStore,
+  isPasskeySupported,
 } from './auth';
 
 // ── Realtime & Event Payloads ────────────────────────────────────────────────
@@ -113,6 +114,11 @@ export type {
   LoginRequest,
   LoginResponse,
   ChangePasswordRequest,
+  PasskeyItem,
+  TwoFactorSetupResponse,
+  TwoFactorVerifyRequest,
+  TwoFactorEnableRequest,
+  TwoFactorDisableRequest,
   CameraType,
   CameraInput,
   CameraItem,

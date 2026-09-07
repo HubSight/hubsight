@@ -112,6 +112,13 @@ func main() {
 		authGroup.POST("/refresh", auth.RefreshHandler)
 		authGroup.POST("/logout", auth.LogoutHandler)
 
+		// Two-Factor Authentication verification during login
+		authGroup.POST("/2fa/verify", auth.Verify2FAHandler)
+
+		// Passkey / Passwordless Authentication (FIDO2)
+		authGroup.POST("/passkeys/login/options", auth.PasskeyLoginOptionsHandler)
+		authGroup.POST("/passkeys/login/verify", auth.PasskeyLoginVerifyHandler)
+
 		// Internal Token Validation (called by cctv-api gateway / other microservices)
 		authGroup.POST("/validate-token", handleValidateToken)
 	}
@@ -126,6 +133,19 @@ func main() {
 		protected.PUT("/locale", auth.UpdateLocaleHandler)
 		protected.PUT("/timezone", auth.UpdateTimezoneHandler)
 		protected.PUT("/preferences", auth.UpdatePreferencesHandler)
+
+		// Two-Factor Authentication (2FA) Management
+		protected.POST("/2fa/setup", auth.Setup2FAHandler)
+		protected.POST("/2fa/enable", auth.Enable2FAHandler)
+		protected.POST("/2fa/disable", auth.Disable2FAHandler)
+		protected.POST("/2fa/recovery-codes", auth.RegenerateRecoveryCodesHandler)
+
+		// Passkey (WebAuthn) Credential Management
+		protected.GET("/passkeys", auth.ListPasskeysHandler)
+		protected.POST("/passkeys/register/options", auth.PasskeyRegisterOptionsHandler)
+		protected.POST("/passkeys/register/verify", auth.PasskeyRegisterVerifyHandler)
+		protected.PUT("/passkeys/:id", auth.RenamePasskeyHandler)
+		protected.DELETE("/passkeys/:id", auth.DeletePasskeyHandler)
 
 		// Access Control & RBAC
 		protected.GET("/permissions", auth.ListPermissionsHandler)

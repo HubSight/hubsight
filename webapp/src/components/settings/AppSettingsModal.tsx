@@ -13,11 +13,15 @@ import {
   Lock,
   Smartphone,
   Globe,
-  Bell
+  Bell,
+  ShieldCheck,
+  RotateCw,
 } from 'lucide-react';
 import { isPwa } from '../../utils/pwa';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../api/client';
+import { TwoFactorSetupModal } from './TwoFactorSetupModal';
+import { PasskeySettingsSection } from './PasskeySettingsSection';
 
 interface AppSettingsModalProps {
   onClose: () => void;
@@ -43,6 +47,16 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
   const [loadingBio, setLoadingBio] = useState(false);
   const [bioError, setBioError] = useState('');
   const [bioSuccess, setBioSuccess] = useState('');
+  const [twoFactorModalMode, setTwoFactorModalMode] = useState<'setup' | 'regenerate' | 'disable' | null>(null);
+
+  const handle2FARefresh = async () => {
+    try {
+      const updatedUser = await api.auth.me();
+      setUser(updatedUser);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const handleTogglePushPref = async (key: string, checked: boolean) => {
     if (!user) return;
@@ -271,6 +285,65 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
             </div>
           </div>
 
+          {/* Setting: Two-Factor Authentication (TOTP 2FA) */}
+          <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                  <ShieldCheck size={16} className="text-orange-600 shrink-0" />
+                  <span>{t('settings.twoFactorTitle')}</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {t('settings.twoFactorDesc')}
+                </p>
+              </div>
+              <span
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 ${
+                  user?.two_factor_enabled
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                }`}
+              >
+                {user?.two_factor_enabled
+                  ? t('settings.twoFactorEnabled')
+                  : t('settings.twoFactorDisabled')}
+              </span>
+            </div>
+
+            <div className="pt-1 flex flex-wrap gap-2">
+              {!user?.two_factor_enabled ? (
+                <button
+                  type="button"
+                  onClick={() => setTwoFactorModalMode('setup')}
+                  className="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                >
+                  {t('settings.enable2faBtn')}
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setTwoFactorModalMode('regenerate')}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                  >
+                    <RotateCw size={13} />
+                    <span>{t('settings.regenRecoveryBtn')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTwoFactorModalMode('disable')}
+                    className="px-3 py-1.5 bg-white hover:bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    {t('settings.disable2faBtn')}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Setting: Passkeys (FIDO2 / WebAuthn) */}
+          <PasskeySettingsSection />
+
           {/* Setting 1: App Lock Toggle */}
           <div className="flex items-center justify-between p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl">
             <div className="pr-3">
@@ -382,6 +455,14 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
           )}
         </div>
       </div>
+
+      {twoFactorModalMode && (
+        <TwoFactorSetupModal
+          mode={twoFactorModalMode}
+          onClose={() => setTwoFactorModalMode(null)}
+          onSuccess={handle2FARefresh}
+        />
+      )}
     </div>
   );
 };
