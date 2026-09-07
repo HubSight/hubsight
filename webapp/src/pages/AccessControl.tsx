@@ -75,16 +75,17 @@ export const AccessControl: React.FC = () => {
       setUsers(uList);
       setRoles(rList);
       setPermissions(pList);
-      if (rList.length > 0 && !selectedRoleId) {
-        setSelectedRoleId(rList[0].id);
-      }
+      setSelectedRoleId((prev) => {
+        if (prev && rList.some((r) => r.id === prev)) return prev;
+        return rList.length > 0 ? rList[0].id : '';
+      });
     } catch (err) {
       console.error('Failed to load access control data:', err);
       toast.error(t('common.errorOccurred'));
     } finally {
       setIsLoading(false);
     }
-  }, [t, selectedRoleId]);
+  }, [t]);
 
   useEffect(() => {
     loadData();
