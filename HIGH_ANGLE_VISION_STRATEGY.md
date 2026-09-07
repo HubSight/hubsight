@@ -3,7 +3,8 @@
 > **Document Type:** Technical Architecture & Algorithm Design
 > **Target Audience:** AI/CV Engineers, Systems Architects (including Claude review)
 > **Repository:** HubSight CCTV Platform (`services/vision`)
-> **Status:** Grounded Engineering Specification (v3.1)
+> **Status:** Grounded Engineering Specification (v3.2)
+> **Changelog:** v3.2 — Added §2.5 (Face Recognition Scope Boundary for High-Angle Streams).
 
 ---
 
@@ -91,6 +92,22 @@ To respect the constraint that cameras are arbitrary RTSP and may be PTZ:
   2. The UI allows an admin to click 4 reference points on the floor to establish planar homography matrix $\mathbf{H} \in \mathbb{R}^{3 \times 3}$.
   3. $\mathbf{H}$ is stored in the `cameras` database record.
   4. **Shift Invalidation:** To prevent invalid homography if the camera is bumped or panned, a feature/template-matching check monitors 3–4 static architectural patches (door frames, floor seams). If static structural landmarks shift by $> 5\%$, $\mathbf{H}$ is automatically invalidated and the system falls back to normalized image space.
+
+### 2.5 Face Recognition Scope Boundary (High-Angle Streams)
+
+> **Ràng buộc bổ sung cho §1.1:** Nếu hệ thống bổ sung module nhận diện khuôn mặt (face ID, ví dụ dựa trên InsightFace/ArcFace) trong tương lai, module này **không được kích hoạt trên luồng camera có `angle_profile = "high"`** (xác định bởi §2.3). Face ID chỉ được coi là đáng tin cậy trên luồng `angle_profile = "standard"` (pitch $15^\circ\text{--}35^\circ$), đúng như phạm vi đã giới hạn ở §1.1.
+
+**Cơ sở kỹ thuật:**
+- Các model InsightFace/ArcFace được huấn luyện chủ yếu trên tập dữ liệu web-scraped (MS1MV2, Glint360K...), biến thiên chủ yếu theo góc **yaw** (quay trái/phải); biến thiên theo **pitch** (nhìn từ trên xuống) trong tập huấn luyện rất hạn chế so với yaw.
+- Ở pitch vượt ngưỡng khoảng $30^\circ$, hiệu năng sinh trắc học của các hệ thống nhận diện khuôn mặt hiện tại suy giảm đáng kể; ở pitch $45^\circ\text{--}75^\circ$ như camera CCTV trần cao trong hệ thống này, phần trán/đỉnh đầu che khuất mắt-mũi-miệng, khiến bước 5-point landmark alignment (tiền đề bắt buộc trước khi trích embedding) thất bại trước khi model kịp hoạt động.
+- Khoảng cách xa và độ phân giải thấp (640p, cùng ràng buộc compute ở §1.2) cộng dồn với domain gap về pose -- hai trục suy giảm này nhân lên chứ không cộng tuyến tính, tương tự vấn đề "Small Target Degradation" đã nêu ở §6.1 cho pose keypoints.
+
+**Gating Rule nếu buộc phải thử nghiệm trên luồng góc cao (không khuyến nghị dùng làm baseline):**
+1. Ước lượng pose khuôn mặt (yaw/pitch) từ 5-point landmark do face detector (SCRFD/RetinaFace) trả về; loại bỏ ứng viên nếu pitch ước lượng $> 25^\circ\text{--}30^\circ$.
+2. Áp ngưỡng kích thước khuôn mặt tối thiểu (interocular distance hoặc bbox width), tương tự cơ chế `resolution_tier: "low_res"` ở §6.1; dưới ngưỡng, đánh dấu `face_quality: "unusable"` và không chạy recognition.
+3. Không dispatch cảnh báo định danh (identity match alert) dựa trên embedding có `face_quality: "unusable"` -- chỉ log "detected, unidentified" để tránh false-match.
+
+- **Target File/Function (dự kiến, nếu module được thêm):** `services/vision/src/recognition/face_id.py` -- logic gating nên tái sử dụng `angle_profile` từ `Detector` (§2.3) làm điều kiện early-exit, tránh lãng phí compute budget đã cam kết ở §1.2.
 
 ---
 
@@ -399,3 +416,4 @@ The roadmap is strictly ordered by **implementation cost vs. production impact**
 ### Explicitly Excluded / Deprecated
 - **Flicker-FFT (8–12 Hz):** Permanently removed due to Nyquist sampling violation at 10 FPS.
 - **Secondary Head-Detection Model:** Replaced by existing COCO pose cranial keypoints 0–4 to preserve CPU compute headroom.
+- **Face ID (InsightFace/ArcFace) trên luồng high-angle:** Không triển khai làm baseline do domain gap về pitch + độ phân giải; xem §2.5 cho cơ sở kỹ thuật và gating rule nếu thử nghiệm.
