@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -388,10 +389,20 @@ func PasskeyRegisterOptionsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"publicKey":    options,
-		"challenge_id": challengeID,
-	})
+	// go-webauthn's CredentialCreation already serializes as {"publicKey":{...}}.
+	// Merge challenge_id into the same top-level object to avoid double-nesting.
+	raw, err := json.Marshal(options)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode options"})
+		return
+	}
+	var merged map[string]any
+	if err := json.Unmarshal(raw, &merged); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decode options"})
+		return
+	}
+	merged["challenge_id"] = challengeID
+	c.JSON(http.StatusOK, merged)
 }
 
 // PasskeyRegisterVerifyHandler verifies and saves the new passkey credential.
@@ -434,10 +445,20 @@ func PasskeyLoginOptionsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"publicKey":    options,
-		"challenge_id": challengeID,
-	})
+	// go-webauthn's CredentialAssertion already serializes as {"publicKey":{...}}.
+	// Merge challenge_id into the same top-level object to avoid double-nesting.
+	raw, err := json.Marshal(options)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode options"})
+		return
+	}
+	var merged map[string]any
+	if err := json.Unmarshal(raw, &merged); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decode options"})
+		return
+	}
+	merged["challenge_id"] = challengeID
+	c.JSON(http.StatusOK, merged)
 }
 
 // PasskeyLoginVerifyHandler verifies passkey assertion and logs the user in.
