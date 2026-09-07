@@ -1,4 +1,13 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/services/vision-service/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/services/vision-service"
+  ],
+  "python.analysis.autoSearchPaths": true,
+  "go.useLanguageServer": true,
+  "gopls": {
+    "build.directoryFilters": ["-**/node_modules", "-**/webapp", "-**/vision-service"]
+  }
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
