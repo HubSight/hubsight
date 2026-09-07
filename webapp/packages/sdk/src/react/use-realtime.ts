@@ -199,4 +199,3 @@ export function useOnStatusChange(
 ): void {
   useOn((r, cb) => r.onStatusChange(cb), listener, deps);
 }
-
