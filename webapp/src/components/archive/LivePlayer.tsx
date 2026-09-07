@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX, Sparkles } from 'lucide-react';
-import { useLiveStream, useRealtimeEvent, type OverlayBox } from '@hubsight/realtime/react';
+import {
+  useLiveStream,
+  useOnVisionPersonEntered,
+  useOnVisionPersonUpdate,
+  useOnVisionPersonLeft,
+  type OverlayBox,
+} from '@hubsight/realtime/react';
 import { useTranslation } from '../../i18n';
 
 const POSE_SKELETON: [number, number][] = [
@@ -151,9 +157,9 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
     boxesRef.current = [];
     drawBoxes();
   };
-  useRealtimeEvent('vision.person.entered', applyBoxes, [cameraId, drawBoxes]);
-  useRealtimeEvent('vision.person.update', applyBoxes, [cameraId, drawBoxes]);
-  useRealtimeEvent('vision.person.left', clearBoxes, [cameraId, drawBoxes]);
+  useOnVisionPersonEntered(applyBoxes, [cameraId, drawBoxes]);
+  useOnVisionPersonUpdate(applyBoxes, [cameraId, drawBoxes]);
+  useOnVisionPersonLeft(clearBoxes, [cameraId, drawBoxes]);
 
   useEffect(() => {
     if (!showBbox || !enableAi) boxesRef.current = [];

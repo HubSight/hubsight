@@ -10,7 +10,7 @@ import { AppLockScreen } from '../components/lock/AppLockScreen';
 import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
-import { useRealtimeEvent } from '@hubsight/realtime/react';
+import { useOnNotification } from '@hubsight/realtime/react';
 import { api } from '../api/client';
 import { getPushNotificationPermission, subscribeToWebPush } from '../utils/push';
 import { Toaster } from 'react-hot-toast';
@@ -34,7 +34,7 @@ const MainLayout = () => {
     api.notifications
       .list()
       .then((res) => setUnreadNotifCount(res.unread_count))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Refresh FCM / Web Push token silently when permission is already granted.
@@ -45,7 +45,7 @@ const MainLayout = () => {
   }, [user]);
 
   // Bump the bell badge when the relay pushes a new notification
-  useRealtimeEvent('notification.new', () => {
+  useOnNotification(() => {
     setUnreadNotifCount((prev) => prev + 1);
   });
 
@@ -160,7 +160,7 @@ const MainLayout = () => {
               <span className="text-[11px] text-slate-600 font-medium tracking-wide">{t('nav.subtitle')}</span>
             </div>
           </NavLink>
-          <button 
+          <button
             className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -275,18 +275,16 @@ const MainLayout = () => {
             {/* Profile Button */}
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className={`flex-1 min-w-0 flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${
-                isUserMenuOpen
+              className={`flex-1 min-w-0 flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${isUserMenuOpen
                   ? 'bg-orange-50/50 border-orange-200 shadow-xs'
                   : 'bg-white hover:bg-slate-50 border-transparent hover:border-slate-200'
-              }`}
+                }`}
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${
-                  user?.role === 'admin'
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${user?.role === 'admin'
                     ? 'bg-red-50 text-red-600 group-hover:bg-red-100'
                     : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
-                }`}
+                  }`}
               >
                 <UserIcon size={16} />
               </div>
@@ -299,11 +297,10 @@ const MainLayout = () => {
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${
-                      user?.role === 'admin'
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${user?.role === 'admin'
                         ? 'bg-red-50 text-red-600 border-red-200'
                         : 'bg-blue-50 text-blue-600 border-blue-200'
-                    }`}
+                      }`}
                   >
                     {user?.role === 'admin' ? t('admin') : t('viewer')}
                   </span>
@@ -341,9 +338,8 @@ const MainLayout = () => {
       {/* Desktop Sidebar Toggle Button */}
       <button
         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-200 shadow-md py-3 px-1 rounded-r-xl transition-all duration-300 hover:bg-slate-50 text-slate-400 hover:text-slate-700 cursor-pointer ${
-          isSidebarCollapsed ? 'left-0' : 'left-[260px]'
-        }`}
+        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-200 shadow-md py-3 px-1 rounded-r-xl transition-all duration-300 hover:bg-slate-50 text-slate-400 hover:text-slate-700 cursor-pointer ${isSidebarCollapsed ? 'left-0' : 'left-[260px]'
+          }`}
         title={isSidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
       >
         {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}

@@ -15,7 +15,7 @@ import {
 import { api } from '../api/client';
 import type { NvrStatusResponse } from '../types/nvr';
 import { useTranslation } from '../i18n';
-import { useRealtimeEvent } from '@hubsight/realtime/react';
+import { useOnNvrStatus } from '@hubsight/realtime/react';
 import { NvrMonitorSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import dayjs from 'dayjs';
@@ -64,7 +64,7 @@ const NvrMonitor = () => {
     title: '',
     message: '',
     inputValue: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const toggleNvrStatus = async (currentStatus: boolean) => {
@@ -102,7 +102,7 @@ const NvrMonitor = () => {
       onConfirm: async (val) => {
         const newQuota = parseInt(val || '', 10);
         if (isNaN(newQuota) || newQuota <= 0) {
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.invalidQuota'), inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.invalidQuota'), inputValue: '', onConfirm: () => { } }), 100);
           return;
         }
 
@@ -112,7 +112,7 @@ const NvrMonitor = () => {
           await fetchStatus(false);
         } catch (err) {
           console.error('Failed to update quota', err);
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.failedUpdateQuota'), inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.failedUpdateQuota'), inputValue: '', onConfirm: () => { } }), 100);
         } finally {
           setIsUpdatingSettings(false);
         }
@@ -130,17 +130,17 @@ const NvrMonitor = () => {
       onConfirm: async (val) => {
         const newDays = parseInt(val || '', 10);
         if (isNaN(newDays) || newDays <= 0) {
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.invalidRetention'), inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.invalidRetention'), inputValue: '', onConfirm: () => { } }), 100);
           return;
         }
-        
+
         setIsUpdatingSettings(true);
         try {
           await api.recorder.updateSettings({ retention_days: newDays });
           await fetchStatus(false);
         } catch (err) {
           console.error('Failed to update retention', err);
-          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.failedUpdateRetention'), inputValue: '', onConfirm: () => {} }), 100);
+          setTimeout(() => setModalConfig({ isOpen: true, type: 'alert', title: t('error'), message: t('nvr.failedUpdateRetention'), inputValue: '', onConfirm: () => { } }), 100);
         } finally {
           setIsUpdatingSettings(false);
         }
@@ -168,7 +168,7 @@ const NvrMonitor = () => {
             type: 'alert',
             inputValue: '',
             onConfirm: () => {
-              setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => {} });
+              setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => { } });
               fetchStatus(true);
             },
           });
@@ -180,7 +180,7 @@ const NvrMonitor = () => {
             message: t('nvr.formatFailed'),
             type: 'alert',
             inputValue: '',
-            onConfirm: () => setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => {} }),
+            onConfirm: () => setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => { } }),
           });
         } finally {
           setIsUpdatingSettings(false);
@@ -208,7 +208,7 @@ const NvrMonitor = () => {
   }, []);
 
   // Real-time Event-Driven updates via RabbitMQ -> Socket.IO (0 HTTP requests)
-  useRealtimeEvent('nvr.status.update', (newStatus) => {
+  useOnNvrStatus((newStatus) => {
     setData(newStatus);
     setLoading(false);
     setIsRefreshing(false);
@@ -275,8 +275,8 @@ const NvrMonitor = () => {
                 onClick={() => toggleNvrStatus(!!data?.is_global_enabled)}
                 disabled={isUpdatingSettings || !data}
                 className={`text-xs px-3 py-1.5 font-semibold rounded-md transition-colors cursor-pointer ${data?.is_global_enabled
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                   }`}
               >
                 {data?.is_global_enabled ? t('nvr.stopEngine') : t('nvr.startEngine')}
@@ -357,10 +357,10 @@ const NvrMonitor = () => {
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-1">
             <div
               className={`h-full transition-all duration-500 ${(data?.storage.used_percentage || 0) > 90
-                  ? 'bg-red-500'
-                  : (data?.storage.used_percentage || 0) > 75
-                    ? 'bg-amber-500'
-                    : 'bg-blue-600'
+                ? 'bg-red-500'
+                : (data?.storage.used_percentage || 0) > 75
+                  ? 'bg-amber-500'
+                  : 'bg-blue-600'
                 }`}
               style={{ width: `${Math.min(data?.storage.used_percentage || 0, 100)}%` }}
             />
@@ -523,7 +523,7 @@ const NvrMonitor = () => {
             <div className="p-6">
               <h3 className="text-lg font-bold text-slate-800 mb-2">{modalConfig.title}</h3>
               <p className="text-sm text-slate-600 mb-5">{modalConfig.message}</p>
-              
+
               {modalConfig.type === 'prompt' && (
                 <div className="mb-2">
                   <input
@@ -542,7 +542,7 @@ const NvrMonitor = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="bg-slate-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-100">
               {modalConfig.type !== 'alert' && (
                 <button
@@ -557,9 +557,8 @@ const NvrMonitor = () => {
                   modalConfig.onConfirm(modalConfig.inputValue);
                   setModalConfig({ ...modalConfig, isOpen: false });
                 }}
-                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm cursor-pointer ${
-                  modalConfig.type === 'confirm' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
-                }`}
+                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm cursor-pointer ${modalConfig.type === 'confirm' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
               >
                 {modalConfig.type === 'alert' ? t('ok') : t('confirm')}
               </button>

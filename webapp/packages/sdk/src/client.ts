@@ -118,7 +118,7 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
   const realtime = createRealtimeManager({ socket: socketClient });
 
   // 5. Wire Realtime force logout directly to Auth Manager
-  realtime.on('auth:force_logout', (payload) => {
+  realtime.onForceLogout((payload) => {
     const currentUser = auth.getUser();
     if (!currentUser || (payload?.userId && currentUser.id === payload.userId)) {
       auth.handleForceLogout(payload?.reason, payload?.message);

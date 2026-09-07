@@ -120,7 +120,7 @@ test('AuthManager state, permissions, and force logout', () => {
   unsub();
 });
 
-test('RealtimeManager typed events and status', () => {
+test('RealtimeManager encapsulated on* prefix methods and status', () => {
   let currentState: SocketState = 'connected';
   const stateListeners = new Set<(state: SocketState) => void>();
   const eventHandlers = new Map<string, Array<(data: unknown) => void>>();
@@ -151,12 +151,11 @@ test('RealtimeManager typed events and status', () => {
   assert.equal(realtime.isConnected(), true);
   assert.equal(realtime.status, 'connected');
 
-  // Test notification listener
+  // 1. onNotification
   const receivedNotifications: unknown[] = [];
   const unsubNotif = realtime.onNotification((n) => {
     receivedNotifications.push(n);
   });
-
   const sampleNotif = {
     id: 'notif_1',
     title: 'Camera alert',
@@ -165,14 +164,58 @@ test('RealtimeManager typed events and status', () => {
     is_read: false,
     created_at: new Date().toISOString(),
   };
-
-  const handlers = eventHandlers.get('notification.new') || [];
-  for (const h of handlers) h(sampleNotif);
-
+  for (const h of eventHandlers.get('notification.new') || []) h(sampleNotif);
   assert.equal(receivedNotifications.length, 1);
   assert.equal((receivedNotifications[0] as typeof sampleNotif).id, 'notif_1');
-
   unsubNotif();
+
+  // 2. onForceLogout
+  let logoutReason = '';
+  const unsubLogout = realtime.onForceLogout((ev) => {
+    logoutReason = ev.reason || '';
+  });
+  for (const h of eventHandlers.get('auth:force_logout') || []) h({ userId: 'u1', reason: 'blocked' });
+  assert.equal(logoutReason, 'blocked');
+  unsubLogout();
+
+  // 3. onVision and onVisionPersonEntered
+  let enteredCamera = '';
+  let visionCamera = '';
+  const unsubVision = realtime.onVision((ev) => {
+    visionCamera = ev.camera_id || '';
+  });
+  const unsubEntered = realtime.onVisionPersonEntered((ev) => {
+    enteredCamera = ev.camera_id || '';
+  });
+  for (const h of eventHandlers.get('vision.person.entered') || []) h({ camera_id: 'cam_yard' });
+  assert.equal(enteredCamera, 'cam_yard');
+  assert.equal(visionCamera, 'cam_yard');
+  unsubVision();
+  unsubEntered();
+
+  // 4. onCamera & onCameraStopped
+  let stoppedCamId = '';
+  let anyCamId = '';
+  const unsubCamera = realtime.onCamera((ev) => {
+    anyCamId = ev.id || '';
+  });
+  const unsubStopped = realtime.onCameraStopped((ev) => {
+    stoppedCamId = ev.id || '';
+  });
+  for (const h of eventHandlers.get('camera.stopped') || []) h({ id: 'cam_front', is_stopped: true });
+  assert.equal(stoppedCamId, 'cam_front');
+  assert.equal(anyCamId, 'cam_front');
+  unsubCamera();
+  unsubStopped();
+
+  // 5. onPoolStatus
+  let totalStreams = 0;
+  const unsubPool = realtime.onPoolStatus((status) => {
+    totalStreams = status.total_live_streams;
+  });
+  for (const h of eventHandlers.get('pool.status.update') || []) h({ total_live_streams: 7 });
+  assert.equal(totalStreams, 7);
+  unsubPool();
 });
 
 test('HubSightClient factory initialization and auto-wiring', () => {

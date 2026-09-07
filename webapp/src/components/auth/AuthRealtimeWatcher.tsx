@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRealtimeEvent } from '@hubsight/realtime/react';
+import { useOnForceLogout } from '@hubsight/realtime/react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../i18n';
 import { api } from '../../api/client';
@@ -9,7 +9,7 @@ export const AuthRealtimeWatcher: React.FC = () => {
   const { user, setUser } = useAuth();
   const { t } = useTranslation();
 
-  useRealtimeEvent('auth:force_logout', (payload) => {
+  useOnForceLogout((payload) => {
     if (user && payload?.userId && user.id === payload.userId) {
       toast.error(payload.message || t('access.accountBlockedAlert'), {
         duration: 6000,

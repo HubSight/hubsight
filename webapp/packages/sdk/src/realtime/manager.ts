@@ -5,11 +5,12 @@ import type {
   PoolStatusSummary,
   RecognitionLogItem,
 } from '../types';
-import type {
-  CameraEvent,
-  RealtimeEventMap,
-  RealtimeEventName,
-  VisionBoxesEvent,
+import {
+  INTERNAL_REALTIME_EVENTS,
+  type CameraEvent,
+  type ForceLogoutEvent,
+  type MemberFaceUpdatedEvent,
+  type VisionBoxesEvent,
 } from './events';
 import type {
   RealtimeManager,
@@ -27,6 +28,12 @@ export function createRealtimeManager(options: CreateRealtimeManagerOptions): Re
 
   const mapStatus = (state: SocketState): RealtimeStatus => state;
 
+  const subscribeInternal = <T>(eventName: string, handler: (payload: T) => void): Unsubscribe => {
+    return socket.on(eventName, (raw) => {
+      handler(raw as T);
+    });
+  };
+
   return {
     get status(): RealtimeStatus {
       return mapStatus(socket.getState());
@@ -42,23 +49,18 @@ export function createRealtimeManager(options: CreateRealtimeManagerOptions): Re
       });
     },
 
-    on<E extends RealtimeEventName>(
-      event: E,
-      handler: (payload: RealtimeEventMap[E]) => void,
-    ): Unsubscribe {
-      return socket.on(event as string, (raw) => {
-        handler(raw as RealtimeEventMap[E]);
-      });
+    onForceLogout(handler: (event: ForceLogoutEvent) => void): Unsubscribe {
+      return subscribeInternal<ForceLogoutEvent>(INTERNAL_REALTIME_EVENTS.AUTH_FORCE_LOGOUT, handler);
     },
 
     onNotification(handler: (item: NotificationItem) => void): Unsubscribe {
-      return this.on('notification.new', handler);
+      return subscribeInternal<NotificationItem>(INTERNAL_REALTIME_EVENTS.NOTIFICATION_NEW, handler);
     },
 
     onVision(handler: (event: VisionBoxesEvent) => void): Unsubscribe {
-      const u1 = this.on('vision.person.update', handler);
-      const u2 = this.on('vision.person.entered', handler);
-      const u3 = this.on('vision.person.left', handler);
+      const u1 = subscribeInternal<VisionBoxesEvent>(INTERNAL_REALTIME_EVENTS.VISION_PERSON_UPDATE, handler);
+      const u2 = subscribeInternal<VisionBoxesEvent>(INTERNAL_REALTIME_EVENTS.VISION_PERSON_ENTERED, handler);
+      const u3 = subscribeInternal<VisionBoxesEvent>(INTERNAL_REALTIME_EVENTS.VISION_PERSON_LEFT, handler);
       return () => {
         u1();
         u2();
@@ -66,14 +68,30 @@ export function createRealtimeManager(options: CreateRealtimeManagerOptions): Re
       };
     },
 
+    onVisionPersonEntered(handler: (event: VisionBoxesEvent) => void): Unsubscribe {
+      return subscribeInternal<VisionBoxesEvent>(INTERNAL_REALTIME_EVENTS.VISION_PERSON_ENTERED, handler);
+    },
+
+    onVisionPersonUpdate(handler: (event: VisionBoxesEvent) => void): Unsubscribe {
+      return subscribeInternal<VisionBoxesEvent>(INTERNAL_REALTIME_EVENTS.VISION_PERSON_UPDATE, handler);
+    },
+
+    onVisionPersonLeft(handler: (event: VisionBoxesEvent) => void): Unsubscribe {
+      return subscribeInternal<VisionBoxesEvent>(INTERNAL_REALTIME_EVENTS.VISION_PERSON_LEFT, handler);
+    },
+
     onRecognitionLog(handler: (item: RecognitionLogItem) => void): Unsubscribe {
-      return this.on('vision.log.new', handler);
+      return subscribeInternal<RecognitionLogItem>(INTERNAL_REALTIME_EVENTS.VISION_LOG_NEW, handler);
+    },
+
+    onMemberFaceUpdated(handler: (event: MemberFaceUpdatedEvent) => void): Unsubscribe {
+      return subscribeInternal<MemberFaceUpdatedEvent>(INTERNAL_REALTIME_EVENTS.MEMBER_FACE_UPDATED, handler);
     },
 
     onPoolStatus(handler: (status: PoolStatusSummary) => void): Unsubscribe {
-      return this.on('pool.status.update', (raw) => {
+      return socket.on(INTERNAL_REALTIME_EVENTS.POOL_STATUS_UPDATE, (raw) => {
         if (raw && typeof raw === 'object' && 'data' in raw) {
-          handler(raw.data as PoolStatusSummary);
+          handler((raw as { data: PoolStatusSummary }).data);
         } else {
           handler(raw as PoolStatusSummary);
         }
@@ -81,18 +99,30 @@ export function createRealtimeManager(options: CreateRealtimeManagerOptions): Re
     },
 
     onNvrStatus(handler: (status: NvrStatusResponse) => void): Unsubscribe {
-      return this.on('nvr.status.update', handler);
+      return subscribeInternal<NvrStatusResponse>(INTERNAL_REALTIME_EVENTS.NVR_STATUS_UPDATE, handler);
     },
 
     onCamera(handler: (event: CameraEvent) => void): Unsubscribe {
-      const u1 = this.on('camera.started', handler);
-      const u2 = this.on('camera.stopped', handler);
-      const u3 = this.on('camera.updated', handler);
+      const u1 = subscribeInternal<CameraEvent>(INTERNAL_REALTIME_EVENTS.CAMERA_STARTED, handler);
+      const u2 = subscribeInternal<CameraEvent>(INTERNAL_REALTIME_EVENTS.CAMERA_STOPPED, handler);
+      const u3 = subscribeInternal<CameraEvent>(INTERNAL_REALTIME_EVENTS.CAMERA_UPDATED, handler);
       return () => {
         u1();
         u2();
         u3();
       };
+    },
+
+    onCameraStarted(handler: (event: CameraEvent) => void): Unsubscribe {
+      return subscribeInternal<CameraEvent>(INTERNAL_REALTIME_EVENTS.CAMERA_STARTED, handler);
+    },
+
+    onCameraStopped(handler: (event: CameraEvent) => void): Unsubscribe {
+      return subscribeInternal<CameraEvent>(INTERNAL_REALTIME_EVENTS.CAMERA_STOPPED, handler);
+    },
+
+    onCameraUpdated(handler: (event: CameraEvent) => void): Unsubscribe {
+      return subscribeInternal<CameraEvent>(INTERNAL_REALTIME_EVENTS.CAMERA_UPDATED, handler);
     },
 
     connect(): void {
