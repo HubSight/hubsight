@@ -86,3 +86,18 @@ func TestLoadUserPermissions_NilSafe(t *testing.T) {
 	// Should not panic on nil user
 	LoadUserPermissions(context.Background(), nil)
 }
+
+func TestDeleteUserHandler_PermanentlyDisabled(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.DELETE("/users/:id", DeleteUserHandler)
+
+	req := httptest.NewRequest(http.MethodDelete, "/users/user_123", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("Expected status 400 when attempting to delete user, got %d", w.Code)
+	}
+}
+

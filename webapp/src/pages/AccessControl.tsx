@@ -10,13 +10,13 @@ import {
   Edit2,
   Trash2,
   CheckCircle2,
-  XCircle,
   Camera,
   Video,
   Activity,
   Sliders,
   UserCheck,
   Lock,
+  Ban,
 } from 'lucide-react';
 import { api } from '../api/client';
 import type { User, Role, Permission } from '@hubsight/api';
@@ -42,7 +42,7 @@ export const AccessControl: React.FC = () => {
   const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
   const [userToResetPassword, setUserToResetPassword] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
-  const [pendingDeleteUserId, setPendingDeleteUserId] = useState<string | null>(null);
+  const [pendingToggleBlockUser, setPendingToggleBlockUser] = useState<User | null>(null);
 
   // User form state
   const [formUsername, setFormUsername] = useState('');
@@ -213,12 +213,14 @@ export const AccessControl: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!pendingDeleteUserId) return;
+  const handleToggleBlockUser = async () => {
+    if (!pendingToggleBlockUser) return;
+    const target = pendingToggleBlockUser;
+    const willBlock = target.is_active; // if active, we block; if inactive, we unblock
     try {
-      await api.users.delete(pendingDeleteUserId);
-      toast.success(t('access.deleteUserSuccess'));
-      setPendingDeleteUserId(null);
+      await api.users.block(target.id, willBlock);
+      toast.success(willBlock ? t('access.blockUserSuccess') : t('access.unblockUserSuccess'));
+      setPendingToggleBlockUser(null);
       await loadData();
     } catch (err: any) {
       const msg = err?.response?.data?.error || t('common.errorOccurred');
@@ -521,7 +523,7 @@ export const AccessControl: React.FC = () => {
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
-                                  <XCircle size={12} />
+                                  <Ban size={12} />
                                   {t('access.inactive')}
                                 </span>
                               )}
@@ -553,11 +555,15 @@ export const AccessControl: React.FC = () => {
                                 </button>
                                 {!isSelf && !isDefaultAdmin && (
                                   <button
-                                    onClick={() => setPendingDeleteUserId(u.id)}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                    title={t('access.deleteUser')}
+                                    onClick={() => setPendingToggleBlockUser(u)}
+                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                      u.is_active
+                                        ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                        : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                    }`}
+                                    title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
                                   >
-                                    <Trash2 size={16} />
+                                    {u.is_active ? <Ban size={16} /> : <UserCheck size={16} />}
                                   </button>
                                 )}
                               </div>
@@ -1004,15 +1010,20 @@ export const AccessControl: React.FC = () => {
         </div>
       )}
 
-      {/* Delete User Confirm */}
+      {/* Block / Unblock User Confirm */}
       <ConfirmDialog
-        isOpen={!!pendingDeleteUserId}
-        title={t('access.deleteUser')}
-        message={t('access.confirmDeleteUser', {
-          username: users.find((u) => u.id === pendingDeleteUserId)?.username || '',
-        })}
-        onConfirm={handleDeleteUser}
-        onCancel={() => setPendingDeleteUserId(null)}
+        isOpen={!!pendingToggleBlockUser}
+        title={pendingToggleBlockUser?.is_active ? t('access.blockUser') : t('access.unblockUser')}
+        message={
+          pendingToggleBlockUser?.is_active
+            ? t('access.confirmBlockUser', { username: pendingToggleBlockUser?.username || '' })
+            : t('access.confirmUnblockUser', { username: pendingToggleBlockUser?.username || '' })
+        }
+        confirmLabel={pendingToggleBlockUser?.is_active ? t('access.blockUser') : t('access.unblockUser')}
+        cancelLabel={t('common.cancel')}
+        variant={pendingToggleBlockUser?.is_active ? 'danger' : 'primary'}
+        onConfirm={handleToggleBlockUser}
+        onCancel={() => setPendingToggleBlockUser(null)}
       />
 
       {/* Delete Role Confirm */}

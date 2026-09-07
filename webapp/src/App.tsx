@@ -15,6 +15,7 @@ import Members from './pages/Members';
 import { PoolMonitor } from './pages/PoolMonitor';
 import { AccessControl } from './pages/AccessControl';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
+import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
@@ -52,6 +53,7 @@ const App = () => {
         <TimezoneProvider>
           <AppLockProvider>
             <RealtimeProvider baseUrl={import.meta.env.VITE_API_URL}>
+              <AuthRealtimeWatcher />
               <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<Login />} />

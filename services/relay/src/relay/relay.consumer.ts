@@ -112,4 +112,9 @@ export class RelayConsumer {
       data,
     });
   }
+
+  @EventPattern('user.blocked')
+  handleUserBlocked(@Payload() data: { user_id: string; username?: string; reason?: string }) {
+    return this.relayService.handleUserBlocked(data.user_id);
+  }
 }
