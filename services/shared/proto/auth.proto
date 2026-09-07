@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "cctv/shared/pkg/pb";
+
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message UserData {
+  string id = 1;
+  string username = 2;
+  string full_name = 3;
+  string role = 4;
+  bool is_active = 5;
+}
+
+message VerifyTokenResponse {
+  bool valid = 1;
+  UserData user = 2;
+}
+
+service AuthService {
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}

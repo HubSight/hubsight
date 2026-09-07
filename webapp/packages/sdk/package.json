@@ -1,0 +1,76 @@
+{
+  "name": "@hubsight/sdk",
+  "version": "0.1.0",
+  "description": "Unified standard HubSight SDK — fully encapsulated HTTP, Auth lifecycle, Realtime event bus, WebRTC media streaming, and React integration",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./src/client.ts",
+      "default": "./src/client.ts"
+    },
+    "./auth": {
+      "types": "./src/auth/index.ts",
+      "default": "./src/auth/index.ts"
+    },
+    "./realtime": {
+      "types": "./src/realtime/index.ts",
+      "default": "./src/realtime/index.ts"
+    },
+    "./media": {
+      "types": "./src/media/index.ts",
+      "default": "./src/media/index.ts"
+    },
+    "./resources": {
+      "types": "./src/resources/index.ts",
+      "default": "./src/resources/index.ts"
+    },
+    "./errors": {
+      "types": "./src/errors/index.ts",
+      "default": "./src/errors/index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
+    },
+    "./react": {
+      "types": "./src/react/index.ts",
+      "default": "./src/react/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "dependencies": {
+    "axios": "^1.7.9",
+    "socket.io-client": "^4.8.1"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsx": "^4.23.13"
+  }
+}

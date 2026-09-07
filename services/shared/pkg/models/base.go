@@ -1,0 +1,27 @@
+package models
+
+// RoleCode defines system user authorization roles.
+type RoleCode string
+
+const (
+	RoleAdmin  RoleCode = "admin"
+	RoleViewer RoleCode = "viewer"
+)
+
+// Locale defines preferred UI languages.
+type Locale string
+
+const (
+	LocaleVi Locale = "vi"
+	LocaleEn Locale = "en"
+)
+
+// MemberRole defines classified identity roles for face recognition.
+type MemberRole string
+
+const (
+	MemberRoleFamily   MemberRole = "family"
+	MemberRoleGuest    MemberRole = "guest"
+	MemberRoleNeighbor MemberRole = "neighbor"
+	MemberRoleStaff    MemberRole = "staff"
+)

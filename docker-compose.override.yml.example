@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# LOCAL DEV OVERRIDE (template)  —  cp docker-compose.override.yml.example docker-compose.override.yml
+#
+# Docker Compose auto-merges docker-compose.override.yml into every command, so
+# after copying just run the normal `docker compose up -d --build`.
+#
+# ⚠️  The real docker-compose.override.yml is gitignored. Production runs the
+#     same command from a clean checkout and must NOT pick this up.
+#
+# WHAT / WHY
+#   WebRTC media between a browser on the host and go2rtc inside a container does
+#   not survive Docker/OrbStack port-forwarding on a laptop — the connection sets
+#   up but Chrome decodes 0 frames (black video, high NACK/PLI). Running
+#   webrtc-service with the host network stack fixes it: go2rtc then binds and
+#   advertises real host addresses the browser can reach directly.
+#   The other services lose the `webrtc-service` DNS name, so they're pointed at
+#   host.docker.internal instead.
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  webrtc-service:
+    network_mode: host
+    ports: !reset []
+    volumes:
+      - ./services/go2rtc/go2rtc.local.yaml:/config/go2rtc.yaml:ro   # loopback-only candidates
+
+  api-gateway:
+    environment:
+      WEBRTC_SERVICE_URL: "http://host.docker.internal:1984"
+
+  core-service:
+    environment:
+      WEBRTC_SERVICE_URL: "http://host.docker.internal:1984"
+
+  pool-service:
+    environment:
+      WEBRTC_SERVICE_URL: "http://host.docker.internal:1984"
+
+  vision-service:
+    environment:
+      GO2RTC_RTSP_BASE: "rtsp://host.docker.internal:8554"
+      WEBRTC_API_URL: "http://host.docker.internal:1984"
+
+  nvr-service:
+    environment:
+      GO2RTC_RTSP_BASE: "rtsp://host.docker.internal:8554"

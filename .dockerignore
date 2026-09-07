@@ -1,0 +1,44 @@
+## Node
+**/node_modules
+**/dist
+webapp/node_modules
+webapp/dist
+npm_cache
+
+## Go build outputs
+services/**/dist
+services/**/bin
+services/bgrd/bgrd
+services/seed/seed
+
+## Python runtime artifacts
+**/.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+
+## AI model caches (can be very large)
+**/.insightface
+**/.ultralytics
+**/yolo*.pt
+
+## Git & IDE
+.git/*
+!.git/HEAD
+!.git/refs
+.idea
+.vscode
+
+## Logs & secrets
+*.log
+.env
+.env.*
+!.env.example
+
+## macOS
+.DS_Store
+
+## Local data volumes
+data

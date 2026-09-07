@@ -1,0 +1,14 @@
+go 1.25.0
+
+use (
+	./services/auth
+	./services/bgrd
+	./services/core
+	./services/gateway
+	./services/hawkeyes
+	./services/pool
+	./services/push
+	./services/recorder
+	./services/seed
+	./services/shared
+)

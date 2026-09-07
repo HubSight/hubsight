@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "cctv/shared/pkg/pb";
+
+message GetCamerasRequest {
+  bool only_ai_enabled = 1;
+  bool only_active = 2;
+}
+
+message CameraData {
+  string id = 1;
+  string name = 2;
+  string host = 3;
+  bool is_active = 4;
+  bool enable_ai = 5;
+}
+
+message GetCamerasResponse {
+  repeated CameraData cameras = 1;
+}
+
+message GetFacesRequest {
+  string member_id = 1;
+}
+
+message FaceVector {
+  string face_id = 1;
+  repeated float embedding = 2;
+  string member_id = 3;
+  string name = 4;
+  string role = 5;
+}
+
+message GetFacesResponse {
+  repeated FaceVector faces = 1;
+}
+
+service CoreService {
+  rpc GetCameras(GetCamerasRequest) returns (GetCamerasResponse);
+  rpc GetFaces(GetFacesRequest) returns (GetFacesResponse);
+}

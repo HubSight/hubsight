@@ -1,0 +1,54 @@
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.sw?
+
+# Environment Variables & Secrets
+.env
+*.env.local
+*.env.*.local
+!*.env.example
+
+# Node / Frontend
+**/node_modules/
+**/dist/
+**/dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Go / Backend
+backend/bin/
+backend/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Media & CCTV Recordings
+**/recordings/**/*.ts
+**/recordings/**/*.mp4
+**/recordings/**/*.m3u8
+
+# Logs
+logs/
+*.log
+npm_cache
+.pnpm-store
+
+# Python
+**/__pycache__/
+**/.venv/
+*.pyc
+
+# Local Docker Compose override (dev only, never deployed)
+/docker-compose.override.yml
+/services/go2rtc/go2rtc.local.yaml

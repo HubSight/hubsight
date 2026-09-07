@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+
+curl -f http://localhost:8080/healthz || exit 1
