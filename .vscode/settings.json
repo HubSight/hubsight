@@ -9,12 +9,12 @@
     "build.directoryFilters": ["-**/node_modules", "-**/webapp", "-**/vision-service"]
   },
   "files.watcherExclude": {
-    "**/.git/objects/**": true,
-    "**/.git/subtree-cache/**": true,
+    "**/.git/**": true,
     "**/node_modules/**": true,
     "**/.venv/**": true,
     "**/dist/**": true
   },
-  "git.autorefresh": true,
+  "git.autorefresh": false,
+  "git.autofetch": false,
   "git.pruneOnFetch": true
 }
