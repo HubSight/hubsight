@@ -66,57 +66,57 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   >
-                  <Route index element={<IndexRedirect />} />
-                  <Route
-                    path="devices"
-                    element={
-                      <AdminRoute>
-                        <Devices />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="members"
-                    element={
-                      <AdminRoute>
-                        <Members />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route path="playback" element={<Playback />} />
-                  <Route
-                    path="recorder"
-                    element={
-                      <AdminRoute>
-                        <NvrMonitor />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="pool"
-                    element={
-                      <AdminRoute>
-                        <PoolMonitor />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="access"
-                    element={
-                      <AdminRoute>
-                        <AccessControl />
-                      </AdminRoute>
-                    }
-                  />
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </RealtimeProvider>
-        </AppLockProvider>
-      </TimezoneProvider>
-    </AuthProvider>
-  </I18nProvider>
-);
+                    <Route index element={<IndexRedirect />} />
+                    <Route
+                      path="devices"
+                      element={
+                        <AdminRoute>
+                          <Devices />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="members"
+                      element={
+                        <AdminRoute>
+                          <Members />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route path="playback" element={<Playback />} />
+                    <Route
+                      path="recorder"
+                      element={
+                        <AdminRoute>
+                          <NvrMonitor />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="pool"
+                      element={
+                        <AdminRoute>
+                          <PoolMonitor />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="access"
+                      element={
+                        <AdminRoute>
+                          <AccessControl />
+                        </AdminRoute>
+                      }
+                    />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </RealtimeProvider>
+          </AppLockProvider>
+        </TimezoneProvider>
+      </AuthProvider>
+    </I18nProvider>
+  );
 };
 
 export default App;

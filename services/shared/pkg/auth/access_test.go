@@ -100,4 +100,3 @@ func TestDeleteUserHandler_PermanentlyDisabled(t *testing.T) {
 		t.Fatalf("Expected status 400 when attempting to delete user, got %d", w.Code)
 	}
 }
-

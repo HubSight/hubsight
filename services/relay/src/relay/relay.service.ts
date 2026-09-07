@@ -5,7 +5,7 @@ import { RelayGateway, EmitEventDto, BroadcastEventDto } from './relay.gateway';
 export class RelayService {
   private readonly logger = new Logger(RelayService.name);
 
-  constructor(private readonly relayGateway: RelayGateway) {}
+  constructor(private readonly relayGateway: RelayGateway) { }
 
   emitEvent(dto: EmitEventDto) {
     const payload = {

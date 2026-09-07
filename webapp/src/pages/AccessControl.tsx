@@ -399,21 +399,19 @@ export const AccessControl: React.FC = () => {
           <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
             <button
               onClick={() => setActiveTab('users')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'users'
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${activeTab === 'users'
                   ? 'bg-white text-slate-800 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+                }`}
             >
               {t('access.tabUsers')} ({users.length})
             </button>
             <button
               onClick={() => setActiveTab('roles')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'roles'
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${activeTab === 'roles'
                   ? 'bg-white text-slate-800 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+                }`}
             >
               {t('access.tabRoles')} ({roles.length})
             </button>
@@ -556,11 +554,10 @@ export const AccessControl: React.FC = () => {
                                 {!isSelf && !isDefaultAdmin && (
                                   <button
                                     onClick={() => setPendingToggleBlockUser(u)}
-                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                      u.is_active
+                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active
                                         ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
                                         : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                                    }`}
+                                      }`}
                                     title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
                                   >
                                     {u.is_active ? <Ban size={16} /> : <UserCheck size={16} />}
@@ -598,11 +595,10 @@ export const AccessControl: React.FC = () => {
                     <div
                       key={r.id}
                       onClick={() => setSelectedRoleId(r.id)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                        isSelected
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
                           ? 'bg-white border-orange-500 shadow-md shadow-orange-500/5 ring-2 ring-orange-500/10'
                           : 'bg-white/80 border-slate-200/80 hover:bg-white hover:border-slate-300 shadow-xs'
-                      }`}
+                        }`}
                     >
                       <div className="min-w-0 flex-1 pr-3">
                         <div className="flex items-center gap-2">
@@ -719,17 +715,16 @@ export const AccessControl: React.FC = () => {
                                 <label
                                   key={perm.id}
                                   onClick={() => handleTogglePermission(perm.id)}
-                                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                                    isChecked
+                                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${isChecked
                                       ? 'bg-white border-orange-500/40 shadow-xs'
                                       : 'bg-white/60 border-slate-200/60 opacity-60 hover:opacity-100'
-                                  } ${isAdmin ? 'cursor-default' : ''}`}
+                                    } ${isAdmin ? 'cursor-default' : ''}`}
                                 >
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
                                     disabled={isAdmin}
-                                    onChange={() => {}}
+                                    onChange={() => { }}
                                     className="mt-0.5 h-4 w-4 rounded-md border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer disabled:cursor-default"
                                   />
                                   <div className="min-w-0 flex-1">

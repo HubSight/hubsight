@@ -8,7 +8,7 @@ import { EmitEventDto, BroadcastEventDto } from './relay.gateway';
 
 @Controller()
 export class RelayConsumer {
-  constructor(private readonly relayService: RelayService) {}
+  constructor(private readonly relayService: RelayService) { }
 
   @Get('health')
   getHealth() {

@@ -10,13 +10,13 @@ export const AuthRealtimeWatcher: React.FC = () => {
   const { t } = useTranslation();
 
   useRealtimeEvent('auth:force_logout', (payload) => {
-    if (!user || user.id === payload.userId) {
+    if (user && payload?.userId && user.id === payload.userId) {
       toast.error(payload.message || t('access.accountBlockedAlert'), {
         duration: 6000,
       });
 
       // Clear authentication cookie and state
-      api.auth.logout().catch(() => {});
+      api.auth.logout().catch(() => { });
       setUser(null);
 
       // Force immediate navigation to login page
@@ -28,3 +28,4 @@ export const AuthRealtimeWatcher: React.FC = () => {
 
   return null;
 };
+
