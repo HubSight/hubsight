@@ -69,3 +69,4 @@ export interface LiveStreamSession {
 export interface MediaManager {
   createLiveStream(options: CreateLiveStreamOptions): LiveStreamSession;
 }
+

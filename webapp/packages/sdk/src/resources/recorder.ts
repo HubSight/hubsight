@@ -22,3 +22,4 @@ export function createRecorderResource(http: InternalHttpClient): RecorderResour
     },
   };
 }
+

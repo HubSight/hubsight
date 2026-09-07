@@ -126,9 +126,9 @@ test('RealtimeManager typed events and status', () => {
   const eventHandlers = new Map<string, Array<(data: unknown) => void>>();
 
   const mockSocket: InternalSocketClient = {
-    connect: () => {},
-    disconnect: () => {},
-    close: () => {},
+    connect: () => { },
+    disconnect: () => { },
+    close: () => { },
     isConnected: () => currentState === 'connected',
     getState: () => currentState,
     onStateChange: (listener) => {
@@ -144,7 +144,7 @@ test('RealtimeManager typed events and status', () => {
         eventHandlers.set(event, remaining);
       };
     },
-    emit: () => {},
+    emit: () => { },
   };
 
   const realtime = createRealtimeManager({ socket: mockSocket });

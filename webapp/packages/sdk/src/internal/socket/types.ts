@@ -19,3 +19,4 @@ export interface InternalSocketClient {
   on(event: string, handler: (payload: unknown) => void): Unsubscribe;
   emit(event: string, data?: unknown): void;
 }
+

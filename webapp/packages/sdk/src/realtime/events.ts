@@ -78,3 +78,4 @@ export interface BuiltInRealtimeEvents {
 
 export type RealtimeEventMap = BuiltInRealtimeEvents;
 export type RealtimeEventName = keyof RealtimeEventMap;
+

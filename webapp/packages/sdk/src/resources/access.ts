@@ -101,3 +101,4 @@ export function createAccessResource(http: InternalHttpClient): AccessResource {
     permissions: createPermissionsResource(http),
   };
 }
+

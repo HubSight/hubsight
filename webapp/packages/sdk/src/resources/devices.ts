@@ -17,3 +17,4 @@ export function createDevicesResource(http: InternalHttpClient): DevicesResource
     },
   };
 }
+

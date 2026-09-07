@@ -34,3 +34,4 @@ export function resolveSocketOrigin(baseUrl?: string): string {
   }
   return '';
 }
+

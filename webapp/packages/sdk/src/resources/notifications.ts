@@ -52,3 +52,4 @@ export function createNotificationsResource(http: InternalHttpClient): Notificat
     },
   };
 }
+

@@ -45,3 +45,4 @@ export interface RealtimeManager {
   disconnect(): void;
   close(): void;
 }
+

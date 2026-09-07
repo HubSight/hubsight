@@ -73,7 +73,7 @@ export class InternalWebRtcEngine {
     this.videoElement = video;
     video.srcObject = this.mediaStream;
     if (this.state === 'live') {
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     }
   }
 
@@ -209,7 +209,7 @@ export class InternalWebRtcEngine {
 
       this.setState('live');
       if (this.videoElement) {
-        this.videoElement.play().catch(() => {});
+        this.videoElement.play().catch(() => { });
       }
 
       if (this.statsIntervalMs > 0 && this.pc && this.videoElement && !this.statsPoller) {
@@ -285,7 +285,7 @@ export class InternalWebRtcEngine {
         .post(`/live/${this.cameraId}/heartbeat`, null, {
           params: { stream_name: this.poolStreamName },
         })
-        .catch(() => {});
+        .catch(() => { });
     }, this.heartbeatMs);
   }
 
@@ -300,7 +300,7 @@ export class InternalWebRtcEngine {
         params: { stream_name: name },
         keepalive: true,
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 
   async destroy(): Promise<void> {
@@ -337,3 +337,4 @@ export class InternalWebRtcEngine {
     this.audioTrackListeners.clear();
   }
 }
+

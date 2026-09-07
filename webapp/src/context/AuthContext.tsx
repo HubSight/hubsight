@@ -13,8 +13,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
-  setUser: () => {},
-  checkAuth: async () => {},
+  setUser: () => { },
+  checkAuth: async () => { },
   can: () => false,
 });
 

@@ -213,7 +213,7 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
       emitChange('FORCE_LOGGED_OUT', null);
 
       // Best-effort cleanup cookie
-      http.post('/auth/logout').catch(() => {});
+      http.post('/auth/logout').catch(() => { });
     },
   };
 
