@@ -204,6 +204,8 @@ services:
   mq-service:
     image: rabbitmq:3-management
     restart: unless-stopped
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-os_mon system_memory_high_watermark 0.95"
 
   # 🔵 Valkey Cache & Queue for Asynq background jobs (Drop-in replacement for Redis)
   redis-service:

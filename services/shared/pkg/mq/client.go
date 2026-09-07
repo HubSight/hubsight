@@ -16,10 +16,23 @@ var (
 	mutex sync.Mutex
 )
 
-func initLocked() error {
+func resetLocked() {
 	if ch != nil {
+		_ = ch.Close()
+		ch = nil
+	}
+	if conn != nil {
+		_ = conn.Close()
+		conn = nil
+	}
+}
+
+func initLocked() error {
+	if conn != nil && !conn.IsClosed() && ch != nil && !ch.IsClosed() {
 		return nil
 	}
+
+	resetLocked()
 
 	url := os.Getenv("RABBITMQ_URL")
 	if url == "" {
@@ -34,6 +47,7 @@ func initLocked() error {
 
 	ch, err = conn.Channel()
 	if err != nil {
+		resetLocked()
 		return err
 	}
 
@@ -70,10 +84,11 @@ func publishLocked(queueName, pattern string, data interface{}) error {
 		nil,
 	)
 	if err != nil {
+		resetLocked()
 		return err
 	}
 
-	return ch.PublishWithContext(
+	err = ch.PublishWithContext(
 		context.Background(),
 		"",
 		q.Name,
@@ -84,6 +99,11 @@ func publishLocked(queueName, pattern string, data interface{}) error {
 			Body:        body,
 		},
 	)
+	if err != nil {
+		resetLocked()
+		return err
+	}
+	return nil
 }
 
 // PublishEvent publishes a JSON message to a specified queue/pattern.
@@ -129,22 +149,16 @@ func PublishMemberEvent(pattern string, data interface{}) {
 func Close() {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if ch != nil {
-		ch.Close()
-		ch = nil
-	}
-	if conn != nil {
-		conn.Close()
-		conn = nil
-	}
+	resetLocked()
 }
 
 // Consume subscribes to a specific queue and returns a channel of deliveries
 func Consume(queueName string) (<-chan amqp.Delivery, error) {
-	if ch == nil {
-		if err := Init(); err != nil {
-			return nil, err
-		}
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if err := initLocked(); err != nil {
+		return nil, err
 	}
 
 	q, err := ch.QueueDeclare(
@@ -156,10 +170,11 @@ func Consume(queueName string) (<-chan amqp.Delivery, error) {
 		nil,
 	)
 	if err != nil {
+		resetLocked()
 		return nil, err
 	}
 
-	return ch.Consume(
+	deliveries, err := ch.Consume(
 		q.Name,
 		"",    // consumer tag
 		true,  // auto-ack
@@ -168,4 +183,9 @@ func Consume(queueName string) (<-chan amqp.Delivery, error) {
 		false, // no-wait
 		nil,
 	)
+	if err != nil {
+		resetLocked()
+		return nil, err
+	}
+	return deliveries, nil
 }

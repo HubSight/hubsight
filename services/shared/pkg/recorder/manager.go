@@ -131,43 +131,58 @@ func (m *RecorderManager) stopAll() {
 }
 
 func (m *RecorderManager) listenForEvents(ctx context.Context) {
-	log.Println("[NVR] Connecting to MQ for event-based recording...")
-	if err := mq.Init(); err != nil {
-		log.Printf("[NVR] Failed to connect to MQ: %v", err)
-	}
-
-	// Wait a moment for MQ to establish
-	time.Sleep(2 * time.Second)
-
-	msgs, err := mq.Consume("nvr_recorder_queue")
-	if err != nil {
-		log.Printf("[NVR] Failed to consume MQ: %v", err)
-		return
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case d, ok := <-msgs:
-			if !ok {
+		default:
+		}
+
+		log.Println("[NVR] Connecting to MQ for event-based recording...")
+		msgs, err := mq.Consume("nvr_recorder_queue")
+		if err != nil {
+			log.Printf("[NVR] Failed to consume MQ: %v (retrying in 5s)...", err)
+			select {
+			case <-ctx.Done():
 				return
-			}
-			var msg struct {
-				Pattern string `json:"pattern"`
-				Data    struct {
-					CameraID string `json:"camera_id"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(d.Body, &msg); err != nil {
+			case <-time.After(5 * time.Second):
 				continue
 			}
+		}
 
-			if strings.HasPrefix(msg.Pattern, "camera.") {
-				log.Printf("[NVR] Camera settings changed (%s), reconciling active recorders immediately...", msg.Pattern)
-				m.reconcile(ctx)
-			} else if msg.Pattern == "notification.new" && msg.Data.CameraID != "" {
-				m.handleEventTrigger(ctx, msg.Data.CameraID)
+		log.Println("[NVR] Successfully connected to MQ for event-based recording")
+		keepListening := true
+		for keepListening {
+			select {
+			case <-ctx.Done():
+				return
+			case d, ok := <-msgs:
+				if !ok {
+					log.Println("[NVR] MQ consumer channel closed, reconnecting in 5s...")
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(5 * time.Second):
+					}
+					keepListening = false
+					break
+				}
+				var msg struct {
+					Pattern string `json:"pattern"`
+					Data    struct {
+						CameraID string `json:"camera_id"`
+					} `json:"data"`
+				}
+				if err := json.Unmarshal(d.Body, &msg); err != nil {
+					continue
+				}
+
+				if strings.HasPrefix(msg.Pattern, "camera.") {
+					log.Printf("[NVR] Camera settings changed (%s), reconciling active recorders immediately...", msg.Pattern)
+					m.reconcile(ctx)
+				} else if msg.Pattern == "notification.new" && msg.Data.CameraID != "" {
+					m.handleEventTrigger(ctx, msg.Data.CameraID)
+				}
 			}
 		}
 	}

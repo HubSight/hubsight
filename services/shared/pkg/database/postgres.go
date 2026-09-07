@@ -46,27 +46,37 @@ func Connect(dbURL string) error {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
-	// AutoMigrate all domain models including RBAC
-	if err := gormDB.AutoMigrate(
-		&models.User{},
-		&models.Session{},
-		&models.Role{},
-		&models.Permission{},
-		&models.Camera{},
-		&models.Recording{},
-		&models.Member{},
-		&models.MemberFace{},
-		&models.Notification{},
-		&models.PushSubscription{},
-		&models.RecognitionLog{},
-		&models.Setting{},
-	); err != nil {
-		return fmt.Errorf("failed running gorm automigrate: %w", err)
-	}
+	// Serialize AutoMigrate and RBAC seeding across microservices using a PostgreSQL advisory lock
+	const migrationLockKey int64 = 839210492810
+	var acquired bool
+	if err := gormDB.Raw("SELECT pg_try_advisory_lock(?)", migrationLockKey).Scan(&acquired).Error; err == nil && acquired {
+		defer gormDB.Exec("SELECT pg_advisory_unlock(?)", migrationLockKey)
 
-	// Seed RBAC permissions and default roles
-	if err := SeedDefaultRolesAndPermissions(gormDB); err != nil {
-		log.Printf("Warning: failed seeding RBAC: %v", err)
+		if err := gormDB.AutoMigrate(
+			&models.User{},
+			&models.Session{},
+			&models.Role{},
+			&models.Permission{},
+			&models.Camera{},
+			&models.Recording{},
+			&models.Member{},
+			&models.MemberFace{},
+			&models.Notification{},
+			&models.PushSubscription{},
+			&models.RecognitionLog{},
+			&models.Setting{},
+		); err != nil {
+			return fmt.Errorf("failed running gorm automigrate: %w", err)
+		}
+
+		// Seed RBAC permissions and default roles
+		if err := SeedDefaultRolesAndPermissions(gormDB); err != nil {
+			log.Printf("Warning: failed seeding RBAC: %v", err)
+		}
+	} else {
+		// Another service is running migration; wait until it finishes
+		gormDB.Exec("SELECT pg_advisory_lock(?)", migrationLockKey)
+		gormDB.Exec("SELECT pg_advisory_unlock(?)", migrationLockKey)
 	}
 
 	DB = gormDB
