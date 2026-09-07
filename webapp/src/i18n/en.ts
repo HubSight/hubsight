@@ -123,6 +123,9 @@ const en: Record<TranslationKey, string> = {
   // === App Settings / Security Modal ===
   'settings.securityTitle': 'App Settings & Security',
   'settings.securitySubtitle': 'Manage notifications, timezone, and device security',
+  'settings.tabSecurity': 'Security & Login',
+  'settings.tabNotifications': 'Push Notifications',
+  'settings.tabGeneral': 'General Preferences',
   'settings.pwaActive': 'App Mode Active',
   'settings.browserMode': 'Web Browser Mode',
   'settings.pwaDesc': 'App Lock protects your persistent session when switching apps.',

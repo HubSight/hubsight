@@ -266,6 +266,18 @@ func CreateInitialUser(ctx context.Context, username, password string) error {
 }
 
 func ChangePassword(ctx context.Context, u *models.User, oldPassword, newPassword string) error {
+	// PasswordHash is stripped (json:"-") when user arrives from HTTP validate-token path.
+	// Fetch it directly from DB when missing.
+	if u.PasswordHash == "" {
+		var dbUser models.User
+		if err := database.DB.WithContext(ctx).
+			Select("password_hash").
+			Where("id = ?", u.ID).
+			First(&dbUser).Error; err == nil {
+			u.PasswordHash = dbUser.PasswordHash
+		}
+	}
+
 	match, err := verifyPassword(oldPassword, u.PasswordHash)
 	if err != nil || !match {
 		return errors.New("incorrect old password")

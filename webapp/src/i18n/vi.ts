@@ -121,6 +121,9 @@ const vi = {
   // === App Settings / Security Modal ===
   'settings.securityTitle': 'Cài đặt thiết bị & Bảo mật',
   'settings.securitySubtitle': 'Tuỳ chỉnh thông báo, múi giờ và khoá bảo mật ứng dụng',
+  'settings.tabSecurity': 'Bảo mật & Đăng nhập',
+  'settings.tabNotifications': 'Thông báo đẩy',
+  'settings.tabGeneral': 'Tuỳ chọn hệ thống',
   'settings.pwaActive': 'Chế độ Ứng dụng đang Hoạt Động',
   'settings.browserMode': 'Chế độ Trình Duyệt Web',
   'settings.pwaDesc': 'Khoá ứng dụng bảo vệ phiên đăng nhập khi bạn chuyển đổi giữa các ứng dụng.',

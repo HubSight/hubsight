@@ -123,6 +123,18 @@ func VerifyPasswordHandler(c *gin.Context) {
 		return
 	}
 
+	// PasswordHash is stripped by json:"-" when user travels through HTTP validate-token.
+	// Fetch directly from DB when empty.
+	if u.PasswordHash == "" {
+		var dbUser models.User
+		if err := database.DB.WithContext(c.Request.Context()).
+			Select("password_hash").
+			Where("id = ?", u.ID).
+			First(&dbUser).Error; err == nil {
+			u.PasswordHash = dbUser.PasswordHash
+		}
+	}
+
 	match, err := verifyPassword(req.Password, u.PasswordHash)
 	if err != nil || !match {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})

@@ -137,7 +137,7 @@ func Enable2FA(ctx context.Context, u *models.User, code string) error {
 	updates := map[string]any{
 		"two_factor_enabled":        true,
 		"two_factor_secret":         pending.Secret,
-		"two_factor_recovery_codes": pending.RecoveryCodes,
+		"two_factor_recovery_codes": models.StringSlice(pending.RecoveryCodes),
 	}
 
 	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Updates(updates).Error; err != nil {
@@ -146,7 +146,7 @@ func Enable2FA(ctx context.Context, u *models.User, code string) error {
 
 	u.TwoFactorEnabled = true
 	u.TwoFactorSecret = pending.Secret
-	u.TwoFactorRecoveryCodes = pending.RecoveryCodes
+	u.TwoFactorRecoveryCodes = models.StringSlice(pending.RecoveryCodes)
 
 	globalPending2FAStore.Delete(u.ID)
 	return nil
@@ -154,6 +154,24 @@ func Enable2FA(ctx context.Context, u *models.User, code string) error {
 
 // Disable2FA deactivates 2FA after checking the user's password or active 2FA code.
 func Disable2FA(ctx context.Context, u *models.User, password, code string) error {
+	// PasswordHash and TwoFactorSecret carry json:"-" tags, so they are stripped
+	// when the user struct travels over the internal HTTP validate-token call.
+	// Fetch the sensitive fields directly from the DB when they are missing.
+	if (password != "" && u.PasswordHash == "") || (code != "" && u.TwoFactorSecret == "") {
+		var dbUser models.User
+		if err := database.DB.WithContext(ctx).
+			Select("password_hash", "two_factor_secret", "two_factor_enabled").
+			Where("id = ?", u.ID).
+			First(&dbUser).Error; err == nil {
+			if u.PasswordHash == "" {
+				u.PasswordHash = dbUser.PasswordHash
+			}
+			if u.TwoFactorSecret == "" {
+				u.TwoFactorSecret = dbUser.TwoFactorSecret
+			}
+		}
+	}
+
 	var verified bool
 	if password != "" {
 		match, err := verifyPassword(password, u.PasswordHash)
@@ -174,7 +192,7 @@ func Disable2FA(ctx context.Context, u *models.User, password, code string) erro
 	updates := map[string]any{
 		"two_factor_enabled":        false,
 		"two_factor_secret":         "",
-		"two_factor_recovery_codes": []string{},
+		"two_factor_recovery_codes": models.StringSlice{},
 	}
 
 	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Updates(updates).Error; err != nil {
@@ -193,6 +211,17 @@ func RegenerateRecoveryCodes(ctx context.Context, u *models.User, password strin
 		return nil, errors.New("2FA is not enabled on this account")
 	}
 
+	// Same json:"-" strip issue: fetch password_hash from DB when empty.
+	if u.PasswordHash == "" {
+		var dbUser models.User
+		if err := database.DB.WithContext(ctx).
+			Select("password_hash").
+			Where("id = ?", u.ID).
+			First(&dbUser).Error; err == nil {
+			u.PasswordHash = dbUser.PasswordHash
+		}
+	}
+
 	match, err := verifyPassword(password, u.PasswordHash)
 	if err != nil || !match {
 		return nil, ErrInvalidPassword
@@ -204,11 +233,11 @@ func RegenerateRecoveryCodes(ctx context.Context, u *models.User, password strin
 	}
 
 	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).
-		Update("two_factor_recovery_codes", hashed).Error; err != nil {
+		Update("two_factor_recovery_codes", models.StringSlice(hashed)).Error; err != nil {
 		return nil, fmt.Errorf("failed saving recovery codes: %w", err)
 	}
 
-	u.TwoFactorRecoveryCodes = hashed
+	u.TwoFactorRecoveryCodes = models.StringSlice(hashed)
 	return plain, nil
 }
 
@@ -231,12 +260,12 @@ func Verify2FALogin(ctx context.Context, preAuthToken, code, recoveryCode string
 
 	// 1. Try recovery code
 	if recoveryCode != "" {
-		valid, remaining := VerifyAndConsumeRecoveryCode(u.TwoFactorRecoveryCodes, recoveryCode)
+		valid, remaining := VerifyAndConsumeRecoveryCode([]string(u.TwoFactorRecoveryCodes), recoveryCode)
 		if valid {
 			authenticated = true
 			_ = database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).
-				Update("two_factor_recovery_codes", remaining).Error
-			u.TwoFactorRecoveryCodes = remaining
+				Update("two_factor_recovery_codes", models.StringSlice(remaining)).Error
+			u.TwoFactorRecoveryCodes = models.StringSlice(remaining)
 		}
 	}
 
@@ -328,7 +357,7 @@ func FinishPasskeyRegistration(ctx context.Context, u *models.User, challengeID,
 		AttestationType: cred.AttestationType,
 		AAGUID:          cred.Authenticator.AAGUID,
 		SignCount:       cred.Authenticator.SignCount,
-		Transports:      formatTransports(cred.Transport),
+		Transports:      models.StringSlice(formatTransports(cred.Transport)),
 		BackupEligible:  cred.Flags.BackupEligible,
 		BackupState:     cred.Flags.BackupState,
 		CreatedAt:       time.Now(),

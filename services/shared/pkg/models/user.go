@@ -1,12 +1,52 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"cctv/shared/pkg/nanoid"
 
 	"gorm.io/gorm"
 )
+
+// StringSlice represents a slice of strings serialized as JSONB in PostgreSQL.
+type StringSlice []string
+
+// Value implements driver.Valuer for PostgreSQL JSONB storage.
+func (s StringSlice) Value() (driver.Value, error) {
+	if s == nil {
+		return "[]", nil
+	}
+	bytes, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return string(bytes), nil
+}
+
+// Scan implements sql.Scanner for reading PostgreSQL JSONB.
+func (s *StringSlice) Scan(value any) error {
+	if value == nil {
+		*s = []string{}
+		return nil
+	}
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return fmt.Errorf("failed to scan StringSlice: unsupported type %T", value)
+	}
+	if len(bytes) == 0 {
+		*s = []string{}
+		return nil
+	}
+	return json.Unmarshal(bytes, s)
+}
 
 // User represents an authorized system account.
 type User struct {
@@ -27,7 +67,7 @@ type User struct {
 	PushPreferences        map[string]bool     `gorm:"column:push_preferences;serializer:json;type:jsonb" json:"push_preferences,omitempty"`
 	TwoFactorEnabled       bool                `gorm:"column:two_factor_enabled;not null;default:false" json:"two_factor_enabled"`
 	TwoFactorSecret        string              `gorm:"column:two_factor_secret;type:text;not null;default:''" json:"-"`
-	TwoFactorRecoveryCodes []string            `gorm:"column:two_factor_recovery_codes;serializer:json;type:jsonb" json:"-"`
+	TwoFactorRecoveryCodes StringSlice         `gorm:"column:two_factor_recovery_codes;type:jsonb" json:"-"`
 	Passkeys               []PasskeyCredential `gorm:"foreignKey:UserID;references:ID" json:"passkeys,omitempty"`
 	Sessions               []Session           `gorm:"foreignKey:UserID;references:ID" json:"-"`
 	PushSubscriptions      []PushSubscription  `gorm:"foreignKey:UserID;references:ID" json:"-"`

@@ -17,9 +17,9 @@ type PasskeyCredential struct {
 	PublicKey       []byte     `gorm:"column:public_key;type:bytea;not null" json:"-"`
 	AttestationType string     `gorm:"column:attestation_type;type:varchar(64);not null;default:''" json:"attestation_type,omitempty"`
 	AAGUID          []byte     `gorm:"column:aaguid;type:bytea" json:"aaguid,omitempty"`
-	SignCount       uint32     `gorm:"column:sign_count;not null;default:0" json:"sign_count"`
-	Transports      []string   `gorm:"column:transports;serializer:json;type:jsonb" json:"transports,omitempty"`
-	BackupEligible  bool       `gorm:"column:backup_eligible;not null;default:false" json:"backup_eligible"`
+	SignCount       uint32      `gorm:"column:sign_count;not null;default:0" json:"sign_count"`
+	Transports      StringSlice `gorm:"column:transports;type:jsonb" json:"transports,omitempty"`
+	BackupEligible  bool        `gorm:"column:backup_eligible;not null;default:false" json:"backup_eligible"`
 	BackupState     bool       `gorm:"column:backup_state;not null;default:false" json:"backup_state"`
 	CreatedAt       time.Time  `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt       time.Time  `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at"`

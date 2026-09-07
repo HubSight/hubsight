@@ -37,3 +37,7 @@ streams:
     - ffmpeg:cam_XbXVEFntLOe5bNHVUtm3R_nvr#audio=opus
   cam_XbXVEFntLOe5bNHVUtm3R_live_3:
     - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_XbXVEFntLOe5bNHVUtm3R_live_4:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_XbXVEFntLOe5bNHVUtm3R_live_5:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
