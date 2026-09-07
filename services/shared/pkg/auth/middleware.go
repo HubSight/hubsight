@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/models"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -79,6 +80,53 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 		userRole := string(u.Role)
 		for _, role := range roles {
 			if userRole == role {
+				c.Next()
+				return
+			}
+		}
+
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: Insufficient permissions"})
+	}
+}
+
+// RequirePermission checks if the authenticated user has ANY of the specified permissions.
+// If the user has role 'admin' or the wildcard '*' permission, access is granted automatically.
+func RequirePermission(perms ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userObj, exists := c.Get("user")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		u, ok := userObj.(*models.User)
+		if !ok || u == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		// Admin role always has all permissions
+		if u.Role == models.RoleAdmin {
+			c.Next()
+			return
+		}
+
+		if len(u.Permissions) == 0 {
+			LoadUserPermissions(c.Request.Context(), u)
+		}
+
+		userPerms := make(map[string]bool, len(u.Permissions))
+		for _, p := range u.Permissions {
+			userPerms[p] = true
+		}
+
+		if userPerms["*"] {
+			c.Next()
+			return
+		}
+
+		for _, reqPerm := range perms {
+			if userPerms[reqPerm] {
 				c.Next()
 				return
 			}

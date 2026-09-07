@@ -15,6 +15,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/pb"
+
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 )
@@ -125,6 +126,19 @@ func main() {
 		protected.PUT("/locale", auth.UpdateLocaleHandler)
 		protected.PUT("/timezone", auth.UpdateTimezoneHandler)
 		protected.PUT("/preferences", auth.UpdatePreferencesHandler)
+
+		// Access Control & RBAC
+		protected.GET("/permissions", auth.ListPermissionsHandler)
+		protected.GET("/roles", auth.ListRolesHandler)
+		protected.POST("/roles", auth.RequirePermission("roles:manage"), auth.CreateRoleHandler)
+		protected.PUT("/roles/:id", auth.RequirePermission("roles:manage"), auth.UpdateRoleHandler)
+		protected.DELETE("/roles/:id", auth.RequirePermission("roles:manage"), auth.DeleteRoleHandler)
+
+		protected.GET("/users", auth.RequirePermission("users:view", "users:manage"), auth.ListUsersHandler)
+		protected.POST("/users", auth.RequirePermission("users:manage"), auth.CreateUserHandler)
+		protected.PUT("/users/:id", auth.RequirePermission("users:manage"), auth.UpdateUserHandler)
+		protected.POST("/users/:id/reset-password", auth.RequirePermission("users:manage"), auth.ResetUserPasswordHandler)
+		protected.DELETE("/users/:id", auth.RequirePermission("users:manage"), auth.DeleteUserHandler)
 	}
 
 	log.Printf("Auth Service listening on :%s", port)
@@ -138,11 +152,12 @@ type ValidateTokenRequest struct {
 }
 
 type ValidateTokenResponse struct {
-	Valid    bool         `json:"valid"`
-	User     *models.User `json:"user,omitempty"`
-	Role     string       `json:"role,omitempty"`
-	Username string       `json:"username,omitempty"`
-	FullName string       `json:"full_name,omitempty"`
+	Valid       bool         `json:"valid"`
+	User        *models.User `json:"user,omitempty"`
+	Role        string       `json:"role,omitempty"`
+	Username    string       `json:"username,omitempty"`
+	FullName    string       `json:"full_name,omitempty"`
+	Permissions []string     `json:"permissions,omitempty"`
 }
 
 func handleValidateToken(c *gin.Context) {
@@ -171,11 +186,12 @@ func handleValidateToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ValidateTokenResponse{
-		Valid:    true,
-		User:     u,
-		Role:     string(u.Role),
-		Username: u.Username,
-		FullName: u.FullName,
+		Valid:       true,
+		User:        u,
+		Role:        string(u.Role),
+		Username:    u.Username,
+		FullName:    u.FullName,
+		Permissions: u.Permissions,
 	})
 }
 

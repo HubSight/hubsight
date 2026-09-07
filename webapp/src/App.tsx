@@ -13,6 +13,7 @@ import Devices from './pages/Devices';
 import NvrMonitor from './pages/NvrMonitor';
 import Members from './pages/Members';
 import { PoolMonitor } from './pages/PoolMonitor';
+import { AccessControl } from './pages/AccessControl';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -94,6 +95,14 @@ const App = () => {
                     element={
                       <AdminRoute>
                         <PoolMonitor />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="access"
+                    element={
+                      <AdminRoute>
+                        <AccessControl />
                       </AdminRoute>
                     }
                   />

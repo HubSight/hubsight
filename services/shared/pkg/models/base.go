@@ -1,11 +1,11 @@
 package models
 
-// Role defines system user authorization roles.
-type Role string
+// RoleCode defines system user authorization roles.
+type RoleCode string
 
 const (
-	RoleAdmin  Role = "admin"
-	RoleViewer Role = "viewer"
+	RoleAdmin  RoleCode = "admin"
+	RoleViewer RoleCode = "viewer"
 )
 
 // Locale defines preferred UI languages.

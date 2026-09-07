@@ -46,10 +46,12 @@ func Connect(dbURL string) error {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
-	// AutoMigrate all 10 domain models
+	// AutoMigrate all domain models including RBAC
 	if err := gormDB.AutoMigrate(
 		&models.User{},
 		&models.Session{},
+		&models.Role{},
+		&models.Permission{},
 		&models.Camera{},
 		&models.Recording{},
 		&models.Member{},
@@ -60,6 +62,11 @@ func Connect(dbURL string) error {
 		&models.Setting{},
 	); err != nil {
 		return fmt.Errorf("failed running gorm automigrate: %w", err)
+	}
+
+	// Seed RBAC permissions and default roles
+	if err := SeedDefaultRolesAndPermissions(gormDB); err != nil {
+		log.Printf("Warning: failed seeding RBAC: %v", err)
 	}
 
 	DB = gormDB

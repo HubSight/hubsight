@@ -36,5 +36,6 @@ export type { DevicesResource } from './resources/devices';
 export type { ArchiveResource } from './resources/archive';
 export type { PoolResource } from './resources/pool';
 export type { RecorderResource } from './resources/recorder';
+export type { UsersResource, RolesResource, PermissionsResource } from './resources/access';
 
 export * from './types';

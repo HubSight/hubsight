@@ -176,7 +176,49 @@ func GetUserBySession(ctx context.Context, token string) (*models.User, error) {
 	now := time.Now()
 	_ = database.DB.WithContext(ctx).Model(&models.Session{ID: sess.ID}).Update("last_seen_at", &now).Error
 
+	LoadUserPermissions(ctx, u)
 	return u, nil
+}
+
+// LoadUserPermissions resolves and caches a user's permissions and role info.
+func LoadUserPermissions(ctx context.Context, u *models.User) {
+	if u == nil {
+		return
+	}
+
+	// Administrator role always has all permissions plus wildcard
+	if u.Role == models.RoleAdmin {
+		var allPerms []models.Permission
+		_ = database.DB.WithContext(ctx).Find(&allPerms).Error
+		u.Permissions = make([]string, 0, len(allPerms)+1)
+		u.Permissions = append(u.Permissions, "*")
+		for _, p := range allPerms {
+			u.Permissions = append(u.Permissions, p.Code)
+		}
+		if u.RoleInfo == nil && u.RoleID != nil {
+			var r models.Role
+			if err := database.DB.WithContext(ctx).Preload("Permissions").First(&r, "id = ?", *u.RoleID).Error; err == nil {
+				u.RoleInfo = &r
+			}
+		}
+		return
+	}
+
+	// For assigned custom or system roles
+	if u.RoleID != nil && *u.RoleID != "" {
+		var r models.Role
+		if err := database.DB.WithContext(ctx).Preload("Permissions").First(&r, "id = ?", *u.RoleID).Error; err == nil {
+			u.RoleInfo = &r
+			u.Permissions = make([]string, 0, len(r.Permissions))
+			for _, p := range r.Permissions {
+				u.Permissions = append(u.Permissions, p.Code)
+			}
+			return
+		}
+	}
+
+	// Fallback to viewer role permissions
+	u.Permissions = []string{"cameras:view", "recordings:view"}
 }
 
 func Logout(ctx context.Context, token string) error {

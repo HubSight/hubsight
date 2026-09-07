@@ -197,6 +197,12 @@ const MainLayout = () => {
               {t('nav.poolMonitor')}
             </NavLink>
           )}
+          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
+            <NavLink to="/access" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <Shield size={20} />
+              {t('nav.accessControl')}
+            </NavLink>
+          )}
         </nav>
 
         {/* Language Switch */}

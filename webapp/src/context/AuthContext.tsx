@@ -7,6 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   setUser: (user: User | null) => void;
   checkAuth: () => Promise<void>;
+  can: (...permissions: string[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   setUser: () => {},
   checkAuth: async () => {},
+  can: () => false,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -34,8 +36,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
+  const can = (...permissions: string[]): boolean => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    const userPerms = user.permissions || [];
+    if (userPerms.includes('*')) return true;
+    return permissions.some((p) => userPerms.includes(p));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, setUser, checkAuth }}>
+    <AuthContext.Provider value={{ user, isLoading, setUser, checkAuth, can }}>
       {children}
     </AuthContext.Provider>
   );

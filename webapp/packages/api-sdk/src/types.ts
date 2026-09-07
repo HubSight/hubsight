@@ -24,17 +24,67 @@ export type {
 export type UserRole = 'admin' | 'viewer';
 export type Locale = 'vi' | 'en';
 
+export interface Permission {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  module: string;
+  created_at?: string;
+}
+
+export interface Role {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  is_system: boolean;
+  permissions?: Permission[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface User {
   id: string;
   username: string;
   full_name?: string;
   role: UserRole;
+  role_id?: string;
+  role_info?: Role;
+  permissions?: string[];
   locale: Locale;
   timezone?: string;
   is_active: boolean;
   created_at: string;
   last_login_at: string;
   push_preferences?: Record<string, boolean>;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  full_name?: string;
+  password: string;
+  role_id?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateUserRequest {
+  full_name?: string;
+  role_id?: string;
+  is_active?: boolean;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  code: string;
+  description?: string;
+  permission_ids?: string[];
+}
+
+export interface UpdateRoleRequest {
+  name: string;
+  description?: string;
+  permission_ids?: string[];
 }
 
 export interface LoginRequest {

@@ -14,7 +14,10 @@ type User struct {
 	Username          string             `gorm:"column:username;type:varchar(255);uniqueIndex:users_username_key;not null" json:"username,omitempty"`
 	FullName          string             `gorm:"column:full_name;type:varchar(255);not null;default:''" json:"full_name,omitempty"`
 	PasswordHash      string             `gorm:"column:password_hash;type:text;not null" json:"-"` // Security fix: never leak Argon2 hash to API clients
-	Role              Role               `gorm:"column:role;type:varchar(32);not null;default:'viewer'" json:"role,omitempty"`
+	Role              RoleCode           `gorm:"column:role;type:varchar(32);not null;default:'viewer'" json:"role,omitempty"`
+	RoleID            *string            `gorm:"column:role_id;type:varchar" json:"role_id,omitempty"`
+	RoleInfo          *Role              `gorm:"foreignKey:RoleID;references:ID" json:"role_info,omitempty"`
+	Permissions       []string           `gorm:"-" json:"permissions,omitempty"`
 	IsActive          bool               `gorm:"column:is_active;not null;default:true" json:"is_active"`
 	Locale            Locale             `gorm:"column:locale;type:varchar(16);not null;default:'vi'" json:"locale,omitempty"`
 	Timezone          string             `gorm:"column:timezone;type:varchar(64);not null;default:'Asia/Ho_Chi_Minh'" json:"timezone,omitempty"`
