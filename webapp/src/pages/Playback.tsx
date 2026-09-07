@@ -10,7 +10,11 @@ import { RecognitionLogSidebar } from '../components/archive/RecognitionLogSideb
 import { PlaybackSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
-import { useRealtimeEvent } from '@hubsight/realtime/react';
+import {
+  useOnCameraStopped,
+  useOnCameraStarted,
+  useOnCameraUpdated,
+} from '@hubsight/realtime/react';
 import { useTranslation } from '../i18n';
 
 type CameraStoppedEvent = {
@@ -70,10 +74,10 @@ const Playback = () => {
     try {
       const cams: CameraItem[] = await api.cameras.list();
       setCameras(cams);
-      
+
       const queryCamId = searchParams.get('camera_id');
       const queryTime = searchParams.get('t');
-      
+
       let targetCamId = selectedCam;
       if (queryCamId && cams.some((c) => c.id === queryCamId)) {
         targetCamId = queryCamId;
@@ -155,18 +159,18 @@ const Playback = () => {
           const targetTs = targetTimestampRef.current;
           // Find the recording that covers this timestamp
           const targetRec = recs.find(r => {
-             const start = new Date(r.start_at).getTime();
-             const end = new Date(r.end_at).getTime();
-             return targetTs >= start && targetTs <= end;
+            const start = new Date(r.start_at).getTime();
+            const end = new Date(r.end_at).getTime();
+            return targetTs >= start && targetTs <= end;
           });
-          
+
           if (targetRec) {
-             setActiveRecording(targetRec);
-             const start = new Date(targetRec.start_at).getTime();
-             seekTargetRef.current = (targetTs - start) / 1000;
+            setActiveRecording(targetRec);
+            const start = new Date(targetRec.start_at).getTime();
+            seekTargetRef.current = (targetTs - start) / 1000;
           } else {
-             // Fallback if no exact match
-             setActiveRecording(recs[0]);
+            // Fallback if no exact match
+            setActiveRecording(recs[0]);
           }
           targetTimestampRef.current = null;
         } else {
@@ -253,9 +257,9 @@ const Playback = () => {
     setStoppedPrompt(null);
   };
 
-  useRealtimeEvent('camera.stopped', handleCameraStopped);
-  useRealtimeEvent('camera.started', handleCameraState);
-  useRealtimeEvent('camera.updated', handleCameraState);
+  useOnCameraStopped(handleCameraStopped);
+  useOnCameraStarted(handleCameraState);
+  useOnCameraUpdated(handleCameraState);
 
   // When user seeks on timeline, automatically switch to Archive mode
   const handleSeek = (rec: Recording, offsetSeconds: number) => {
@@ -349,9 +353,8 @@ const Playback = () => {
             <ArchiveSidebar {...sidebarProps} />
 
             <div
-              className={`pb-6 shrink-0 ${
-                !selectedCam ? 'opacity-50 pointer-events-none' : ''
-              }`}
+              className={`pb-6 shrink-0 ${!selectedCam ? 'opacity-50 pointer-events-none' : ''
+                }`}
             >
               <TimelineControl
                 recordings={recordings}

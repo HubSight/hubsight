@@ -50,7 +50,26 @@ export interface MemberFaceUpdatedEvent {
 }
 
 /**
- * Single source of truth for all 12 built-in HubSight realtime event payloads.
+ * Internal wire mapping for all 12 built-in HubSight realtime event names.
+ * These are completely internal to the SDK and hidden from client consumers.
+ */
+export const INTERNAL_REALTIME_EVENTS = {
+  AUTH_FORCE_LOGOUT: 'auth:force_logout',
+  VISION_PERSON_ENTERED: 'vision.person.entered',
+  VISION_PERSON_UPDATE: 'vision.person.update',
+  VISION_PERSON_LEFT: 'vision.person.left',
+  VISION_LOG_NEW: 'vision.log.new',
+  MEMBER_FACE_UPDATED: 'member.face.updated',
+  NOTIFICATION_NEW: 'notification.new',
+  POOL_STATUS_UPDATE: 'pool.status.update',
+  NVR_STATUS_UPDATE: 'nvr.status.update',
+  CAMERA_STARTED: 'camera.started',
+  CAMERA_STOPPED: 'camera.stopped',
+  CAMERA_UPDATED: 'camera.updated',
+} as const;
+
+/**
+ * Internal single source of truth for all 12 built-in HubSight realtime event payloads.
  */
 export interface BuiltInRealtimeEvents {
   // Auth & Session

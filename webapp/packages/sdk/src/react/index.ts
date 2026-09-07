@@ -13,7 +13,22 @@ export { useAuth, type UseAuthResult } from './use-auth';
 
 export {
   useRealtimeStatus,
-  useRealtimeEvent,
+  useRealtimeSubscription,
+  useOnNotification,
+  useOnForceLogout,
+  useOnVision,
+  useOnVisionPersonEntered,
+  useOnVisionPersonUpdate,
+  useOnVisionPersonLeft,
+  useOnRecognitionLog,
+  useOnMemberFaceUpdated,
+  useOnPoolStatus,
+  useOnNvrStatus,
+  useOnCamera,
+  useOnCameraStarted,
+  useOnCameraStopped,
+  useOnCameraUpdated,
+  useOnStatusChange,
   type UseRealtimeStatusResult,
 } from './use-realtime';
 

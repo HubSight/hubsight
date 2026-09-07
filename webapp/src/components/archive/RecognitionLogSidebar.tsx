@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
-import { useRealtimeEvent } from '@hubsight/realtime/react';
+import { useOnRecognitionLog, useOnMemberFaceUpdated } from '@hubsight/realtime/react';
 import { api } from '../../api/client';
 import { useTimezone } from '../../context/TimezoneContext';
 import { useTranslation } from '../../i18n';
@@ -83,12 +83,12 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
     fetchLogs(cameraId);
   }, [cameraId, fetchLogs]);
 
-  useRealtimeEvent('vision.log.new', (item) => {
+  useOnRecognitionLog((item) => {
     if (!item || item.camera_id !== cameraId) return;
     setLogs((prev) => [item, ...prev.filter((l) => l.id !== item.id)]);
   }, [cameraId]);
 
-  useRealtimeEvent('member.face.updated', () => {
+  useOnMemberFaceUpdated(() => {
     if (cameraId) fetchLogs(cameraId);
   }, [cameraId, fetchLogs]);
 

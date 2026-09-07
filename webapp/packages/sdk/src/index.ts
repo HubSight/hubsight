@@ -50,7 +50,7 @@ export {
   type SessionStorageAdapter,
 } from './auth/storage';
 
-// ── Realtime & Built-in Events ───────────────────────────────────────────────
+// ── Realtime & Event Payloads ────────────────────────────────────────────────
 export type {
   RealtimeManager,
   RealtimeStatus,
@@ -58,9 +58,6 @@ export type {
   Unsubscribe as RealtimeUnsubscribe,
 } from './realtime/types';
 export type {
-  BuiltInRealtimeEvents,
-  RealtimeEventMap,
-  RealtimeEventName,
   OverlayBox,
   VisionBoxesEvent,
   ForceLogoutEvent,
