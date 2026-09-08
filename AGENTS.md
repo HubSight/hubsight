@@ -39,6 +39,13 @@ Connections to `go2rtc` streams are tightly managed to save resources:
 4. **Relay**: `core-service` saves to DB, then publishes to RabbitMQ. `relay-service` pushes to Socket.IO clients.
 5. **Web Push**: `core-service` also publishes `notification.new` to `push_queue`. `push-service` sends FCM / VAPID Web Push to stored subscriptions.
 
+### App Configuration (.hscfg) & Zero-Config Enrollment
+- HubSight provides an encrypted multi-layer container format (`.hscfg`) for Mobile and Desktop apps.
+- Features: Argon2id (64MB, 4 rounds, keyLen 32) + AES-256-GCM (AAD: `HSCFG\x01`) + Ed25519 digital signature, locked by a 6-digit PIN.
+- Integrates with Google Service Accounts to automatically query Google Firebase Management API for Android `google-services.json` and iOS `GoogleService-Info.plist`.
+- Unified Gateway URLs: All REST API and WebSocket traffic routes strictly via the Gateway domain (ports 80/443 or :8088), with WebRTC media on `:8555`.
+- Full technical specification & Mobile/Desktop client integration guides (Flutter, React Native, Go/Desktop): See [`docs/APP_CONFIG_SPECIFICATION.md`](docs/APP_CONFIG_SPECIFICATION.md).
+
 ## 3. Data Schema & Stack
 
 - **Backend**: Go 1.25, Gin Web Framework, gRPC (for service-to-service).
