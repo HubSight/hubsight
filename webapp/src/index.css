@@ -14,7 +14,17 @@
     color: #0f172a;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
   }
+}
+
+/* Enable smooth iOS momentum scrolling and contain scroll events */
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 /* Safe Area Inset Utilities for iOS & Android PWA */

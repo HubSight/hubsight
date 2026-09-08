@@ -193,8 +193,8 @@ const vi = {
   'serviceAccounts.maskedKeyNote': 'Khóa riêng tư RSA đã được mã hóa và ẩn để đảm bảo an toàn tuyệt đối.',
   'serviceAccounts.createdAt': 'Ngày nhập',
 
-  // === App Configs (.hscfg) ===
-  'appConfigs.title': 'Cấu hình Ứng dụng (.hscfg)',
+  // === App Configs ===
+  'appConfigs.title': 'Cấu hình Ứng dụng',
   'appConfigs.subtitle': 'Đóng gói hồ sơ cấu hình bảo mật đa tầng cho các ứng dụng HubSight (Mobile & Desktop), mã hóa Argon2id + AES-GCM và lưu trữ an toàn trên hệ thống.',
   'appConfigs.createProfile': 'Tạo Cấu hình Mới',
   'appConfigs.totalProfiles': 'Tổng cấu hình',
@@ -213,7 +213,7 @@ const vi = {
   'appConfigs.detailAction': 'Chi tiết',
   'appConfigs.deleteAction': 'Xóa',
   'appConfigs.empty': 'Chưa có cấu hình ứng dụng nào được tạo.',
-  'appConfigs.wizardTitle': 'Wizard Tạo Cấu hình Ứng dụng (.hscfg)',
+  'appConfigs.wizardTitle': 'Wizard Tạo Cấu hình Ứng dụng',
   'appConfigs.wizardSubtitle': 'Hoàn thành 4 bước để tự động lấy cấu hình FCM, mã hóa bảo mật và lưu trữ an toàn.',
   'appConfigs.step1': '1. Thông tin cơ bản',
   'appConfigs.step2': '2. Google FCM',
@@ -226,7 +226,7 @@ const vi = {
   'appConfigs.deleteSuccess': 'Đã xóa cấu hình ứng dụng thành công.',
   'appConfigs.generateSuccess': 'Đã tạo và mã hóa file cấu hình .hscfg thành công!',
 
-  'mobileConfigs.title': 'Cấu hình Ứng dụng (.hscfg)',
+  'mobileConfigs.title': 'Cấu hình Ứng dụng',
   'mobileConfigs.subtitle': 'Đóng gói hồ sơ cấu hình bảo mật đa tầng cho các ứng dụng HubSight (Mobile & Desktop), mã hóa Argon2id + AES-GCM và lưu trữ an toàn trên hệ thống.',
   'mobileConfigs.createProfile': 'Tạo Cấu hình Mới',
   'mobileConfigs.totalProfiles': 'Tổng cấu hình',
@@ -245,7 +245,7 @@ const vi = {
   'mobileConfigs.detailAction': 'Chi tiết',
   'mobileConfigs.deleteAction': 'Xóa',
   'mobileConfigs.empty': 'Chưa có cấu hình ứng dụng nào được tạo.',
-  'mobileConfigs.wizardTitle': 'Wizard Tạo Cấu hình Ứng dụng (.hscfg)',
+  'mobileConfigs.wizardTitle': 'Wizard Tạo Cấu hình Ứng dụng',
   'mobileConfigs.wizardSubtitle': 'Hoàn thành 4 bước để tự động lấy cấu hình FCM, mã hóa bảo mật và lưu trữ an toàn.',
   'mobileConfigs.step1': '1. Thông tin cơ bản',
   'mobileConfigs.step2': '2. Google FCM',

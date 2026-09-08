@@ -195,8 +195,8 @@ const en: Record<TranslationKey, string> = {
   'serviceAccounts.maskedKeyNote': 'RSA private key is securely stored and masked to prevent credential leaks.',
   'serviceAccounts.createdAt': 'Imported At',
 
-  // === App Configs (.hscfg) ===
-  'appConfigs.title': 'App Configurations (.hscfg)',
+  // === App Configs ===
+  'appConfigs.title': 'App Configurations',
   'appConfigs.subtitle': 'Generate multi-layer encrypted deployment profiles for HubSight client applications (Mobile & Desktop), secured with Argon2id + AES-GCM and stored securely on the system.',
   'appConfigs.createProfile': 'New App Profile',
   'appConfigs.totalProfiles': 'Total Profiles',
@@ -215,7 +215,7 @@ const en: Record<TranslationKey, string> = {
   'appConfigs.detailAction': 'Details',
   'appConfigs.deleteAction': 'Delete',
   'appConfigs.empty': 'No application configuration profiles found.',
-  'appConfigs.wizardTitle': 'App Profile Generator Wizard (.hscfg)',
+  'appConfigs.wizardTitle': 'App Profile Generator Wizard',
   'appConfigs.wizardSubtitle': 'Complete 4 steps to auto-fetch FCM credentials, encrypt the container, and save securely.',
   'appConfigs.step1': '1. Basic Profile',
   'appConfigs.step2': '2. Google FCM',
@@ -228,7 +228,7 @@ const en: Record<TranslationKey, string> = {
   'appConfigs.deleteSuccess': 'Application profile deleted successfully.',
   'appConfigs.generateSuccess': 'Application configuration profile (.hscfg) generated and encrypted successfully!',
 
-  'mobileConfigs.title': 'App Configurations (.hscfg)',
+  'mobileConfigs.title': 'App Configurations',
   'mobileConfigs.subtitle': 'Generate multi-layer encrypted deployment profiles for HubSight client applications (Mobile & Desktop), secured with Argon2id + AES-GCM and stored securely on the system.',
   'mobileConfigs.createProfile': 'New App Profile',
   'mobileConfigs.totalProfiles': 'Total Profiles',
@@ -247,7 +247,7 @@ const en: Record<TranslationKey, string> = {
   'mobileConfigs.detailAction': 'Details',
   'mobileConfigs.deleteAction': 'Delete',
   'mobileConfigs.empty': 'No application configuration profiles found.',
-  'mobileConfigs.wizardTitle': 'App Profile Generator Wizard (.hscfg)',
+  'mobileConfigs.wizardTitle': 'App Profile Generator Wizard',
   'mobileConfigs.wizardSubtitle': 'Complete 4 steps to auto-fetch FCM credentials, encrypt the container, and save securely.',
   'mobileConfigs.step1': '1. Basic Profile',
   'mobileConfigs.step2': '2. Google FCM',

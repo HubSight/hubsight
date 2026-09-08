@@ -71,7 +71,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
               <button
                 onClick={() => onStart(device)}
                 disabled={isToggling}
-                className="w-7.5 h-7.5 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-white active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-white active:scale-95 transition-all cursor-pointer disabled:opacity-40"
                 title={t('devices.startDevice')}
                 aria-label={t('devices.startDevice')}
               >
@@ -82,40 +82,42 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
                 <button
                   onClick={() => onRestart(device)}
                   disabled={isToggling}
-                  className="w-7.5 h-7.5 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white active:scale-95 transition-all cursor-pointer disabled:opacity-40"
                   title={t('devices.restartDevice')}
                   aria-label={t('devices.restartDevice')}
                 >
-                  <RotateCw size={13} />
+                  <RotateCw size={14} />
                 </button>
                 <button
                   onClick={() => onStop(device)}
                   disabled={isToggling}
-                  className="w-7.5 h-7.5 rounded-lg flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-white active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-white active:scale-95 transition-all cursor-pointer disabled:opacity-40"
                   title={t('devices.stopDevice')}
                   aria-label={t('devices.stopDevice')}
                 >
-                  <Square size={12} fill="currentColor" />
+                  <Square size={12} />
                 </button>
               </>
             )}
             <button
               onClick={() => onEdit(device)}
-              className="w-7.5 h-7.5 rounded-lg flex items-center justify-center text-slate-400 hover:text-orange-600 hover:bg-white active:scale-95 transition-all cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-orange-600 hover:bg-white active:scale-95 transition-all cursor-pointer"
               title={t('devices.editDevice')}
               aria-label={t('devices.editDevice')}
             >
-              <Pencil size={13} />
+              <Pencil size={14} />
             </button>
+            <div className="w-px h-4 bg-slate-200 mx-0.5 shrink-0" />
             <button
               onClick={() => onDelete(device.id)}
-              className="w-7.5 h-7.5 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-white active:scale-95 transition-all cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer"
               title={t('devices.deleteDevice')}
               aria-label={t('devices.deleteDevice')}
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} />
             </button>
           </div>
+
         </div>
 
         {/* Row 2: Status & Brand Badges (Full width, never squeezed by action buttons) */}

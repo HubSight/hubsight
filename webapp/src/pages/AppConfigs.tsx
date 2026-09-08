@@ -309,75 +309,79 @@ export const AppConfigs: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col min-h-screen bg-slate-50/50 pb-12">
-      {/* Sticky Top Header */}
-      <header className="sticky top-0 z-20 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-xs">
-              <FileShield size={20} />
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 overflow-hidden">
+      {/* Top Header */}
+      <div className="shrink-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs shrink-0">
+              <FileShield size={18} />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800 leading-none">
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-slate-800 leading-snug">
                 {t('appConfigs.title')}
               </h1>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
+              <p className="text-xs text-slate-500 mt-0.5 hidden sm:block font-medium">
                 {t('appConfigs.subtitle')}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={openWizard}
-              className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-98 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap"
+              className="px-3 py-2 sm:px-4 sm:py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-98 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap"
             >
               <Plus size={15} />
-              <span>{t('appConfigs.createProfile')}</span>
+              <span className="hidden sm:inline">{t('appConfigs.createProfile')}</span>
+              <span className="sm:hidden">Tạo mới</span>
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Main Scrollable Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-20">
         {/* KPI Stats Widgets */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-2xs shrink-0">
-              <FileShield size={22} />
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-2xs shrink-0">
+              <FileShield size={18} className="sm:hidden" />
+              <FileShield size={22} className="hidden sm:block" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-xs font-medium text-slate-500 truncate block">{t('appConfigs.totalProfiles')}</span>
-              <p className="text-2xl font-bold text-slate-800 leading-none mt-1">{totalProfiles}</p>
+              <span className="text-[10px] sm:text-xs font-medium text-slate-500 truncate block">{t('appConfigs.totalProfiles')}</span>
+              <p className="text-base sm:text-2xl font-bold text-slate-800 leading-tight mt-0.5 sm:mt-1">{totalProfiles}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-2xs shrink-0">
-              <Cloud size={22} />
+          <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-2xs shrink-0">
+              <Cloud size={18} className="sm:hidden" />
+              <Cloud size={22} className="hidden sm:block" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-xs font-medium text-slate-500 truncate block">{t('appConfigs.withFcm')}</span>
-              <p className="text-2xl font-bold text-slate-800 leading-none mt-1">{withFcmProfiles}</p>
+              <span className="text-[10px] sm:text-xs font-medium text-slate-500 truncate block">{t('appConfigs.withFcm')}</span>
+              <p className="text-base sm:text-2xl font-bold text-slate-800 leading-tight mt-0.5 sm:mt-1">{withFcmProfiles}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shadow-2xs shrink-0">
-              <Download size={22} />
+          <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shadow-2xs shrink-0">
+              <Download size={18} className="sm:hidden" />
+              <Download size={22} className="hidden sm:block" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-xs font-medium text-slate-500 truncate block">{t('appConfigs.totalDownloads')}</span>
-              <p className="text-2xl font-bold text-slate-800 leading-none mt-1">{totalDownloads}</p>
+              <span className="text-[10px] sm:text-xs font-medium text-slate-500 truncate block">{t('appConfigs.totalDownloads')}</span>
+              <p className="text-base sm:text-2xl font-bold text-slate-800 leading-tight mt-0.5 sm:mt-1">{totalDownloads}</p>
             </div>
           </div>
         </div>
 
         {/* Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <div className="relative w-full sm:w-96">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="relative flex-1 sm:max-w-md">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -388,10 +392,11 @@ export const AppConfigs: React.FC = () => {
             />
           </div>
 
-          <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+          <span className="text-[11px] sm:text-xs text-slate-400 font-medium text-right sm:text-left whitespace-nowrap px-1">
             Hiển thị {filteredConfigs.length} cấu hình
           </span>
         </div>
+
 
         {/* Desktop Table View */}
         <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
@@ -596,7 +601,7 @@ export const AppConfigs: React.FC = () => {
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleDownload(cfg)}
@@ -608,10 +613,22 @@ export const AppConfigs: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleOpenQr(cfg)}
-                    className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1 border border-sky-200"
+                    className="px-2.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1 border border-sky-200 shrink-0"
+                    title="Mã QR"
                   >
                     <QrCode size={13} />
-                    <span>Mã QR</span>
+                    <span className="hidden xs:inline">Mã QR</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedConfigForDetail(cfg);
+                      setDetailModalOpen(true);
+                    }}
+                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer shrink-0"
+                    title={t('appConfigs.detailAction')}
+                  >
+                    <Eye size={15} />
                   </button>
                   <button
                     type="button"
@@ -619,7 +636,8 @@ export const AppConfigs: React.FC = () => {
                       setConfigToDelete(cfg);
                       setDeleteModalOpen(true);
                     }}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer shrink-0"
+                    title={t('appConfigs.deleteAction')}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -628,7 +646,8 @@ export const AppConfigs: React.FC = () => {
             ))
           )}
         </div>
-      </main>
+      </div>
+
 
       {/* QR Modal */}
       <AppConfigQrModal
