@@ -330,14 +330,22 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
       await http.delete(`/auth/passkeys/${id}`);
     },
 
-    async loginWithPasskey(username?: string, conditional?: boolean): Promise<LoginResponse> {
+    async loginWithPasskey(username: string, conditional?: boolean): Promise<LoginResponse> {
       currentState = 'loading';
       const isPwa = storage.isPwa();
+
+      const trimmedUser = username?.trim();
+      if (!trimmedUser) {
+        currentState = currentUser ? 'authenticated' : 'unauthenticated';
+        const err: any = new Error('username_required');
+        err.code = 'username_required';
+        throw err;
+      }
 
       try {
         const optRes = await http.post<{ publicKey: any; challenge_id: string }>(
           '/auth/passkeys/login/options',
-          { username }
+          { username: trimmedUser }
         );
         const reqOptions = prepareRequestOptions(optRes.publicKey);
         if (conditional) {

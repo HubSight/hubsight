@@ -21,6 +21,11 @@ var (
 	ErrInvalidCode       = errors.New("invalid authentication code")
 	ErrInvalidPassword   = errors.New("incorrect password")
 	ErrPasskeyNotFound   = errors.New("passkey credential not found")
+	ErrUsernameRequired  = errors.New("username is required")
+	ErrUserNotFound      = errors.New("user not found")
+	ErrUserInactive      = errors.New("user account is deactivated")
+	ErrNoPasskeyForUser  = errors.New("no passkey registered for this account")
+	ErrUserMismatch      = errors.New("credential does not belong to specified user")
 )
 
 // ── In-Memory Pre-Auth Challenge Store for 2FA ───────────────────────────────
@@ -374,7 +379,7 @@ func FinishPasskeyRegistration(ctx context.Context, u *models.User, challengeID,
 	return &passkey, nil
 }
 
-// BeginPasskeyLogin initiates authentication ceremony (supports both username & discoverable).
+// BeginPasskeyLogin initiates authentication ceremony requiring a valid existing username.
 func BeginPasskeyLogin(ctx context.Context, username, origin string) (any, string, error) {
 	_ = EnsureDynamicOrigin(origin)
 	w, err := GetWebAuthn()
@@ -382,38 +387,35 @@ func BeginPasskeyLogin(ctx context.Context, username, origin string) (any, strin
 		return nil, "", err
 	}
 
-	if username != "" {
-		var u models.User
-		if err := database.DB.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
-			return nil, "", errors.New("user not found")
-		}
-
-		var creds []models.PasskeyCredential
-		if err := database.DB.WithContext(ctx).Where("user_id = ?", u.ID).Find(&creds).Error; err != nil || len(creds) == 0 {
-			return nil, "", errors.New("no passkey registered for this account")
-		}
-
-		adapter := &WebAuthnUserAdapter{
-			User:        &u,
-			Credentials: creds,
-		}
-
-		options, sessionData, err := w.BeginLogin(adapter)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed creating login options: %w", err)
-		}
-
-		challengeID := challengeStore.Save(sessionData, u.ID, 5*time.Minute)
-		return options, challengeID, nil
+	username = strings.TrimSpace(username)
+	if username == "" {
+		return nil, "", ErrUsernameRequired
 	}
 
-	// Discoverable login (Passwordless / Resident Key)
-	options, sessionData, err := w.BeginDiscoverableLogin()
+	var u models.User
+	if err := database.DB.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
+		return nil, "", ErrUserNotFound
+	}
+	if !u.IsActive {
+		return nil, "", ErrUserInactive
+	}
+
+	var creds []models.PasskeyCredential
+	if err := database.DB.WithContext(ctx).Where("user_id = ?", u.ID).Find(&creds).Error; err != nil || len(creds) == 0 {
+		return nil, "", ErrNoPasskeyForUser
+	}
+
+	adapter := &WebAuthnUserAdapter{
+		User:        &u,
+		Credentials: creds,
+	}
+
+	options, sessionData, err := w.BeginLogin(adapter)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed creating discoverable login options: %w", err)
+		return nil, "", fmt.Errorf("failed creating login options: %w", err)
 	}
 
-	challengeID := challengeStore.Save(sessionData, "", 5*time.Minute)
+	challengeID := challengeStore.Save(sessionData, u.ID, 5*time.Minute)
 	return options, challengeID, nil
 }
 
@@ -425,7 +427,7 @@ func FinishPasskeyLogin(ctx context.Context, challengeID, credentialJSON string,
 		return nil, "", "", err
 	}
 
-	sessionData, _, ok := challengeStore.Pop(challengeID)
+	sessionData, storedUserID, ok := challengeStore.Pop(challengeID)
 	if !ok {
 		return nil, "", "", errors.New("passkey login challenge expired or invalid")
 	}
@@ -441,12 +443,17 @@ func FinishPasskeyLogin(ctx context.Context, challengeID, credentialJSON string,
 		return nil, "", "", ErrPasskeyNotFound
 	}
 
+	// Validate that the credential actually belongs to the user who requested the challenge
+	if storedUserID != "" && passkey.UserID != storedUserID {
+		return nil, "", "", ErrUserMismatch
+	}
+
 	var u models.User
 	if err := database.DB.WithContext(ctx).Where("id = ?", passkey.UserID).First(&u).Error; err != nil {
-		return nil, "", "", errors.New("user not found")
+		return nil, "", "", ErrUserNotFound
 	}
 	if !u.IsActive {
-		return nil, "", "", errors.New("user is inactive")
+		return nil, "", "", ErrUserInactive
 	}
 
 	var allCreds []models.PasskeyCredential

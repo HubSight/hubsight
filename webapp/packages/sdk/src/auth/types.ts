@@ -60,7 +60,7 @@ export interface AuthManager {
   registerPasskey(name: string): Promise<PasskeyItem>;
   renamePasskey(id: string, name: string): Promise<void>;
   deletePasskey(id: string): Promise<void>;
-  loginWithPasskey(username?: string, conditional?: boolean): Promise<LoginResponse>;
+  loginWithPasskey(username: string, conditional?: boolean): Promise<LoginResponse>;
 
   // Internal kernel handler for realtime kickout
   handleForceLogout(reason?: string, message?: string): void;

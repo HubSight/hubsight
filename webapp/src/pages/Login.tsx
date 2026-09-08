@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
@@ -41,6 +41,7 @@ const Login = () => {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const usernameInputRef = useRef<HTMLInputElement>(null);
 
   const { checkAuth } = useAuth();
   const { t, locale, setLocale } = useTranslation();
@@ -51,29 +52,6 @@ const Login = () => {
     isPasskeySupported().then((supported) => {
       if (isMounted) setPasskeySupported(supported);
     });
-
-    // WebAuthn Level 3 Conditional Mediation (autofill when input is focused)
-    if (
-      typeof window !== 'undefined' &&
-      window.PublicKeyCredential &&
-      PublicKeyCredential.isConditionalMediationAvailable
-    ) {
-      PublicKeyCredential.isConditionalMediationAvailable().then((available) => {
-        if (available && isMounted) {
-          api.auth
-            .loginWithPasskey(undefined, true)
-            .then(async (res) => {
-              if (isMounted && res) {
-                await checkAuth();
-                navigate('/devices');
-              }
-            })
-            .catch(() => {
-              // Conditional mediation quietly ignored
-            });
-        }
-      }).catch(() => {});
-    }
 
     return () => {
       isMounted = false;
@@ -136,17 +114,51 @@ const Login = () => {
 
   const handlePasskeyLogin = async () => {
     setError('');
+    const trimmedUser = username.trim();
+    if (!trimmedUser) {
+      setError(t('login.usernameRequired'));
+      usernameInputRef.current?.focus();
+      return;
+    }
+
     setPasskeyLoading(true);
 
     try {
-      await api.auth.loginWithPasskey(username.trim() || undefined);
+      await api.auth.loginWithPasskey(trimmedUser);
       await checkAuth();
       navigate('/devices');
     } catch (err: any) {
       if (err.name === 'NotAllowedError' || err.message?.includes('cancel')) {
         return;
       }
-      if (isApiError(err)) {
+
+      const serverErr =
+        err?.response?.data?.code ||
+        err?.response?.data?.error ||
+        err?.code ||
+        err?.message ||
+        '';
+
+      if (serverErr === 'username_required' || serverErr === 'USERNAME_REQUIRED') {
+        setError(t('login.usernameRequired'));
+        usernameInputRef.current?.focus();
+      } else if (serverErr === 'user not found' || serverErr === 'user_not_found') {
+        setError(t('login.userNotFound'));
+        usernameInputRef.current?.select();
+      } else if (
+        serverErr === 'user account is deactivated' ||
+        serverErr === 'user is inactive' ||
+        serverErr === 'user_inactive'
+      ) {
+        setError(t('login.userInactive'));
+      } else if (serverErr.includes('no passkey') || serverErr === 'no_passkey') {
+        setError(t('login.noPasskeyForUser'));
+      } else if (
+        serverErr === 'credential does not belong to specified user' ||
+        serverErr === 'user_mismatch'
+      ) {
+        setError(t('login.userMismatch'));
+      } else if (isApiError(err)) {
         setError(getErrorMessage(err, t('login.passkeyFailed')));
       } else {
         setError(err?.message || t('login.passkeyFailed'));
@@ -229,34 +241,6 @@ const Login = () => {
           {/* ── STEP 1: Username & Password / Passkey ── */}
           {step === 'credentials' ? (
             <div className="space-y-4 sm:space-y-5 flex-1">
-              {/* Passkey Button (if supported) */}
-              {passkeySupported && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={handlePasskeyLogin}
-                    disabled={passkeyLoading || loading}
-                    className="group w-full min-h-[46px] sm:min-h-[44px] py-2.5 px-4 bg-white hover:bg-orange-50/60 active:bg-orange-100/50 text-slate-700 hover:text-orange-600 border border-slate-200 hover:border-orange-300 active:scale-[0.99] font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs hover:shadow-sm touch-manipulation"
-                  >
-                    {passkeyLoading ? (
-                      <Loader2 size={19} className="animate-spin text-orange-600" />
-                    ) : (
-                      <Fingerprint size={19} className="text-orange-600 group-hover:scale-110 transition-transform duration-150" />
-                    )}
-                    <span>{t('login.passkeyBtn')}</span>
-                  </button>
-
-                  <div className="relative my-4 flex items-center justify-center">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-200" />
-                    </div>
-                    <div className="relative bg-white px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      {t('login.or')}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
@@ -267,6 +251,7 @@ const Login = () => {
                       <User size={18} />
                     </span>
                     <input
+                      ref={usernameInputRef}
                       type="text"
                       required
                       autoFocus
@@ -275,7 +260,10 @@ const Login = () => {
                       autoCorrect="off"
                       spellCheck={false}
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        if (error) setError('');
+                      }}
                       placeholder={t('login.usernamePlaceholder')}
                       className="w-full pl-11 pr-4 py-3 sm:py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
                     />
@@ -295,7 +283,10 @@ const Login = () => {
                       required
                       autoComplete="current-password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (error) setError('');
+                      }}
                       placeholder={t('login.passwordPlaceholder')}
                       className="w-full pl-11 pr-12 py-3 sm:py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
                     />
@@ -313,11 +304,14 @@ const Login = () => {
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full min-h-[46px] sm:min-h-[44px] mt-6 py-3 sm:py-2.5 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 active:scale-[0.99] text-white font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed touch-manipulation"
+                  disabled={loading || passkeyLoading}
+                  className="w-full min-h-[46px] sm:min-h-[44px] mt-6 py-3 sm:py-2.5 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 active:scale-[0.99] text-white font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed touch-manipulation shadow-xs hover:shadow-sm"
                 >
                   {loading ? (
-                    <span>{t('login.signingIn')}</span>
+                    <div className="flex items-center gap-2">
+                      <Loader2 size={18} className="animate-spin" />
+                      <span>{t('login.signingIn')}</span>
+                    </div>
                   ) : (
                     <>
                       <span>{t('login.submit')}</span>
@@ -326,6 +320,34 @@ const Login = () => {
                   )}
                 </button>
               </form>
+
+              {/* Passkey Button (if supported) */}
+              {passkeySupported && (
+                <div className="pt-0.5">
+                  <div className="relative my-4 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-slate-200" />
+                    </div>
+                    <div className="relative bg-white px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                      {t('login.or')}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePasskeyLogin}
+                    disabled={passkeyLoading || loading}
+                    className="group w-full min-h-[46px] sm:min-h-[44px] py-2.5 px-4 bg-white hover:bg-orange-50/60 active:bg-orange-100/50 text-slate-700 hover:text-orange-600 border border-slate-200 hover:border-orange-300 active:scale-[0.99] font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs hover:shadow-sm touch-manipulation"
+                  >
+                    {passkeyLoading ? (
+                      <Loader2 size={19} className="animate-spin text-orange-600" />
+                    ) : (
+                      <Fingerprint size={19} className="text-orange-600 group-hover:scale-110 transition-transform duration-150" />
+                    )}
+                    <span>{t('login.passkeyBtn')}</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             /* ── STEP 2: 2FA TOTP or Backup Recovery Code ── */

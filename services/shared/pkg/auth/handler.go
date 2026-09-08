@@ -441,7 +441,13 @@ func PasskeyLoginOptionsHandler(c *gin.Context) {
 	origin := c.Request.Header.Get("Origin")
 	options, challengeID, err := BeginPasskeyLogin(c.Request.Context(), req.Username, origin)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		status := http.StatusBadRequest
+		if errors.Is(err, ErrUserNotFound) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, ErrUserInactive) {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"error": err.Error(), "code": err.Error()})
 		return
 	}
 
