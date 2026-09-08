@@ -164,19 +164,11 @@ const MainLayout = () => {
           </button>
         </div>
 
-        <nav className="flex-1 flex flex-col">
-          {user?.role === 'admin' && (
-            <NavLink to="/devices" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Camera size={20} />
-              {t('nav.devices')}
-            </NavLink>
-          )}
-          {user?.role === 'admin' && (
-            <NavLink to="/members" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Users size={20} />
-              {t('nav.members')}
-            </NavLink>
-          )}
+        <nav className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
+          {/* Section 1: Giám sát (Surveillance) */}
+          <div className="px-6 pt-1 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+            {t('nav.sectionSurveillance')}
+          </div>
           <NavLink to="/multiview" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <LayoutGrid size={20} />
             {t('nav.multiview')}
@@ -185,29 +177,60 @@ const MainLayout = () => {
             <Video size={20} />
             {t('nav.playback')}
           </NavLink>
+
+          {/* Section 2: Quản lý (Management) */}
           {user?.role === 'admin' && (
-            <NavLink to="/recorder" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Activity size={20} />
-              {t('nav.nvrMonitor')}
-            </NavLink>
+            <>
+              <div className="px-6 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                {t('nav.sectionManagement')}
+              </div>
+              <NavLink to="/devices" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <Camera size={20} />
+                {t('nav.devices')}
+              </NavLink>
+              <NavLink to="/members" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <Users size={20} />
+                {t('nav.members')}
+              </NavLink>
+            </>
           )}
+
+          {/* Section 3: Hệ thống (System) */}
           {user?.role === 'admin' && (
-            <NavLink to="/pool" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Layers size={20} />
-              {t('nav.poolMonitor')}
-            </NavLink>
+            <>
+              <div className="px-6 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                {t('nav.sectionSystem')}
+              </div>
+              <NavLink to="/recorder" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <Activity size={20} />
+                {t('nav.nvrMonitor')}
+              </NavLink>
+              <NavLink to="/pool" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <Layers size={20} />
+                {t('nav.poolMonitor')}
+              </NavLink>
+            </>
           )}
-          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('*')) && (
-            <NavLink to="/users" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <UserCog size={20} />
-              {t('nav.users')}
-            </NavLink>
-          )}
-          {(user?.role === 'admin' || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
-            <NavLink to="/roles" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Shield size={20} />
-              {t('nav.roles')}
-            </NavLink>
+
+          {/* Section 4: Quản trị (Administration) */}
+          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
+            <>
+              <div className="px-6 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                {t('nav.sectionAdmin')}
+              </div>
+              {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('*')) && (
+                <NavLink to="/users" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <UserCog size={20} />
+                  {t('nav.users')}
+                </NavLink>
+              )}
+              {(user?.role === 'admin' || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
+                <NavLink to="/roles" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <Shield size={20} />
+                  {t('nav.roles')}
+                </NavLink>
+              )}
+            </>
           )}
         </nav>
 

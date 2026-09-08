@@ -56,6 +56,10 @@ const vi = {
   'login.invalid2faCode': 'Mã xác thực hoặc mã khôi phục không đúng.',
 
   // === Sidebar / Nav ===
+  'nav.sectionSurveillance': 'Giám sát',
+  'nav.sectionManagement': 'Quản lý',
+  'nav.sectionSystem': 'Hệ thống',
+  'nav.sectionAdmin': 'Quản trị',
   'nav.devices': 'Thiết bị',
   'nav.members': 'Thành viên',
   'nav.multiview': 'Giám sát đa kênh',

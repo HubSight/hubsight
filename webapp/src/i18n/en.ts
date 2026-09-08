@@ -58,6 +58,10 @@ const en: Record<TranslationKey, string> = {
   'login.invalid2faCode': 'Invalid authentication code or recovery code.',
 
   // === Sidebar / Nav ===
+  'nav.sectionSurveillance': 'Surveillance',
+  'nav.sectionManagement': 'Management',
+  'nav.sectionSystem': 'System',
+  'nav.sectionAdmin': 'Administration',
   'nav.devices': 'Devices',
   'nav.members': 'Members',
   'nav.multiview': 'Multi-View',
