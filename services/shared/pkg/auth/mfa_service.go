@@ -305,7 +305,10 @@ func BeginPasskeyRegistration(ctx context.Context, u *models.User, origin string
 		Credentials: existingCreds,
 	}
 
-	options, sessionData, err := w.BeginRegistration(adapter)
+	options, sessionData, err := w.BeginRegistration(
+		adapter,
+		webauthn.WithResidentKeyRequirement(protocol.ResidentKeyRequirementPreferred),
+	)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed beginning passkey registration: %w", err)
 	}
