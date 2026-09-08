@@ -215,12 +215,12 @@ const NvrMonitor = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap">
           {/* Real-time WebSocket Live Status Badge */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200/80 select-none">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200/80 select-none whitespace-nowrap shrink-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <span className="flex items-center gap-1">
-              <Zap size={13} className="text-emerald-600" />
+              <Zap size={13} className="text-emerald-600 shrink-0" />
               {t('nvr.realtimeLive')}
             </span>
           </div>
@@ -228,7 +228,7 @@ const NvrMonitor = () => {
           <button
             onClick={() => fetchStatus(false)}
             disabled={isRefreshing}
-            className="btn btn-secondary flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer"
+            className="btn btn-secondary flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
             title={t('refresh')}
           >
             <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-orange-600' : ''} />
@@ -238,146 +238,154 @@ const NvrMonitor = () => {
       </div>
 
       {/* Stats Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 md:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-6 md:mb-8">
 
         {/* Card 1: Service Status */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               {t('nvr.engineStatus')}
             </span>
-            <div className="flex gap-2 items-center">
-              <span className="text-[11px] font-bold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
-                {t('nvr.alwaysActive')}
-              </span>
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <Server size={20} />
-              </div>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
+              <Server size={20} />
             </div>
           </div>
-          <div className="flex items-center gap-3 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full animate-pulse bg-emerald-500" />
-            <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">
-              {data?.status || t('nvr.healthy')}
-            </h3>
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <span className="w-2.5 h-2.5 rounded-full animate-pulse bg-emerald-500 shrink-0" />
+              <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">
+                {data?.status || t('nvr.healthy')}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-2">
+              <Clock size={14} className="text-slate-400 shrink-0" />
+              <span>{t('nvr.uptime')}: {data ? formatUptime(data.system.uptime_seconds) : '0s'}</span>
+            </p>
           </div>
-          <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-            <Clock size={14} className="text-slate-400" />
-            {t('nvr.uptime')}: {data ? formatUptime(data.system.uptime_seconds) : '0s'}
-          </p>
         </div>
 
         {/* Card 2: Recording Pipeline */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               {t('nvr.recordingDevices')}
             </span>
-            <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+            <div className="p-2 bg-orange-50 text-orange-600 rounded-xl shrink-0">
               <Video size={20} />
             </div>
           </div>
-          <div className="flex items-baseline gap-2 mb-1">
-            <h3 className="text-2xl font-bold text-slate-800">
-              {recordingCamsCount}
-              <span className="text-sm font-medium text-slate-400"> / {totalCamsCount} {t('nvr.active')}</span>
-            </h3>
+          <div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <h3 className="text-2xl font-bold text-slate-800">
+                {recordingCamsCount}
+                <span className="text-sm font-medium text-slate-400"> / {totalCamsCount} {t('nvr.active')}</span>
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
+              <Radio size={14} className="text-orange-500 shrink-0" />
+              <span>{t('nvr.liveStreamsActive')}: {data?.active_live_streams_count || 0}</span>
+            </p>
           </div>
-          <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-            <Radio size={14} className="text-orange-500" />
-            {t('nvr.liveStreamsActive')}: {data?.active_live_streams_count || 0}
-          </p>
         </div>
 
         {/* Card 3: Storage Quota & Retention Policy */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              {t('nvr.storageTitle')}
-            </span>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={handleCleanupStorage}
-                disabled={isUpdatingSettings || !data}
-                className="text-xs px-2.5 py-1 font-semibold bg-red-50 text-red-600 rounded-lg hover:bg-red-100 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-              >
-                {t('nvr.format')}
-              </button>
-              <button
-                onClick={() => promptUpdateQuota(data?.storage.quota_bytes || 0)}
-                disabled={isUpdatingSettings || !data}
-                className="text-xs px-2.5 py-1 font-semibold bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-              >
-                {t('nvr.editLimit')}
-              </button>
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg shrink-0">
-                <HardDrive size={18} />
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                {t('nvr.storageTitle')}
+              </span>
+              <div className="p-2 bg-purple-50 text-purple-600 rounded-xl shrink-0">
+                <HardDrive size={20} />
               </div>
             </div>
+            <div className="flex items-baseline gap-1.5 mb-2">
+              <h3 className="text-xl font-bold text-slate-800">
+                {data ? formatBytes(data.storage.used_bytes) : '0 B'}
+              </h3>
+              <span className="text-xs text-slate-400">
+                / {data ? formatBytes(data.storage.quota_bytes) : '47 GB'}
+              </span>
+            </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-1.5">
+              <div
+                className={`h-full transition-all duration-500 ${(data?.storage.used_percentage || 0) > 90
+                  ? 'bg-red-500'
+                  : (data?.storage.used_percentage || 0) > 75
+                    ? 'bg-amber-500'
+                    : 'bg-blue-600'
+                  }`}
+                style={{ width: `${Math.min(data?.storage.used_percentage || 0, 100)}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+              <span>{(data?.storage.used_percentage || 0).toFixed(1)}% {t('nvr.used')}</span>
+              <button
+                type="button"
+                onClick={() => promptUpdateRetention(data?.storage.retention_days || 4)}
+                className="flex items-center gap-1 text-emerald-600 font-semibold cursor-pointer hover:text-emerald-700 transition-colors"
+              >
+                <Trash2 size={11} /> {data?.storage.retention_days || 4} {t('nvr.retentionDays')} ({t('edit')})
+              </button>
+            </div>
           </div>
-          <div className="flex items-baseline gap-2 mb-2">
-            <h3 className="text-xl font-bold text-slate-800">
-              {data ? formatBytes(data.storage.used_bytes) : '0 B'}
-            </h3>
-            <span className="text-xs text-slate-400">
-              / {data ? formatBytes(data.storage.quota_bytes) : '47 GB'}
-            </span>
-          </div>
-          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-1">
-            <div
-              className={`h-full transition-all duration-500 ${(data?.storage.used_percentage || 0) > 90
-                ? 'bg-red-500'
-                : (data?.storage.used_percentage || 0) > 75
-                  ? 'bg-amber-500'
-                  : 'bg-blue-600'
-                }`}
-              style={{ width: `${Math.min(data?.storage.used_percentage || 0, 100)}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1.5">
-            <span>{(data?.storage.used_percentage || 0).toFixed(1)}% {t('nvr.used')}</span>
-            <span className="flex items-center gap-1 text-emerald-600 font-semibold cursor-pointer hover:text-emerald-700 transition-colors" onClick={() => promptUpdateRetention(data?.storage.retention_days || 4)}>
-              <Trash2 size={11} /> {data?.storage.retention_days || 4} {t('nvr.retentionDays')} ({t('edit')})
-            </span>
+
+          <div className="flex items-center gap-2 pt-3 border-t border-slate-100 mt-3">
+            <button
+              onClick={() => promptUpdateQuota(data?.storage.quota_bytes || 0)}
+              disabled={isUpdatingSettings || !data}
+              className="flex-1 text-xs py-1.5 px-2 font-medium bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200/80 rounded-lg active:scale-95 transition-all cursor-pointer text-center whitespace-nowrap"
+            >
+              {t('nvr.editLimit')}
+            </button>
+            <button
+              onClick={handleCleanupStorage}
+              disabled={isUpdatingSettings || !data}
+              className="flex-1 text-xs py-1.5 px-2 font-medium bg-red-50 hover:bg-red-100 text-red-700 border border-red-200/80 rounded-lg active:scale-95 transition-all cursor-pointer text-center whitespace-nowrap"
+            >
+              {t('nvr.format')}
+            </button>
           </div>
         </div>
 
         {/* Card 4: System Resources */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               {t('nvr.systemResources')}
             </span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl shrink-0">
               <Cpu size={20} />
             </div>
           </div>
-          <div className="flex items-baseline gap-2 mb-1">
-            <h3 className="text-xl font-bold text-slate-800">
-              {data?.system.memory_alloc_mb.toFixed(1)} MB
-            </h3>
-            <span className="text-xs text-slate-400">{t('nvr.memoryUsage')}</span>
+          <div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <h3 className="text-xl font-bold text-slate-800">
+                {data?.system.memory_alloc_mb.toFixed(1)} MB
+              </h3>
+              <span className="text-xs text-slate-400">{t('nvr.memoryUsage')}</span>
+            </div>
+            <div className="text-xs text-slate-500 mt-2 flex items-center justify-between flex-wrap gap-1">
+              <span>{t('nvr.goroutines', { count: data?.system.goroutines || 0 })}</span>
+              <span>{t('nvr.cpuCores', { count: data?.system.num_cpu || 1 })}</span>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">
-            <span>{t('nvr.goroutines', { count: data?.system.goroutines || 0 })}</span>
-            <span>{t('nvr.cpuCores', { count: data?.system.num_cpu || 1 })}</span>
-          </p>
         </div>
       </div>
 
       {/* Camera Pipeline Detail Cards */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden mb-6">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <Database size={18} className="text-orange-600" />
+              <Database size={18} className="text-orange-600 shrink-0" />
               {t('nvr.cameraDetails')}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               {t('nvr.cameraDetailsSubtitle')}
             </p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg self-start sm:self-auto shrink-0">
             {t('nvr.totalPipelines', { count: totalCamsCount })}
           </span>
         </div>
@@ -388,7 +396,7 @@ const NvrMonitor = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+            <table className="w-full text-left border-collapse text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/30 text-xs font-semibold text-slate-500">
                   <th className="py-3.5 px-5">{t('nvr.camera')}</th>
