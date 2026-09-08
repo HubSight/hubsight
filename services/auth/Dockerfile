@@ -28,7 +28,7 @@ COPY services/auth ./services/auth
 WORKDIR /app/services/auth
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go build -ldflags="-s -w" -trimpath -o /app/dist/auth main.go
+    go build -ldflags="-s -w" -trimpath -o /app/dist/auth .
 
 FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
