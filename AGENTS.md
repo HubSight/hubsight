@@ -66,6 +66,10 @@ Connections to `go2rtc` streams are tightly managed to save resources:
    - There is ONLY ONE deployment command: `docker compose up -d --build`.
    - Never invent alternative shell scripts or kubernetes manifests unless explicitly requested.
 7. **Connection Pool Integrity**: Any modifications to the configuration or settings of an active (running) device MUST force an immediate teardown of its Connection Pool. In the UI, saving changes for an active camera requires invoking a sequence of `stop` (to tear down `go2rtc` resources) followed by `start` (to recreate them with the fresh config), ensuring no stale streaming artifacts or ghost sessions remain in the `pool-service`.
+8. **Go Build Artifact Hygiene**:
+   - Never run plain `go build` without an output directory.
+   - All local Go binaries must strictly be compiled into the `dist/` folder (e.g. `go build -o dist/ ./services/...` or `go install` with `GOBIN`), or by running `.\scripts\build.ps1` (Windows), `./scripts/build.sh` (macOS/Linux), or `make build`.
+   - Never leave compiled binaries in root or service directories.
 
 When modifying this repository, read and abide by these rules. Focus on resource efficiency (particularly streaming and AI processes) and keep the frontend strictly coupled to the gateway.
 

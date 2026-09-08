@@ -5,6 +5,9 @@
   ],
   "python.analysis.autoSearchPaths": true,
   "go.useLanguageServer": true,
+  "go.toolsEnvVars": {
+    "GOBIN": "${workspaceFolder}/dist"
+  },
   "gopls": {
     "build.directoryFilters": ["-**/node_modules", "-**/webapp", "-**/vision-service"]
   },

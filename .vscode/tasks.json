@@ -1,0 +1,58 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build All Services (Go)",
+      "type": "shell",
+      "command": "go",
+      "args": [
+        "build",
+        "-o",
+        "dist/",
+        "./services/auth",
+        "./services/core",
+        "./services/gateway",
+        "./services/pool",
+        "./services/push",
+        "./services/recorder",
+        "./services/bgrd",
+        "./services/hawkeyes"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Build Auth Service",
+      "type": "shell",
+      "command": "go",
+      "args": ["build", "-o", "dist/", "./services/auth"],
+      "group": "build",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Build Core Service",
+      "type": "shell",
+      "command": "go",
+      "args": ["build", "-o", "dist/", "./services/core"],
+      "group": "build",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Clean Dist",
+      "type": "shell",
+      "windows": {
+        "command": "powershell -Command \"Remove-Item -Recurse -Force -ErrorAction SilentlyContinue dist\""
+      },
+      "osx": {
+        "command": "rm -rf dist"
+      },
+      "linux": {
+        "command": "rm -rf dist"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
