@@ -166,7 +166,7 @@ export const NvrMonitorSkeleton: React.FC = () => {
 
 export const AppLoadingSkeleton: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 dark:bg-[#090d16] p-4 select-none">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 dark:bg-black p-4 select-none">
       <div className="flex flex-col items-center text-center animate-fade-in">
         <div className="w-20 h-20 rounded-[22px] bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-5">
           <Camera size={40} />

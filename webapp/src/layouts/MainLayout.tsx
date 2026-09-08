@@ -97,7 +97,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 dark:bg-black pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Floating Realtime Notification Toast */}
       <NotificationToast />
       <Toaster position="top-right" />
