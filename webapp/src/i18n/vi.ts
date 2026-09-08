@@ -20,6 +20,8 @@ const vi = {
   noData: 'Không có dữ liệu',
   admin: 'Quản trị',
   viewer: 'Xem',
+  'common.viewCards': 'Dạng thẻ',
+  'common.viewTable': 'Dạng bảng',
 
   // === Auth / Login ===
   'login.title': 'HubSight',

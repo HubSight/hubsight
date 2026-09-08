@@ -22,6 +22,8 @@ const en: Record<TranslationKey, string> = {
   noData: 'No data',
   admin: 'Admin',
   viewer: 'Viewer',
+  'common.viewCards': 'Cards view',
+  'common.viewTable': 'Table view',
 
   // === Auth / Login ===
   'login.title': 'HubSight',

@@ -10,7 +10,9 @@ import {
   Database,
   Radio,
   Trash2,
-  Zap
+  Zap,
+  LayoutGrid,
+  Table as TableIcon
 } from 'lucide-react';
 import { api } from '../api/client';
 import type { NvrStatusResponse } from '../types/nvr';
@@ -51,6 +53,7 @@ const NvrMonitor = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'auto'>('auto');
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     type: 'confirm' | 'prompt' | 'alert';
@@ -385,9 +388,38 @@ const NvrMonitor = () => {
               {t('nvr.cameraDetailsSubtitle')}
             </p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg self-start sm:self-auto shrink-0">
-            {t('nvr.totalPipelines', { count: totalCamsCount })}
-          </span>
+
+          <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+            {/* View Mode Switcher */}
+            <div className="inline-flex p-0.5 bg-slate-200/70 rounded-lg border border-slate-200/80">
+              <button
+                type="button"
+                onClick={() => setViewMode(viewMode === 'cards' ? 'auto' : 'cards')}
+                className={`p-1.5 rounded-md transition-all cursor-pointer ${viewMode === 'cards'
+                  ? 'bg-white text-orange-600 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                title={t('common.viewCards')}
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode(viewMode === 'table' ? 'auto' : 'table')}
+                className={`p-1.5 rounded-md transition-all cursor-pointer ${viewMode === 'table'
+                  ? 'bg-white text-orange-600 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                title={t('common.viewTable')}
+              >
+                <TableIcon size={15} />
+              </button>
+            </div>
+
+            <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
+              {t('nvr.totalPipelines', { count: totalCamsCount })}
+            </span>
+          </div>
         </div>
 
         {data?.cameras.length === 0 ? (
@@ -396,179 +428,193 @@ const NvrMonitor = () => {
           </div>
         ) : (
           <>
-            {/* Mobile Cards View (< md) */}
-            <div className="md:hidden divide-y divide-slate-100">
-              {data?.cameras.map((cam) => (
-                <div key={cam.camera_id} className="p-4 space-y-3 hover:bg-slate-50/50 transition-colors">
-                  {/* Row 1: Name & Status */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-slate-800 text-sm leading-tight truncate">{cam.name}</div>
-                      <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">{cam.host}</div>
-                    </div>
-                    {cam.status === 'recording' ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        {t('nvr.recording').toUpperCase()}
-                      </span>
-                    ) : cam.status === 'stalled' ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        {t('nvr.noSignal')}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                        {t('nvr.disabled').toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Row 2: Badges (Mode, Quality, Codecs) */}
-                  <div className="flex flex-wrap gap-1.5 text-[10px]">
-                    {cam.nvr_mode === 'disabled' ? (
-                      <span className="px-2 py-0.5 rounded font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                        {t('device.nvrModeDisabled')}
-                      </span>
-                    ) : cam.nvr_mode === 'full' ? (
-                      <span className="px-2 py-0.5 rounded font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        Full 24/7
-                      </span>
-                    ) : cam.nvr_mode === 'aor' ? (
-                      <span className="px-2 py-0.5 rounded font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                        AOR (1/30 FPS)
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Event-based
-                      </span>
-                    )}
-                    <span className="px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600 border border-slate-200/80 font-mono">
-                      {cam.record_quality === 'hd' ? '1080p HD' : '720p'}
-                    </span>
-                    <span className="px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
-                      {cam.video_codec === 'copy' ? t('devices.copyCpu') : cam.video_codec}
-                    </span>
-                    <span className="px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
-                      {cam.audio_mode === 'disabled' || cam.audio_mode === 'mute'
-                        ? t('nvr.audioDisabled')
-                        : cam.audio_mode === 'auto'
-                          ? t('nvr.audioAuto')
-                          : cam.audio_mode === 'copy'
-                            ? t('nvr.audioCopy')
-                            : cam.audio_mode === 'aac'
-                              ? t('nvr.audioAac')
-                              : t('nvr.audioOther', { mode: cam.audio_mode })}
-                    </span>
-                  </div>
-
-                  {/* Row 3: Segments info grid */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-xs">
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">{t('nvr.latestSegment')}:</span>
-                      {cam.latest_segment_at ? (
-                        <div className="font-semibold text-slate-700">
-                          {dayjs(cam.latest_segment_at).fromNow()}
-                          <span className="text-[10px] text-slate-400 font-normal ml-1">
-                            ({formatBytes(cam.latest_segment_size || 0)})
-                          </span>
+            {/* Mobile / Compact Cards View (Default below 1150px) */}
+            <div className={viewMode === 'cards' ? 'block' : viewMode === 'table' ? 'hidden' : 'min-[1150px]:hidden'}>
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {data?.cameras.map((cam) => (
+                  <div
+                    key={cam.camera_id}
+                    className="bg-slate-50/70 hover:bg-slate-50/90 border border-slate-200/80 rounded-xl p-4 space-y-3 transition-colors"
+                  >
+                    {/* Row 1: Name & Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-slate-800 text-sm leading-tight truncate" title={cam.name}>
+                          {cam.name}
                         </div>
+                        <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate" title={cam.host}>
+                          {cam.host}
+                        </div>
+                      </div>
+                      {cam.status === 'recording' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          {t('nvr.recording').toUpperCase()}
+                        </span>
+                      ) : cam.status === 'stalled' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                          {t('nvr.noSignal')}
+                        </span>
                       ) : (
-                        <span className="text-slate-400 italic text-[11px]">{t('nvr.noSegments')}</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                          {t('nvr.disabled').toUpperCase()}
+                        </span>
                       )}
                     </div>
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">{t('nvr.totalSegments')}:</span>
-                      <span className="font-semibold text-slate-700">
-                        {cam.total_segments.toLocaleString()} {t('nvr.files')}
+
+                    {/* Row 2: Badges (Mode, Quality, Codecs) */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                      {cam.nvr_mode === 'disabled' ? (
+                        <span className="px-2 py-0.5 rounded font-semibold bg-slate-200/70 text-slate-600 border border-slate-300/60 whitespace-nowrap">
+                          {t('device.nvrModeDisabled')}
+                        </span>
+                      ) : cam.nvr_mode === 'full' ? (
+                        <span className="px-2 py-0.5 rounded font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                          Full 24/7
+                        </span>
+                      ) : cam.nvr_mode === 'aor' ? (
+                        <span className="px-2 py-0.5 rounded font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
+                          AOR (1/30 FPS)
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                          Event-based
+                        </span>
+                      )}
+                      <span className="px-2 py-0.5 rounded font-medium bg-white text-slate-600 border border-slate-200/80 font-mono whitespace-nowrap">
+                        {cam.record_quality === 'hd' ? '1080p HD' : '720p'}
                       </span>
-                      <span className="text-[10px] text-slate-400 ml-1">
-                        ({t('nvr.mins', { minutes: Math.round(cam.segment_duration / 60), seconds: cam.segment_duration })})
+                      <span className="px-2 py-0.5 rounded font-medium bg-white text-slate-600 border border-slate-200/80 whitespace-nowrap">
+                        {cam.video_codec === 'copy' ? t('devices.copyCpu') : cam.video_codec}
+                      </span>
+                      <span className="px-2 py-0.5 rounded font-medium bg-white text-slate-600 border border-slate-200/80 whitespace-nowrap">
+                        {cam.audio_mode === 'disabled' || cam.audio_mode === 'mute'
+                          ? t('nvr.audioDisabled')
+                          : cam.audio_mode === 'auto'
+                            ? t('nvr.audioAuto')
+                            : cam.audio_mode === 'copy'
+                              ? t('nvr.audioCopy')
+                              : cam.audio_mode === 'aac'
+                                ? t('nvr.audioAac')
+                                : t('nvr.audioOther', { mode: cam.audio_mode })}
                       </span>
                     </div>
+
+                    {/* Row 3: Segments info grid */}
+                    <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-200/60 text-xs">
+                      <div>
+                        <span className="text-slate-400 text-[11px] block">{t('nvr.latestSegment')}:</span>
+                        {cam.latest_segment_at ? (
+                          <div className="font-semibold text-slate-700">
+                            {dayjs(cam.latest_segment_at).fromNow()}
+                            <span className="text-[10px] text-slate-400 font-normal ml-1">
+                              ({formatBytes(cam.latest_segment_size || 0)})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">{t('nvr.noSegments')}</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-slate-400 text-[11px] block">{t('nvr.totalSegments')}:</span>
+                        <span className="font-semibold text-slate-700">
+                          {cam.total_segments.toLocaleString()} {t('nvr.files')}
+                        </span>
+                        <span className="text-[10px] text-slate-400 ml-1">
+                          ({t('nvr.mins', { minutes: Math.round(cam.segment_duration / 60), seconds: cam.segment_duration })})
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            {/* Desktop Table View (>= md) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm min-w-[700px]">
+            {/* Desktop Table View (Sticky Column & Whitespace-Nowrap, Default >= 1150px) */}
+            <div className={viewMode === 'table' ? 'block overflow-x-auto' : viewMode === 'cards' ? 'hidden' : 'hidden min-[1150px]:block overflow-x-auto'}>
+              <table className="w-full text-left border-collapse text-sm min-w-[880px]">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/30 text-xs font-semibold text-slate-500">
-                    <th className="py-3.5 px-5">{t('nvr.camera')}</th>
-                    <th className="py-3.5 px-4">{t('nvr.mode')}</th>
-                    <th className="py-3.5 px-4">{t('nvr.status')}</th>
-                    <th className="py-3.5 px-4">{t('nvr.streamPipeline')}</th>
-                    <th className="py-3.5 px-4">{t('nvr.segmentLength')}</th>
-                    <th className="py-3.5 px-4">{t('nvr.latestSegment')}</th>
-                    <th className="py-3.5 px-4">{t('nvr.totalSegments')}</th>
+                  <tr className="border-b border-slate-200/80 bg-slate-50/80 text-xs font-semibold text-slate-500">
+                    {/* Sticky Camera Column */}
+                    <th className="py-3.5 px-5 sticky left-0 bg-slate-50/95 backdrop-blur-xs z-20 shadow-[1px_0_0_0_#e2e8f0] whitespace-nowrap min-w-[190px] max-w-[240px]">
+                      {t('nvr.camera')}
+                    </th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">{t('nvr.mode')}</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">{t('nvr.status')}</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">{t('nvr.streamPipeline')}</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">{t('nvr.segmentLength')}</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">{t('nvr.latestSegment')}</th>
+                    <th className="py-3.5 px-5 whitespace-nowrap">{t('nvr.totalSegments')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {data?.cameras.map((cam) => (
-                    <tr key={cam.camera_id} className="hover:bg-slate-50/60 transition-colors">
-                      {/* Device Info */}
-                      <td className="py-4 px-5">
-                        <div className="font-semibold text-slate-800">{cam.name}</div>
-                        <div className="text-xs text-slate-400 font-mono break-all max-w-xs truncate">
+                    <tr key={cam.camera_id} className="hover:bg-slate-50/60 transition-colors group">
+                      {/* Sticky Camera Cell */}
+                      <td className="py-4 px-5 sticky left-0 bg-white group-hover:bg-slate-50/90 transition-colors z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-nowrap min-w-[190px] max-w-[240px]">
+                        <div className="font-semibold text-slate-800 truncate" title={cam.name}>
+                          {cam.name}
+                        </div>
+                        <div className="text-xs text-slate-400 font-mono truncate" title={cam.host}>
                           {cam.host}
                         </div>
                       </td>
 
                       {/* NVR Mode & Quality */}
-                      <td className="py-4 px-4 text-xs">
+                      <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1 items-start">
                           {cam.nvr_mode === 'disabled' ? (
-                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
                               {t('device.nvrModeDisabled')}
                             </span>
                           ) : cam.nvr_mode === 'full' ? (
-                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                               Full 24/7
                             </span>
                           ) : cam.nvr_mode === 'aor' ? (
-                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
                               AOR (1/30 FPS)
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                               Event-based
                             </span>
                           )}
-                          <span className="text-[10px] font-mono text-slate-500">
+                          <span className="text-[10px] font-mono text-slate-500 whitespace-nowrap">
                             {cam.record_quality === 'hd' ? '1080p HD' : '720p Standard'}
                           </span>
                         </div>
                       </td>
 
                       {/* Status Badge */}
-                      <td className="py-4 px-4">
+                      <td className="py-4 px-4 whitespace-nowrap">
                         {cam.status === 'recording' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                             {t('nvr.recording').toUpperCase()}
                           </span>
                         ) : cam.status === 'stalled' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                             {t('nvr.noSignal')}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                            <span className="w-2 h-2 rounded-full bg-slate-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
                             {t('nvr.disabled').toUpperCase()}
                           </span>
                         )}
                       </td>
 
                       {/* Stream Pipeline Settings */}
-                      <td className="py-4 px-4 text-xs">
-                        <div className="flex flex-wrap gap-1">
-                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-mono whitespace-nowrap">
                             {cam.video_codec === 'copy' ? t('devices.copyCpu') : cam.video_codec}
                           </span>
-                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] whitespace-nowrap">
                             {cam.audio_mode === 'disabled' || cam.audio_mode === 'mute'
                               ? t('nvr.audioDisabled')
                               : cam.audio_mode === 'auto'
@@ -583,29 +629,29 @@ const NvrMonitor = () => {
                       </td>
 
                       {/* Segment Length */}
-                      <td className="py-4 px-4 text-xs font-medium text-slate-700">
+                      <td className="py-4 px-4 text-xs font-medium text-slate-700 whitespace-nowrap">
                         {t('nvr.mins', { minutes: Math.round(cam.segment_duration / 60), seconds: cam.segment_duration })}
                       </td>
 
                       {/* Latest S3 Segment */}
-                      <td className="py-4 px-4 text-xs">
+                      <td className="py-4 px-4 text-xs whitespace-nowrap">
                         {cam.latest_segment_at ? (
                           <div>
-                            <div className="font-semibold text-slate-800">
+                            <div className="font-semibold text-slate-800 whitespace-nowrap">
                               {dayjs(cam.latest_segment_at).fromNow()}
                             </div>
-                            <div className="text-[11px] text-slate-400">
+                            <div className="text-[11px] text-slate-400 whitespace-nowrap">
                               {formatBytes(cam.latest_segment_size || 0)} •{' '}
                               {dayjs(cam.latest_segment_at).format('HH:mm:ss')}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">{t('nvr.noSegments')}</span>
+                          <span className="text-slate-400 italic whitespace-nowrap">{t('nvr.noSegments')}</span>
                         )}
                       </td>
 
                       {/* Total Segments */}
-                      <td className="py-4 px-4 text-xs font-semibold text-slate-800">
+                      <td className="py-4 px-5 text-xs font-semibold text-slate-800 whitespace-nowrap">
                         {cam.total_segments.toLocaleString()} {t('nvr.files')}
                       </td>
                     </tr>
