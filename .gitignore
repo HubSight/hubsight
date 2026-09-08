@@ -25,6 +25,15 @@ pnpm-debug.log*
 # Go / Backend
 backend/bin/
 backend/tmp/
+/auth
+/core
+/gateway
+/pool
+/pool-service
+/push
+/recorder
+/bgrd
+/hawkeyes
 *.exe
 *.exe~
 *.dll
