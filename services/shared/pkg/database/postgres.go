@@ -66,6 +66,7 @@ func Connect(dbURL string) error {
 			&models.RecognitionLog{},
 			&models.Setting{},
 			&models.PasskeyCredential{},
+			&models.ApiClient{},
 		); err != nil {
 			return fmt.Errorf("failed running gorm automigrate: %w", err)
 		}

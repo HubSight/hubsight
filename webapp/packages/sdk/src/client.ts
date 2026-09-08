@@ -23,6 +23,7 @@ import { createMembersResource, type MembersResource } from './resources/members
 import { createNotificationsResource, type NotificationsResource } from './resources/notifications';
 import { createPoolResource, type PoolResource } from './resources/pool';
 import { createRecorderResource, type RecorderResource } from './resources/recorder';
+import { createClientsResource, type ClientsResource } from './resources/clients';
 
 export interface BaseClientOptions {
   /** REST API base URL, e.g. `/api` or `http://localhost:8088/api` (default: `/api`) */
@@ -33,6 +34,8 @@ export interface BaseClientOptions {
   sessionStorage?: SessionStorageAdapter;
   /** Default timeout for HTTP requests in ms (default: 15000) */
   timeoutMs?: number;
+  /** Client API Key for application authorization (default: 'hs_web_client_core') */
+  apiKey?: string;
 }
 
 export interface BaseClient {
@@ -66,6 +69,7 @@ export interface HubSightClient extends BaseClient {
   readonly permissions: PermissionsResource;
   readonly pool: PoolResource;
   readonly recorder: RecorderResource;
+  readonly clients: ClientsResource;
 }
 
 /**
@@ -89,6 +93,7 @@ export function createBaseClient(options: BaseClientOptions = {}): BaseClient {
     baseUrl: resolvedBase,
     withCredentials,
     timeoutMs,
+    apiKey: options.apiKey,
     onRefreshAuth: async () => {
       if (!authManagerRef) return false;
       return authManagerRef.refreshSession();
@@ -163,6 +168,7 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
   let accessRef: AccessResource | null = null;
   let poolRef: PoolResource | null = null;
   let recorderRef: RecorderResource | null = null;
+  let clientsRef: ClientsResource | null = null;
 
   return {
     baseUrl: base.baseUrl,
@@ -207,6 +213,9 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
     },
     get recorder() {
       return (recorderRef ??= createRecorderResource(base.http));
+    },
+    get clients() {
+      return (clientsRef ??= createClientsResource(base.http));
     },
 
     destroy(): void {

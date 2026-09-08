@@ -74,6 +74,39 @@ export interface ResetPasswordRequest {
   must_change_password?: boolean;
 }
 
+// ── Application Clients (API Keys & OAuth2 Governance) ──────────────────────
+
+export type ClientPlatform = 'flutter_mobile' | 'web_spa' | 'third_party';
+export type ClientType = 'public' | 'confidential';
+
+export interface ApiClient {
+  id: string;
+  client_id: string;
+  api_key: string;
+  name: string;
+  platform: ClientPlatform | string;
+  client_type: ClientType | string;
+  is_active: boolean;
+  is_system: boolean;
+  rate_limit_rps: number;
+  created_at?: string;
+  updated_at?: string;
+  last_used_at?: string | null;
+}
+
+export interface CreateClientRequest {
+  name: string;
+  platform: ClientPlatform | string;
+  client_type?: ClientType | string;
+  rate_limit_rps?: number;
+}
+
+export interface UpdateClientRequest {
+  name: string;
+  platform: ClientPlatform | string;
+  rate_limit_rps?: number;
+}
+
 export interface CreateRoleRequest {
   name: string;
   code: string;

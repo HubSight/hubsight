@@ -213,7 +213,7 @@ const MainLayout = () => {
           )}
 
           {/* Section 4: Quản trị (Administration) */}
-          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
+          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('clients:manage') || user?.permissions?.includes('*')) && (
             <>
               <div className="px-6 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
                 {t('nav.sectionAdmin')}
@@ -228,6 +228,12 @@ const MainLayout = () => {
                 <NavLink to="/roles" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <Shield size={20} />
                   {t('nav.roles')}
+                </NavLink>
+              )}
+              {(user?.role === 'admin' || user?.permissions?.includes('clients:manage') || user?.permissions?.includes('*')) && (
+                <NavLink to="/clients" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <KeyRound size={20} />
+                  {t('nav.clients')}
                 </NavLink>
               )}
             </>

@@ -25,6 +25,8 @@ export interface HttpClientOptions {
   baseUrl: string;
   withCredentials?: boolean;
   timeoutMs?: number;
+  /** Client API Key for client application identification (default: 'hs_web_client_core') */
+  apiKey?: string;
   /** Hook called by AuthManager to perform silent token refresh on 401 */
   onRefreshAuth?: () => Promise<boolean>;
   /** Hook called when a session is unrecoverable */
@@ -101,6 +103,7 @@ export function createInternalHttpClient(options: HttpClientOptions): InternalHt
     baseUrl,
     withCredentials = true,
     timeoutMs = 15000,
+    apiKey = 'hs_web_client_core',
     onRefreshAuth,
     onSessionExpired,
   } = options;
@@ -111,6 +114,7 @@ export function createInternalHttpClient(options: HttpClientOptions): InternalHt
     timeout: timeoutMs,
     headers: {
       Accept: 'application/json',
+      'X-API-Key': apiKey,
     },
   });
 

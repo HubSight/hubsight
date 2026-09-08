@@ -77,7 +77,7 @@ func GenerateToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-func createSessionForUser(ctx context.Context, userID string, isPWA bool) (*models.Session, string, string, error) {
+func createSessionForUser(ctx context.Context, userID string, isPWA bool, clientID ...string) (*models.Session, string, string, error) {
 	token := GenerateToken()
 	expiresAt := time.Now().Add(24 * 7 * time.Hour) // 1 week
 
@@ -86,6 +86,9 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool) (*mode
 		TokenHash: hashToken(token),
 		ExpiresAt: expiresAt,
 		IsPwa:     isPWA,
+	}
+	if len(clientID) > 0 && clientID[0] != "" {
+		sess.ClientID = clientID[0]
 	}
 
 	var refreshToken string
@@ -110,7 +113,7 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool) (*mode
 	return &sess, token, refreshToken, nil
 }
 
-func Login(ctx context.Context, username, password string, isPWA bool) (*models.Session, string, string, error) {
+func Login(ctx context.Context, username, password string, isPWA bool, clientID ...string) (*models.Session, string, string, error) {
 	var u models.User
 	if err := database.DB.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
 		return nil, "", "", errors.New("invalid credentials")
@@ -132,7 +135,7 @@ func Login(ctx context.Context, username, password string, isPWA bool) (*models.
 		return nil, preAuthToken, "", ErrTwoFactorRequired
 	}
 
-	return createSessionForUser(ctx, u.ID, isPWA)
+	return createSessionForUser(ctx, u.ID, isPWA, clientID...)
 }
 
 func RefreshPWASession(ctx context.Context, refreshToken string) (*models.Session, string, string, error) {

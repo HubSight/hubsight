@@ -27,7 +27,7 @@ func New() *gin.Engine {
 			return origin == "https://cctv.quoctran.space" || strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "https://localhost")
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-Service-Key"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-Service-Key", "X-API-Key", "X-Client-ID"},
 		ExposeHeaders:    []string{"Content-Length", "X-Pool-Stream-Name", "X-Pool-Conn-Index"},
 		AllowCredentials: true,
 	}))

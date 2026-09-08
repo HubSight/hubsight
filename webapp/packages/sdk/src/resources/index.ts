@@ -107,3 +107,17 @@ export {
   cleanupStorage,
   type RecorderResource,
 } from './recorder';
+
+// ── Application Clients ──────────────────────────────────────────────────────
+export {
+  createClientsResource,
+  listClients,
+  createClient,
+  updateClient,
+  toggleClient,
+  rotateClientKey,
+  deleteClient,
+  verifyClientKey,
+  type ClientsResource,
+} from './clients';
+

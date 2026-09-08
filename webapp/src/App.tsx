@@ -16,6 +16,7 @@ import Members from './pages/Members';
 import { PoolMonitor } from './pages/PoolMonitor';
 import Users from './pages/Users';
 import Roles from './pages/Roles';
+import Clients from './pages/Clients';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
@@ -120,6 +121,14 @@ const App = () => {
                       element={
                         <AdminRoute>
                           <Roles />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="clients"
+                      element={
+                        <AdminRoute>
+                          <Clients />
                         </AdminRoute>
                       }
                     />

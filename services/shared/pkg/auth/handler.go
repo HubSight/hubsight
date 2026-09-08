@@ -19,7 +19,24 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	session, token, refreshToken, err := Login(c.Request.Context(), req.Username, req.Password, req.IsPWA)
+	apiKey := c.GetHeader("X-API-Key")
+	if apiKey == "" {
+		apiKey = c.Query("api_key")
+	}
+
+	var clientID string
+	if apiKey != "" {
+		client, err := ValidateClientApiKey(apiKey)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or inactive client API key"})
+			return
+		}
+		clientID = client.ClientID
+	} else {
+		clientID = "hs_web_client_core"
+	}
+
+	session, token, refreshToken, err := Login(c.Request.Context(), req.Username, req.Password, req.IsPWA, clientID)
 	if err != nil {
 		if errors.Is(err, ErrTwoFactorRequired) {
 			c.JSON(http.StatusOK, gin.H{

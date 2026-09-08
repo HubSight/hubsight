@@ -15,6 +15,7 @@ type Session struct {
 	TokenHash        []byte     `gorm:"column:token_hash;type:bytea;uniqueIndex:sessions_token_hash_key;not null" json:"-"`
 	RefreshTokenHash []byte     `gorm:"column:refresh_token_hash;type:bytea" json:"-"`
 	IsPwa            bool       `gorm:"column:is_pwa;not null;default:false" json:"is_pwa"`
+	ClientID         string     `gorm:"column:client_id;type:varchar(64)" json:"client_id,omitempty"`
 	ExpiresAt        time.Time  `gorm:"column:expires_at;not null" json:"expires_at,omitempty"`
 	CreatedAt        time.Time  `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
 	LastSeenAt       *time.Time `gorm:"column:last_seen_at" json:"last_seen_at,omitempty"`

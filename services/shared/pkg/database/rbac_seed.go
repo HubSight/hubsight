@@ -32,6 +32,7 @@ var SystemPermissions = []models.Permission{
 	{Code: "users:view", Name: "Xem Người dùng", Description: "Xem danh sách tài khoản người dùng và trạng thái", Module: "access"},
 	{Code: "users:manage", Name: "Quản lý Người dùng", Description: "Tạo tài khoản, gán vai trò, đặt lại mật khẩu và khóa tài khoản", Module: "access"},
 	{Code: "roles:manage", Name: "Quản lý Vai trò", Description: "Tạo mới, chỉnh sửa ma trận quyền và xóa vai trò tùy chỉnh", Module: "access"},
+	{Code: "clients:manage", Name: "Quản lý Ứng dụng & API Keys", Description: "Tạo, sửa, đổi mã key, bật/tắt và xóa các client ứng dụng kết nối", Module: "access"},
 }
 
 // SeedDefaultRolesAndPermissions ensures permissions, default roles, and user associations are synced.
@@ -158,6 +159,54 @@ func SeedDefaultRolesAndPermissions(db *gorm.DB) error {
 			Update("role_id", viewerRole.ID).Error
 	}
 
+	// 4. Seed default system API clients (Web Portal & Flutter Mobile)
+	if err := SeedDefaultApiClients(db); err != nil {
+		log.Printf("Warning: failed seeding default API clients: %v", err)
+	}
+
+	return nil
+}
+
+// SeedDefaultApiClients ensures standard system clients exist and are active.
+func SeedDefaultApiClients(db *gorm.DB) error {
+	defaultClients := []models.ApiClient{
+		{
+			ClientID:     "hs_web_client_core",
+			APIKey:       "hs_web_client_core",
+			Name:         "HubSight Web Portal",
+			Platform:     models.PlatformWebSPA,
+			ClientType:   models.ClientTypePublic,
+			IsActive:     true,
+			IsSystem:     true,
+			RateLimitRPS: 0,
+		},
+		{
+			ClientID:     "hs_mob_client_default",
+			APIKey:       "hs_mob_client_default",
+			Name:         "HubSight Mobile App (Flutter)",
+			Platform:     models.PlatformFlutterMobile,
+			ClientType:   models.ClientTypePublic,
+			IsActive:     true,
+			IsSystem:     true,
+			RateLimitRPS: 0,
+		},
+	}
+
+	for _, dc := range defaultClients {
+		var existing models.ApiClient
+		if err := db.Where("client_id = ?", dc.ClientID).First(&existing).Error; err != nil {
+			newClient := dc
+			newClient.ID = nanoid.New()
+			if err := db.Create(&newClient).Error; err != nil {
+				log.Printf("Warning: failed to seed client %s: %v", dc.ClientID, err)
+			}
+		} else {
+			// Keep system flag synced
+			if !existing.IsSystem {
+				_ = db.Model(&existing).Update("is_system", true).Error
+			}
+		}
+	}
 	return nil
 }
 

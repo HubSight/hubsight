@@ -74,7 +74,7 @@ func main() {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-API-Key, X-Client-ID")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 
 		if c.Request.Method == "OPTIONS" {
@@ -125,6 +125,10 @@ func main() {
 
 		// Internal Token Validation (called by cctv-api gateway / other microservices)
 		authGroup.POST("/validate-token", handleValidateToken)
+
+		// Client API Key Verification
+		authGroup.GET("/clients/verify", auth.VerifyClientHandler)
+		authGroup.POST("/clients/verify", auth.VerifyClientHandler)
 	}
 
 	// Protected Auth Endpoints (require active session)
@@ -163,6 +167,14 @@ func main() {
 		protected.PUT("/users/:id", auth.RequirePermission("users:manage"), auth.UpdateUserHandler)
 		protected.POST("/users/:id/reset-password", auth.RequirePermission("users:manage"), auth.ResetUserPasswordHandler)
 		protected.DELETE("/users/:id", auth.RequirePermission("users:manage"), auth.DeleteUserHandler)
+
+		// Client Application Management (OAuth2 / Client ID Governance)
+		protected.GET("/clients", auth.RequirePermission("clients:manage"), auth.ListClientsHandler)
+		protected.POST("/clients", auth.RequirePermission("clients:manage"), auth.CreateClientHandler)
+		protected.PUT("/clients/:id", auth.RequirePermission("clients:manage"), auth.UpdateClientHandler)
+		protected.PUT("/clients/:id/toggle", auth.RequirePermission("clients:manage"), auth.ToggleClientHandler)
+		protected.POST("/clients/:id/rotate-key", auth.RequirePermission("clients:manage"), auth.RotateClientKeyHandler)
+		protected.DELETE("/clients/:id", auth.RequirePermission("clients:manage"), auth.DeleteClientHandler)
 	}
 
 	log.Printf("Auth Service listening on :%s", port)
