@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"cctv/shared/pkg/models"
@@ -13,6 +14,19 @@ import (
 )
 
 var httpClient = &http.Client{Timeout: 5 * time.Second}
+
+func isAllowedWhilePasswordChangeRequired(path string) bool {
+	path = strings.TrimSuffix(path, "/")
+	switch path {
+	case "/auth/me", "/api/auth/me",
+		"/auth/password", "/api/auth/password",
+		"/auth/logout", "/api/auth/logout",
+		"/auth/refresh", "/api/auth/refresh":
+		return true
+	default:
+		return false
+	}
+}
 
 func Middleware() gin.HandlerFunc {
 	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
@@ -44,6 +58,13 @@ func Middleware() gin.HandlerFunc {
 				User  *models.User `json:"user"`
 			}
 			if err := json.NewDecoder(resp.Body).Decode(&valResp); err == nil && valResp.Valid && valResp.User != nil {
+				if valResp.User.MustChangePassword && !isAllowedWhilePasswordChangeRequired(c.Request.URL.Path) {
+					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+						"error": "Password change required",
+						"code":  "MUST_CHANGE_PASSWORD",
+					})
+					return
+				}
 				c.Set("user", valResp.User)
 				c.Next()
 				return
@@ -54,6 +75,14 @@ func Middleware() gin.HandlerFunc {
 		user, err := GetUserBySession(c.Request.Context(), cookie)
 		if err != nil || !user.IsActive {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		if user.MustChangePassword && !isAllowedWhilePasswordChangeRequired(c.Request.URL.Path) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": "Password change required",
+				"code":  "MUST_CHANGE_PASSWORD",
+			})
 			return
 		}
 

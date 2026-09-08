@@ -59,6 +59,7 @@ type User struct {
 	RoleInfo          *Role              `gorm:"foreignKey:RoleID;references:ID" json:"role_info,omitempty"`
 	Permissions       []string           `gorm:"-" json:"permissions,omitempty"`
 	IsActive          bool               `gorm:"column:is_active;not null;default:true" json:"is_active"`
+	MustChangePassword bool              `gorm:"column:must_change_password;not null;default:false" json:"must_change_password"`
 	Locale            Locale             `gorm:"column:locale;type:varchar(16);not null;default:'vi'" json:"locale,omitempty"`
 	Timezone          string             `gorm:"column:timezone;type:varchar(64);not null;default:'Asia/Ho_Chi_Minh'" json:"timezone,omitempty"`
 	CreatedAt         time.Time          `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`

@@ -43,6 +43,8 @@ export const Users: React.FC = () => {
   const [formPassword, setFormPassword] = useState('');
   const [formRoleId, setFormRoleId] = useState<string>('');
   const [formIsActive, setFormIsActive] = useState(true);
+  const [formMustChangePassword, setFormMustChangePassword] = useState(true);
+  const [resetMustChangePassword, setResetMustChangePassword] = useState(true);
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
   // Load users and roles
@@ -75,6 +77,7 @@ export const Users: React.FC = () => {
     setFormPassword('');
     setFormRoleId(roles.find((r) => r.code === 'viewer')?.id || roles[0]?.id || '');
     setFormIsActive(true);
+    setFormMustChangePassword(true);
     setUserModalOpen(true);
   };
 
@@ -84,6 +87,7 @@ export const Users: React.FC = () => {
     setFormFullName(u.full_name || '');
     setFormRoleId(u.role_id || '');
     setFormIsActive(u.is_active);
+    setFormMustChangePassword(u.must_change_password ?? false);
     setUserModalOpen(true);
   };
 
@@ -96,6 +100,7 @@ export const Users: React.FC = () => {
           full_name: formFullName,
           role_id: formRoleId || undefined,
           is_active: formIsActive,
+          must_change_password: formMustChangePassword,
         });
         toast.success(t('access.saveSuccess'));
       } else {
@@ -105,6 +110,7 @@ export const Users: React.FC = () => {
           password: formPassword,
           role_id: formRoleId || undefined,
           is_active: formIsActive,
+          must_change_password: formMustChangePassword,
         });
         toast.success(t('access.saveSuccess'));
       }
@@ -122,7 +128,7 @@ export const Users: React.FC = () => {
     e.preventDefault();
     if (!userToResetPassword) return;
     try {
-      await api.users.resetPassword(userToResetPassword.id, newPassword);
+      await api.users.resetPassword(userToResetPassword.id, newPassword, resetMustChangePassword);
       toast.success(t('access.resetPasswordSuccess'));
       setResetPasswordModalOpen(false);
       setNewPassword('');
@@ -292,17 +298,25 @@ export const Users: React.FC = () => {
                               {getRoleBadge(roleObj?.code || u.role, roleObj?.name)}
                             </td>
                             <td className="px-5 py-3.5">
-                              {u.is_active ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                                  <CheckCircle2 size={12} />
-                                  {t('access.active')}
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
-                                  <Ban size={12} />
-                                  {t('access.inactive')}
-                                </span>
-                              )}
+                              <div className="flex flex-col gap-1 items-start">
+                                {u.is_active ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                    <CheckCircle2 size={12} />
+                                    {t('access.active')}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                                    <Ban size={12} />
+                                    {t('access.inactive')}
+                                  </span>
+                                )}
+                                {u.must_change_password && (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200" title={t('access.requirePasswordChangeDesc')}>
+                                    <KeyRound size={10} />
+                                    {t('access.mustChangePasswordBadge')}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-5 py-3.5 text-xs text-slate-500">
                               {u.last_login_at
@@ -436,17 +450,32 @@ export const Users: React.FC = () => {
                 </select>
               </div>
 
-              <div className="pt-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="userActive"
-                  checked={formIsActive}
-                  onChange={(e) => setFormIsActive(e.target.checked)}
-                  className="w-4 h-4 text-orange-600 border-slate-300 rounded-sm focus:ring-orange-500"
-                />
-                <label htmlFor="userActive" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
-                  {t('access.activeAccount')}
-                </label>
+              <div className="pt-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="userActive"
+                    checked={formIsActive}
+                    onChange={(e) => setFormIsActive(e.target.checked)}
+                    className="w-4 h-4 text-orange-600 border-slate-300 rounded-sm focus:ring-orange-500"
+                  />
+                  <label htmlFor="userActive" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
+                    {t('access.activeAccount')}
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="userMustChangePassword"
+                    checked={formMustChangePassword}
+                    onChange={(e) => setFormMustChangePassword(e.target.checked)}
+                    className="w-4 h-4 text-orange-600 border-slate-300 rounded-sm focus:ring-orange-500"
+                  />
+                  <label htmlFor="userMustChangePassword" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
+                    {t('access.requirePasswordChangeOnLogin')}
+                  </label>
+                </div>
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
@@ -505,6 +534,19 @@ export const Users: React.FC = () => {
                   placeholder={t('access.min6Chars')}
                   className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
+              </div>
+
+              <div className="pt-1 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="resetMustChangePassword"
+                  checked={resetMustChangePassword}
+                  onChange={(e) => setResetMustChangePassword(e.target.checked)}
+                  className="w-4 h-4 text-orange-600 border-slate-300 rounded-sm focus:ring-orange-500"
+                />
+                <label htmlFor="resetMustChangePassword" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
+                  {t('access.requirePasswordChangeOnLogin')}
+                </label>
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">

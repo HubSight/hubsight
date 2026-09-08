@@ -196,11 +196,12 @@ func ListUsersHandler(c *gin.Context) {
 }
 
 type CreateUserRequest struct {
-	Username string  `json:"username" binding:"required"`
-	FullName string  `json:"full_name"`
-	Password string  `json:"password" binding:"required"`
-	RoleID   *string `json:"role_id"`
-	IsActive *bool   `json:"is_active"`
+	Username           string  `json:"username" binding:"required"`
+	FullName           string  `json:"full_name"`
+	Password           string  `json:"password" binding:"required"`
+	RoleID             *string `json:"role_id"`
+	IsActive           *bool   `json:"is_active"`
+	MustChangePassword *bool   `json:"must_change_password"`
 }
 
 // CreateUserHandler creates a new user account and links their initial role.
@@ -240,6 +241,11 @@ func CreateUserHandler(c *gin.Context) {
 		isActive = *req.IsActive
 	}
 
+	mustChange := true
+	if req.MustChangePassword != nil {
+		mustChange = *req.MustChangePassword
+	}
+
 	legacyRole := models.RoleViewer
 	if req.RoleID != nil && *req.RoleID != "" {
 		var role models.Role
@@ -251,12 +257,13 @@ func CreateUserHandler(c *gin.Context) {
 	}
 
 	newUser := models.User{
-		Username:     username,
-		FullName:     strings.TrimSpace(req.FullName),
-		PasswordHash: hash,
-		Role:         legacyRole,
-		RoleID:       req.RoleID,
-		IsActive:     isActive,
+		Username:           username,
+		FullName:           strings.TrimSpace(req.FullName),
+		PasswordHash:       hash,
+		Role:               legacyRole,
+		RoleID:             req.RoleID,
+		IsActive:           isActive,
+		MustChangePassword: mustChange,
 	}
 
 	if err := database.DB.WithContext(ctx).Create(&newUser).Error; err != nil {
@@ -272,9 +279,10 @@ func CreateUserHandler(c *gin.Context) {
 }
 
 type UpdateUserRequest struct {
-	FullName *string `json:"full_name"`
-	RoleID   *string `json:"role_id"`
-	IsActive *bool   `json:"is_active"`
+	FullName           *string `json:"full_name"`
+	RoleID             *string `json:"role_id"`
+	IsActive           *bool   `json:"is_active"`
+	MustChangePassword *bool   `json:"must_change_password"`
 }
 
 // UpdateUserHandler updates user account details, assigned role, or status.
@@ -318,6 +326,9 @@ func UpdateUserHandler(c *gin.Context) {
 	if req.IsActive != nil {
 		updates["is_active"] = *req.IsActive
 	}
+	if req.MustChangePassword != nil {
+		updates["must_change_password"] = *req.MustChangePassword
+	}
 	if req.RoleID != nil {
 		updates["role_id"] = *req.RoleID
 		// Sync legacy role column
@@ -358,7 +369,8 @@ func UpdateUserHandler(c *gin.Context) {
 }
 
 type ResetPasswordRequest struct {
-	NewPassword string `json:"new_password" binding:"required"`
+	NewPassword        string `json:"new_password" binding:"required"`
+	MustChangePassword *bool  `json:"must_change_password"`
 }
 
 // ResetUserPasswordHandler allows administrators to reset a user's password.
@@ -383,7 +395,15 @@ func ResetUserPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	if err := database.DB.WithContext(ctx).Model(&user).Update("password_hash", hash).Error; err != nil {
+	mustChange := true
+	if req.MustChangePassword != nil {
+		mustChange = *req.MustChangePassword
+	}
+
+	if err := database.DB.WithContext(ctx).Model(&user).Updates(map[string]any{
+		"password_hash":        hash,
+		"must_change_password": mustChange,
+	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset password"})
 		return
 	}

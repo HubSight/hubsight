@@ -45,6 +45,7 @@ export interface User {
   locale?: Locale;
   timezone?: string;
   is_active: boolean;
+  must_change_password?: boolean;
   two_factor_enabled?: boolean;
   push_preferences?: Record<string, boolean>;
   created_at?: string;
@@ -58,12 +59,19 @@ export interface CreateUserRequest {
   password: string;
   role_id?: string;
   is_active?: boolean;
+  must_change_password?: boolean;
 }
 
 export interface UpdateUserRequest {
   full_name?: string;
   role_id?: string;
   is_active?: boolean;
+  must_change_password?: boolean;
+}
+
+export interface ResetPasswordRequest {
+  new_password: string;
+  must_change_password?: boolean;
 }
 
 export interface CreateRoleRequest {
@@ -90,6 +98,7 @@ export interface LoginResponse {
   message?: string;
   status?: string;
   pre_auth_token?: string;
+  must_change_password?: boolean;
 }
 
 // ── 2FA & MFA Types ─────────────────────────────────────────────────────────

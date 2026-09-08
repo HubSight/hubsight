@@ -18,6 +18,7 @@ import Users from './pages/Users';
 import Roles from './pages/Roles';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
+import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
@@ -26,6 +27,10 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     return <AppLoadingSkeleton />;
   }
   if (!user) return <Navigate to="/login" replace />;
+
+  if (user.must_change_password) {
+    return <ForceChangePasswordModal />;
+  }
 
   return <>{children}</>;
 };

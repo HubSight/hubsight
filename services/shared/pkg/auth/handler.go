@@ -35,6 +35,10 @@ func LoginHandler(c *gin.Context) {
 	c.SetCookie("session", token, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
 
 	resp := gin.H{"status": "ok"}
+	if session != nil && session.User != nil {
+		resp["user"] = session.User
+		resp["must_change_password"] = session.User.MustChangePassword
+	}
 	if req.IsPWA && refreshToken != "" {
 		resp["refresh_token"] = refreshToken
 	}
@@ -276,6 +280,10 @@ func Verify2FAHandler(c *gin.Context) {
 	c.SetCookie("session", token, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
 
 	resp := gin.H{"status": "ok"}
+	if session != nil && session.User != nil {
+		resp["user"] = session.User
+		resp["must_change_password"] = session.User.MustChangePassword
+	}
 	if req.IsPWA && refreshToken != "" {
 		resp["refresh_token"] = refreshToken
 	}
@@ -485,6 +493,10 @@ func PasskeyLoginVerifyHandler(c *gin.Context) {
 	c.SetCookie("session", token, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
 
 	resp := gin.H{"status": "ok"}
+	if session != nil && session.User != nil {
+		resp["user"] = session.User
+		resp["must_change_password"] = session.User.MustChangePassword
+	}
 	if req.IsPWA && refreshToken != "" {
 		resp["refresh_token"] = refreshToken
 	}

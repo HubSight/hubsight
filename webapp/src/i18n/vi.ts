@@ -691,6 +691,22 @@ const vi = {
   'access.roleAdmin': 'Quản trị viên',
   'access.roleOperator': 'Điều hành viên',
   'access.roleViewer': 'Người xem',
+  'access.requirePasswordChangeOnLogin': 'Yêu cầu đổi mật khẩu ở lần đăng nhập tiếp theo',
+  'access.requirePasswordChangeDesc': 'Người dùng sẽ bắt buộc phải thiết lập mật khẩu mới ngay sau khi đăng nhập.',
+  'access.mustChangePasswordBadge': 'Cần đổi mật khẩu',
+
+  // === Force Change Password Screen ===
+  'forcePassword.title': 'Yêu cầu đổi mật khẩu',
+  'forcePassword.subtitle': 'Quản trị viên đã yêu cầu bạn đổi mật khẩu trước khi tiếp tục truy cập hệ thống.',
+  'forcePassword.currentPassword': 'Mật khẩu hiện tại (mật khẩu tạm)',
+  'forcePassword.newPassword': 'Mật khẩu mới',
+  'forcePassword.confirmPassword': 'Xác nhận mật khẩu mới',
+  'forcePassword.submit': 'Đổi mật khẩu & Tiếp tục',
+  'forcePassword.logout': 'Đăng xuất',
+  'forcePassword.success': 'Đổi mật khẩu thành công! Hệ thống đã được mở khóa.',
+  'forcePassword.errMismatch': 'Xác nhận mật khẩu mới không khớp.',
+  'forcePassword.errShort': 'Mật khẩu mới phải có ít nhất 6 ký tự.',
+  'forcePassword.errSame': 'Mật khẩu mới không được trùng với mật khẩu hiện tại.',
 
   // === Permissions translations ===
   'perm.cameras:view.name': 'Xem Camera & Live',

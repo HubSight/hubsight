@@ -100,3 +100,38 @@ func TestDeleteUserHandler_PermanentlyDisabled(t *testing.T) {
 		t.Fatalf("Expected status 400 when attempting to delete user, got %d", w.Code)
 	}
 }
+
+func TestIsAllowedWhilePasswordChangeRequired(t *testing.T) {
+	allowed := []string{
+		"/auth/me",
+		"/auth/me/",
+		"/api/auth/me",
+		"/auth/password",
+		"/api/auth/password",
+		"/auth/logout",
+		"/api/auth/logout",
+		"/auth/refresh",
+		"/api/auth/refresh",
+	}
+	for _, p := range allowed {
+		if !isAllowedWhilePasswordChangeRequired(p) {
+			t.Errorf("Expected path %s to be allowed while password change required", p)
+		}
+	}
+
+	blocked := []string{
+		"/cameras",
+		"/api/cameras",
+		"/devices",
+		"/members",
+		"/api/members",
+		"/auth/users",
+		"/auth/roles",
+		"/pool",
+	}
+	for _, p := range blocked {
+		if isAllowedWhilePasswordChangeRequired(p) {
+			t.Errorf("Expected path %s to be blocked while password change required", p)
+		}
+	}
+}

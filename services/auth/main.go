@@ -21,6 +21,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && handleCLI(os.Args[1:]) {
+		return
+	}
+
 	log.Println("Starting Standalone CCTV Auth Service (SSO/OIDC Ready)...")
 
 	cfg := config.Load()
@@ -172,12 +176,13 @@ type ValidateTokenRequest struct {
 }
 
 type ValidateTokenResponse struct {
-	Valid       bool         `json:"valid"`
-	User        *models.User `json:"user,omitempty"`
-	Role        string       `json:"role,omitempty"`
-	Username    string       `json:"username,omitempty"`
-	FullName    string       `json:"full_name,omitempty"`
-	Permissions []string     `json:"permissions,omitempty"`
+	Valid              bool         `json:"valid"`
+	User               *models.User `json:"user,omitempty"`
+	Role               string       `json:"role,omitempty"`
+	Username           string       `json:"username,omitempty"`
+	FullName           string       `json:"full_name,omitempty"`
+	Permissions        []string     `json:"permissions,omitempty"`
+	MustChangePassword bool         `json:"must_change_password"`
 }
 
 func handleValidateToken(c *gin.Context) {
@@ -206,12 +211,13 @@ func handleValidateToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ValidateTokenResponse{
-		Valid:       true,
-		User:        u,
-		Role:        string(u.Role),
-		Username:    u.Username,
-		FullName:    u.FullName,
-		Permissions: u.Permissions,
+		Valid:              true,
+		User:               u,
+		Role:               string(u.Role),
+		Username:           u.Username,
+		FullName:           u.FullName,
+		Permissions:        u.Permissions,
+		MustChangePassword: u.MustChangePassword,
 	})
 }
 

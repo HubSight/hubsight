@@ -15,7 +15,7 @@ export interface UsersResource {
   create(body: CreateUserRequest): Promise<User>;
   update(id: string, body: UpdateUserRequest): Promise<User>;
   block(id: string, blocked: boolean): Promise<User>;
-  resetPassword(id: string, newPassword: string): Promise<void>;
+  resetPassword(id: string, newPassword: string, mustChangePassword?: boolean): Promise<void>;
   delete(id: string): Promise<void>;
 }
 
@@ -59,9 +59,12 @@ export async function blockUser(client: HttpLike, id: string, blocked: boolean):
   return http.put<User>(`/auth/users/${id}`, { is_active: !blocked });
 }
 
-export async function resetUserPassword(client: HttpLike, id: string, newPassword: string): Promise<void> {
+export async function resetUserPassword(client: HttpLike, id: string, newPassword: string, mustChangePassword = true): Promise<void> {
   const http = resolveHttpClient(client);
-  await http.post(`/auth/users/${id}/reset-password`, { new_password: newPassword });
+  await http.post(`/auth/users/${id}/reset-password`, {
+    new_password: newPassword,
+    must_change_password: mustChangePassword,
+  });
 }
 
 export async function deleteUser(client: HttpLike, id: string): Promise<void> {
@@ -104,7 +107,7 @@ export function createUsersResource(http: InternalHttpClient): UsersResource {
     create: (body) => createUser(http, body),
     update: (id, body) => updateUser(http, id, body),
     block: (id, blocked) => blockUser(http, id, blocked),
-    resetPassword: (id, newPassword) => resetUserPassword(http, id, newPassword),
+    resetPassword: (id, newPassword, mustChangePassword) => resetUserPassword(http, id, newPassword, mustChangePassword),
     delete: (id) => deleteUser(http, id),
   };
 }

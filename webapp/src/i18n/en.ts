@@ -693,6 +693,22 @@ const en: Record<TranslationKey, string> = {
   'access.roleAdmin': 'Administrator',
   'access.roleOperator': 'Operator',
   'access.roleViewer': 'Viewer',
+  'access.requirePasswordChangeOnLogin': 'Require password change on next login',
+  'access.requirePasswordChangeDesc': 'The user will be required to set a new password upon logging in.',
+  'access.mustChangePasswordBadge': 'Password change pending',
+
+  // === Force Change Password Screen ===
+  'forcePassword.title': 'Password Change Required',
+  'forcePassword.subtitle': 'An administrator requires you to change your password before continuing to use the system.',
+  'forcePassword.currentPassword': 'Current (temporary) password',
+  'forcePassword.newPassword': 'New password',
+  'forcePassword.confirmPassword': 'Confirm new password',
+  'forcePassword.submit': 'Change Password & Continue',
+  'forcePassword.logout': 'Log Out',
+  'forcePassword.success': 'Password changed successfully! System unlocked.',
+  'forcePassword.errMismatch': 'New passwords do not match.',
+  'forcePassword.errShort': 'New password must be at least 6 characters long.',
+  'forcePassword.errSame': 'New password cannot be the same as current password.',
 
   // === Permissions translations ===
   'perm.cameras:view.name': 'View Cameras & Live',

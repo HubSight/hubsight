@@ -25,6 +25,11 @@ const (
 	saltLen  = 16
 )
 
+// HashPassword hashes a plain-text password using Argon2id with cryptographically random salt.
+func HashPassword(password string) (string, error) {
+	return hashPassword(password)
+}
+
 func hashPassword(password string) (string, error) {
 	salt := make([]byte, saltLen)
 	if _, err := rand.Read(salt); err != nil {
@@ -95,6 +100,12 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool) (*mode
 
 	now := time.Now()
 	_ = database.DB.WithContext(ctx).Model(&models.User{ID: userID}).Update("last_login_at", &now).Error
+
+	var u models.User
+	if err := database.DB.WithContext(ctx).Preload("RoleInfo.Permissions").First(&u, "id = ?", userID).Error; err == nil {
+		LoadUserPermissions(ctx, &u)
+		sess.User = &u
+	}
 
 	return &sess, token, refreshToken, nil
 }
@@ -288,9 +299,14 @@ func ChangePassword(ctx context.Context, u *models.User, oldPassword, newPasswor
 		return err
 	}
 
-	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("password_hash", hash).Error; err != nil {
+	updates := map[string]any{
+		"password_hash":        hash,
+		"must_change_password": false,
+	}
+	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Updates(updates).Error; err != nil {
 		return err
 	}
 	u.PasswordHash = hash
+	u.MustChangePassword = false
 	return nil
 }
