@@ -12,6 +12,8 @@ export interface CreateSocketClientOptions {
   withCredentials?: boolean;
   autoConnect?: boolean;
   token?: string | (() => string | undefined | null);
+  /** Client API Key or Client ID required by relay gateway */
+  apiKey?: string;
 }
 
 export function createInternalSocketClient(
@@ -22,6 +24,7 @@ export function createInternalSocketClient(
     withCredentials = true,
     autoConnect = true,
     token,
+    apiKey = 'hs_web_client_core',
   } = options;
 
   const origin = resolveSocketOrigin(baseUrl);
@@ -48,7 +51,17 @@ export function createInternalSocketClient(
     transports: ['websocket'],
     withCredentials,
     autoConnect,
-    ...(initialToken ? { auth: { token: initialToken } } : {}),
+    auth: {
+      ...(initialToken ? { token: initialToken } : {}),
+      ...(apiKey ? { apiKey, clientId: apiKey } : {}),
+    },
+    query: {
+      ...(apiKey ? { apiKey, client_id: apiKey } : {}),
+      ...(initialToken ? { token: initialToken } : {}),
+    },
+    extraHeaders: {
+      ...(apiKey ? { 'X-API-Key': apiKey, 'X-Client-ID': apiKey } : {}),
+    },
   });
 
   socket.on('connect', () => setState('connected'));
@@ -56,6 +69,7 @@ export function createInternalSocketClient(
     setState(reason === 'io client disconnect' ? 'disconnected' : 'reconnecting');
   });
   socket.on('connect_error', () => setState('error'));
+  socket.on('auth_error', () => setState('error'));
 
   return {
     connect(): void {

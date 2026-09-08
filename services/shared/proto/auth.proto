@@ -20,6 +20,27 @@ message VerifyTokenResponse {
   UserData user = 2;
 }
 
+message VerifyClientRequest {
+  string api_key = 1;
+}
+
+message ClientData {
+  string id = 1;
+  string client_id = 2;
+  string name = 3;
+  string platform = 4;
+  bool is_active = 5;
+  bool is_system = 6;
+}
+
+message VerifyClientResponse {
+  bool valid = 1;
+  ClientData client = 2;
+  string error = 3;
+}
+
 service AuthService {
   rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+  rpc VerifyClient(VerifyClientRequest) returns (VerifyClientResponse);
 }
+

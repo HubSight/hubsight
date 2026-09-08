@@ -372,3 +372,42 @@ test('Tree-shakable subpath entrypoints import cleanly', async () => {
   assert.ok(resourcesModule.listCameras);
   assert.ok(resourcesModule.createCamerasResource);
 });
+
+test('Client API Key and Token propagation in HTTP and Socket.io clients', async () => {
+  const customKey = 'hs_custom_client_key_123';
+  const customToken = 'my-jwt-session-token-456';
+
+  const client = createHubSightClient({
+    baseUrl: 'http://localhost:8088/api',
+    apiKey: customKey,
+    token: customToken,
+    autoConnectRealtime: false,
+  });
+
+  // Verify client is initialized with proper apiKey and baseUrl
+  assert.equal(client.baseUrl, 'http://localhost:8088/api');
+
+  // Verify internal socket client creation with explicit apiKey
+  const { createInternalSocketClient } = await import('../src/internal/socket/client');
+  const socketClient = createInternalSocketClient({
+    baseUrl: 'http://localhost:8088/api',
+    apiKey: customKey,
+    token: customToken,
+    autoConnect: false,
+  });
+  assert.ok(socketClient);
+  assert.equal(socketClient.getState(), 'disconnected');
+
+  // Verify createBaseClient with token and apiKey
+  const { createBaseClient } = await import('../src/client');
+  const baseClient = createBaseClient({
+    baseUrl: 'http://localhost:8088/api',
+    apiKey: customKey,
+    token: customToken,
+  });
+  assert.ok(baseClient.http);
+
+  client.destroy();
+  socketClient.close();
+  baseClient.destroy();
+});

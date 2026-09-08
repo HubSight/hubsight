@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -120,8 +122,112 @@ func main() {
 	r.Any("/relay", forwardRelay)
 	r.Any("/relay/*action", forwardRelay)
 
+	m2mSecret := os.Getenv("M2M_SECRET")
+	if m2mSecret == "" {
+		m2mSecret = "cctv-internal-m2m-secret"
+	}
+	gatewayHttpClient := &http.Client{Timeout: 5 * time.Second}
+
 	// 2. WebRTC Signaling / WHEP / Stream Proxy (/webrtc and /webrtc/* -> webrtc-service:1984/*)
 	forwardWebRTC := func(c *gin.Context) {
+		// Bypass if valid M2M internal service key is present
+		serviceKey := c.GetHeader("X-Service-Key")
+		if serviceKey == "" {
+			serviceKey = c.GetHeader("X-Internal-Key")
+		}
+		if serviceKey != "" && serviceKey == m2mSecret {
+			c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/webrtc")
+			if c.Request.URL.Path == "" {
+				c.Request.URL.Path = "/"
+			}
+			c.Request.URL.RawPath = ""
+			c.Request.Host = webrtcTarget.Host
+			webrtcProxy.ServeHTTP(c.Writer, c.Request)
+			return
+		}
+
+		// 1. Verify Client API Key (or Client ID)
+		apiKey := c.GetHeader("X-API-Key")
+		if apiKey == "" {
+			apiKey = c.GetHeader("X-Client-ID")
+		}
+		if apiKey == "" {
+			apiKey = c.Query("api_key")
+		}
+		if apiKey == "" {
+			apiKey = c.Query("client_id")
+		}
+
+		if apiKey == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Missing client API key or client ID",
+				"code":  "CLIENT_KEY_REQUIRED",
+			})
+			return
+		}
+
+		keyReqBody, _ := json.Marshal(map[string]string{"api_key": apiKey})
+		keyResp, err := gatewayHttpClient.Post(authServiceURL+"/auth/clients/verify", "application/json", bytes.NewBuffer(keyReqBody))
+		if err != nil || keyResp.StatusCode != http.StatusOK {
+			if keyResp != nil {
+				keyResp.Body.Close()
+			}
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": "Invalid or deactivated client API key",
+				"code":  "INVALID_CLIENT_KEY",
+			})
+			return
+		}
+		keyResp.Body.Close()
+
+		// 2. Verify User Authentication Token
+		token := ""
+		authHeader := c.GetHeader("Authorization")
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		} else if authHeader != "" {
+			token = authHeader
+		} else if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
+			token = cookie
+		} else if qToken := c.Query("token"); qToken != "" {
+			token = qToken
+		}
+
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Authentication required. Missing auth token",
+				"code":  "AUTH_REQUIRED",
+			})
+			return
+		}
+
+		tokReqBody, _ := json.Marshal(map[string]string{"token": token})
+		tokResp, err := gatewayHttpClient.Post(authServiceURL+"/auth/validate-token", "application/json", bytes.NewBuffer(tokReqBody))
+		if err != nil || tokResp.StatusCode != http.StatusOK {
+			if tokResp != nil {
+				tokResp.Body.Close()
+			}
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized: Session invalid or expired",
+				"code":  "INVALID_TOKEN",
+			})
+			return
+		}
+
+		var valResp struct {
+			Valid bool `json:"valid"`
+		}
+		if err := json.NewDecoder(tokResp.Body).Decode(&valResp); err != nil || !valResp.Valid {
+			tokResp.Body.Close()
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized: Session invalid or expired",
+				"code":  "INVALID_TOKEN",
+			})
+			return
+		}
+		tokResp.Body.Close()
+
+		// Both authentications passed -> forward to webrtc-service
 		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/webrtc")
 		if c.Request.URL.Path == "" {
 			c.Request.URL.Path = "/"

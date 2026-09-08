@@ -45,6 +45,8 @@ export interface BaseClientOptions {
   timeoutMs?: number;
   /** Client API Key for application authorization (default: 'hs_web_client_core') */
   apiKey?: string;
+  /** Optional bearer token for non-cookie environments */
+  token?: string | (() => string | undefined | null);
 }
 
 export interface BaseClient {
@@ -57,8 +59,6 @@ export interface BaseClient {
 export interface HubSightClientOptions extends BaseClientOptions {
   /** Automatically connect realtime Socket.IO on client creation (default: true) */
   autoConnectRealtime?: boolean;
-  /** Optional bearer token for non-cookie environments */
-  token?: string | (() => string | undefined | null);
 }
 
 export interface HubSightClient extends BaseClient {
@@ -106,6 +106,7 @@ export function createBaseClient(options: BaseClientOptions = {}): BaseClient {
     withCredentials,
     timeoutMs,
     apiKey: options.apiKey,
+    token: options.token,
     onRefreshAuth: async () => {
       if (!authManagerRef) return false;
       return authManagerRef.refreshSession();
@@ -144,6 +145,7 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
   const {
     autoConnectRealtime = true,
     token,
+    apiKey = options.apiKey || 'hs_web_client_core',
   } = options;
 
   let realtimeRef: RealtimeManager | null = null;
@@ -154,6 +156,7 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
         withCredentials: options.withCredentials ?? true,
         autoConnect: autoConnectRealtime,
         token,
+        apiKey,
       });
       realtimeRef = createRealtimeManager({ socket: socketClient });
 

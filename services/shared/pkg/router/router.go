@@ -163,15 +163,19 @@ func New() *gin.Engine {
 			protected.GET("/notifications/vapid-key", notification.GetVapidPublicKeyHandler)
 			protected.POST("/notifications/test", notification.TestPushHandler)
 
-			// Live streaming endpoints (WebRTC signaling)
-			protected.POST("/live/:id/webrtc", live.WebRTCHandler)
-			protected.GET("/live-status/:id", live.LiveStatusHandler)
-			protected.POST("/live/:id/release", live.PoolReleaseHandler)
-			protected.POST("/live/:id/heartbeat", live.PoolHeartbeatHandler)
-			// Optional live-viewer heartbeat (NVR monitor fallback only).
-			// Does NOT start/stop vision-service — CV + logs + push run 24/7 when enable_ai.
-			protected.POST("/live/:id/ai/heartbeat", live.AIHeartbeatHandler)
-			protected.POST("/live/:id/ai/stop", live.AIStopHandler)
+			// Live streaming endpoints (WebRTC signaling - requires both user token & client key)
+			liveGroup := protected.Group("")
+			liveGroup.Use(auth.RequireClientKey())
+			{
+				liveGroup.POST("/live/:id/webrtc", live.WebRTCHandler)
+				liveGroup.GET("/live-status/:id", live.LiveStatusHandler)
+				liveGroup.POST("/live/:id/release", live.PoolReleaseHandler)
+				liveGroup.POST("/live/:id/heartbeat", live.PoolHeartbeatHandler)
+				// Optional live-viewer heartbeat (NVR monitor fallback only).
+				// Does NOT start/stop vision-service — CV + logs + push run 24/7 when enable_ai.
+				liveGroup.POST("/live/:id/ai/heartbeat", live.AIHeartbeatHandler)
+				liveGroup.POST("/live/:id/ai/stop", live.AIStopHandler)
+			}
 		}
 	}
 

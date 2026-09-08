@@ -49,7 +49,7 @@ func GenerateClientId(platform string) string {
 	return prefix + nanoid.New()
 }
 
-// ValidateClientApiKey verifies that an API key exists and is currently active.
+// ValidateClientApiKey verifies that an API key (or Client ID) exists and is currently active.
 // Automatically updates last_used_at with a 60-second debounce.
 func ValidateClientApiKey(apiKey string) (*models.ApiClient, error) {
 	apiKey = strings.TrimSpace(apiKey)
@@ -58,7 +58,7 @@ func ValidateClientApiKey(apiKey string) (*models.ApiClient, error) {
 	}
 
 	var client models.ApiClient
-	if err := database.DB.Where("api_key = ?", apiKey).First(&client).Error; err != nil {
+	if err := database.DB.Where("api_key = ? OR client_id = ?", apiKey, apiKey).First(&client).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("client not found")
 		}
@@ -79,7 +79,7 @@ func ValidateClientApiKey(apiKey string) (*models.ApiClient, error) {
 	return &client, nil
 }
 
-// RequireClientKey middleware ensures requests include a valid, active X-API-Key.
+// RequireClientKey middleware ensures requests include a valid, active X-API-Key or X-Client-ID.
 // Allows requests with X-Service-Key for internal microservice calls.
 func RequireClientKey() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -91,12 +91,18 @@ func RequireClientKey() gin.HandlerFunc {
 
 		apiKey := c.GetHeader("X-API-Key")
 		if apiKey == "" {
+			apiKey = c.GetHeader("X-Client-ID")
+		}
+		if apiKey == "" {
 			apiKey = c.Query("api_key")
+		}
+		if apiKey == "" {
+			apiKey = c.Query("client_id")
 		}
 
 		if apiKey == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Missing X-API-Key header",
+				"error": "Missing client identification (X-API-Key or X-Client-ID header)",
 				"code":  "CLIENT_KEY_REQUIRED",
 			})
 			return
@@ -367,19 +373,36 @@ func DeleteClientHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// VerifyClientHandler checks if a given API key is valid.
+// VerifyClientHandler checks if a given API key or Client ID is valid.
 func VerifyClientHandler(c *gin.Context) {
 	apiKey := c.GetHeader("X-API-Key")
 	if apiKey == "" {
+		apiKey = c.GetHeader("X-Client-ID")
+	}
+	if apiKey == "" {
 		apiKey = c.Query("api_key")
+	}
+	if apiKey == "" {
+		apiKey = c.Query("client_id")
 	}
 
 	if apiKey == "" {
 		var req struct {
-			APIKey string `json:"api_key"`
+			APIKey   string `json:"api_key"`
+			ClientID string `json:"client_id"`
+			ApiKey   string `json:"apiKey"`
+			ClientId string `json:"clientId"`
 		}
 		if err := c.ShouldBindJSON(&req); err == nil {
-			apiKey = req.APIKey
+			if req.APIKey != "" {
+				apiKey = req.APIKey
+			} else if req.ApiKey != "" {
+				apiKey = req.ApiKey
+			} else if req.ClientID != "" {
+				apiKey = req.ClientID
+			} else if req.ClientId != "" {
+				apiKey = req.ClientId
+			}
 		}
 	}
 

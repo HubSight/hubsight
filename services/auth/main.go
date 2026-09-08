@@ -259,3 +259,30 @@ func (s *grpcAuthServer) VerifyToken(ctx context.Context, req *pb.VerifyTokenReq
 		},
 	}, nil
 }
+
+func (s *grpcAuthServer) VerifyClient(ctx context.Context, req *pb.VerifyClientRequest) (*pb.VerifyClientResponse, error) {
+	if req.ApiKey == "" {
+		return &pb.VerifyClientResponse{Valid: false, Error: "Missing API key"}, nil
+	}
+
+	client, err := auth.ValidateClientApiKey(req.ApiKey)
+	if err != nil || client == nil {
+		errMsg := "Invalid or deactivated client API key"
+		if err != nil {
+			errMsg = err.Error()
+		}
+		return &pb.VerifyClientResponse{Valid: false, Error: errMsg}, nil
+	}
+
+	return &pb.VerifyClientResponse{
+		Valid: true,
+		Client: &pb.ClientData{
+			Id:       client.ID,
+			ClientId: client.ClientID,
+			Name:     client.Name,
+			Platform: client.Platform,
+			IsActive: client.IsActive,
+			IsSystem: client.IsSystem,
+		},
+	}, nil
+}

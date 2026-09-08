@@ -27,6 +27,8 @@ export interface HttpClientOptions {
   timeoutMs?: number;
   /** Client API Key for client application identification (default: 'hs_web_client_core') */
   apiKey?: string;
+  /** Optional bearer token for non-cookie environments */
+  token?: string | (() => string | undefined | null);
   /** Hook called by AuthManager to perform silent token refresh on 401 */
   onRefreshAuth?: () => Promise<boolean>;
   /** Hook called when a session is unrecoverable */
@@ -115,7 +117,18 @@ export function createInternalHttpClient(options: HttpClientOptions): InternalHt
     headers: {
       Accept: 'application/json',
       'X-API-Key': apiKey,
+      'X-Client-ID': apiKey,
     },
+  });
+
+  instance.interceptors.request.use((config) => {
+    if (options.token) {
+      const tok = typeof options.token === 'function' ? options.token() : options.token;
+      if (tok && !config.headers.Authorization) {
+        config.headers.Authorization = tok.startsWith('Bearer ') ? tok : `Bearer ${tok}`;
+      }
+    }
+    return config;
   });
 
   let isRefreshing = false;
