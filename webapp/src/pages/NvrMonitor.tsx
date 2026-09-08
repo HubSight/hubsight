@@ -53,7 +53,23 @@ const NvrMonitor = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
-  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'auto'>('auto');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1150) {
+      return 'table';
+    }
+    return 'cards';
+  });
+  const [isManualToggle, setIsManualToggle] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!isManualToggle) {
+        setViewMode(window.innerWidth >= 1150 ? 'table' : 'cards');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isManualToggle]);
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     type: 'confirm' | 'prompt' | 'alert';
@@ -394,9 +410,12 @@ const NvrMonitor = () => {
             <div className="inline-flex p-0.5 bg-slate-200/70 rounded-lg border border-slate-200/80">
               <button
                 type="button"
-                onClick={() => setViewMode(viewMode === 'cards' ? 'auto' : 'cards')}
+                onClick={() => {
+                  setViewMode('cards');
+                  setIsManualToggle(true);
+                }}
                 className={`p-1.5 rounded-md transition-all cursor-pointer ${viewMode === 'cards'
-                  ? 'bg-white text-orange-600 shadow-xs'
+                  ? 'bg-white text-orange-600 shadow-xs font-semibold'
                   : 'text-slate-500 hover:text-slate-800'
                   }`}
                 title={t('common.viewCards')}
@@ -405,9 +424,12 @@ const NvrMonitor = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode(viewMode === 'table' ? 'auto' : 'table')}
+                onClick={() => {
+                  setViewMode('table');
+                  setIsManualToggle(true);
+                }}
                 className={`p-1.5 rounded-md transition-all cursor-pointer ${viewMode === 'table'
-                  ? 'bg-white text-orange-600 shadow-xs'
+                  ? 'bg-white text-orange-600 shadow-xs font-semibold'
                   : 'text-slate-500 hover:text-slate-800'
                   }`}
                 title={t('common.viewTable')}
@@ -428,8 +450,8 @@ const NvrMonitor = () => {
           </div>
         ) : (
           <>
-            {/* Mobile / Compact Cards View (Default below 1150px) */}
-            <div className={viewMode === 'cards' ? 'block' : viewMode === 'table' ? 'hidden' : 'min-[1150px]:hidden'}>
+            {/* Mobile / Compact Cards View */}
+            <div className={viewMode === 'cards' ? 'block' : 'hidden'}>
               <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {data?.cameras.map((cam) => (
                   <div
@@ -532,8 +554,8 @@ const NvrMonitor = () => {
               </div>
             </div>
 
-            {/* Desktop Table View (Sticky Column & Whitespace-Nowrap, Default >= 1150px) */}
-            <div className={viewMode === 'table' ? 'block overflow-x-auto' : viewMode === 'cards' ? 'hidden' : 'hidden min-[1150px]:block overflow-x-auto'}>
+            {/* Desktop Table View (Sticky Column & Whitespace-Nowrap) */}
+            <div className={viewMode === 'table' ? 'block overflow-x-auto' : 'hidden'}>
               <table className="w-full text-left border-collapse text-sm min-w-[880px]">
                 <thead>
                   <tr className="border-b border-slate-200/80 bg-slate-50/80 text-xs font-semibold text-slate-500">
