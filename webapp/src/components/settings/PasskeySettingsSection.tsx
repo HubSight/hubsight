@@ -85,9 +85,9 @@ export const PasskeySettingsSection: React.FC = () => {
         return;
       }
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Không thể tạo Passkey'));
+        setError(getErrorMessage(err, 'Không thể liên kết thiết bị'));
       } else {
-        setError(err?.message || 'Không thể tạo Passkey trên thiết bị này');
+        setError(err?.message || 'Không thể liên kết trên thiết bị này');
       }
     } finally {
       setRegistering(false);
@@ -110,7 +110,7 @@ export const PasskeySettingsSection: React.FC = () => {
       setEditingId(null);
     } catch (err) {
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Lỗi đổi tên Passkey'));
+        setError(getErrorMessage(err, 'Lỗi đổi tên thiết bị'));
       }
     } finally {
       setActionLoading(false);
@@ -125,7 +125,7 @@ export const PasskeySettingsSection: React.FC = () => {
       setPasskeys((prev) => prev.filter((k) => k.id !== id));
     } catch (err) {
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Lỗi xóa Passkey'));
+        setError(getErrorMessage(err, 'Lỗi xóa thiết bị'));
       }
     } finally {
       setActionLoading(false);

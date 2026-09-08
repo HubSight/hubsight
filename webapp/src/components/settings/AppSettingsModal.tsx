@@ -133,7 +133,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               <div className="hidden sm:block min-w-0">
                 <span className="block font-bold truncate">{t('settings.tabSecurity')}</span>
                 <span className="text-[11px] text-slate-400 font-normal block truncate">
-                  2FA • Passkeys • Khóa
+                  2FA • Sinh trắc học
                 </span>
               </div>
               <span className="sm:hidden font-bold">{t('settings.tabSecurity')}</span>
@@ -206,7 +206,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                     {t('settings.mfaSectionTitle')}
                   </h4>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {t('settings.passkeySubtitle')}
+                    {t('settings.mfaSectionSubtitle')}
                   </p>
                 </div>
 
