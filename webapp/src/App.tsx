@@ -14,7 +14,8 @@ import Devices from './pages/Devices';
 import NvrMonitor from './pages/NvrMonitor';
 import Members from './pages/Members';
 import { PoolMonitor } from './pages/PoolMonitor';
-import { AccessControl } from './pages/AccessControl';
+import Users from './pages/Users';
+import Roles from './pages/Roles';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
 
@@ -102,13 +103,22 @@ const App = () => {
                       }
                     />
                     <Route
-                      path="access"
+                      path="users"
                       element={
                         <AdminRoute>
-                          <AccessControl />
+                          <Users />
                         </AdminRoute>
                       }
                     />
+                    <Route
+                      path="roles"
+                      element={
+                        <AdminRoute>
+                          <Roles />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route path="access" element={<Navigate to="/users" replace />} />
                   </Route>
                 </Routes>
               </BrowserRouter>

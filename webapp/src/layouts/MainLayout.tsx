@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid } from 'lucide-react';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
 import { AppFooter } from '../components/AppFooter';
@@ -197,10 +197,16 @@ const MainLayout = () => {
               {t('nav.poolMonitor')}
             </NavLink>
           )}
-          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
-            <NavLink to="/access" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('*')) && (
+            <NavLink to="/users" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <UserCog size={20} />
+              {t('nav.users')}
+            </NavLink>
+          )}
+          {(user?.role === 'admin' || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
+            <NavLink to="/roles" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <Shield size={20} />
-              {t('nav.accessControl')}
+              {t('nav.roles')}
             </NavLink>
           )}
         </nav>
