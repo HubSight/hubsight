@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, Plus, Search, ShieldCheck, HeartHandshake } from 'lucide-react';
+import { Users, Plus, Search, ShieldCheck, HeartHandshake } from '@/components/icons';
 import { api } from '../api/client';
 import type { MemberItem } from '../types/member';
 import { MemberCard } from '../components/members/MemberCard';

@@ -14,7 +14,7 @@ import {
   ChevronRight,
   Info,
   Layers,
-} from 'lucide-react';
+} from '@/components/icons';
 import type { MemberItem, FaceItem } from '../../types/member';
 import { useTranslation } from '../../i18n';
 import { api } from '../../api/client';

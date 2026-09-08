@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX, Sparkles } from 'lucide-react';
+import { Loader2, AlertCircle, Activity, Volume2, Volume1, VolumeX, Sparkles } from '@/components/icons';
 import {
   useLiveStream,
   useOnVisionPersonEntered,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Check, Search, X } from 'lucide-react';
+import { ChevronDown, Check, Search, X } from '@/components/icons';
 import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
 import { useTranslation } from '../../i18n';
 

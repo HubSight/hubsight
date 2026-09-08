@@ -17,6 +17,8 @@ import { PoolMonitor } from './pages/PoolMonitor';
 import Users from './pages/Users';
 import Roles from './pages/Roles';
 import Clients from './pages/Clients';
+import GoogleServiceAccounts from './pages/GoogleServiceAccounts';
+import AppConfigs from './pages/AppConfigs';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
@@ -44,6 +46,21 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== 'admin') return <Navigate to="/playback" replace />;
+
+  return <>{children}</>;
+};
+
+const PermissionRoute = ({ children, permission }: { children: ReactNode; permission: string | string[] }) => {
+  const { user, isLoading, can } = useAuth();
+
+  if (isLoading) {
+    return <AppLoadingSkeleton />;
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  const hasPerm = Array.isArray(permission)
+    ? permission.some((p) => can(p))
+    : can(permission);
+  if (user.role !== 'admin' && !hasPerm) return <Navigate to="/playback" replace />;
 
   return <>{children}</>;
 };
@@ -132,6 +149,23 @@ const App = () => {
                         </AdminRoute>
                       }
                     />
+                    <Route
+                      path="service-accounts"
+                      element={
+                        <PermissionRoute permission="service_accounts:manage">
+                          <GoogleServiceAccounts />
+                        </PermissionRoute>
+                      }
+                    />
+                    <Route
+                      path="app-configs"
+                      element={
+                        <PermissionRoute permission={["app_configs:manage", "mobile_configs:manage"]}>
+                          <AppConfigs />
+                        </PermissionRoute>
+                      }
+                    />
+                    <Route path="mobile-configs" element={<Navigate to="/app-configs" replace />} />
                     <Route path="access" element={<Navigate to="/users" replace />} />
                   </Route>
                 </Routes>

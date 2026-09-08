@@ -33,6 +33,8 @@ var SystemPermissions = []models.Permission{
 	{Code: "users:manage", Name: "Quản lý Người dùng", Description: "Tạo tài khoản, gán vai trò, đặt lại mật khẩu và khóa tài khoản", Module: "access"},
 	{Code: "roles:manage", Name: "Quản lý Vai trò", Description: "Tạo mới, chỉnh sửa ma trận quyền và xóa vai trò tùy chỉnh", Module: "access"},
 	{Code: "clients:manage", Name: "Quản lý Ứng dụng & API Keys", Description: "Tạo, sửa, đổi mã key, bật/tắt và xóa các client ứng dụng kết nối", Module: "access"},
+	{Code: "app_configs:manage", Name: "Quản lý Cấu hình Ứng dụng (.hscfg)", Description: "Tạo, tải về, sinh mã QR và xóa file cấu hình bảo mật cho ứng dụng Mobile & Desktop", Module: "access"},
+	{Code: "mobile_configs:manage", Name: "Quản lý Cấu hình Ứng dụng (.hscfg) [Legacy]", Description: "Quyền kế thừa tương thích cho cấu hình ứng dụng", Module: "access"},
 }
 
 // SeedDefaultRolesAndPermissions ensures permissions, default roles, and user associations are synced.
@@ -183,8 +185,8 @@ func SeedDefaultApiClients(db *gorm.DB) error {
 		{
 			ClientID:     "hs_mob_client_default",
 			APIKey:       "hs_mob_client_default",
-			Name:         "HubSight Mobile App (Flutter)",
-			Platform:     models.PlatformFlutterMobile,
+			Name:         "HubSight Mobile App",
+			Platform:     models.PlatformMobile,
 			ClientType:   models.ClientTypePublic,
 			IsActive:     true,
 			IsSystem:     true,
@@ -201,9 +203,19 @@ func SeedDefaultApiClients(db *gorm.DB) error {
 				log.Printf("Warning: failed to seed client %s: %v", dc.ClientID, err)
 			}
 		} else {
-			// Keep system flag synced
+			// Keep system flag, name and platform synced
+			updates := map[string]interface{}{}
 			if !existing.IsSystem {
-				_ = db.Model(&existing).Update("is_system", true).Error
+				updates["is_system"] = true
+			}
+			if existing.Name != dc.Name {
+				updates["name"] = dc.Name
+			}
+			if existing.Platform != dc.Platform {
+				updates["platform"] = dc.Platform
+			}
+			if len(updates) > 0 {
+				_ = db.Model(&existing).Updates(updates).Error
 			}
 		}
 	}

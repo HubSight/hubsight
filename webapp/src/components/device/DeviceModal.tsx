@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Globe, Sliders, HardDrive, X } from 'lucide-react';
+import { Layers, Globe, Sliders, HardDrive, X } from '@/components/icons';
 import type { DeviceFormData } from '../../types/device';
 import { DeviceGeneralTab } from './DeviceGeneralTab';
 import { DeviceNvrTab } from './DeviceNvrTab';

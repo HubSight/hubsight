@@ -12,7 +12,7 @@ func TestGenerateClientApiKey(t *testing.T) {
 		platform       string
 		expectedPrefix string
 	}{
-		{models.PlatformFlutterMobile, "hs_mob_"},
+		{models.PlatformMobile, "hs_mob_"},
 		{models.PlatformWebSPA, "hs_web_"},
 		{models.PlatformThirdParty, "hs_ext_"},
 		{"unknown_platform", "hs_ext_"},
@@ -39,7 +39,7 @@ func TestGenerateClientId(t *testing.T) {
 		platform       string
 		expectedPrefix string
 	}{
-		{models.PlatformFlutterMobile, "mob_"},
+		{models.PlatformMobile, "mob_"},
 		{models.PlatformWebSPA, "web_"},
 		{models.PlatformThirdParty, "ext_"},
 	}

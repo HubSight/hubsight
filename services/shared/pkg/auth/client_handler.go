@@ -20,7 +20,7 @@ import (
 func GenerateClientApiKey(platform string) (string, error) {
 	var prefix string
 	switch platform {
-	case models.PlatformFlutterMobile:
+	case models.PlatformMobile, "flutter_mobile":
 		prefix = "hs_mob_"
 	case models.PlatformWebSPA:
 		prefix = "hs_web_"
@@ -39,7 +39,7 @@ func GenerateClientApiKey(platform string) (string, error) {
 func GenerateClientId(platform string) string {
 	var prefix string
 	switch platform {
-	case models.PlatformFlutterMobile:
+	case models.PlatformMobile, "flutter_mobile":
 		prefix = "mob_"
 	case models.PlatformWebSPA:
 		prefix = "web_"
@@ -155,9 +155,12 @@ func CreateClientHandler(c *gin.Context) {
 
 	platform := strings.TrimSpace(req.Platform)
 	switch platform {
-	case models.PlatformFlutterMobile, models.PlatformWebSPA, models.PlatformThirdParty:
+	case models.PlatformMobile, "flutter_mobile", models.PlatformWebSPA, models.PlatformThirdParty:
+		if platform == "flutter_mobile" {
+			platform = models.PlatformMobile
+		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid platform. Allowed: flutter_mobile, web_spa, third_party"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid platform. Allowed: mobile, web_spa, third_party"})
 		return
 	}
 
@@ -229,7 +232,10 @@ func UpdateClientHandler(c *gin.Context) {
 
 	platform := strings.TrimSpace(req.Platform)
 	switch platform {
-	case models.PlatformFlutterMobile, models.PlatformWebSPA, models.PlatformThirdParty:
+	case models.PlatformMobile, "flutter_mobile", models.PlatformWebSPA, models.PlatformThirdParty:
+		if platform == "flutter_mobile" {
+			platform = models.PlatformMobile
+		}
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid platform"})
 		return

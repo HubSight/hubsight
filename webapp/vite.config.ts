@@ -29,6 +29,12 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(packageJson.version),
     __COMMIT_HASH__: JSON.stringify(commitHash)
   },
+  resolve: {
+    alias: {
+      '@': path.resolve(import.meta.dirname, 'src'),
+      'lucide-react': path.resolve(import.meta.dirname, 'src/components/icons'),
+    },
+  },
   plugins: [
     react(),
     VitePWA({

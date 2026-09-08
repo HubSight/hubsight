@@ -10,7 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldAlert,
-} from 'lucide-react';
+} from '@/components/icons';
 import { api } from '../../api/client';
 import { isApiError, getErrorMessage, isPasskeySupported } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';

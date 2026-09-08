@@ -11,7 +11,7 @@ import {
   AlertCircle,
   VideoOff,
   Scaling,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useLiveStream } from '@hubsight/sdk/react';
 import type { CameraItem } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';

@@ -13,7 +13,7 @@ import {
   Zap,
   LayoutGrid,
   Table as TableIcon
-} from 'lucide-react';
+} from '@/components/icons';
 import { api } from '../api/client';
 import type { NvrStatusResponse } from '../types/nvr';
 import { useTranslation } from '../i18n';

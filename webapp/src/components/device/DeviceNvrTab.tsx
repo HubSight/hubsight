@@ -8,7 +8,7 @@ import {
   CheckCircle2,
   Film,
   Sparkles
-} from 'lucide-react';
+} from '@/components/icons';
 import type { DeviceFormData } from '../../types/device';
 import { useTranslation } from '../../i18n';
 
@@ -233,7 +233,7 @@ export const DeviceNvrTab: React.FC<DeviceNvrTabProps> = ({ formData, onChange }
             ))}
           </div>
           <p className="text-[11px] text-slate-400 mt-1.5">
-            Thời lượng mỗi tệp video phân đoạn được cắt và đồng bộ lên S3/MinIO.
+            Thời lượng mỗi tệp video phân đoạn được cắt và đồng bộ lên hệ thống lưu trữ.
           </p>
         </div>
       )}

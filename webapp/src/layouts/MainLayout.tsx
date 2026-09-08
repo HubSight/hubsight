@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog } from 'lucide-react';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield } from '@/components/icons';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
 import { AppFooter } from '../components/AppFooter';
@@ -142,54 +142,54 @@ const MainLayout = () => {
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden
-        transition-all duration-300 ease-in-out md:relative md:py-6
+        transition-all duration-300 ease-in-out md:relative md:py-4
         ${isMobileMenuOpen ? 'translate-x-0 w-[270px]' : '-translate-x-full w-[270px] md:translate-x-0'}
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
       `}>
-        <div className="flex items-center justify-between px-6 pt-3 pb-2 md:pt-0 mb-6 md:mb-8">
-          <NavLink to="/" className="flex items-center gap-3 no-underline group cursor-pointer">
-            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
-              <Camera size={22} />
+        <div className="flex items-center justify-between px-5 pt-2 pb-1 md:pt-0 mb-3 md:mb-4">
+          <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
+            <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+              <Camera size={20} />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-none text-slate-800 group-hover:text-orange-600 transition-colors">HubSight</h1>
-              <span className="text-[11px] text-slate-600 font-medium tracking-wide">{t('nav.subtitle')}</span>
+              <h1 className="font-bold text-base leading-none text-slate-800 group-hover:text-orange-600 transition-colors">HubSight</h1>
+              <span className="text-[10px] text-slate-500 font-medium tracking-wide">{t('nav.subtitle')}</span>
             </div>
           </NavLink>
           <button
             className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
 
-        <nav className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 flex flex-col overflow-y-auto custom-scrollbar space-y-0.5 pb-2">
           {/* Section 1: Giám sát (Surveillance) */}
-          <div className="px-6 pt-1 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+          <div className="px-5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
             {t('nav.sectionSurveillance')}
           </div>
           <NavLink to="/multiview" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <LayoutGrid size={20} />
+            <LayoutGrid size={18} />
             {t('nav.multiview')}
           </NavLink>
           <NavLink to="/playback" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <Video size={20} />
+            <Video size={18} />
             {t('nav.playback')}
           </NavLink>
 
           {/* Section 2: Quản lý (Management) */}
           {user?.role === 'admin' && (
             <>
-              <div className="px-6 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+              <div className="px-5 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
                 {t('nav.sectionManagement')}
               </div>
               <NavLink to="/devices" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <Camera size={20} />
+                <Camera size={18} />
                 {t('nav.devices')}
               </NavLink>
               <NavLink to="/members" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <Users size={20} />
+                <Users size={18} />
                 {t('nav.members')}
               </NavLink>
             </>
@@ -198,175 +198,188 @@ const MainLayout = () => {
           {/* Section 3: Hệ thống (System) */}
           {user?.role === 'admin' && (
             <>
-              <div className="px-6 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+              <div className="px-5 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
                 {t('nav.sectionSystem')}
               </div>
               <NavLink to="/recorder" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <Activity size={20} />
+                <Activity size={18} />
                 {t('nav.nvrMonitor')}
               </NavLink>
               <NavLink to="/pool" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <Layers size={20} />
+                <Layers size={18} />
                 {t('nav.poolMonitor')}
               </NavLink>
             </>
           )}
 
           {/* Section 4: Quản trị (Administration) */}
-          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('clients:manage') || user?.permissions?.includes('*')) && (
+          {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('clients:manage') || user?.permissions?.includes('service_accounts:manage') || user?.permissions?.includes('*')) && (
             <>
-              <div className="px-6 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
+              <div className="px-5 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
                 {t('nav.sectionAdmin')}
               </div>
               {(user?.role === 'admin' || user?.permissions?.includes('users:view') || user?.permissions?.includes('users:manage') || user?.permissions?.includes('*')) && (
                 <NavLink to="/users" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  <UserCog size={20} />
+                  <UserCog size={18} />
                   {t('nav.users')}
                 </NavLink>
               )}
               {(user?.role === 'admin' || user?.permissions?.includes('roles:manage') || user?.permissions?.includes('*')) && (
                 <NavLink to="/roles" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  <Shield size={20} />
+                  <Shield size={18} />
                   {t('nav.roles')}
                 </NavLink>
               )}
               {(user?.role === 'admin' || user?.permissions?.includes('clients:manage') || user?.permissions?.includes('*')) && (
                 <NavLink to="/clients" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  <KeyRound size={20} />
+                  <KeyRound size={18} />
                   {t('nav.clients')}
+                </NavLink>
+              )}
+              {(user?.role === 'admin' || user?.permissions?.includes('service_accounts:manage') || user?.permissions?.includes('*')) && (
+                <NavLink to="/service-accounts" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <Cloud size={18} />
+                  {t('nav.serviceAccounts')}
+                </NavLink>
+              )}
+              {(user?.role === 'admin' || user?.permissions?.includes('app_configs:manage') || user?.permissions?.includes('mobile_configs:manage') || user?.permissions?.includes('*')) && (
+                <NavLink to="/app-configs" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <FileShield size={18} />
+                  {t('nav.appConfigs')}
                 </NavLink>
               )}
             </>
           )}
         </nav>
 
-        {/* Language Switch */}
-        <div className="px-3 mb-2">
+        {/* Sidebar Bottom Footer: Language Switch & User Profile */}
+        <div className="shrink-0 border-t border-slate-200/90 pt-2 px-3 pb-1 space-y-1.5 bg-white">
+          {/* Language Switch */}
           <button
             onClick={handleSwitchLocale}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-slate-200"
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer border border-slate-200/70 hover:border-slate-300"
           >
-            <Globe size={15} className="text-slate-400 shrink-0" />
+            <Globe size={14} className="text-slate-400 shrink-0" />
             <span className="flex-1 text-left">{t('lang.switch')}</span>
-            <span className="text-[11px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
+            <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-200">
               {locale === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
             </span>
           </button>
-        </div>
 
-        {/* Compact Bottom User Profile & Actions Popover */}
-        <div className="mt-auto border-t border-slate-200 pt-3 px-3 relative" ref={userMenuRef}>
-          {/* User Popover Menu */}
-          {isUserMenuOpen && (
-            <div className="absolute bottom-full left-3 right-3 mb-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                <p className="text-xs font-bold text-slate-800 truncate">
-                  {user?.full_name || user?.username}
-                </p>
-                <p className="text-[11px] text-slate-400 font-mono truncate">
-                  @{user?.username} • {user?.role === 'admin' ? t('admin') : t('viewer')}
-                </p>
+          {/* Compact Bottom User Profile & Actions Popover */}
+          <div className="relative" ref={userMenuRef}>
+            {/* User Popover Menu */}
+            {isUserMenuOpen && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                  <p className="text-xs font-bold text-slate-800 truncate">
+                    {user?.full_name || user?.username}
+                  </p>
+                  <p className="text-[11px] text-slate-400 font-mono truncate">
+                    @{user?.username} • {user?.role === 'admin' ? t('admin') : t('viewer')}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowSettingsModal(true);
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
+                >
+                  <Shield size={15} className="text-orange-600 shrink-0" />
+                  {t('nav.security')}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowPasswordModal(true);
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
+                >
+                  <KeyRound size={15} className="text-slate-500 shrink-0" />
+                  {t('nav.changePassword')}
+                </button>
+
+                <div className="my-1 border-t border-slate-100" />
+
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                >
+                  <LogOut size={15} className="shrink-0" />
+                  {t('nav.logout')}
+                </button>
               </div>
+            )}
 
+            {/* Interactive User Row with Bell Button next to Profile */}
+            <div className="flex items-center gap-1.5">
+              {/* Profile Button */}
               <button
-                onClick={() => {
-                  setShowSettingsModal(true);
-                  setIsUserMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
-              >
-                <Shield size={15} className="text-orange-600 shrink-0" />
-                {t('nav.security')}
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowPasswordModal(true);
-                  setIsUserMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
-              >
-                <KeyRound size={15} className="text-slate-500 shrink-0" />
-                {t('nav.changePassword')}
-              </button>
-
-              <div className="my-1 border-t border-slate-100" />
-
-              <button
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-              >
-                <LogOut size={15} className="shrink-0" />
-                {t('nav.logout')}
-              </button>
-            </div>
-          )}
-
-          {/* Interactive User Row with Bell Button next to Profile */}
-          <div className="flex items-center gap-1.5">
-            {/* Profile Button */}
-            <button
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className={`flex-1 min-w-0 flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${isUserMenuOpen
-                ? 'bg-orange-50/50 border-orange-200 shadow-xs'
-                : 'bg-white hover:bg-slate-50 border-transparent hover:border-slate-200'
-                }`}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${user?.role === 'admin'
-                  ? 'bg-red-50 text-red-600 group-hover:bg-red-100'
-                  : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className={`flex-1 min-w-0 flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${isUserMenuOpen
+                  ? 'bg-orange-50/50 border-orange-200 shadow-xs'
+                  : 'bg-white hover:bg-slate-50 border-transparent hover:border-slate-200'
                   }`}
               >
-                <UserIcon size={16} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-xs font-bold text-slate-800 truncate leading-tight"
-                  title={user?.full_name || user?.username}
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${user?.role === 'admin'
+                    ? 'bg-red-50 text-red-600 group-hover:bg-red-100'
+                    : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                    }`}
                 >
-                  {user?.full_name || user?.username}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${user?.role === 'admin'
-                      ? 'bg-red-50 text-red-600 border-red-200'
-                      : 'bg-blue-50 text-blue-600 border-blue-200'
-                      }`}
-                  >
-                    {user?.role === 'admin' ? t('admin') : t('viewer')}
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-mono truncate">
-                    @{user?.username}
-                  </span>
+                  <UserIcon size={16} />
                 </div>
-              </div>
-              <ChevronsUpDown size={14} className="text-slate-400 group-hover:text-slate-600 shrink-0 transition-colors" />
-            </button>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="text-xs font-bold text-slate-800 truncate leading-tight"
+                    title={user?.full_name || user?.username}
+                  >
+                    {user?.full_name || user?.username}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${user?.role === 'admin'
+                        ? 'bg-red-50 text-red-600 border-red-200'
+                        : 'bg-blue-50 text-blue-600 border-blue-200'
+                        }`}
+                    >
+                      {user?.role === 'admin' ? t('admin') : t('viewer')}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono truncate">
+                      @{user?.username}
+                    </span>
+                  </div>
+                </div>
+                <ChevronsUpDown size={14} className="text-slate-400 group-hover:text-slate-600 shrink-0 transition-colors" />
+              </button>
 
-            {/* Notification Bell Button */}
-            <button
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                setShowNotificationDrawer(true);
-              }}
-              className="relative p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-white shadow-2xs"
-              title={t('notifications.title')}
-              aria-label={t('notifications.title')}
-            >
-              <Bell size={18} />
-              {unreadNotifCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white flex items-center justify-center ring-2 ring-white leading-none animate-pulse">
-                  {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
-                </span>
-              )}
-            </button>
+              {/* Notification Bell Button */}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setShowNotificationDrawer(true);
+                }}
+                className="relative p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-white shadow-2xs"
+                title={t('notifications.title')}
+                aria-label={t('notifications.title')}
+              >
+                <Bell size={18} />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white flex items-center justify-center ring-2 ring-white leading-none animate-pulse">
+                    {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <AppFooter className="mt-2 pt-2 border-t border-slate-100/80" />
           </div>
-
-          <AppFooter className="mt-2 pt-2 border-t border-slate-100/80" />
         </div>
       </aside>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tv, Volume2 } from 'lucide-react';
+import { Tv, Volume2 } from '@/components/icons';
 import type { DeviceFormData } from '../../types/device';
 import { FFMPEG_PRESET_TAGS } from '../../constants/devicePresets';
 import { useTranslation } from '../../i18n';

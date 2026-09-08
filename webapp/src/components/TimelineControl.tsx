@@ -13,7 +13,7 @@ import {
   ChevronUp,
   HardDrive,
   ShieldCheck
-} from 'lucide-react';
+} from '@/components/icons';
 import type { Recording } from '../types/recording';
 import { api } from '../api/client';
 import { useTranslation } from '../i18n';

@@ -10,7 +10,7 @@ import {
   Check,
   Download,
   VideoOff
-} from 'lucide-react';
+} from '@/components/icons';
 import dayjs from 'dayjs';
 import type { Recording } from '../../types/recording';
 import { api } from '../../api/client';

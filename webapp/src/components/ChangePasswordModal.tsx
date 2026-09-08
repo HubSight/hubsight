@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { KeyRound, Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { KeyRound, Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2 } from '@/components/icons';
 import { api } from '../api/client';
 import { isApiError, getErrorMessage } from '@hubsight/sdk';
 import { useTranslation } from '../i18n';

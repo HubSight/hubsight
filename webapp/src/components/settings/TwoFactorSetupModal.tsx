@@ -9,7 +9,7 @@ import {
   Loader2,
   KeyRound,
   AlertCircle,
-} from 'lucide-react';
+} from '@/components/icons';
 import { api } from '../../api/client';
 import { isApiError, getErrorMessage } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info } from 'lucide-react';
+import { Info } from '@/components/icons';
 import type { DeviceFormData } from '../../types/device';
 import { BRAND_PRESETS, parseRtspUrl } from '../../constants/devicePresets';
 import { DeviceBrandDropdown } from './DeviceBrandDropdown';

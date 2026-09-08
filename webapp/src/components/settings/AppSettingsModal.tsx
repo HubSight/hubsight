@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   RotateCw,
   Sliders,
-} from 'lucide-react';
+} from '@/components/icons';
 import { isPwa } from '../../utils/pwa';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../api/client';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, Square, Rewind, FastForward, Radio } from 'lucide-react';
+import { Play, Pause, Square, Rewind, FastForward, Radio } from '@/components/icons';
 import dayjs from 'dayjs';
 import type { Recording } from '../../types/recording';
 import { useTranslation } from '../../i18n';

@@ -10,7 +10,8 @@ import (
 
 // Platform constants for ApiClient
 const (
-	PlatformFlutterMobile = "flutter_mobile"
+	PlatformMobile        = "mobile"
+	PlatformFlutterMobile = "mobile"
 	PlatformWebSPA        = "web_spa"
 	PlatformThirdParty    = "third_party"
 )

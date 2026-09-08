@@ -121,3 +121,38 @@ export {
   type ClientsResource,
 } from './clients';
 
+// ── Google Service Accounts ──────────────────────────────────────────────────
+export {
+  createGoogleServiceAccountsResource,
+  listGoogleServiceAccounts,
+  getGoogleServiceAccount,
+  importGoogleServiceAccount,
+  importGoogleServiceAccountFile,
+  activateGoogleServiceAccount,
+  testGoogleServiceAccount,
+  deleteGoogleServiceAccount,
+  type GoogleServiceAccountsResource,
+} from './google-service-accounts';
+
+// ── App Configs (.hscfg) ──────────────────────────────────────────────────
+export {
+  createAppConfigsResource,
+  type AppConfigsResource,
+  createMobileConfigsResource,
+  type MobileConfigsResource,
+  listAppConfigs,
+  getAppConfig,
+  generateAppConfig,
+  getAppConfigDownloadUrl,
+  getAppConfigQr,
+  deleteAppConfig,
+  listMobileConfigs,
+  getMobileConfig,
+  generateMobileConfig,
+  getMobileConfigDownloadUrl,
+  getMobileConfigQr,
+  deleteMobileConfig,
+} from './app-configs';
+
+
+

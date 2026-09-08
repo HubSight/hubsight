@@ -67,9 +67,14 @@ func Connect(dbURL string) error {
 			&models.Setting{},
 			&models.PasskeyCredential{},
 			&models.ApiClient{},
+			&models.GoogleServiceAccount{},
+			&models.AppConfig{},
 		); err != nil {
 			return fmt.Errorf("failed running gorm automigrate: %w", err)
 		}
+
+		// Ensure smooth migration from mobile_configs to app_configs if old table exists
+		_ = gormDB.Exec("DO $$ BEGIN IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'mobile_configs') AND NOT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'app_configs') THEN ALTER TABLE mobile_configs RENAME TO app_configs; END IF; END $$;").Error
 
 		// Seed RBAC permissions and default roles
 		if err := SeedDefaultRolesAndPermissions(gormDB); err != nil {

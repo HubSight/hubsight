@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Plus, Radar } from 'lucide-react';
+import { ChevronDown, Plus, Radar } from '@/components/icons';
 import { useTranslation } from '../../i18n';
 
 interface AddDeviceSplitButtonProps {

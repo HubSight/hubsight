@@ -15,7 +15,7 @@ import {
   ArrowLeft,
   Loader2,
   Fingerprint,
-} from 'lucide-react';
+} from '@/components/icons';
 import { api } from '../api/client';
 import { isApiError, getErrorMessage, isPasskeySupported } from '@hubsight/sdk';
 import { AppFooter } from '../components/AppFooter';

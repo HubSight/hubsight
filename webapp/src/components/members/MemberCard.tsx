@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Edit2, Trash2, Camera, ShieldCheck, HeartHandshake, Sparkles } from 'lucide-react';
+import { User, Edit2, Trash2, Camera, ShieldCheck, HeartHandshake, Sparkles } from '@/components/icons';
 import type { MemberItem } from '../../types/member';
 import { useTranslation } from '../../i18n';
 

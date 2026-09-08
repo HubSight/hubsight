@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowDown, RefreshCw } from 'lucide-react';
+import { ArrowDown, RefreshCw } from '@/components/icons';
 import { useTranslation } from '../../i18n';
 
 interface PullToRefreshProps {

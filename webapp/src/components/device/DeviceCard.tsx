@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Play, Square, Trash2, RotateCw, Copy, Check } from 'lucide-react';
+import { Pencil, Play, Square, Trash2, RotateCw, Copy, Check } from '@/components/icons';
 import type { DeviceType } from '../../types/device';
 import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
 import { useTranslation } from '../../i18n';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyRound, Lock, Eye, EyeOff, LogOut, ArrowRight, Loader2, ShieldAlert } from 'lucide-react';
+import { KeyRound, Lock, Eye, EyeOff, LogOut, ArrowRight, Loader2, ShieldAlert } from '@/components/icons';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../i18n';

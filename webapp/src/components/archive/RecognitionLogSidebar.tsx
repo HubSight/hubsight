@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@/components/icons';
 import { useOnRecognitionLog, useOnMemberFaceUpdated } from '@hubsight/sdk/react';
 import { api } from '../../api/client';
 import { useTimezone } from '../../context/TimezoneContext';

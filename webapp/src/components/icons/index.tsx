@@ -1,0 +1,190 @@
+import { createFaIcon, type IconProps } from './factory';
+export type { IconProps };
+import {
+  faChartLine,
+  faCircleExclamation,
+  faTriangleExclamation,
+  faArrowDown,
+  faArrowLeft,
+  faArrowRight,
+  faBan,
+  faBell,
+  faRobot,
+  faCalendarDays,
+  faCamera,
+  faCheck,
+  faCheckDouble,
+  faCircleCheck,
+  faChevronDown,
+  faChevronLeft,
+  faChevronRight,
+  faChevronUp,
+  faAnglesLeft,
+  faAnglesRight,
+  faUpDown,
+  faClock,
+  faCopy,
+  faMicrochip,
+  faDatabase,
+  faDownload,
+  faPenToSquare,
+  faPen,
+  faEye,
+  faEyeSlash,
+  faForward,
+  faFilm,
+  faFingerprint,
+  faFire,
+  faGaugeHigh,
+  faGlobe,
+  faTableCellsLarge,
+  faGripVertical,
+  faHardDrive,
+  faHandshake,
+  faCircleInfo,
+  faKey,
+  faLock,
+  faLayerGroup,
+  faSpinner,
+  faRightFromBracket,
+  faExpand,
+  faCompress,
+  faBars,
+  faPause,
+  faPlay,
+  faPlus,
+  faSatelliteDish,
+  faTowerBroadcast,
+  faRotate,
+  faBackward,
+  faRotateLeft,
+  faUpRightAndDownLeftFromCenter,
+  faMagnifyingGlass,
+  faServer,
+  faShield,
+  faShieldHalved,
+  faSliders,
+  faMobileScreen,
+  faWandMagicSparkles,
+  faSquare,
+  faStar,
+  faTable,
+  faTrashCan,
+  faTv,
+  faUpload,
+  faUser,
+  faUserCheck,
+  faUserGear,
+  faUserXmark,
+  faUsers,
+  faVideo,
+  faVideoSlash,
+  faVolumeLow,
+  faVolumeHigh,
+  faVolumeXmark,
+  faXmark,
+  faBolt,
+  faPowerOff,
+  faCloud,
+  faFileCode,
+  faQrcode,
+  faFileShield,
+} from '@fortawesome/free-solid-svg-icons';
+
+
+// ── Exported Icon Components (Font Awesome 7 SVG suite) ──────────────────────
+export const Activity = createFaIcon(faChartLine);
+export const AlertCircle = createFaIcon(faCircleExclamation);
+export const AlertTriangle = createFaIcon(faTriangleExclamation);
+export const ArrowDown = createFaIcon(faArrowDown);
+export const ArrowLeft = createFaIcon(faArrowLeft);
+export const ArrowRight = createFaIcon(faArrowRight);
+export const Ban = createFaIcon(faBan);
+export const Bell = createFaIcon(faBell);
+export const Bot = createFaIcon(faRobot);
+export const Calendar = createFaIcon(faCalendarDays);
+export const Camera = createFaIcon(faCamera);
+export const Check = createFaIcon(faCheck);
+export const CheckCheck = createFaIcon(faCheckDouble);
+export const CheckCircle2 = createFaIcon(faCircleCheck);
+export const ChevronDown = createFaIcon(faChevronDown);
+export const ChevronLeft = createFaIcon(faChevronLeft);
+export const ChevronRight = createFaIcon(faChevronRight);
+export const ChevronUp = createFaIcon(faChevronUp);
+export const ChevronsLeft = createFaIcon(faAnglesLeft);
+export const ChevronsRight = createFaIcon(faAnglesRight);
+export const ChevronsUpDown = createFaIcon(faUpDown);
+export const Clock = createFaIcon(faClock);
+export const Cloud = createFaIcon(faCloud);
+export const Copy = createFaIcon(faCopy);
+export const Cpu = createFaIcon(faMicrochip);
+export const FileCode = createFaIcon(faFileCode);
+export const FileJson = createFaIcon(faFileCode);
+export const FileShield = createFaIcon(faFileShield);
+export const QrCode = createFaIcon(faQrcode);
+export const Database = createFaIcon(faDatabase);
+export const Download = createFaIcon(faDownload);
+export const Edit2 = createFaIcon(faPenToSquare);
+export const Eye = createFaIcon(faEye);
+export const EyeOff = createFaIcon(faEyeSlash);
+export const FastForward = createFaIcon(faForward);
+export const Film = createFaIcon(faFilm);
+export const Fingerprint = createFaIcon(faFingerprint);
+export const Flame = createFaIcon(faFire);
+export const Gauge = createFaIcon(faGaugeHigh);
+export const Globe = createFaIcon(faGlobe);
+export const Grid2X2 = createFaIcon(faTableCellsLarge);
+export const GripVertical = createFaIcon(faGripVertical);
+export const HardDrive = createFaIcon(faHardDrive);
+export const HeartHandshake = createFaIcon(faHandshake);
+export const Info = createFaIcon(faCircleInfo);
+export const KeyRound = createFaIcon(faKey);
+export const Layers = createFaIcon(faLayerGroup);
+export const LayoutGrid = createFaIcon(faTableCellsLarge);
+export const Loader2 = createFaIcon(faSpinner, 'animate-spin');
+export const Lock = createFaIcon(faLock);
+export const LogOut = createFaIcon(faRightFromBracket);
+export const Maximize = createFaIcon(faExpand);
+export const Maximize2 = createFaIcon(faExpand);
+export const Menu = createFaIcon(faBars);
+export const Minimize = createFaIcon(faCompress);
+export const Minimize2 = createFaIcon(faCompress);
+export const Pause = createFaIcon(faPause);
+export const Pencil = createFaIcon(faPen);
+export const Play = createFaIcon(faPlay);
+export const Plus = createFaIcon(faPlus);
+export const Power = createFaIcon(faPowerOff);
+export const PowerOff = createFaIcon(faPowerOff);
+export const Radar = createFaIcon(faSatelliteDish);
+export const Radio = createFaIcon(faTowerBroadcast);
+export const RefreshCw = createFaIcon(faRotate);
+export const Rewind = createFaIcon(faBackward);
+export const RotateCcw = createFaIcon(faRotateLeft);
+export const RotateCw = createFaIcon(faRotate);
+export const Scaling = createFaIcon(faUpRightAndDownLeftFromCenter);
+export const Search = createFaIcon(faMagnifyingGlass);
+export const Server = createFaIcon(faServer);
+export const Shield = createFaIcon(faShield);
+export const ShieldAlert = createFaIcon(faShieldHalved);
+export const ShieldCheck = createFaIcon(faShieldHalved);
+export const Sliders = createFaIcon(faSliders);
+export const Smartphone = createFaIcon(faMobileScreen);
+export const Sparkles = createFaIcon(faWandMagicSparkles);
+export const Square = createFaIcon(faSquare);
+export const Star = createFaIcon(faStar);
+export const Table = createFaIcon(faTable);
+export const Trash2 = createFaIcon(faTrashCan);
+export const Tv = createFaIcon(faTv);
+export const Upload = createFaIcon(faUpload);
+export const User = createFaIcon(faUser);
+export const UserCheck = createFaIcon(faUserCheck);
+export const UserCog = createFaIcon(faUserGear);
+export const UserX = createFaIcon(faUserXmark);
+export const Users = createFaIcon(faUsers);
+export const Video = createFaIcon(faVideo);
+export const VideoOff = createFaIcon(faVideoSlash);
+export const Volume1 = createFaIcon(faVolumeLow);
+export const Volume2 = createFaIcon(faVolumeHigh);
+export const VolumeX = createFaIcon(faVolumeXmark);
+export const X = createFaIcon(faXmark);
+export const Zap = createFaIcon(faBolt);

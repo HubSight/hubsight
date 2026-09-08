@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Camera, Check, Bot } from 'lucide-react';
+import { X, Camera, Check, Bot } from '@/components/icons';
 import type { CameraItem } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';
 

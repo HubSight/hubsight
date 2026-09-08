@@ -76,7 +76,7 @@ export interface ResetPasswordRequest {
 
 // ── Application Clients (API Keys & OAuth2 Governance) ──────────────────────
 
-export type ClientPlatform = 'flutter_mobile' | 'web_spa' | 'third_party';
+export type ClientPlatform = 'mobile' | 'flutter_mobile' | 'web_spa' | 'third_party';
 export type ClientType = 'public' | 'confidential';
 
 export interface ApiClient {
@@ -533,3 +533,129 @@ export interface SubscribePushRequest {
   keys?: { p256dh: string; auth: string };
   user_agent?: string;
 }
+
+// ── Google Service Accounts (GCP / Firebase FCM Governance) ─────────────────
+
+export interface GoogleServiceAccount {
+  id: string;
+  name: string;
+  type: string;
+  project_id: string;
+  private_key_id: string;
+  client_email: string;
+  client_id: string;
+  auth_uri?: string;
+  token_uri?: string;
+  auth_provider_x509_cert_url?: string;
+  client_x509_cert_url?: string;
+  is_active: boolean;
+  status: 'active' | 'error' | 'untested' | string;
+  last_tested_at?: string | null;
+  last_error?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  has_private_key: boolean;
+}
+
+export interface ImportGoogleServiceAccountInput {
+  name?: string;
+  raw_json: string;
+  is_active?: boolean;
+}
+
+export interface ImportGoogleServiceAccountResponse {
+  account: GoogleServiceAccount;
+  message: string;
+  warning?: string;
+  test_result?: string;
+}
+
+export interface TestGoogleServiceAccountResult {
+  success: boolean;
+  message: string;
+  status: string;
+}
+
+// ── App Config (.hscfg) Profiles ──────────────────────────────────────────
+
+export interface AppConfig {
+  id: string;
+  name: string;
+  description?: string;
+  object_key: string;
+  file_size: number;
+  sha256_checksum: string;
+  client_id: string;
+  google_service_account_id?: string;
+  project_id?: string;
+  gateway_url: string;
+  api_base_url: string;
+  webrtc_base_url: string;
+  relay_ws_url: string;
+  has_android_fcm: boolean;
+  has_ios_fcm: boolean;
+  has_ca_cert: boolean;
+  download_count: number;
+  created_by?: string;
+  created_at: string;
+  updated_at?: string;
+  client?: ApiClient;
+  google_service_account?: GoogleServiceAccount;
+}
+
+export interface GenerateAppConfigRequest {
+  name: string;
+  description?: string;
+  pin: string;
+  google_service_account_id?: string;
+  client_id?: string;
+  auto_create_client?: boolean;
+  client_name?: string;
+  platform?: string;
+  gateway_url?: string;
+  api_base_url?: string;
+  webrtc_base_url?: string;
+  relay_ws_url?: string;
+  android_config_raw?: string;
+  ios_config_raw?: string;
+  ca_cert_raw?: string;
+}
+
+export interface GenerateAppConfigResponse {
+  success: boolean;
+  message: string;
+  config: AppConfig;
+}
+
+export interface AppConfigQRResponse {
+  qr_code_base64: string;
+  download_url: string;
+  config_id: string;
+  name: string;
+  expires_in: number;
+}
+
+// Backward compatibility type aliases
+export type MobileConfig = AppConfig;
+export type GenerateMobileConfigRequest = GenerateAppConfigRequest;
+export type GenerateMobileConfigResponse = GenerateAppConfigResponse;
+export type MobileConfigQRResponse = AppConfigQRResponse;
+
+export interface FirebaseAppItem {
+  name: string;
+  appId: string;
+  displayName: string;
+  packageName?: string;
+  bundleId?: string;
+}
+
+export interface FirebasePreflightResult {
+  success: boolean;
+  error?: string;
+  project_id?: string;
+  android_apps?: FirebaseAppItem[];
+  ios_apps?: FirebaseAppItem[];
+  web_apps?: FirebaseAppItem[];
+}
+

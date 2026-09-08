@@ -112,6 +112,38 @@ func New() *gin.Engine {
 				adminOnly.POST("/settings/storage/cleanup", cctvapi.CleanupStorage)
 			}
 
+			// Google Service Account management (Admin & Power Users with service_accounts:manage permission)
+			gsa := protected.Group("/google-service-accounts")
+			gsa.Use(auth.RequirePermission("service_accounts:manage"))
+			{
+				gsa.GET("", cctvapi.ListGoogleServiceAccounts)
+				gsa.GET("/:id", cctvapi.GetGoogleServiceAccount)
+				gsa.POST("/import", cctvapi.ImportGoogleServiceAccount)
+				gsa.PUT("/:id/activate", cctvapi.ActivateGoogleServiceAccount)
+				gsa.POST("/:id/test", cctvapi.TestGoogleServiceAccount)
+				gsa.GET("/:id/firebase-preflight", cctvapi.PreflightFirebaseApps)
+				gsa.DELETE("/:id", cctvapi.DeleteGoogleServiceAccount)
+			}
+
+			// App Config (.hscfg) management (Admin & Power Users with app_configs:manage / mobile_configs:manage permission)
+			appCfgHandler := func(rg *gin.RouterGroup) {
+				rg.GET("", cctvapi.ListAppConfigs)
+				rg.GET("/:id", cctvapi.GetAppConfig)
+				rg.POST("", cctvapi.GenerateAppConfig)
+				rg.GET("/:id/download", cctvapi.DownloadAppConfig)
+				rg.GET("/:id/qr", cctvapi.GetAppConfigQR)
+				rg.DELETE("/:id", cctvapi.DeleteAppConfig)
+			}
+
+			ac := protected.Group("/app-configs")
+			ac.Use(auth.RequirePermission("app_configs:manage", "mobile_configs:manage"))
+			appCfgHandler(ac)
+
+			// Legacy alias for /mobile-configs
+			mc := protected.Group("/mobile-configs")
+			mc.Use(auth.RequirePermission("app_configs:manage", "mobile_configs:manage"))
+			appCfgHandler(mc)
+
 			// Archive and timeline endpoints
 			protected.GET("/archive/timeline", recording.TimelineHandler)
 			protected.GET("/archive/:id/available-days", recording.AvailableDaysHandler)

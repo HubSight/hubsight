@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/notification"
 
 	firebase "firebase.google.com/go/v4"
@@ -17,10 +19,22 @@ import (
 )
 
 var (
+	fcmMu     sync.RWMutex
 	fcmOnce   sync.Once
 	fcmClient *messaging.Client
 	fcmErr    error
 )
+
+// ReloadFCMClient resets and reloads the cached FCM messaging client.
+func ReloadFCMClient(ctx context.Context) error {
+	fcmMu.Lock()
+	defer fcmMu.Unlock()
+	fcmClient = nil
+	fcmErr = nil
+	fcmOnce = sync.Once{}
+	_, err := getFCMClient(ctx)
+	return err
+}
 
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
@@ -31,16 +45,27 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
-func firebaseCredentialsJSON() []byte {
-	if raw := strings.TrimSpace(os.Getenv("FIREBASE_CREDENTIALS_JSON")); raw != "" {
-		return []byte(raw)
+func firebaseCredentialsJSON() ([]byte, string) {
+	// 1. Check database for active GoogleServiceAccount
+	if database.DB != nil {
+		var sa models.GoogleServiceAccount
+		if err := database.DB.Where("is_active = ?", true).Order("updated_at DESC").First(&sa).Error; err == nil && len(sa.RawJSON) > 0 {
+			return []byte(sa.RawJSON), sa.ProjectID
+		}
 	}
 
+	// 2. Fallback to FIREBASE_CREDENTIALS_JSON environment variable
+	if raw := strings.TrimSpace(os.Getenv("FIREBASE_CREDENTIALS_JSON")); raw != "" {
+		projectID := firstNonEmpty(os.Getenv("FIREBASE_PROJECT_ID"), os.Getenv("FIREBASE_WEB_PROJECT_ID"))
+		return []byte(raw), projectID
+	}
+
+	// 3. Fallback to individual FIREBASE_* env vars
 	projectID := firstNonEmpty(os.Getenv("FIREBASE_PROJECT_ID"), os.Getenv("FIREBASE_WEB_PROJECT_ID"))
 	clientEmail := os.Getenv("FIREBASE_CLIENT_EMAIL")
 	privateKey := os.Getenv("FIREBASE_PRIVATE_KEY")
 	if projectID == "" || clientEmail == "" || privateKey == "" {
-		return nil
+		return nil, ""
 	}
 
 	privateKey = strings.ReplaceAll(privateKey, "\\n", "\n")
@@ -52,15 +77,26 @@ func firebaseCredentialsJSON() []byte {
 		"token_uri":    "https://oauth2.googleapis.com/token",
 	})
 	if err != nil {
-		return nil
+		return nil, ""
 	}
-	return body
+	return body, projectID
 }
 
 func getFCMClient(ctx context.Context) (*messaging.Client, error) {
+	fcmMu.RLock()
+	if fcmClient != nil {
+		defer fcmMu.RUnlock()
+		return fcmClient, nil
+	}
+	fcmMu.RUnlock()
+
+	fcmMu.Lock()
+	defer fcmMu.Unlock()
+
 	fcmOnce.Do(func() {
 		var opts []option.ClientOption
-		if creds := firebaseCredentialsJSON(); len(creds) > 0 {
+		creds, credsProjectID := firebaseCredentialsJSON()
+		if len(creds) > 0 {
 			opts = append(opts, option.WithCredentialsJSON(creds))
 		} else if path := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); path != "" {
 			opts = append(opts, option.WithCredentialsFile(path))
@@ -69,7 +105,7 @@ func getFCMClient(ctx context.Context) (*messaging.Client, error) {
 			return
 		}
 
-		projectID := firstNonEmpty(os.Getenv("FIREBASE_PROJECT_ID"), os.Getenv("FIREBASE_WEB_PROJECT_ID"))
+		projectID := firstNonEmpty(credsProjectID, os.Getenv("FIREBASE_PROJECT_ID"), os.Getenv("FIREBASE_WEB_PROJECT_ID"))
 		cfg := &firebase.Config{ProjectID: projectID}
 		app, err := firebase.NewApp(ctx, cfg, opts...)
 		if err != nil {

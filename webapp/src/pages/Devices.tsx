@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Video } from 'lucide-react';
+import { Camera, Video } from '@/components/icons';
 import { api } from '../api/client';
 import type { DeviceType, DeviceFormData } from '../types/device';
 import { DeviceCard } from '../components/device/DeviceCard';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, HeartHandshake, AlertTriangle, Bell, ArrowRight } from 'lucide-react';
+import { X, ShieldCheck, HeartHandshake, AlertTriangle, Bell, ArrowRight } from '@/components/icons';
 import { useOnNotification } from '@hubsight/sdk/react';
 import type { NotificationItem } from '../../types/notification';
 import { useTimezone } from '../../context/TimezoneContext';

@@ -10,7 +10,7 @@ import {
   Smartphone,
   Check,
   Video
-} from 'lucide-react';
+} from '@/components/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type { NotificationItem } from '../../types/notification';

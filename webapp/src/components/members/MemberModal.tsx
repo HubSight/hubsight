@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ShieldCheck, HeartHandshake, Camera, User, Trash2 } from 'lucide-react';
+import { X, ShieldCheck, HeartHandshake, Camera, User, Trash2 } from '@/components/icons';
 import type { MemberItem, MemberFormData } from '../../types/member';
 import { useTranslation } from '../../i18n';
 import { api } from '../../api/client';

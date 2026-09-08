@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Radar, X, CheckCircle2, Loader2, Camera } from 'lucide-react';
+import { Radar, X, CheckCircle2, Loader2, Camera } from '@/components/icons';
 import { api } from '../../api/client';
 import type { ScanCandidate, ScanJob } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';

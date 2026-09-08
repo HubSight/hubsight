@@ -9,7 +9,7 @@ import {
   Minimize,
   Film,
   Menu,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n';
 

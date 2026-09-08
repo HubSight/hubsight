@@ -8,7 +8,7 @@ import {
   Sparkles,
   Info,
   Radio,
-} from 'lucide-react';
+} from '@/components/icons';
 import { api } from '../api/client';
 import type { PoolStatusSummary } from '../types/pool';
 import { useTranslation } from '../i18n';

@@ -78,11 +78,11 @@
   }
   
   .nav-link {
-    @apply flex items-center gap-3 px-6 py-3 text-slate-600 no-underline transition-all duration-200 font-medium hover:bg-slate-50 hover:text-slate-900;
+    @apply flex items-center gap-2.5 mx-3 px-3 py-2 text-slate-600 no-underline transition-all duration-150 font-medium text-sm rounded-xl hover:bg-slate-100 hover:text-slate-900;
   }
   
   .nav-link.active {
-    @apply bg-orange-600 text-white font-semibold;
+    @apply bg-orange-600 text-white font-semibold shadow-sm hover:bg-orange-600 hover:text-white;
   }
 
   .timeline-item {

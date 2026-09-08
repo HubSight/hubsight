@@ -1,5 +1,5 @@
 import React from 'react';
-import { GripVertical, Plus, Check, Bot, AlertCircle } from 'lucide-react';
+import { GripVertical, Plus, Check, Bot, AlertCircle } from '@/components/icons';
 import type { CameraItem } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';
 

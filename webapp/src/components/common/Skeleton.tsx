@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Video } from 'lucide-react';
+import { Camera, Video } from '@/components/icons';
 
 interface SkeletonProps {
   className?: string;

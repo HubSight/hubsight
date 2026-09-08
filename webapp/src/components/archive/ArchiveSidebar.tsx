@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Calendar as CalendarIcon, ChevronDown, LayoutGrid } from 'lucide-react';
+import { Camera, Calendar as CalendarIcon, ChevronDown, LayoutGrid } from '@/components/icons';
 import Calendar from 'react-calendar';
 import dayjs from 'dayjs';
 import 'react-calendar/dist/Calendar.css';

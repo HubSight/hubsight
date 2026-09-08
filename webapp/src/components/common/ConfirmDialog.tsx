@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Trash2, X } from '@/components/icons';
 import { useTranslation } from '../../i18n';
 
 export interface ConfirmDialogProps {

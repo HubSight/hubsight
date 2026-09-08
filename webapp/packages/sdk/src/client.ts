@@ -24,6 +24,15 @@ import { createNotificationsResource, type NotificationsResource } from './resou
 import { createPoolResource, type PoolResource } from './resources/pool';
 import { createRecorderResource, type RecorderResource } from './resources/recorder';
 import { createClientsResource, type ClientsResource } from './resources/clients';
+import {
+  createGoogleServiceAccountsResource,
+  type GoogleServiceAccountsResource,
+} from './resources/google-service-accounts';
+import {
+  createAppConfigsResource,
+  type AppConfigsResource,
+  type MobileConfigsResource,
+} from './resources/app-configs';
 
 export interface BaseClientOptions {
   /** REST API base URL, e.g. `/api` or `http://localhost:8088/api` (default: `/api`) */
@@ -70,6 +79,9 @@ export interface HubSightClient extends BaseClient {
   readonly pool: PoolResource;
   readonly recorder: RecorderResource;
   readonly clients: ClientsResource;
+  readonly googleServiceAccounts: GoogleServiceAccountsResource;
+  readonly appConfigs: AppConfigsResource;
+  readonly mobileConfigs: MobileConfigsResource;
 }
 
 /**
@@ -169,6 +181,8 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
   let poolRef: PoolResource | null = null;
   let recorderRef: RecorderResource | null = null;
   let clientsRef: ClientsResource | null = null;
+  let googleServiceAccountsRef: GoogleServiceAccountsResource | null = null;
+  let appConfigsRef: AppConfigsResource | null = null;
 
   return {
     baseUrl: base.baseUrl,
@@ -216,6 +230,15 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
     },
     get clients() {
       return (clientsRef ??= createClientsResource(base.http));
+    },
+    get googleServiceAccounts() {
+      return (googleServiceAccountsRef ??= createGoogleServiceAccountsResource(base.http));
+    },
+    get appConfigs() {
+      return (appConfigsRef ??= createAppConfigsResource(base.http, base.baseUrl));
+    },
+    get mobileConfigs() {
+      return (appConfigsRef ??= createAppConfigsResource(base.http, base.baseUrl));
     },
 
     destroy(): void {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Camera, X } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Camera, X } from '@/components/icons';
 import type { CameraItem } from '@hubsight/sdk';
 import { DraggableCameraItem } from './DraggableCameraItem';
 import { useTranslation } from '../../i18n';

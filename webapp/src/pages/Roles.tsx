@@ -10,7 +10,7 @@ import {
   Activity,
   Sliders,
   Check,
-} from 'lucide-react';
+} from '@/components/icons';
 import { api } from '../api/client';
 import type { Role, Permission } from '@hubsight/sdk';
 import { useTranslation } from '../i18n';

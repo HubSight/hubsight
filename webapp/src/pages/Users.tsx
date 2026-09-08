@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   X,
   Shield,
-} from 'lucide-react';
+} from '@/components/icons';
 import { api } from '../api/client';
 import type { User, Role } from '@hubsight/sdk';
 import { useAuth } from '../context/AuthContext';
