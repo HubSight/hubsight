@@ -22,3 +22,4 @@ if (-not (Test-Path $Output)) {
 go build -o "$Output/" $Services
 
 Write-Host "Build completed successfully. Binaries saved to '$Output/'." -ForegroundColor Green
+
