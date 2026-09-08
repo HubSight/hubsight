@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { AppLockProvider } from './context/AppLockContext';
 import { HubSightProvider } from '@hubsight/sdk/react';
 import api from './api/client';
 import { TimezoneProvider } from './context/TimezoneContext';
@@ -53,8 +52,7 @@ const App = () => {
       <AuthProvider>
         <LocaleSync />
         <TimezoneProvider>
-          <AppLockProvider>
-            <HubSightProvider client={api}>
+          <HubSightProvider client={api}>
               <AuthRealtimeWatcher />
               <BrowserRouter>
                 <Routes>
@@ -115,7 +113,6 @@ const App = () => {
                 </Routes>
               </BrowserRouter>
             </HubSightProvider>
-          </AppLockProvider>
         </TimezoneProvider>
       </AuthProvider>
     </I18nProvider>

@@ -6,7 +6,6 @@ import type { Locale } from '../i18n';
 import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid } from 'lucide-react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
-import { AppLockScreen } from '../components/lock/AppLockScreen';
 import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
@@ -87,9 +86,6 @@ const MainLayout = () => {
 
   return (
     <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
-      {/* App Lock Screen Overlay */}
-      <AppLockScreen />
-
       {/* Floating Realtime Notification Toast */}
       <NotificationToast />
       <Toaster position="top-right" />
