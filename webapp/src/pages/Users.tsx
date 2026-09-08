@@ -202,28 +202,33 @@ export const Users: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200/80 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center">
-              <UserCog size={20} />
-            </div>
-            <h1 className="text-xl font-bold text-slate-800">{t('users.title')}</h1>
+      <div className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+          <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
+            <UserCog size={20} />
           </div>
-          <p className="text-xs text-slate-500 mt-1">{t('users.subtitle')}</p>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl font-bold text-slate-800 leading-tight truncate">
+              {t('users.title')}
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5 hidden sm:block">
+              {t('users.subtitle')}
+            </p>
+          </div>
         </div>
 
         <button
           onClick={handleOpenCreateUser}
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0 whitespace-nowrap"
         >
           <Plus size={16} />
-          {t('access.addUser')}
+          <span className="hidden sm:inline">{t('access.addUser')}</span>
+          <span className="sm:hidden">Thêm</span>
         </button>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 pb-20">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-64 text-slate-400">
             <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-3" />
@@ -232,139 +237,245 @@ export const Users: React.FC = () => {
         ) : (
           <div className="space-y-4 max-w-6xl mx-auto">
             {/* Search toolbar */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="relative w-full max-w-md">
+            <div className="flex items-center justify-between gap-3">
+              <div className="relative flex-1 max-w-md">
                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder={`${t('search')}...`}
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs"
+                  className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs"
                 />
               </div>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs text-slate-500 font-medium shrink-0">
                 {t('access.userCount', { count: filteredUsers.length })}
               </span>
             </div>
 
-            {/* Users Table */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                      <th className="px-5 py-3.5">{t('access.fullName')} / {t('access.username')}</th>
-                      <th className="px-5 py-3.5">{t('access.role')}</th>
-                      <th className="px-5 py-3.5">{t('access.status')}</th>
-                      <th className="px-5 py-3.5">{t('access.lastLogin')}</th>
-                      <th className="px-5 py-3.5 text-right">{t('access.actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-5 py-12 text-center text-slate-400">
-                          {t('noData')}
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredUsers.map((u) => {
-                        const roleObj = u.role_info || roles.find((r) => r.id === u.role_id);
-                        const isSelf = currentUser?.id === u.id;
-                        const isDefaultAdmin = u.username === 'admin';
-
-                        return (
-                          <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="px-5 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-sm uppercase">
-                                  {u.full_name ? u.full_name.charAt(0) : u.username.charAt(0)}
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-slate-800 flex items-center gap-2">
-                                    {u.full_name || u.username}
-                                    {isSelf && (
-                                      <span className="text-[10px] font-semibold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md">
-                                        {t('access.you')}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-slate-400">@{u.username}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              {getRoleBadge(roleObj?.code || u.role, roleObj?.name)}
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <div className="flex flex-col gap-1 items-start">
-                                {u.is_active ? (
-                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                                    <CheckCircle2 size={12} />
-                                    {t('access.active')}
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
-                                    <Ban size={12} />
-                                    {t('access.inactive')}
-                                  </span>
-                                )}
-                                {u.must_change_password && (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200" title={t('access.requirePasswordChangeDesc')}>
-                                    <KeyRound size={10} />
-                                    {t('access.mustChangePasswordBadge')}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-5 py-3.5 text-xs text-slate-500">
-                              {u.last_login_at
-                                ? new Date(u.last_login_at).toLocaleString()
-                                : t('access.never')}
-                            </td>
-                            <td className="px-5 py-3.5 text-right">
-                              <div className="inline-flex items-center gap-1">
-                                <button
-                                  onClick={() => handleOpenEditUser(u)}
-                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                  title={t('access.editUser')}
-                                >
-                                  <Edit2 size={16} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setUserToResetPassword(u);
-                                    setNewPassword('');
-                                    setResetPasswordModalOpen(true);
-                                  }}
-                                  className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-                                  title={t('access.resetPassword')}
-                                >
-                                  <KeyRound size={16} />
-                                </button>
-                                {!isSelf && !isDefaultAdmin && (
-                                  <button
-                                    onClick={() => setPendingToggleBlockUser(u)}
-                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active
-                                      ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                      : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                                      }`}
-                                    title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
-                                  >
-                                    {u.is_active ? <Ban size={16} /> : <UserCheck size={16} />}
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+            {filteredUsers.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400">
+                {t('noData')}
               </div>
-            </div>
+            ) : (
+              <>
+                {/* ── MOBILE VIEW: Touch-Friendly Card List ── */}
+                <div className="block md:hidden space-y-3">
+                  {filteredUsers.map((u) => {
+                    const roleObj = u.role_info || roles.find((r) => r.id === u.role_id);
+                    const isSelf = currentUser?.id === u.id;
+                    const isDefaultAdmin = u.username === 'admin';
+
+                    return (
+                      <div
+                        key={`mobile-${u.id}`}
+                        className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3"
+                      >
+                        {/* Top: Avatar, Name, Username, Self badge & Status badge */}
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-sm uppercase shrink-0">
+                              {u.full_name ? u.full_name.charAt(0) : u.username.charAt(0)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-slate-900 text-sm flex items-center gap-1.5 flex-wrap">
+                                <span className="truncate">{u.full_name || u.username}</span>
+                                {isSelf && (
+                                  <span className="text-[10px] font-semibold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md shrink-0">
+                                    {t('access.you')}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-slate-400 truncate">@{u.username}</div>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <div className="shrink-0">
+                            {u.is_active ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                <CheckCircle2 size={11} />
+                                {t('access.active')}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                                <Ban size={11} />
+                                {t('access.inactive')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle: Role Badge & Metadata */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80 text-xs">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {getRoleBadge(roleObj?.code || u.role, roleObj?.name)}
+                            {u.must_change_password && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">
+                                <KeyRound size={10} />
+                                {t('access.mustChangePasswordBadge')}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400">
+                            {u.last_login_at ? new Date(u.last_login_at).toLocaleDateString() : t('access.never')}
+                          </span>
+                        </div>
+
+                        {/* Bottom: Actions Row */}
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditUser(u)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer border border-slate-200/80"
+                          >
+                            <Edit2 size={13} />
+                            <span>{t('edit')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUserToResetPassword(u);
+                              setNewPassword('');
+                              setResetPasswordModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors cursor-pointer border border-amber-200/80"
+                          >
+                            <KeyRound size={13} />
+                            <span>{t('nav.changePassword')}</span>
+                          </button>
+                          {!isSelf && !isDefaultAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => setPendingToggleBlockUser(u)}
+                              className={`p-1.5 rounded-xl transition-colors cursor-pointer border ${
+                                u.is_active
+                                  ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200/80'
+                                  : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200/80'
+                              }`}
+                              title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
+                              aria-label={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
+                            >
+                              {u.is_active ? <Ban size={14} /> : <UserCheck size={14} />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ── DESKTOP VIEW: Table ── */}
+                <div className="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                          <th className="px-5 py-3.5">{t('access.fullName')} / {t('access.username')}</th>
+                          <th className="px-5 py-3.5">{t('access.role')}</th>
+                          <th className="px-5 py-3.5">{t('access.status')}</th>
+                          <th className="px-5 py-3.5">{t('access.lastLogin')}</th>
+                          <th className="px-5 py-3.5 text-right">{t('access.actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredUsers.map((u) => {
+                          const roleObj = u.role_info || roles.find((r) => r.id === u.role_id);
+                          const isSelf = currentUser?.id === u.id;
+                          const isDefaultAdmin = u.username === 'admin';
+
+                          return (
+                            <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-5 py-3.5">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-sm uppercase">
+                                    {u.full_name ? u.full_name.charAt(0) : u.username.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold text-slate-800 flex items-center gap-2">
+                                      {u.full_name || u.username}
+                                      {isSelf && (
+                                        <span className="text-[10px] font-semibold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md">
+                                          {t('access.you')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-slate-400">@{u.username}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-5 py-3.5">
+                                {getRoleBadge(roleObj?.code || u.role, roleObj?.name)}
+                              </td>
+                              <td className="px-5 py-3.5">
+                                <div className="flex flex-col gap-1 items-start">
+                                  {u.is_active ? (
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                      <CheckCircle2 size={12} />
+                                      {t('access.active')}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                                      <Ban size={12} />
+                                      {t('access.inactive')}
+                                    </span>
+                                  )}
+                                  {u.must_change_password && (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200" title={t('access.requirePasswordChangeDesc')}>
+                                      <KeyRound size={10} />
+                                      {t('access.mustChangePasswordBadge')}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-5 py-3.5 text-xs text-slate-500">
+                                {u.last_login_at
+                                  ? new Date(u.last_login_at).toLocaleString()
+                                  : t('access.never')}
+                              </td>
+                              <td className="px-5 py-3.5 text-right">
+                                <div className="inline-flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleOpenEditUser(u)}
+                                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                    title={t('access.editUser')}
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setUserToResetPassword(u);
+                                      setNewPassword('');
+                                      setResetPasswordModalOpen(true);
+                                    }}
+                                    className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                    title={t('access.resetPassword')}
+                                  >
+                                    <KeyRound size={16} />
+                                  </button>
+                                  {!isSelf && !isDefaultAdmin && (
+                                    <button
+                                      onClick={() => setPendingToggleBlockUser(u)}
+                                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active
+                                        ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                        : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                        }`}
+                                      title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
+                                    >
+                                      {u.is_active ? <Ban size={16} /> : <UserCheck size={16} />}
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
