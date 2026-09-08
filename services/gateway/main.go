@@ -163,9 +163,18 @@ func main() {
 			return
 		}
 
-		// Check if it's a direct file request (e.g. /assets/style.css)
+		// Check if it's a direct file request (e.g. /assets/style.css, /sw.js, /favicon.svg)
 		file := filepath.Join(publicDir, path)
 		if info, err := os.Stat(file); err == nil && !info.IsDir() {
+			// PWA Service Worker, manifest, and HTML files must NEVER be cached
+			if path == "/sw.js" || path == "/custom-sw.js" || path == "/manifest.webmanifest" || strings.HasSuffix(path, ".html") {
+				c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+				c.Writer.Header().Set("Pragma", "no-cache")
+				c.Writer.Header().Set("Expires", "0")
+			} else if strings.HasPrefix(path, "/assets/") {
+				// Vite hashed assets (JS/CSS) have immutable content hashes
+				c.Writer.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			}
 			c.File(file)
 			return
 		}
@@ -176,8 +185,13 @@ func main() {
 			c.JSON(http.StatusNotFound, gin.H{"error": "frontend not found", "public_dir": publicDir})
 			return
 		}
+		// Never cache SPA entrypoint so new bundle hashes are loaded immediately
+		c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Writer.Header().Set("Pragma", "no-cache")
+		c.Writer.Header().Set("Expires", "0")
 		c.File(index)
 	})
+
 
 	log.Printf("API Gateway listening on :%s (Auth: %s, Core: %s, Relay: %s, WebRTC: %s)",
 		port, authServiceURL, coreServiceURL, relayServiceURL, webrtcServiceURL)
