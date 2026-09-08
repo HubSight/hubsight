@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { ThemePreference } from '@hubsight/sdk';
 import { api } from '../api/client';
 import { useAuth } from './AuthContext';
@@ -20,12 +20,16 @@ const ThemeContext = createContext<ThemeContextType>({
 
 const THEME_STORAGE_KEY = 'hs_theme';
 
-function getSystemTheme(): ResolvedTheme {
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+export function getSystemTheme(): ResolvedTheme {
+  if (typeof window === 'undefined' || !window.matchMedia) return 'light';
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
 
-function applyThemeToDom(resolved: ResolvedTheme) {
+export function applyThemeToDom(resolved: ResolvedTheme) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   if (resolved === 'dark') {
@@ -35,6 +39,14 @@ function applyThemeToDom(resolved: ResolvedTheme) {
     root.classList.remove('dark');
     root.style.colorScheme = 'light';
   }
+
+  try {
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]:not([media])') as HTMLMetaElement
+      || document.querySelector('meta[name="theme-color"]') as HTMLMetaElement;
+    if (metaThemeColor) {
+      metaThemeColor.content = resolved === 'dark' ? '#000000' : '#ffffff';
+    }
+  } catch {}
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,20 +54,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-      if (saved === 'light' || saved === 'dark' || saved === 'system') {
-        return saved;
-      }
+      try {
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
+        if (saved === 'light' || saved === 'dark' || saved === 'system') {
+          return saved;
+        }
+      } catch {}
     }
     return 'system';
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    const initialTheme = typeof window !== 'undefined'
-      ? ((localStorage.getItem(THEME_STORAGE_KEY) as Theme) || 'system')
-      : 'system';
+    let initialTheme: Theme = 'system';
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
+        if (saved === 'light' || saved === 'dark' || saved === 'system') {
+          initialTheme = saved;
+        }
+      } catch {}
+    }
     return initialTheme === 'system' ? getSystemTheme() : initialTheme;
   });
+
+  const themeRef = useRef<Theme>(theme);
+  themeRef.current = theme;
+
+  const lastSyncedUserThemeRef = useRef<string | null>(null);
 
   // Apply resolved theme to DOM
   const updateResolvedTheme = useCallback((targetTheme: Theme) => {
@@ -64,46 +89,82 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     applyThemeToDom(resolved);
   }, []);
 
-  // Sync with user preference from DB on login / load
+  // Sync with user preference from DB on login / user change
+  // Note: Only sync when user.theme changes from an external source, NOT on internal theme state changes
   useEffect(() => {
-    if (user?.theme && (user.theme === 'system' || user.theme === 'light' || user.theme === 'dark')) {
-      if (user.theme !== theme) {
+    if (!user?.theme) return;
+    if (user.theme === 'system' || user.theme === 'light' || user.theme === 'dark') {
+      if (user.theme !== lastSyncedUserThemeRef.current) {
+        lastSyncedUserThemeRef.current = user.theme;
         setThemeState(user.theme);
-        localStorage.setItem(THEME_STORAGE_KEY, user.theme);
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, user.theme);
+        } catch {}
         updateResolvedTheme(user.theme);
       }
     }
-  }, [user?.theme, theme, updateResolvedTheme]);
+  }, [user?.theme, updateResolvedTheme]);
 
-  // Listen to OS system color scheme changes if theme === 'system'
+  // Robust, persistent listener for OS system color scheme changes
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    if (typeof window === 'undefined' || !window.matchMedia) return;
 
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (theme === 'system') {
-        const resolved: ResolvedTheme = e.matches ? 'dark' : 'light';
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const handleSystemThemeChange = () => {
+      if (themeRef.current === 'system') {
+        const isDark = mq.matches;
+        const resolved: ResolvedTheme = isDark ? 'dark' : 'light';
         setResolvedTheme(resolved);
         applyThemeToDom(resolved);
       }
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+    // Immediately evaluate on mount
+    if (themeRef.current === 'system') {
+      handleSystemThemeChange();
+    }
 
-  // Initial apply on mount
+    // Modern browsers
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', handleSystemThemeChange);
+    } else if (typeof (mq as any).addListener === 'function') {
+      // Legacy WebKit / Safari
+      (mq as any).addListener(handleSystemThemeChange);
+    }
+
+    // Crucial for macOS / iOS: appearance often changes while tab is inactive
+    const handleWindowFocusOrVisibility = () => {
+      if (themeRef.current === 'system') {
+        handleSystemThemeChange();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocusOrVisibility);
+    document.addEventListener('visibilitychange', handleWindowFocusOrVisibility);
+
+    return () => {
+      if (typeof mq.removeEventListener === 'function') {
+        mq.removeEventListener('change', handleSystemThemeChange);
+      } else if (typeof (mq as any).removeListener === 'function') {
+        (mq as any).removeListener(handleSystemThemeChange);
+      }
+      window.removeEventListener('focus', handleWindowFocusOrVisibility);
+      document.removeEventListener('visibilitychange', handleWindowFocusOrVisibility);
+    };
+  }, []);
+
+  // Apply on mount / theme state changes
   useEffect(() => {
     updateResolvedTheme(theme);
   }, [theme, updateResolvedTheme]);
 
   const setTheme = useCallback(async (newTheme: Theme) => {
+    lastSyncedUserThemeRef.current = newTheme;
     setThemeState(newTheme);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch {
-      /* ignore storage errors */
-    }
+    } catch {}
     updateResolvedTheme(newTheme);
 
     // If logged in, save to backend

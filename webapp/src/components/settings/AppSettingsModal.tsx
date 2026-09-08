@@ -26,10 +26,10 @@ interface AppSettingsModalProps {
 }
 
 export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) => {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { timezone, setTimezone } = useTimezone();
   const { user, setUser } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<'security' | 'notifications' | 'general'>('security');
   const [twoFactorModalMode, setTwoFactorModalMode] = useState<'setup' | 'regenerate' | 'disable' | null>(null);
@@ -402,7 +402,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                         {t('settings.themeSystem')}
                       </span>
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight">
-                        {t('settings.themeSystemDesc')}
+                        {t('settings.themeSystemDesc')} {theme === 'system' && `(${resolvedTheme === 'dark' ? (locale === 'vi' ? 'Đang áp dụng: Tối' : 'Currently: Dark') : (locale === 'vi' ? 'Đang áp dụng: Sáng' : 'Currently: Light')})`}
                       </span>
                     </button>
 
