@@ -282,45 +282,60 @@ const MainLayout = () => {
 
         {/* Sidebar Bottom Footer: Language & Theme Switch + User Profile */}
         <div className="shrink-0 border-t border-slate-200/90 dark:border-slate-800 pt-2 px-3 pb-1 space-y-1.5 bg-white dark:bg-slate-900">
-          {/* Language & Quick Theme Switcher Grid */}
-          <div className="grid grid-cols-2 gap-1.5">
+          {/* Language & 3-Way Theme Switcher Bar */}
+          <div className="flex items-center justify-between gap-2 p-1 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-800">
             {/* Language Switch */}
             <button
               onClick={handleSwitchLocale}
-              className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer border border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700/70 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
               title={t('lang.switch')}
             >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <Globe size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                <span className="truncate">{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
-              </div>
-              <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 px-1 py-0.5 rounded border border-orange-200 dark:border-orange-800/40 shrink-0">
-                {locale === 'vi' ? 'VI' : 'EN'}
-              </span>
+              <Globe size={14} className="text-slate-400 dark:text-slate-400 shrink-0" />
+              <span>{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
             </button>
 
-            {/* Quick Theme Toggle */}
-            <button
-              onClick={cycleTheme}
-              className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer border border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
-              title={t('settings.themeDesc')}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                {theme === 'dark' ? (
-                  <Moon size={13} className="text-indigo-400 shrink-0" />
-                ) : theme === 'light' ? (
-                  <Sun size={13} className="text-amber-500 shrink-0" />
-                ) : (
-                  <Monitor size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                )}
-                <span className="truncate">
-                  {theme === 'system' ? t('settings.themeSystem') : theme === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
-                </span>
-              </div>
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase shrink-0">
-                {theme}
-              </span>
-            </button>
+            {/* 3-Way Theme Segmented Control */}
+            <div className="flex items-center p-0.5 bg-slate-200/60 dark:bg-slate-900/80 rounded-xl border border-slate-200/80 dark:border-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-white dark:bg-slate-800 text-amber-500 shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                title={t('settings.themeLight')}
+                aria-label={t('settings.themeLight')}
+              >
+                <Sun size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-white dark:bg-slate-800 text-indigo-400 shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                title={t('settings.themeDark')}
+                aria-label={t('settings.themeDark')}
+              >
+                <Moon size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('system')}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  theme === 'system'
+                    ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                title={t('settings.themeSystem')}
+                aria-label={t('settings.themeSystem')}
+              >
+                <Monitor size={14} />
+              </button>
+            </div>
           </div>
 
           {/* Compact Bottom User Profile & Actions Popover */}
