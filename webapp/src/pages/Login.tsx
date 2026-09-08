@@ -236,12 +236,12 @@ const Login = () => {
                     type="button"
                     onClick={handlePasskeyLogin}
                     disabled={passkeyLoading || loading}
-                    className="w-full min-h-[46px] sm:min-h-[44px] py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs touch-manipulation"
+                    className="group w-full min-h-[46px] sm:min-h-[44px] py-2.5 px-4 bg-white hover:bg-orange-50/60 active:bg-orange-100/50 text-slate-700 hover:text-orange-600 border border-slate-200 hover:border-orange-300 active:scale-[0.99] font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs hover:shadow-sm touch-manipulation"
                   >
                     {passkeyLoading ? (
-                      <Loader2 size={18} className="animate-spin text-orange-500" />
+                      <Loader2 size={19} className="animate-spin text-orange-600" />
                     ) : (
-                      <Fingerprint size={18} className="text-orange-400" />
+                      <Fingerprint size={19} className="text-orange-600 group-hover:scale-110 transition-transform duration-150" />
                     )}
                     <span>{t('login.passkeyBtn')}</span>
                   </button>
