@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield } from '@/components/icons';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield, Sun, Moon, Monitor } from '@/components/icons';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { AppSettingsModal } from '../components/settings/AppSettingsModal';
 import { AppFooter } from '../components/AppFooter';
@@ -13,9 +13,11 @@ import { useOnNotification } from '@hubsight/sdk/react';
 import { api } from '../api/client';
 import { getPushNotificationPermission, subscribeToWebPush } from '../utils/push';
 import { Toaster } from 'react-hot-toast';
+import { useTheme } from '../context/ThemeContext';
 
 const MainLayout = () => {
   const { user, checkAuth } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { t, locale, setLocale } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -84,8 +86,18 @@ const MainLayout = () => {
     }
   };
 
+  const cycleTheme = () => {
+    if (theme === 'system') {
+      setTheme('light');
+    } else if (theme === 'light') {
+      setTheme('dark');
+    } else {
+      setTheme('system');
+    }
+  };
+
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Floating Realtime Notification Toast */}
       <NotificationToast />
       <Toaster position="top-right" />
@@ -98,30 +110,46 @@ const MainLayout = () => {
       />
 
       {/* Mobile Header (In flex-flow on mobile: shrink-0, hidden on desktop) */}
-      <header className="md:hidden shrink-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-30 pt-[env(safe-area-inset-top)] shadow-xs">
+      <header className="md:hidden shrink-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 z-30 pt-[env(safe-area-inset-top)] shadow-xs">
         <div className="h-14 flex items-center justify-between px-4">
           <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
             <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
               <Camera size={18} />
             </div>
-            <h2 className="text-base font-bold m-0 text-slate-800 tracking-tight">HubSight</h2>
+            <h2 className="text-base font-bold m-0 text-slate-800 dark:text-slate-100 tracking-tight">HubSight</h2>
           </NavLink>
 
           <div className="flex items-center gap-1">
+            {/* Quick Theme Toggle on Mobile */}
+            <button
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation cursor-pointer"
+              onClick={cycleTheme}
+              aria-label="Toggle theme"
+              title={theme === 'system' ? t('settings.themeSystem') : theme === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
+            >
+              {theme === 'dark' ? (
+                <Moon size={19} className="text-indigo-400" />
+              ) : theme === 'light' ? (
+                <Sun size={19} className="text-amber-500" />
+              ) : (
+                <Monitor size={19} />
+              )}
+            </button>
+
             {/* Notification Bell on Mobile */}
             <button
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation relative cursor-pointer"
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation relative cursor-pointer"
               onClick={() => setShowNotificationDrawer(true)}
               aria-label="Notifications"
             >
               <Bell size={20} />
               {unreadNotifCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
               )}
             </button>
 
             <button
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 active:bg-slate-100 transition-colors touch-manipulation cursor-pointer"
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation cursor-pointer"
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Open navigation menu"
             >
@@ -141,7 +169,7 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 bg-white shadow-xl shadow-slate-200/20 border-r border-slate-200 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden
+        fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/20 dark:shadow-none border-r border-slate-200 dark:border-slate-800 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden
         transition-all duration-300 ease-in-out md:relative md:py-4
         ${isMobileMenuOpen ? 'translate-x-0 w-[270px]' : '-translate-x-full w-[270px] md:translate-x-0'}
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
@@ -152,12 +180,12 @@ const MainLayout = () => {
               <Camera size={20} />
             </div>
             <div>
-              <h1 className="font-bold text-base leading-none text-slate-800 group-hover:text-orange-600 transition-colors">HubSight</h1>
-              <span className="text-[10px] text-slate-500 font-medium tracking-wide">{t('nav.subtitle')}</span>
+              <h1 className="font-bold text-base leading-none text-slate-800 dark:text-slate-100 group-hover:text-orange-600 transition-colors">HubSight</h1>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">{t('nav.subtitle')}</span>
             </div>
           </NavLink>
           <button
-            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <X size={22} />
@@ -166,7 +194,7 @@ const MainLayout = () => {
 
         <nav className="flex-1 flex flex-col overflow-y-auto custom-scrollbar space-y-0.5 pb-2">
           {/* Section 1: Giám sát (Surveillance) */}
-          <div className="px-5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+          <div className="px-5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
             {t('nav.sectionSurveillance')}
           </div>
           <NavLink to="/multiview" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
@@ -252,30 +280,59 @@ const MainLayout = () => {
           )}
         </nav>
 
-        {/* Sidebar Bottom Footer: Language Switch & User Profile */}
-        <div className="shrink-0 border-t border-slate-200/90 pt-2 px-3 pb-1 space-y-1.5 bg-white">
-          {/* Language Switch */}
-          <button
-            onClick={handleSwitchLocale}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer border border-slate-200/70 hover:border-slate-300"
-          >
-            <Globe size={14} className="text-slate-400 shrink-0" />
-            <span className="flex-1 text-left">{t('lang.switch')}</span>
-            <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-200">
-              {locale === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
-            </span>
-          </button>
+        {/* Sidebar Bottom Footer: Language & Theme Switch + User Profile */}
+        <div className="shrink-0 border-t border-slate-200/90 dark:border-slate-800 pt-2 px-3 pb-1 space-y-1.5 bg-white dark:bg-slate-900">
+          {/* Language & Quick Theme Switcher Grid */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {/* Language Switch */}
+            <button
+              onClick={handleSwitchLocale}
+              className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer border border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+              title={t('lang.switch')}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Globe size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="truncate">{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
+              </div>
+              <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 px-1 py-0.5 rounded border border-orange-200 dark:border-orange-800/40 shrink-0">
+                {locale === 'vi' ? 'VI' : 'EN'}
+              </span>
+            </button>
+
+            {/* Quick Theme Toggle */}
+            <button
+              onClick={cycleTheme}
+              className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer border border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+              title={t('settings.themeDesc')}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                {theme === 'dark' ? (
+                  <Moon size={13} className="text-indigo-400 shrink-0" />
+                ) : theme === 'light' ? (
+                  <Sun size={13} className="text-amber-500 shrink-0" />
+                ) : (
+                  <Monitor size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                )}
+                <span className="truncate">
+                  {theme === 'system' ? t('settings.themeSystem') : theme === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase shrink-0">
+                {theme}
+              </span>
+            </button>
+          </div>
 
           {/* Compact Bottom User Profile & Actions Popover */}
           <div className="relative" ref={userMenuRef}>
             {/* User Popover Menu */}
             {isUserMenuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                  <p className="text-xs font-bold text-slate-800 truncate">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-slate-950/60 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                     {user?.full_name || user?.username}
                   </p>
-                  <p className="text-[11px] text-slate-400 font-mono truncate">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono truncate">
                     @{user?.username} • {user?.role === 'admin' ? t('admin') : t('viewer')}
                   </p>
                 </div>
@@ -285,7 +342,7 @@ const MainLayout = () => {
                     setShowSettingsModal(true);
                     setIsUserMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   <Shield size={15} className="text-orange-600 shrink-0" />
                   {t('nav.security')}
@@ -296,20 +353,20 @@ const MainLayout = () => {
                     setShowPasswordModal(true);
                     setIsUserMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   <KeyRound size={15} className="text-slate-500 shrink-0" />
                   {t('nav.changePassword')}
                 </button>
 
-                <div className="my-1 border-t border-slate-100" />
+                <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
                     handleLogout();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
                 >
                   <LogOut size={15} className="shrink-0" />
                   {t('nav.logout')}
@@ -323,21 +380,21 @@ const MainLayout = () => {
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className={`flex-1 min-w-0 flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${isUserMenuOpen
-                  ? 'bg-orange-50/50 border-orange-200 shadow-xs'
-                  : 'bg-white hover:bg-slate-50 border-transparent hover:border-slate-200'
+                  ? 'bg-orange-50/50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/50 shadow-xs'
+                  : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent hover:border-slate-200 dark:hover:border-slate-700'
                   }`}
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${user?.role === 'admin'
-                    ? 'bg-red-50 text-red-600 group-hover:bg-red-100'
-                    : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                    ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/40'
+                    : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40'
                     }`}
                 >
                   <UserIcon size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p
-                    className="text-xs font-bold text-slate-800 truncate leading-tight"
+                    className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight"
                     title={user?.full_name || user?.username}
                   >
                     {user?.full_name || user?.username}
@@ -345,18 +402,18 @@ const MainLayout = () => {
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
                       className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${user?.role === 'admin'
-                        ? 'bg-red-50 text-red-600 border-red-200'
-                        : 'bg-blue-50 text-blue-600 border-blue-200'
+                        ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50'
+                        : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50'
                         }`}
                     >
                       {user?.role === 'admin' ? t('admin') : t('viewer')}
                     </span>
-                    <span className="text-[11px] text-slate-400 font-mono truncate">
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono truncate">
                       @{user?.username}
                     </span>
                   </div>
                 </div>
-                <ChevronsUpDown size={14} className="text-slate-400 group-hover:text-slate-600 shrink-0 transition-colors" />
+                <ChevronsUpDown size={14} className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0 transition-colors" />
               </button>
 
               {/* Notification Bell Button */}
@@ -365,20 +422,20 @@ const MainLayout = () => {
                   setIsMobileMenuOpen(false);
                   setShowNotificationDrawer(true);
                 }}
-                className="relative p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-white shadow-2xs"
+                className="relative p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-white dark:bg-slate-800/60 shadow-2xs"
                 title={t('notifications.title')}
                 aria-label={t('notifications.title')}
               >
                 <Bell size={18} />
                 {unreadNotifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white flex items-center justify-center ring-2 ring-white leading-none animate-pulse">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-slate-900 leading-none animate-pulse">
                     {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
                   </span>
                 )}
               </button>
             </div>
 
-            <AppFooter className="mt-2 pt-2 border-t border-slate-100/80" />
+            <AppFooter className="mt-2 pt-2 border-t border-slate-100/80 dark:border-slate-800/80" />
           </div>
         </div>
       </aside>
@@ -386,7 +443,7 @@ const MainLayout = () => {
       {/* Desktop Sidebar Toggle Button */}
       <button
         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-200 shadow-md py-3 px-1 rounded-r-xl transition-all duration-300 hover:bg-slate-50 text-slate-400 hover:text-slate-700 cursor-pointer ${isSidebarCollapsed ? 'left-0' : 'left-[260px]'
+        className={`hidden md:flex fixed top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-md py-3 px-1 rounded-r-xl transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer ${isSidebarCollapsed ? 'left-0' : 'left-[260px]'
           }`}
         title={isSidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
       >

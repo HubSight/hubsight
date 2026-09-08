@@ -69,29 +69,31 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       aria-labelledby="confirm-dialog-title"
     >
       <div
-        className="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 sm:p-6">
           <div className="flex items-start gap-3.5">
             <div
               className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                isDanger ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
+                isDanger
+                  ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400'
+                  : 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400'
               }`}
             >
               {isDanger ? <Trash2 size={20} /> : <AlertTriangle size={20} />}
             </div>
             <div className="min-w-0 flex-1">
-              <h3 id="confirm-dialog-title" className="text-base font-bold text-slate-800 leading-snug">
+              <h3 id="confirm-dialog-title" className="text-base font-bold text-slate-800 dark:text-slate-100 leading-snug">
                 {title}
               </h3>
-              <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{message}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">{message}</p>
             </div>
             <button
               type="button"
               onClick={onCancel}
               disabled={isLoading}
-              className="p-1.5 -mt-1 -mr-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40"
+              className="p-1.5 -mt-1 -mr-1 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-40"
               aria-label={t('close')}
             >
               <X size={16} />
@@ -99,19 +101,19 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </div>
 
           {imageUrl && (
-            <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
+            <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
               <img src={imageUrl} alt="" className="w-full h-40 object-cover" />
             </div>
           )}
         </div>
 
-        <div className="px-5 sm:px-6 py-4 bg-slate-50/90 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <div className="px-5 sm:px-6 py-4 bg-slate-50/90 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
           <button
             ref={cancelRef}
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="px-4 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 hover:border-slate-300 rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {cancelLabel || t('cancel')}
           </button>

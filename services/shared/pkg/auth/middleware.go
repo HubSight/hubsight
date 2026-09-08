@@ -39,7 +39,7 @@ func Middleware() gin.HandlerFunc {
 		if err != nil || cookie == "" {
 			authHeader := c.GetHeader("Authorization")
 			if authHeader != "" {
-				cookie = authHeader
+				cookie = strings.TrimPrefix(authHeader, "Bearer ")
 			}
 		}
 

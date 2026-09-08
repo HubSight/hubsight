@@ -71,7 +71,7 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
     <div className="space-y-4">
       {/* Segment Duration */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
           {t('device.segmentDuration')}
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -83,7 +83,7 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
               className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                 formData.segmentDuration === item.secs
                   ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
               }`}
             >
               {item.label}
@@ -94,8 +94,8 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
 
       {/* Video Codec Cards */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
-          <Tv size={16} className="text-orange-600" />
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-1.5">
+          <Tv size={16} className="text-orange-600 dark:text-orange-400" />
           {t('device.videoCodecMode')}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -105,17 +105,17 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
               onClick={() => onChange({ videoCodec: vc.id })}
               className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                 formData.videoCodec === vc.id
-                  ? 'border-orange-500 bg-orange-50/50 ring-1 ring-orange-500 shadow-sm'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/30 ring-1 ring-orange-500 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-slate-700'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-sm text-slate-800">{vc.title}</span>
-                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded">
+                <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">{vc.title}</span>
+                <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold rounded">
                   {vc.badge}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed">{vc.desc}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{vc.desc}</p>
             </div>
           ))}
         </div>
@@ -123,8 +123,8 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
 
       {/* Audio Mode Cards */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1.5">
-          <Volume2 size={16} className="text-orange-600" />
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-1.5">
+          <Volume2 size={16} className="text-orange-600 dark:text-orange-400" />
           {t('device.audioMode')}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -134,31 +134,31 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
               onClick={() => onChange({ audioMode: am.id })}
               className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                 formData.audioMode === am.id
-                  ? 'border-orange-500 bg-orange-50/50 ring-1 ring-orange-500 shadow-sm'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/30 ring-1 ring-orange-500 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-slate-700'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-sm text-slate-800">{am.title}</span>
+                <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">{am.title}</span>
                 <span
                   className={`px-2 py-0.5 text-[10px] font-bold rounded ${
                     am.id === 'auto'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-slate-100 text-slate-700'
+                      ? 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   {am.badge}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed">{am.desc}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{am.desc}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Quick FFmpeg presets */}
-      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-        <label className="block text-sm font-medium text-slate-700 mb-2">
+      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
           {t('device.quickFfmpegOptions')}
         </label>
         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -167,7 +167,7 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
               key={tag.label}
               type="button"
               onClick={() => onAddFfmpegTag(tag.value)}
-              className="text-xs bg-white hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 text-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-200 transition-all font-medium cursor-pointer shadow-2xs"
+              className="text-xs bg-white dark:bg-slate-800 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-600 dark:hover:text-orange-400 hover:border-orange-200 dark:hover:border-orange-700 text-slate-700 dark:text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-all font-medium cursor-pointer shadow-2xs"
               title={tag.desc}
             >
               + {tag.label}
@@ -176,14 +176,14 @@ export const DeviceFfmpegTab: React.FC<DeviceFfmpegTabProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
             {t('device.customFfmpegArgs')}
           </label>
           <input
             type="text"
             value={formData.extraArgs}
             onChange={(e) => onChange({ extraArgs: e.target.value })}
-            className="input-field w-full font-mono text-xs bg-white"
+            className="input-field w-full font-mono text-xs bg-white dark:bg-slate-900"
             placeholder="e.g. -fflags nobuffer -loglevel warning"
           />
           <p className="text-[11px] text-slate-400 mt-1">

@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   LoginResponse,
   PasskeyItem,
+  ThemePreference,
   TwoFactorSetupResponse,
   TwoFactorVerifyRequest,
   User,
@@ -46,6 +47,7 @@ export interface AuthManager {
   changePassword(body: ChangePasswordRequest): Promise<void>;
   setLocale(locale: Locale): Promise<void>;
   setTimezone(timezone: string): Promise<void>;
+  setTheme(theme: ThemePreference): Promise<void>;
   setPreferences(preferences: Record<string, boolean>): Promise<void>;
 
   // Two-Factor Authentication (2FA)

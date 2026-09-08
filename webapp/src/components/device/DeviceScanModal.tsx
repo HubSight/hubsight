@@ -115,33 +115,33 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl max-h-[92dvh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[92dvh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 flex flex-col overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-800/80">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center">
               <Radar size={18} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-800">{t('devices.scanTitle')}</h2>
-              <p className="text-[11px] text-slate-500">{t('devices.scanSubtitle')}</p>
+              <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">{t('devices.scanTitle')}</h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('devices.scanSubtitle')}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="px-5 py-3 border-b border-slate-100 flex flex-col sm:flex-row gap-2">
+        <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-2">
           <input
             value={extraCidr}
             onChange={(e) => setExtraCidr(e.target.value)}
             placeholder={t('devices.scanCidrPlaceholder')}
             disabled={running}
-            className="flex-1 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500"
+            className="flex-1 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl outline-none focus:border-orange-500"
           />
           <button
             type="button"
@@ -155,10 +155,10 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
 
         {running && (
           <div className="px-5 pt-3">
-            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div className="h-full bg-orange-500 transition-all" style={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[11px] text-slate-500 mt-1.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
               {t('devices.scanProgress', {
                 scanned: job?.scanned ?? 0,
                 total: job?.total ?? 0,
@@ -170,35 +170,37 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
           {error && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs">{error}</div>
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400 text-xs">{error}</div>
           )}
           {candidates.length === 0 && !running && (
-            <div className="text-center py-10 text-sm text-slate-500">{t('devices.scanEmpty')}</div>
+            <div className="text-center py-10 text-sm text-slate-500 dark:text-slate-400">{t('devices.scanEmpty')}</div>
           )}
           {candidates.map((c) => {
             const on = selected.has(c.ip);
             return (
               <label
                 key={c.ip}
-                className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-colors ${on ? 'border-orange-400 bg-orange-50/40' : 'border-slate-200 bg-white hover:border-slate-300'
+                className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-colors ${on
+                    ? 'border-orange-400 bg-orange-50/40 dark:border-orange-500 dark:bg-orange-950/30'
+                    : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800/50 dark:hover:border-slate-700'
                   }`}
               >
                 <input type="checkbox" className="mt-1" checked={on} onChange={() => toggle(c.ip)} />
-                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
                   <Camera size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm text-slate-800">{c.ip}:{c.port}</span>
-                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                    <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{c.ip}:{c.port}</span>
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                       {c.brand || 'generic'}
                     </span>
                     {c.via && <span className="text-[10px] text-slate-400">via {c.via}</span>}
                   </div>
-                  <p className="text-[11px] text-slate-500 truncate mt-0.5 font-mono">{c.rtsp_url}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 font-mono">{c.rtsp_url}</p>
                   <button
                     type="button"
-                    className="text-[11px] font-semibold text-orange-600 mt-1 cursor-pointer"
+                    className="text-[11px] font-semibold text-orange-600 dark:text-orange-400 mt-1 cursor-pointer"
                     onClick={(e) => {
                       e.preventDefault();
                       onConfigure(c);
@@ -213,8 +215,8 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
           })}
         </div>
 
-        <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between gap-2 bg-slate-50/80">
-          <span className="text-xs text-slate-500">
+        <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/80 dark:bg-slate-800/80">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             {running && <Loader2 size={12} className="inline animate-spin mr-1" />}
             {t('devices.scanFound', { count: candidates.length })}
           </span>
@@ -222,7 +224,7 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold rounded-xl bg-white border border-slate-200 text-slate-600 cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
             >
               {t('cancel')}
             </button>

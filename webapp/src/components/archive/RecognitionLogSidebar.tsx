@@ -17,39 +17,39 @@ interface RecognitionLogSidebarProps {
 const CATEGORY_STYLES: Record<string, { bar: string; text: string; bg: string; border: string }> = {
   member: {
     bar: 'bg-emerald-500',
-    text: 'text-emerald-800',
-    bg: 'bg-emerald-50/70',
-    border: 'border-emerald-200',
+    text: 'text-emerald-800 dark:text-emerald-300',
+    bg: 'bg-emerald-50/70 dark:bg-emerald-950/30',
+    border: 'border-emerald-200 dark:border-emerald-800/60',
   },
   guest: {
     bar: 'bg-blue-500',
-    text: 'text-blue-800',
-    bg: 'bg-blue-50/70',
-    border: 'border-blue-200',
+    text: 'text-blue-800 dark:text-blue-300',
+    bg: 'bg-blue-50/70 dark:bg-blue-950/30',
+    border: 'border-blue-200 dark:border-blue-800/60',
   },
   stranger: {
     bar: 'bg-red-500',
-    text: 'text-red-800',
-    bg: 'bg-red-50/70',
-    border: 'border-red-200',
+    text: 'text-red-800 dark:text-red-300',
+    bg: 'bg-red-50/70 dark:bg-red-950/30',
+    border: 'border-red-200 dark:border-red-800/60',
   },
   risk: {
     bar: 'bg-orange-500',
-    text: 'text-orange-800',
-    bg: 'bg-orange-50/70',
-    border: 'border-orange-200',
+    text: 'text-orange-800 dark:text-orange-300',
+    bg: 'bg-orange-50/70 dark:bg-orange-950/30',
+    border: 'border-orange-200 dark:border-orange-800/60',
   },
   fall: {
     bar: 'bg-rose-500',
-    text: 'text-rose-800',
-    bg: 'bg-rose-50/70',
-    border: 'border-rose-200',
+    text: 'text-rose-800 dark:text-rose-300',
+    bg: 'bg-rose-50/70 dark:bg-rose-950/30',
+    border: 'border-rose-200 dark:border-rose-800/60',
   },
   suspicious: {
     bar: 'bg-amber-500',
-    text: 'text-amber-800',
-    bg: 'bg-amber-50/70',
-    border: 'border-amber-200',
+    text: 'text-amber-800 dark:text-amber-300',
+    bg: 'bg-amber-50/70 dark:bg-amber-950/30',
+    border: 'border-amber-200 dark:border-amber-800/60',
   },
 };
 
@@ -123,19 +123,19 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
     <aside
       className={
         isDocked
-          ? 'flex flex-col h-full min-h-0 w-full bg-white overflow-hidden'
-          : 'flex flex-col h-[40vh] bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden'
+          ? 'flex flex-col h-full min-h-0 w-full bg-white dark:bg-slate-900 overflow-hidden'
+          : 'flex flex-col h-[40vh] bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden'
       }
     >
-      <div className={`px-4 border-b border-slate-100 shrink-0 flex items-center justify-between gap-2 ${isDocked ? 'py-4' : 'py-3'}`}>
-        <h3 className={`font-semibold text-slate-800 tracking-tight ${isDocked ? 'text-[15px]' : 'text-sm'}`}>
+      <div className={`px-4 border-b border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between gap-2 ${isDocked ? 'py-4' : 'py-3'}`}>
+        <h3 className={`font-semibold text-slate-800 dark:text-slate-100 tracking-tight ${isDocked ? 'text-[15px]' : 'text-sm'}`}>
           {t('log.title')}
         </h3>
         {logs.length > 0 && (
           <button
             type="button"
             onClick={() => setConfirmClear(true)}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-red-600 cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer transition-colors"
             title={t('log.clear')}
           >
             <Trash2 size={13} />
@@ -147,9 +147,9 @@ export const RecognitionLogSidebar: React.FC<RecognitionLogSidebarProps> = ({ ca
         {loading && logs.length === 0 ? (
           <div className="space-y-2 p-1">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+              <div key={i} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
             ))}
-            <p className="text-[11px] text-slate-400 text-center pt-2">{t('log.loading')}</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center pt-2">{t('log.loading')}</p>
           </div>
         ) : error && logs.length === 0 ? (
           <p className="text-xs text-slate-400 text-center py-10">{t('log.error')}</p>

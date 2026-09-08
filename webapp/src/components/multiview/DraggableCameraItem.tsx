@@ -37,16 +37,16 @@ export const DraggableCameraItem: React.FC<DraggableCameraItemProps> = ({
       draggable={isOnline}
       onDragStart={handleDragStart}
       className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all select-none ${!isOnline
-          ? 'bg-slate-50/80 border-slate-200/60 opacity-60 cursor-not-allowed'
+          ? 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-800/60 opacity-60 cursor-not-allowed'
           : isInGrid
-            ? 'bg-orange-50/40 border-orange-200/80 hover:border-orange-300 cursor-grab active:cursor-grabbing shadow-xs'
-            : 'bg-white border-slate-200 hover:border-orange-300 hover:shadow-xs cursor-grab active:cursor-grabbing'
+            ? 'bg-orange-50/40 dark:bg-orange-950/30 border-orange-200/80 dark:border-orange-800/60 hover:border-orange-300 dark:hover:border-orange-600 cursor-grab active:cursor-grabbing shadow-xs'
+            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-500 hover:shadow-xs cursor-grab active:cursor-grabbing'
         }`}
     >
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
         {/* Drag Handle Icon */}
         <div
-          className={`shrink-0 ${isOnline ? 'text-slate-400 group-hover:text-orange-500' : 'text-slate-300'
+          className={`shrink-0 ${isOnline ? 'text-slate-400 dark:text-slate-500 group-hover:text-orange-500' : 'text-slate-300 dark:text-slate-600'
             }`}
         >
           <GripVertical size={16} />
@@ -55,7 +55,7 @@ export const DraggableCameraItem: React.FC<DraggableCameraItemProps> = ({
         {/* Status Indicator */}
         <div className="relative flex items-center justify-center shrink-0">
           <span
-            className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'
+            className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
               }`}
           />
           {isOnline && (
@@ -66,12 +66,12 @@ export const DraggableCameraItem: React.FC<DraggableCameraItemProps> = ({
         {/* Camera Info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs font-semibold text-slate-800 truncate" title={camera.name}>
+            <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate" title={camera.name}>
               {camera.name}
             </p>
             {camera.enable_ai && (
               <span
-                className="inline-flex items-center px-1.5 py-0.2 text-[9px] font-bold rounded bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+                className="inline-flex items-center px-1.5 py-0.2 text-[9px] font-bold rounded bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shrink-0"
                 title="AI Powered"
               >
                 <Bot size={10} className="mr-0.5" />
@@ -79,7 +79,7 @@ export const DraggableCameraItem: React.FC<DraggableCameraItemProps> = ({
               </span>
             )}
           </div>
-          <p className="text-[11px] text-slate-600 truncate mt-0.5">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate mt-0.5">
             {camera.brand || 'RTSP'} • {camera.host || 'Direct Stream'}
           </p>
         </div>
@@ -88,7 +88,7 @@ export const DraggableCameraItem: React.FC<DraggableCameraItemProps> = ({
       {/* Right side: Slot badge or Quick Add button */}
       <div className="flex items-center gap-1.5 shrink-0 ml-2">
         {isInGrid && gridSlotIndex !== null ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700 border border-orange-200">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
             <Check size={11} />
             {t('multiview.slotBadge', { num: (gridSlotIndex + 1).toString() })}
           </span>
@@ -100,13 +100,13 @@ export const DraggableCameraItem: React.FC<DraggableCameraItemProps> = ({
               onQuickAdd(camera.id);
             }}
             title={t('multiview.clickToSelect')}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             <Plus size={15} />
           </button>
         ) : (
           <span
-            className="text-slate-400 p-1"
+            className="text-slate-400 dark:text-slate-500 p-1"
             title={t('multiview.allCamerasOffline')}
           >
             <AlertCircle size={14} />

@@ -8,7 +8,7 @@ interface SkeletonProps {
 export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => {
   return (
     <div
-      className={`animate-pulse bg-slate-200/80 rounded-md ${className}`}
+      className={`animate-pulse bg-slate-200/80 dark:bg-slate-800/80 rounded-md ${className}`}
       aria-hidden="true"
     />
   );
@@ -16,7 +16,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => {
 
 export const DeviceCardSkeleton: React.FC = () => {
   return (
-    <div className="bg-white border border-slate-200/90 p-4 sm:p-5 shadow-sm flex flex-col justify-between rounded-xl">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col justify-between rounded-xl">
       <div>
         <div className="flex justify-between items-start mb-3 gap-2">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -44,7 +44,7 @@ export const DeviceCardSkeleton: React.FC = () => {
       </div>
 
       {/* Footer Skeleton */}
-      <div className="pt-3 border-t border-slate-100 flex justify-between">
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between">
         <Skeleton className="h-4 w-28 rounded" />
         <Skeleton className="h-4 w-20 rounded" />
       </div>
@@ -77,7 +77,7 @@ export const PlaybackSkeleton: React.FC = () => {
 
       {/* Below player toolbar & timeline skeleton */}
       <div className="flex flex-col shrink-0 px-4 lg:px-6 mt-4 gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <Skeleton className="h-9 w-40 rounded-xl" />
             <Skeleton className="h-9 w-32 rounded-xl" />
@@ -87,7 +87,7 @@ export const PlaybackSkeleton: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-3">
           <div className="flex justify-between items-center">
             <Skeleton className="h-4 w-44 rounded" />
             <Skeleton className="h-4 w-28 rounded" />
@@ -107,7 +107,7 @@ export const NvrMonitorSkeleton: React.FC = () => {
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4"
+            className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4"
           >
             <div className="flex items-center justify-between">
               <Skeleton className="h-4 w-24 rounded" />
@@ -122,7 +122,7 @@ export const NvrMonitorSkeleton: React.FC = () => {
       </div>
 
       {/* Control Panel Skeleton */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div className="space-y-2">
             <Skeleton className="h-6 w-48 rounded" />
@@ -142,7 +142,7 @@ export const NvrMonitorSkeleton: React.FC = () => {
           {Array.from({ length: 3 }).map((_, idx) => (
             <div
               key={idx}
-              className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
+              className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export const NvrMonitorSkeleton: React.FC = () => {
                 <Skeleton className="h-5 w-16 rounded-full" />
               </div>
               <Skeleton className="h-10 w-full rounded-lg" />
-              <div className="flex justify-between pt-2 border-t border-slate-100">
+              <div className="flex justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                 <Skeleton className="h-4 w-24 rounded" />
                 <Skeleton className="h-4 w-20 rounded" />
               </div>
@@ -166,18 +166,18 @@ export const NvrMonitorSkeleton: React.FC = () => {
 
 export const AppLoadingSkeleton: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 p-4 select-none">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 dark:bg-[#090d16] p-4 select-none">
       <div className="flex flex-col items-center text-center animate-fade-in">
         <div className="w-20 h-20 rounded-[22px] bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-5">
           <Camera size={40} />
         </div>
-        <h1 className="text-2xl sm:text-[26px] font-extrabold text-slate-900 tracking-tight mb-1.5">
+        <h1 className="text-2xl sm:text-[26px] font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-1.5">
           HubSight
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 font-medium mb-6">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mb-6">
           Smart CCTV & NVR Management
         </p>
-        <div className="w-36 h-1 bg-slate-200 rounded-full overflow-hidden">
+        <div className="w-36 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
           <div className="h-full bg-orange-600 rounded-full animate-[shimmer_1.3s_infinite_linear] w-1/2" />
         </div>
       </div>

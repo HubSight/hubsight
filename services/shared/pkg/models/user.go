@@ -62,6 +62,7 @@ type User struct {
 	MustChangePassword bool              `gorm:"column:must_change_password;not null;default:false" json:"must_change_password"`
 	Locale            Locale             `gorm:"column:locale;type:varchar(16);not null;default:'vi'" json:"locale,omitempty"`
 	Timezone          string             `gorm:"column:timezone;type:varchar(64);not null;default:'Asia/Ho_Chi_Minh'" json:"timezone,omitempty"`
+	Theme             Theme              `gorm:"column:theme;type:varchar(16);not null;default:'system'" json:"theme"`
 	CreatedAt         time.Time          `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
 	UpdatedAt         time.Time          `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
 	LastLoginAt       *time.Time         `gorm:"column:last_login_at" json:"last_login_at,omitempty"`
@@ -100,6 +101,9 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	}
 	if u.Timezone == "" {
 		u.Timezone = "Asia/Ho_Chi_Minh"
+	}
+	if u.Theme == "" {
+		u.Theme = ThemeSystem
 	}
 	return nil
 }

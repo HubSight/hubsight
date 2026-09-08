@@ -5,6 +5,7 @@ import type {
   LoginRequest,
   LoginResponse,
   PasskeyItem,
+  ThemePreference,
   TwoFactorSetupResponse,
   TwoFactorVerifyRequest,
   User,
@@ -215,6 +216,15 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
       await http.put('/auth/timezone', { timezone });
       if (currentUser) {
         currentUser = { ...currentUser, timezone };
+        if (currentSession) currentSession.user = currentUser;
+        emitChange('USER_UPDATED', currentSession);
+      }
+    },
+
+    async setTheme(theme: ThemePreference): Promise<void> {
+      await http.put('/auth/theme', { theme });
+      if (currentUser) {
+        currentUser = { ...currentUser, theme };
         if (currentSession) currentSession.user = currentUser;
         emitChange('USER_UPDATED', currentSession);
       }

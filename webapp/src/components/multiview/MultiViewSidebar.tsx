@@ -36,18 +36,18 @@ export const MultiViewSidebar: React.FC<MultiViewSidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <div className="hidden lg:flex flex-col items-center py-4 px-2 bg-white border-r border-slate-200 shrink-0">
+      <div className="hidden lg:flex flex-col items-center py-4 px-2 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shrink-0">
         <button
           type="button"
           onClick={onToggleCollapse}
           title={t('nav.expandSidebar')}
-          className="p-2 rounded-xl text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+          className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         >
           <ChevronRight size={18} />
         </button>
-        <div className="mt-4 flex flex-col items-center gap-2 text-slate-400">
+        <div className="mt-4 flex flex-col items-center gap-2 text-slate-400 dark:text-slate-500">
           <Camera size={18} />
-          <span className="text-[10px] font-bold text-slate-500 rotate-90 my-6">
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 rotate-90 my-6">
             CAMERAS
           </span>
         </div>
@@ -56,12 +56,12 @@ export const MultiViewSidebar: React.FC<MultiViewSidebarProps> = ({
   }
 
   return (
-    <aside className="w-full lg:w-72 xl:w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 h-full min-h-0">
+    <aside className="w-full lg:w-72 xl:w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 h-full min-h-0">
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 shrink-0">
         <div className="min-w-0">
-          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5 truncate">
-            <Camera size={16} className="text-orange-600 shrink-0" />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 truncate">
+            <Camera size={16} className="text-orange-600 dark:text-orange-400 shrink-0" />
             <span>{t('multiview.sidebarTitle')}</span>
           </h3>
           <p className="text-[11px] text-slate-400 mt-0.5">
@@ -76,14 +76,14 @@ export const MultiViewSidebar: React.FC<MultiViewSidebarProps> = ({
           type="button"
           onClick={onToggleCollapse}
           title={t('nav.collapseSidebar')}
-          className="hidden lg:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+          className="hidden lg:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
         >
           <ChevronLeft size={18} />
         </button>
       </div>
 
       {/* Search Bar */}
-      <div className="px-4 py-2.5 border-b border-slate-100 shrink-0">
+      <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <div className="relative flex items-center">
           <Search size={15} className="absolute left-3 text-slate-400 pointer-events-none" />
           <input
@@ -91,13 +91,13 @@ export const MultiViewSidebar: React.FC<MultiViewSidebarProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('multiview.searchPlaceholder')}
-            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-orange-500 focus:bg-white transition-all"
+            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl outline-none focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              className="absolute right-2.5 p-0.5 text-slate-400 hover:text-slate-600 rounded-md cursor-pointer"
+              className="absolute right-2.5 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md cursor-pointer"
             >
               <X size={13} />
             </button>
@@ -106,7 +106,7 @@ export const MultiViewSidebar: React.FC<MultiViewSidebarProps> = ({
       </div>
 
       {/* Drag & Drop Hint Banner */}
-      <div className="px-4 py-2 bg-orange-50/50 border-b border-orange-100/60 text-[11px] text-orange-800 shrink-0 flex items-center gap-1.5">
+      <div className="px-4 py-2 bg-orange-50/50 dark:bg-orange-950/30 border-b border-orange-100/60 dark:border-orange-900/40 text-[11px] text-orange-800 dark:text-orange-300 shrink-0 flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
         <span className="truncate">{t('multiview.sidebarSubtitle')}</span>
       </div>
@@ -114,8 +114,8 @@ export const MultiViewSidebar: React.FC<MultiViewSidebarProps> = ({
       {/* Cameras List */}
       <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2 custom-scrollbar">
         {filteredCameras.length === 0 ? (
-          <div className="py-10 text-center text-slate-400">
-            <Camera size={28} className="mx-auto mb-2 text-slate-300 stroke-1" />
+          <div className="py-10 text-center text-slate-400 dark:text-slate-500">
+            <Camera size={28} className="mx-auto mb-2 text-slate-300 dark:text-slate-600 stroke-1" />
             <p className="text-xs font-medium">{t('multiview.noCamerasFound')}</p>
           </div>
         ) : (

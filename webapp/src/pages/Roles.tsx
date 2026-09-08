@@ -231,17 +231,17 @@ export const Roles: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200/80 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center">
               <Shield size={20} />
             </div>
-            <h1 className="text-xl font-bold text-slate-800">{t('roles.title')}</h1>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">{t('roles.title')}</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">{t('roles.subtitle')}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('roles.subtitle')}</p>
         </div>
 
         <button
@@ -256,7 +256,7 @@ export const Roles: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+          <div className="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-slate-500">
             <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-3" />
             <span className="text-sm font-medium">{t('loading')}</span>
           </div>
@@ -265,10 +265,10 @@ export const Roles: React.FC = () => {
             {/* Left Column: Roles list */}
             <div className="lg:col-span-4 space-y-3">
               <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {t('access.tabRoles')}
                 </span>
-                <span className="text-xs text-slate-400 font-medium">
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
                   {t('access.roleCount', { count: roles.length })}
                 </span>
               </div>
@@ -281,24 +281,24 @@ export const Roles: React.FC = () => {
                       key={r.id}
                       onClick={() => setSelectedRoleId(r.id)}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
-                        ? 'bg-white border-orange-500 shadow-md shadow-orange-500/5 ring-2 ring-orange-500/10'
-                        : 'bg-white/80 border-slate-200/80 hover:bg-white hover:border-slate-300 shadow-xs'
+                        ? 'bg-white dark:bg-slate-900 border-orange-500 shadow-md shadow-orange-500/5 ring-2 ring-orange-500/10'
+                        : 'bg-white/80 dark:bg-slate-900/80 border-slate-200/80 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
                         }`}
                     >
                       <div className="min-w-0 flex-1 pr-3">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-sm text-slate-800 truncate">{getRoleDisplayName(r)}</h4>
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate">{getRoleDisplayName(r)}</h4>
                           {r.is_system ? (
-                            <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md">
+                            <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md">
                               {t('access.systemRole')}
                             </span>
                           ) : (
-                            <span className="text-[10px] font-semibold bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded-md">
+                            <span className="text-[10px] font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 px-1.5 py-0.5 rounded-md">
                               {t('access.customRole')}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-1">
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 line-clamp-1">
                           {r.description || `code: ${r.code}`}
                         </p>
                       </div>
@@ -310,7 +310,7 @@ export const Roles: React.FC = () => {
                               e.stopPropagation();
                               setPendingDeleteRoleId(r.id);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
                             title={t('common.delete')}
                           >
                             <Trash2 size={15} />
@@ -324,25 +324,25 @@ export const Roles: React.FC = () => {
             </div>
 
             {/* Right Column: Permissions Matrix */}
-            <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col">
+            <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs flex flex-col">
               {activeRole ? (
                 <>
                   {/* Role Header */}
-                  <div className="border-b border-slate-100 pb-5 mb-6 flex items-start justify-between gap-4">
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 flex items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2.5">
-                        <h2 className="text-lg font-bold text-slate-800">{getRoleDisplayName(activeRole)}</h2>
+                        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{getRoleDisplayName(activeRole)}</h2>
                         {activeRole.is_system ? (
-                          <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                          <span className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md">
                             {t('access.systemRole')}
                           </span>
                         ) : (
-                          <span className="text-xs font-semibold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md">
+                          <span className="text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-md">
                             {t('access.customRole')}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 mt-1.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                         {activeRole.description || `${t('access.roleCode')}: ${activeRole.code}`}
                       </p>
                     </div>
@@ -363,8 +363,8 @@ export const Roles: React.FC = () => {
 
                   {/* Permissions Checklist */}
                   {activeRole.code === 'admin' ? (
-                    <div className="p-4 bg-purple-50/60 border border-purple-100 rounded-2xl text-purple-800 text-xs flex items-center gap-3">
-                      <Shield size={20} className="shrink-0 text-purple-600" />
+                    <div className="p-4 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/50 rounded-2xl text-purple-800 dark:text-purple-300 text-xs flex items-center gap-3">
+                      <Shield size={20} className="shrink-0 text-purple-600 dark:text-purple-400" />
                       <span>{t('access.adminNotice', { name: getRoleDisplayName(activeRole) })}</span>
                     </div>
                   ) : (
@@ -372,17 +372,17 @@ export const Roles: React.FC = () => {
                       {Array.from(permissionsByModule.entries()).map(([mod, perms]) => {
                         const allSelected = perms.every((p) => selectedRolePermIds.has(p.id));
                         return (
-                          <div key={mod} className="border border-slate-100 rounded-2xl p-4.5 bg-slate-50/50">
-                            <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+                          <div key={mod} className="border border-slate-100 dark:border-slate-800 rounded-2xl p-4.5 bg-slate-50/50 dark:bg-slate-800/40">
+                            <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-700/60 pb-2.5">
                               <div className="flex items-center gap-2">
                                 {getModuleIcon(mod)}
-                                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200">
                                   {getModuleTitle(mod)}
                                 </h3>
                               </div>
                               <button
                                 onClick={() => handleToggleModuleAll(perms)}
-                                className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 cursor-pointer"
+                                className="text-[11px] font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 cursor-pointer"
                               >
                                 {allSelected ? t('access.deselectAllModule') : t('access.selectAllModule')}
                               </button>
@@ -396,23 +396,23 @@ export const Roles: React.FC = () => {
                                     key={perm.id}
                                     onClick={() => handleTogglePermission(perm.id)}
                                     className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 select-none ${checked
-                                      ? 'bg-white border-orange-400/80 shadow-2xs'
-                                      : 'bg-white/60 border-slate-200/60 hover:border-slate-300'
+                                      ? 'bg-white dark:bg-slate-800 border-orange-400/80 dark:border-orange-500/80 shadow-2xs'
+                                      : 'bg-white/60 dark:bg-slate-800/60 border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600'
                                       }`}
                                   >
                                     <div
                                       className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${checked
                                         ? 'bg-orange-600 border-orange-600 text-white'
-                                        : 'border-slate-300 bg-white'
+                                        : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
                                         }`}
                                     >
                                       {checked && <Check size={12} strokeWidth={3} />}
                                     </div>
                                     <div className="min-w-0">
-                                      <p className="text-xs font-semibold text-slate-800 leading-tight">
+                                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">
                                         {getPermissionName(perm)}
                                       </p>
-                                      <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug">
                                         {getPermissionDesc(perm)}
                                       </p>
                                     </div>
@@ -427,7 +427,7 @@ export const Roles: React.FC = () => {
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500">
                   <span className="text-sm font-medium">{t('noData')}</span>
                 </div>
               )}
@@ -440,13 +440,13 @@ export const Roles: React.FC = () => {
 
       {/* Create Role Modal */}
       {roleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-base text-slate-800">{t('access.addRole')}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">{t('access.addRole')}</h3>
               <button
                 onClick={() => setRoleModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -454,7 +454,7 @@ export const Roles: React.FC = () => {
 
             <form onSubmit={handleSaveRole} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('access.roleName')} <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -463,12 +463,12 @@ export const Roles: React.FC = () => {
                   value={formRoleName}
                   onChange={(e) => setFormRoleName(e.target.value)}
                   placeholder="e.g. Security Guard"
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('access.roleCode')} <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -477,12 +477,12 @@ export const Roles: React.FC = () => {
                   value={formRoleCode}
                   onChange={(e) => setFormRoleCode(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
                   placeholder="e.g. security_guard"
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-mono"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('access.description')}
                 </label>
                 <textarea
@@ -490,15 +490,15 @@ export const Roles: React.FC = () => {
                   value={formRoleDesc}
                   onChange={(e) => setFormRoleDesc(e.target.value)}
                   placeholder={t('access.roleDescPlaceholder')}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setRoleModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
                 >
                   {t('cancel')}
                 </button>

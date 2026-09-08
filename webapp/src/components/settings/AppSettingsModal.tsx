@@ -10,9 +10,13 @@ import {
   ShieldCheck,
   RotateCw,
   Sliders,
+  Sun,
+  Moon,
+  Monitor,
 } from '@/components/icons';
 import { isPwa } from '../../utils/pwa';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../api/client';
 import { TwoFactorSetupModal } from './TwoFactorSetupModal';
 import { PasskeySettingsSection } from './PasskeySettingsSection';
@@ -25,6 +29,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
   const { t } = useTranslation();
   const { timezone, setTimezone } = useTimezone();
   const { user, setUser } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<'security' | 'notifications' | 'general'>('security');
   const [twoFactorModalMode, setTwoFactorModalMode] = useState<'setup' | 'regenerate' | 'disable' | null>(null);
@@ -82,25 +87,25 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl bg-white border-0 sm:border border-slate-200/90 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl overflow-hidden z-10 flex flex-col h-dvh sm:h-[88vh] sm:max-h-[850px]">
+      <div className="relative w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl bg-white dark:bg-slate-900 border-0 sm:border border-slate-200/90 dark:border-slate-800 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl overflow-hidden z-10 flex flex-col h-dvh sm:h-[88vh] sm:max-h-[850px]">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 pt-[max(env(safe-area-inset-top),1.25rem)] sm:pt-5 pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] sm:px-7 border-b border-slate-100 bg-slate-50/70 shrink-0">
+        <div className="flex items-center justify-between pb-4 pt-[max(env(safe-area-inset-top),1.25rem)] sm:pt-5 pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] sm:px-7 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200/60 flex items-center justify-center text-orange-600 shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/60 dark:border-orange-500/30 flex items-center justify-center text-orange-600 dark:text-orange-500 shadow-2xs">
               <Shield size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-base sm:text-lg text-slate-800 tracking-tight">
+              <h3 className="font-bold text-base sm:text-lg text-slate-800 dark:text-slate-100 tracking-tight">
                 {t('settings.securityTitle')}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t('settings.securitySubtitle')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label={t('close')}
           >
             <X size={18} />
@@ -110,29 +115,29 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
         {/* Main Body with Left Sidebar on Desktop & Horizontal Tabs on Mobile */}
         <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Navigation Sidebar */}
-          <div className="sm:w-64 shrink-0 bg-slate-50/60 border-b sm:border-b-0 sm:border-r border-slate-100 p-2 sm:p-4 flex flex-row sm:flex-col gap-1 sm:gap-1.5 overflow-x-auto sm:overflow-y-auto scrollbar-none">
+          <div className="sm:w-64 shrink-0 bg-slate-50/60 dark:bg-slate-900/60 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 p-2 sm:p-4 flex flex-row sm:flex-col gap-1 sm:gap-1.5 overflow-x-auto sm:overflow-y-auto scrollbar-none">
             {/* Tab 1: Security */}
             <button
               type="button"
               onClick={() => setActiveTab('security')}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl sm:rounded-2xl text-left text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap sm:whitespace-normal shrink-0 sm:shrink ${
                 activeTab === 'security'
-                  ? 'bg-white text-orange-700 border border-orange-200/80 shadow-2xs'
-                  : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-800 text-orange-700 dark:text-orange-400 border border-orange-200/80 dark:border-orange-500/30 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                   activeTab === 'security'
                     ? 'bg-orange-600 text-white'
-                    : 'bg-slate-200/70 text-slate-600'
+                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                 }`}
               >
                 <ShieldCheck size={16} />
               </div>
               <div className="hidden sm:block min-w-0">
                 <span className="block font-bold truncate">{t('settings.tabSecurity')}</span>
-                <span className="text-[11px] text-slate-400 font-normal block truncate">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal block truncate">
                   2FA • Sinh trắc học
                 </span>
               </div>
@@ -145,22 +150,22 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               onClick={() => setActiveTab('notifications')}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl sm:rounded-2xl text-left text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap sm:whitespace-normal shrink-0 sm:shrink ${
                 activeTab === 'notifications'
-                  ? 'bg-white text-orange-700 border border-orange-200/80 shadow-2xs'
-                  : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-800 text-orange-700 dark:text-orange-400 border border-orange-200/80 dark:border-orange-500/30 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                   activeTab === 'notifications'
                     ? 'bg-orange-600 text-white'
-                    : 'bg-slate-200/70 text-slate-600'
+                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                 }`}
               >
                 <Bell size={16} />
               </div>
               <div className="hidden sm:block min-w-0">
                 <span className="block font-bold truncate">{t('settings.tabNotifications')}</span>
-                <span className="text-[11px] text-slate-400 font-normal block truncate">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal block truncate">
                   Cảnh báo • Phân loại
                 </span>
               </div>
@@ -173,23 +178,23 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               onClick={() => setActiveTab('general')}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl sm:rounded-2xl text-left text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap sm:whitespace-normal shrink-0 sm:shrink ${
                 activeTab === 'general'
-                  ? 'bg-white text-orange-700 border border-orange-200/80 shadow-2xs'
-                  : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-800 text-orange-700 dark:text-orange-400 border border-orange-200/80 dark:border-orange-500/30 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                   activeTab === 'general'
                     ? 'bg-orange-600 text-white'
-                    : 'bg-slate-200/70 text-slate-600'
+                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                 }`}
               >
                 <Sliders size={16} />
               </div>
               <div className="hidden sm:block min-w-0">
                 <span className="block font-bold truncate">{t('settings.tabGeneral')}</span>
-                <span className="text-[11px] text-slate-400 font-normal block truncate">
-                  Múi giờ • Chế độ PWA
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal block truncate">
+                  Giao diện • Múi giờ
                 </span>
               </div>
               <span className="sm:hidden font-bold">{t('settings.tabGeneral')}</span>
@@ -197,36 +202,36 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
           </div>
 
           {/* Right Content Pane */}
-          <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto space-y-6 bg-white">
+          <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto space-y-6 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
             {/* ── TAB 1: SECURITY & AUTHENTICATION ── */}
             {activeTab === 'security' && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h4 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                  <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                     {t('settings.mfaSectionTitle')}
                   </h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {t('settings.mfaSectionSubtitle')}
                   </p>
                 </div>
 
                 {/* Two-Factor Authentication Card */}
-                <div className="p-5 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-3.5 shadow-2xs">
+                <div className="p-5 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3.5 shadow-2xs">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div>
-                      <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                      <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
                         <ShieldCheck size={18} className="text-orange-600 shrink-0" />
                         <span>{t('settings.twoFactorTitle')}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
                         {t('settings.twoFactorDesc')}
                       </p>
                     </div>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 self-start sm:self-auto ${
                         user?.two_factor_enabled
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/50'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       {user?.two_factor_enabled
@@ -249,7 +254,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                         <button
                           type="button"
                           onClick={() => setTwoFactorModalMode('regenerate')}
-                          className="px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                          className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                         >
                           <RotateCw size={13} />
                           <span>{t('settings.regenRecoveryBtn')}</span>
@@ -257,7 +262,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                         <button
                           type="button"
                           onClick={() => setTwoFactorModalMode('disable')}
-                          className="px-3.5 py-2 bg-white hover:bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                          className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold transition-all cursor-pointer"
                         >
                           {t('settings.disable2faBtn')}
                         </button>
@@ -275,22 +280,22 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
             {activeTab === 'notifications' && (
               <div className="space-y-5 animate-fade-in">
                 <div>
-                  <h4 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                  <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                     {t('settings.pushTitle')}
                   </h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {t('settings.pushSubtitle')}
                   </p>
                 </div>
 
-                <div className="p-5 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-4">
+                <div className="p-5 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-4">
                   {/* Family & Guests */}
-                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-200/60">
+                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-200/60 dark:border-slate-700/60">
                     <div className="pr-3">
-                      <label className="text-sm font-bold text-slate-700 block">
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-200 block">
                         {t('settings.pushFamily')}
                       </label>
-                      <p className="text-xs text-slate-500 mt-0.5 max-w-lg">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-lg">
                         {t('settings.pushFamilyDesc')}
                       </p>
                     </div>
@@ -301,17 +306,17 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                         onChange={(e) => handleTogglePushPref('family', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                      <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
 
                   {/* Strangers & Security Alerts */}
-                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-200/60">
+                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-200/60 dark:border-slate-700/60">
                     <div className="pr-3">
-                      <label className="text-sm font-bold text-slate-700 block">
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-200 block">
                         {t('settings.pushStranger')}
                       </label>
-                      <p className="text-xs text-slate-500 mt-0.5 max-w-lg">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-lg">
                         {t('settings.pushStrangerDesc')}
                       </p>
                     </div>
@@ -322,17 +327,17 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                         onChange={(e) => handleTogglePushPref('stranger', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                      <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
 
                   {/* System */}
                   <div className="flex items-center justify-between">
                     <div className="pr-3">
-                      <label className="text-sm font-bold text-slate-700 block">
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-200 block">
                         {t('settings.pushSystem')}
                       </label>
-                      <p className="text-xs text-slate-500 mt-0.5 max-w-lg">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-lg">
                         {t('settings.pushSystemDesc')}
                       </p>
                     </div>
@@ -343,7 +348,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                         onChange={(e) => handleTogglePushPref('system', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                      <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
                 </div>
@@ -354,28 +359,125 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
             {activeTab === 'general' && (
               <div className="space-y-5 animate-fade-in">
                 <div>
-                  <h4 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+                  <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                     {t('settings.tabGeneral')}
                   </h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {t('settings.timezoneDesc')}
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {t('settings.themeDesc')}
                   </p>
                 </div>
 
+                {/* Setting: Theme Preference */}
+                <div className="p-5 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
+                    <Sun size={18} className="text-orange-600 shrink-0" />
+                    <span>{t('settings.themeTitle')}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                    {t('settings.themeDesc')}
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                    {/* System Option */}
+                    <button
+                      type="button"
+                      onClick={() => setTheme('system')}
+                      className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        theme === 'system'
+                          ? 'bg-orange-50/80 dark:bg-orange-950/30 border-orange-500 ring-2 ring-orange-500/20 shadow-xs'
+                          : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-2">
+                        <div className={`p-2 rounded-lg ${theme === 'system' ? 'bg-orange-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                          <Monitor size={16} />
+                        </div>
+                        {theme === 'system' && (
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">
+                        {t('settings.themeSystem')}
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight">
+                        {t('settings.themeSystemDesc')}
+                      </span>
+                    </button>
+
+                    {/* Light Option */}
+                    <button
+                      type="button"
+                      onClick={() => setTheme('light')}
+                      className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        theme === 'light'
+                          ? 'bg-orange-50/80 dark:bg-orange-950/30 border-orange-500 ring-2 ring-orange-500/20 shadow-xs'
+                          : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-2">
+                        <div className={`p-2 rounded-lg ${theme === 'light' ? 'bg-orange-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                          <Sun size={16} />
+                        </div>
+                        {theme === 'light' && (
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">
+                        {t('settings.themeLight')}
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight">
+                        {t('settings.themeLightDesc')}
+                      </span>
+                    </button>
+
+                    {/* Dark Option */}
+                    <button
+                      type="button"
+                      onClick={() => setTheme('dark')}
+                      className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        theme === 'dark'
+                          ? 'bg-orange-50/80 dark:bg-orange-950/30 border-orange-500 ring-2 ring-orange-500/20 shadow-xs'
+                          : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-2">
+                        <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-orange-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                          <Moon size={16} />
+                        </div>
+                        {theme === 'dark' && (
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">
+                        {t('settings.themeDark')}
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight">
+                        {t('settings.themeDarkDesc')}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Setting: Timezone Preference */}
-                <div className="p-5 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <div className="p-5 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
                     <Globe size={18} className="text-orange-600 shrink-0" />
                     <span>{t('settings.timezoneTitle')}</span>
                   </div>
-                  <p className="text-xs text-slate-500 max-w-xl">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
                     {t('settings.timezoneDesc')}
                   </p>
                   <div className="pt-2 max-w-md">
                     <select
                       value={timezone}
                       onChange={(e) => setTimezone(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 cursor-pointer shadow-2xs"
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 cursor-pointer shadow-2xs"
                     >
                       {TIMEZONE_OPTIONS.map((tz) => (
                         <option key={tz.value} value={tz.value}>
@@ -390,13 +492,13 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                 <div
                   className={`p-4 rounded-2xl border flex items-center gap-3 text-xs ${
                     isRunningPwa
-                      ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
-                      : 'bg-slate-50 border-slate-200 text-slate-600'
+                      ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <Smartphone
                     size={20}
-                    className={isRunningPwa ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'}
+                    className={isRunningPwa ? 'text-emerald-600 dark:text-emerald-400 shrink-0' : 'text-slate-400 dark:text-slate-500 shrink-0'}
                   />
                   <div>
                     <span className="font-bold text-sm block">

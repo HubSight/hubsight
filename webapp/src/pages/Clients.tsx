@@ -221,21 +221,21 @@ export const Clients: React.FC = () => {
       case 'mobile':
       case 'flutter_mobile':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0 whitespace-nowrap">
             <Smartphone size={12} />
             {t('clients.platformMobile')}
           </span>
         );
       case 'web_spa':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0 whitespace-nowrap">
             <Globe size={12} />
             {t('clients.platformWeb')}
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0 whitespace-nowrap">
             <Layers size={12} />
             {t('clients.platformThirdParty')}
           </span>
@@ -254,17 +254,17 @@ export const Clients: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
       {/* Sticky Header (Consistent with Users and Roles pages) */}
-      <div className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shrink-0">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
               <KeyRound size={20} />
             </div>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-800">{t('clients.title')}</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">{t('clients.title')}</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">{t('clients.subtitle')}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('clients.subtitle')}</p>
         </div>
 
         <button
@@ -279,7 +279,7 @@ export const Clients: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-3.5 sm:p-6">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+          <div className="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-slate-500">
             <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-3" />
             <span className="text-sm font-medium">{t('loading')}</span>
           </div>
@@ -291,21 +291,21 @@ export const Clients: React.FC = () => {
                 <div className="relative flex-1">
                   <Search
                     size={16}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
                   />
                   <input
                     type="text"
                     placeholder={t('clients.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 sm:py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs"
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs"
                   />
                 </div>
                 <select
                   value={platformFilter}
                   onChange={(e) => setPlatformFilter(e.target.value)}
                   aria-label={t('clients.platform')}
-                  className="px-3.5 py-2.5 sm:py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 shadow-xs cursor-pointer shrink-0"
+                  className="px-3.5 py-2.5 sm:py-2 text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 shadow-xs cursor-pointer shrink-0"
                 >
                   <option value="all">{t('clients.allPlatforms')}</option>
                   <option value="mobile">{t('clients.platformMobile')}</option>
@@ -314,14 +314,14 @@ export const Clients: React.FC = () => {
                 </select>
               </div>
 
-              <span className="text-xs text-slate-500 font-medium px-1 self-end sm:self-center">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium px-1 self-end sm:self-center">
                 {t('clients.count', { count: filteredClients.length })}
               </span>
             </div>
 
             {/* Empty State */}
             {filteredClients.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-8 text-center text-slate-400 dark:text-slate-500">
                 {t('noData')}
               </div>
             ) : (
@@ -335,21 +335,21 @@ export const Clients: React.FC = () => {
                       <div
                         key={`mobile-${client.id}`}
                         onClick={() => setDetailClient(client)}
-                        className={`bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3 active:scale-[0.99] transition-all cursor-pointer ${
-                          !client.is_active ? 'opacity-75 bg-slate-50/60' : ''
+                        className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-2xs space-y-3 active:scale-[0.99] transition-all cursor-pointer ${
+                          !client.is_active ? 'opacity-75 bg-slate-50/60 dark:bg-slate-900/60' : ''
                         }`}
                       >
                         {/* Top: Icon, App Name, System Badge & Status Badge */}
                         <div className="flex items-start justify-between gap-2.5">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-600 font-semibold flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 font-semibold flex items-center justify-center shrink-0">
                               <KeyRound size={18} />
                             </div>
                             <div className="min-w-0">
-                              <div className="font-semibold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                              <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 flex-wrap">
                                 <span className="truncate text-sm">{client.name}</span>
                                 {client.is_system && (
-                                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md border border-slate-200 uppercase tracking-wider shrink-0">
+                                  <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 uppercase tracking-wider shrink-0">
                                     {t('clients.systemClient')}
                                   </span>
                                 )}
@@ -363,12 +363,12 @@ export const Clients: React.FC = () => {
                           {/* Status Badge */}
                           <div className="shrink-0">
                             {client.is_active ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800">
                                 <CheckCircle2 size={11} />
                                 {t('clients.active')}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800">
                                 <Ban size={11} />
                                 {t('clients.deactivated')}
                               </span>
@@ -379,24 +379,24 @@ export const Clients: React.FC = () => {
                         {/* Client ID with Copy */}
                         <div
                           onClick={(e) => e.stopPropagation()}
-                          className="flex items-center justify-between gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200/80"
+                          className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700"
                         >
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">ID:</span>
-                            <code className="text-xs font-mono font-medium text-slate-700 truncate">
+                            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">ID:</span>
+                            <code className="text-xs font-mono font-medium text-slate-700 dark:text-slate-200 truncate">
                               {client.client_id}
                             </code>
                           </div>
                           <button
                             type="button"
                             onClick={() => copyToClipboard(client.client_id, 'id', client.id)}
-                            className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200/80 rounded-lg shadow-2xs transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1"
+                            className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 rounded-lg shadow-2xs transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1"
                             title="Sao chép Client ID"
                           >
                             {isIdCopied ? (
                               <>
-                                <Check size={12} className="text-emerald-600" />
-                                <span className="text-[11px] text-emerald-600">Đã chép</span>
+                                <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                                <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Đã chép</span>
                               </>
                             ) : (
                               <>
@@ -410,12 +410,12 @@ export const Clients: React.FC = () => {
                         {/* Actions Row */}
                         <div
                           onClick={(e) => e.stopPropagation()}
-                          className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2"
+                          className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2"
                         >
                           <button
                             type="button"
                             onClick={() => setDetailClient(client)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-xl transition-colors cursor-pointer"
                           >
                             <Eye size={13} />
                             <span>{t('clients.viewDetails')}</span>
@@ -441,8 +441,8 @@ export const Clients: React.FC = () => {
                               }
                               className={`p-2 rounded-xl transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
                                 client.is_active
-                                  ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                  : 'text-rose-500 hover:text-emerald-600 hover:bg-emerald-50'
+                                  ? 'text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                                  : 'text-rose-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
                               }`}
                             >
                               {client.is_active ? <Ban size={15} /> : <CheckCircle2 size={15} />}
@@ -454,7 +454,7 @@ export const Clients: React.FC = () => {
                               onClick={() => handleOpenEdit(client)}
                               title={t('edit')}
                               aria-label={t('edit')}
-                              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                             >
                               <Edit2 size={15} />
                             </button>
@@ -466,7 +466,7 @@ export const Clients: React.FC = () => {
                                 onClick={() => setClientToDelete(client)}
                                 title={t('delete')}
                                 aria-label={t('delete')}
-                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
                               >
                                 <Trash2 size={15} />
                               </button>
@@ -479,11 +479,11 @@ export const Clients: React.FC = () => {
                 </div>
 
                 {/* ── DESKTOP & TABLET VIEW: Full-Width 5-Column Table ── */}
-                <div className="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                        <tr className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
                           <th className="px-6 py-3.5">{t('clients.name')}</th>
                           <th className="px-6 py-3.5">{t('clients.platform')}</th>
                           <th className="px-6 py-3.5">{t('clients.clientId')}</th>
@@ -491,7 +491,7 @@ export const Clients: React.FC = () => {
                           <th className="px-6 py-3.5 text-right">{t('clients.actions')}</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {filteredClients.map((client) => {
                           const isIdCopied = copiedClientId === client.id;
 
@@ -499,21 +499,21 @@ export const Clients: React.FC = () => {
                             <tr
                               key={`desktop-${client.id}`}
                               onClick={() => setDetailClient(client)}
-                              className={`group hover:bg-slate-50/80 transition-colors cursor-pointer ${
-                                !client.is_active ? 'opacity-60 bg-slate-50/40' : ''
+                              className={`group hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer ${
+                                !client.is_active ? 'opacity-60 bg-slate-50/40 dark:bg-slate-900/40' : ''
                               }`}
                             >
                               {/* Application Name & System Badge */}
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-orange-100 group-hover:text-orange-600 font-semibold flex items-center justify-center shrink-0 transition-colors">
+                                  <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:bg-orange-100 dark:group-hover:bg-orange-950/40 group-hover:text-orange-600 dark:group-hover:text-orange-400 font-semibold flex items-center justify-center shrink-0 transition-colors">
                                     <KeyRound size={16} />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="font-semibold text-slate-800 flex items-center gap-2">
+                                    <div className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                       <span className="truncate">{client.name}</span>
                                       {client.is_system && (
-                                        <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md border border-slate-200 uppercase tracking-wider shrink-0 whitespace-nowrap">
+                                        <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 uppercase tracking-wider shrink-0 whitespace-nowrap">
                                           {t('clients.systemClient')}
                                         </span>
                                       )}
@@ -531,19 +531,19 @@ export const Clients: React.FC = () => {
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div
                                   onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/80"
+                                  className="inline-flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700"
                                 >
-                                  <code className="text-xs font-mono text-slate-700 font-medium">
+                                  <code className="text-xs font-mono text-slate-700 dark:text-slate-200 font-medium">
                                     {client.client_id}
                                   </code>
                                   <button
                                     onClick={() => copyToClipboard(client.client_id, 'id', client.id)}
-                                    className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors cursor-pointer"
+                                    className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-colors cursor-pointer"
                                     title="Sao chép Client ID"
                                     aria-label="Sao chép Client ID"
                                   >
                                     {isIdCopied ? (
-                                      <Check size={13} className="text-emerald-600" />
+                                      <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
                                     ) : (
                                       <Copy size={13} />
                                     )}
@@ -555,12 +555,12 @@ export const Clients: React.FC = () => {
                               <td className="px-6 py-4 whitespace-nowrap text-center">
                                 <div className="flex justify-center">
                                   {client.is_active ? (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 whitespace-nowrap">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-100 dark:border-emerald-800 whitespace-nowrap">
                                       <CheckCircle2 size={12} />
                                       {t('clients.active')}
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-100 whitespace-nowrap">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-md border border-rose-100 dark:border-rose-800 whitespace-nowrap">
                                       <Ban size={12} />
                                       {t('clients.deactivated')}
                                     </span>
@@ -577,7 +577,7 @@ export const Clients: React.FC = () => {
                                   {/* View Detail Button */}
                                   <button
                                     onClick={() => setDetailClient(client)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg transition-colors cursor-pointer"
                                     title={t('clients.viewDetails')}
                                   >
                                     <Eye size={13} />
@@ -602,8 +602,8 @@ export const Clients: React.FC = () => {
                                     }
                                     className={`p-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
                                       client.is_active
-                                        ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                        : 'text-rose-500 hover:text-emerald-600 hover:bg-emerald-50'
+                                        ? 'text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                                        : 'text-rose-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
                                     }`}
                                   >
                                     {client.is_active ? <Ban size={15} /> : <CheckCircle2 size={15} />}
@@ -614,7 +614,7 @@ export const Clients: React.FC = () => {
                                     onClick={() => handleOpenEdit(client)}
                                     title={t('edit')}
                                     aria-label={t('edit')}
-                                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                                   >
                                     <Edit2 size={15} />
                                   </button>
@@ -629,7 +629,7 @@ export const Clients: React.FC = () => {
                                         : t('delete')
                                     }
                                     aria-label={t('delete')}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                                   >
                                     <Trash2 size={15} />
                                   </button>
@@ -652,25 +652,25 @@ export const Clients: React.FC = () => {
 
       {/* Client Detail Modal */}
       {detailClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div
-            className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-150"
             role="dialog"
             aria-modal="true"
           >
             {/* Header */}
-            <div className="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-4 bg-slate-50/50">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
                   <KeyRound size={22} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base font-bold text-slate-800">
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                       {detailClient.name}
                     </h3>
                     {detailClient.is_system && (
-                      <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200 uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 uppercase tracking-wider">
                         {t('clients.systemClient')}
                       </span>
                     )}
@@ -678,12 +678,12 @@ export const Clients: React.FC = () => {
                   <div className="flex items-center gap-2 mt-1">
                     {renderPlatformBadge(detailClient.platform)}
                     {detailClient.is_active ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800">
                         <CheckCircle2 size={11} />
                         {t('clients.active')}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800">
                         <Ban size={11} />
                         {t('clients.deactivated')}
                       </span>
@@ -695,7 +695,7 @@ export const Clients: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setDetailClient(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 aria-label="Đóng"
               >
                 <X size={18} />
@@ -706,29 +706,29 @@ export const Clients: React.FC = () => {
             <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
               {/* Credentials & API Key Section */}
               <div>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+                <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
                   {t('clients.credentialsSection')}
                 </h4>
-                <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-4 space-y-3.5">
+                <div className="bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-4 space-y-3.5">
                   {/* Client ID */}
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+                    <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
                       {t('clients.clientId')}
                     </label>
                     <div className="flex items-center gap-2">
-                      <code className="text-xs font-mono font-medium text-slate-800 bg-white px-3 py-2 rounded-xl border border-slate-200/80 flex-1 select-all break-all">
+                      <code className="text-xs font-mono font-medium text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700 flex-1 select-all break-all">
                         {detailClient.client_id}
                       </code>
                       <button
                         type="button"
                         onClick={() => copyToClipboard(detailClient.client_id, 'id', detailClient.id)}
-                        className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200/80 rounded-xl shadow-2xs transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+                        className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 rounded-xl shadow-2xs transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1.5"
                         title="Sao chép Client ID"
                       >
                         {copiedClientId === detailClient.id ? (
                           <>
-                            <Check size={13} className="text-emerald-600" />
-                            <span className="text-emerald-600">Đã chép</span>
+                            <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-emerald-600 dark:text-emerald-400">Đã chép</span>
                           </>
                         ) : (
                           <>
@@ -743,14 +743,14 @@ export const Clients: React.FC = () => {
                   {/* API Key */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         {t('clients.apiKey')}
                       </label>
                       {!detailClient.is_system && (
                         <button
                           type="button"
                           onClick={() => setClientToRotate(detailClient)}
-                          className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer inline-flex items-center gap-1"
+                          className="text-[11px] font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:underline cursor-pointer inline-flex items-center gap-1"
                         >
                           <RefreshCw size={11} />
                           {t('clients.rotateKey')}
@@ -758,7 +758,7 @@ export const Clients: React.FC = () => {
                       )}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <code className="text-xs font-mono font-medium text-slate-800 bg-white px-3 py-2 rounded-xl border border-slate-200/80 flex-1 break-all select-all">
+                      <code className="text-xs font-mono font-medium text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700 flex-1 break-all select-all">
                         {visibleKeys[detailClient.id]
                           ? detailClient.api_key
                           : `${detailClient.api_key.slice(0, 10)}••••••••••••••••••••••••`}
@@ -767,7 +767,7 @@ export const Clients: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => toggleKeyVisibility(detailClient.id)}
-                          className="p-2 text-slate-500 hover:text-slate-800 bg-white hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-colors cursor-pointer shrink-0"
+                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
                           title={visibleKeys[detailClient.id] ? 'Ẩn khóa' : 'Hiện khóa'}
                         >
                           {visibleKeys[detailClient.id] ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -775,13 +775,13 @@ export const Clients: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => copyToClipboard(detailClient.api_key, 'key', detailClient.id)}
-                          className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200/80 rounded-xl shadow-2xs transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+                          className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 rounded-xl shadow-2xs transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1.5"
                           title="Sao chép API Key"
                         >
                           {copiedKeyId === detailClient.id ? (
                             <>
-                              <Check size={13} className="text-emerald-600" />
-                              <span className="text-emerald-600">Đã chép</span>
+                              <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
+                              <span className="text-emerald-600 dark:text-emerald-400">Đã chép</span>
                             </>
                           ) : (
                             <>
@@ -792,8 +792,8 @@ export const Clients: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-1.5">
-                      API Key được truyền qua header <code className="text-slate-600">X-API-Key</code> trong các request từ ứng dụng client.
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
+                      API Key được truyền qua header <code className="text-slate-600 dark:text-slate-300">X-API-Key</code> trong các request từ ứng dụng client.
                     </p>
                   </div>
                 </div>
@@ -801,44 +801,44 @@ export const Clients: React.FC = () => {
 
               {/* Governance & Specifications */}
               <div>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+                <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
                   {t('clients.governanceSection')}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-slate-50/80 rounded-xl border border-slate-200/80 p-3">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <div className="bg-slate-50/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 p-3">
+                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
                       {t('clients.rateLimit')}
                     </span>
-                    <span className="text-xs font-semibold text-slate-800 mt-1 block">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-1 block">
                       {detailClient.rate_limit_rps > 0
                         ? `${detailClient.rate_limit_rps} RPS`
                         : t('clients.rateLimitUnlimited')}
                     </span>
                   </div>
 
-                  <div className="bg-slate-50/80 rounded-xl border border-slate-200/80 p-3">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <div className="bg-slate-50/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 p-3">
+                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
                       {t('clients.lastUsed')}
                     </span>
-                    <span className="text-xs font-semibold text-slate-800 mt-1 block">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-1 block">
                       {formatLastUsed(detailClient.last_used_at)}
                     </span>
                   </div>
 
-                  <div className="bg-slate-50/80 rounded-xl border border-slate-200/80 p-3">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <div className="bg-slate-50/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 p-3">
+                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
                       {t('clients.createdAt')}
                     </span>
-                    <span className="text-xs font-semibold text-slate-800 mt-1 block">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-1 block">
                       {formatLastUsed(detailClient.created_at)}
                     </span>
                   </div>
 
-                  <div className="bg-slate-50/80 rounded-xl border border-slate-200/80 p-3">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <div className="bg-slate-50/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 p-3">
+                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
                       Phân loại truy cập
                     </span>
-                    <span className="text-xs font-semibold text-slate-800 mt-1 block">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-1 block">
                       {detailClient.client_type === 'confidential'
                         ? t('clients.confidentialClient')
                         : t('clients.publicClient')}
@@ -849,7 +849,7 @@ export const Clients: React.FC = () => {
             </div>
 
             {/* Footer Actions */}
-            <div className="px-5 sm:px-6 py-3.5 sm:py-4 bg-slate-50/80 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+            <div className="px-5 sm:px-6 py-3.5 sm:py-4 bg-slate-50/80 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
               <div>
                 {!detailClient.is_system && (
                   <button
@@ -857,8 +857,8 @@ export const Clients: React.FC = () => {
                     onClick={() => handleToggleClick(detailClient)}
                     className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
                       detailClient.is_active
-                        ? 'border-rose-200 text-rose-600 bg-rose-50/50 hover:bg-rose-50'
-                        : 'border-emerald-200 text-emerald-600 bg-emerald-50/50 hover:bg-emerald-50'
+                        ? 'border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/40 hover:bg-rose-50 dark:hover:bg-rose-900/40'
+                        : 'border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/40 hover:bg-emerald-50 dark:hover:bg-emerald-900/40'
                     }`}
                   >
                     {detailClient.is_active ? (
@@ -884,7 +884,7 @@ export const Clients: React.FC = () => {
                     setDetailClient(null);
                     handleOpenEdit(toEdit);
                   }}
-                  className="flex-1 sm:flex-none justify-center px-4 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                  className="flex-1 sm:flex-none justify-center px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Edit2 size={13} />
                   <span>{t('clients.editClient')}</span>
@@ -892,7 +892,7 @@ export const Clients: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setDetailClient(null)}
-                  className="flex-1 sm:flex-none justify-center px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-none justify-center px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
                 >
                   {t('clients.close')}
                 </button>
@@ -904,10 +904,10 @@ export const Clients: React.FC = () => {
 
       {/* Create / Edit Client Modal */}
       {clientModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-base text-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">
                 {editingClient
                   ? t('clients.modalEditTitle')
                   : t('clients.modalCreateTitle')}
@@ -915,7 +915,7 @@ export const Clients: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setClientModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -923,7 +923,7 @@ export const Clients: React.FC = () => {
 
             <form onSubmit={handleSaveClient} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('clients.name')} <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -932,18 +932,18 @@ export const Clients: React.FC = () => {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder={t('clients.namePlaceholder')}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-medium text-slate-900"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('clients.platform')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formPlatform}
                   onChange={(e) => setFormPlatform(e.target.value)}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer text-slate-900"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer text-slate-900 dark:text-slate-100"
                 >
                   <option value="mobile">{t('clients.platformMobile')}</option>
                   <option value="web_spa">{t('clients.platformWeb')}</option>
@@ -952,7 +952,7 @@ export const Clients: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('clients.rateLimit')}
                 </label>
                 <input
@@ -962,9 +962,9 @@ export const Clients: React.FC = () => {
                   value={formRateLimit}
                   onChange={(e) => setFormRateLimit(Math.max(0, parseInt(e.target.value) || 0))}
                   placeholder="0"
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                   {t('clients.rateLimitHelper')}
                 </p>
               </div>
@@ -973,7 +973,7 @@ export const Clients: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setClientModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   {t('cancel')}
                 </button>

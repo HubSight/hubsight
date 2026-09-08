@@ -71,7 +71,7 @@ export const AddDeviceSplitButton: React.FC<AddDeviceSplitButtonProps> = ({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+6px)] z-30 min-w-[220px] py-1 rounded-xl bg-white border border-slate-200 shadow-[0_8px_28px_rgba(15,23,42,0.12)] overflow-hidden"
+          className="absolute right-0 top-[calc(100%+6px)] z-30 min-w-[220px] py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-[0_8px_28px_rgba(15,23,42,0.12)] dark:shadow-2xl overflow-hidden"
         >
           <button
             type="button"
@@ -80,9 +80,9 @@ export const AddDeviceSplitButton: React.FC<AddDeviceSplitButtonProps> = ({
               setOpen(false);
               onManual();
             }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer text-left"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer text-left"
           >
-            <Plus size={16} className="text-slate-400" />
+            <Plus size={16} className="text-slate-400 dark:text-slate-500" />
             {t('devices.addManual')}
           </button>
           <button
@@ -92,9 +92,9 @@ export const AddDeviceSplitButton: React.FC<AddDeviceSplitButtonProps> = ({
               setOpen(false);
               onScan();
             }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 cursor-pointer text-left"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-700 dark:hover:text-orange-300 cursor-pointer text-left"
           >
-            <Radar size={16} className="text-orange-600" />
+            <Radar size={16} className="text-orange-600 dark:text-orange-400" />
             {t('devices.scanNetwork')}
           </button>
         </div>

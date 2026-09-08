@@ -178,21 +178,21 @@ export const Users: React.FC = () => {
     switch (code) {
       case 'admin':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
             <Shield size={12} />
             {name}
           </span>
         );
       case 'operator':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
             <UserCheck size={12} />
             {name}
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
             {name}
           </span>
         );
@@ -200,18 +200,18 @@ export const Users: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3 shrink-0">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-          <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
             <UserCog size={20} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-slate-800 leading-tight truncate">
+            <h1 className="text-base sm:text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight truncate">
               {t('users.title')}
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5 hidden sm:block">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 hidden sm:block">
               {t('users.subtitle')}
             </p>
           </div>
@@ -230,7 +230,7 @@ export const Users: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 pb-20">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+          <div className="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-slate-500">
             <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-3" />
             <span className="text-sm font-medium">{t('loading')}</span>
           </div>
@@ -239,22 +239,22 @@ export const Users: React.FC = () => {
             {/* Search toolbar */}
             <div className="flex items-center justify-between gap-3">
               <div className="relative flex-1 max-w-md">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder={`${t('search')}...`}
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs"
+                  className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs"
                 />
               </div>
-              <span className="text-xs text-slate-500 font-medium shrink-0">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium shrink-0">
                 {t('access.userCount', { count: filteredUsers.length })}
               </span>
             </div>
 
             {filteredUsers.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-8 text-center text-slate-400 dark:text-slate-500">
                 {t('noData')}
               </div>
             ) : (
@@ -269,36 +269,36 @@ export const Users: React.FC = () => {
                     return (
                       <div
                         key={`mobile-${u.id}`}
-                        className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3"
+                        className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-2xs space-y-3"
                       >
                         {/* Top: Avatar, Name, Username, Self badge & Status badge */}
                         <div className="flex items-start justify-between gap-2.5">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-sm uppercase shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center text-sm uppercase shrink-0">
                               {u.full_name ? u.full_name.charAt(0) : u.username.charAt(0)}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="font-semibold text-slate-900 text-sm flex items-center gap-1.5 flex-wrap">
+                              <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-1.5 flex-wrap">
                                 <span className="truncate">{u.full_name || u.username}</span>
                                 {isSelf && (
-                                  <span className="text-[10px] font-semibold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md shrink-0">
+                                  <span className="text-[10px] font-semibold bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded-md shrink-0">
                                     {t('access.you')}
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-slate-400 truncate">@{u.username}</div>
+                              <div className="text-xs text-slate-400 dark:text-slate-500 truncate">@{u.username}</div>
                             </div>
                           </div>
 
                           {/* Status Badge */}
                           <div className="shrink-0">
                             {u.is_active ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800">
                                 <CheckCircle2 size={11} />
                                 {t('access.active')}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800">
                                 <Ban size={11} />
                                 {t('access.inactive')}
                               </span>
@@ -307,27 +307,27 @@ export const Users: React.FC = () => {
                         </div>
 
                         {/* Middle: Role Badge & Metadata */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80 dark:border-slate-800 text-xs">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {getRoleBadge(roleObj?.code || u.role, roleObj?.name)}
                             {u.must_change_password && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
                                 <KeyRound size={10} />
                                 {t('access.mustChangePasswordBadge')}
                               </span>
                             )}
                           </div>
-                          <span className="text-[11px] text-slate-400">
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500">
                             {u.last_login_at ? new Date(u.last_login_at).toLocaleDateString() : t('access.never')}
                           </span>
                         </div>
 
                         {/* Bottom: Actions Row */}
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => handleOpenEditUser(u)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer border border-slate-200/80"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-700"
                           >
                             <Edit2 size={13} />
                             <span>{t('edit')}</span>
@@ -339,7 +339,7 @@ export const Users: React.FC = () => {
                               setNewPassword('');
                               setResetPasswordModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors cursor-pointer border border-amber-200/80"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-xl transition-colors cursor-pointer border border-amber-200/80 dark:border-amber-800"
                           >
                             <KeyRound size={13} />
                             <span>{t('nav.changePassword')}</span>
@@ -350,8 +350,8 @@ export const Users: React.FC = () => {
                               onClick={() => setPendingToggleBlockUser(u)}
                               className={`p-1.5 rounded-xl transition-colors cursor-pointer border ${
                                 u.is_active
-                                  ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200/80'
-                                  : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200/80'
+                                  ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 border-rose-200/80 dark:border-rose-800'
+                                  : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200/80 dark:border-emerald-800'
                               }`}
                               title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
                               aria-label={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
@@ -366,11 +366,11 @@ export const Users: React.FC = () => {
                 </div>
 
                 {/* ── DESKTOP VIEW: Table ── */}
-                <div className="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                        <tr className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
                           <th className="px-5 py-3.5">{t('access.fullName')} / {t('access.username')}</th>
                           <th className="px-5 py-3.5">{t('access.role')}</th>
                           <th className="px-5 py-3.5">{t('access.status')}</th>
@@ -378,29 +378,29 @@ export const Users: React.FC = () => {
                           <th className="px-5 py-3.5 text-right">{t('access.actions')}</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {filteredUsers.map((u) => {
                           const roleObj = u.role_info || roles.find((r) => r.id === u.role_id);
                           const isSelf = currentUser?.id === u.id;
                           const isDefaultAdmin = u.username === 'admin';
 
                           return (
-                            <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                            <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                               <td className="px-5 py-3.5">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-sm uppercase">
+                                  <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center text-sm uppercase">
                                     {u.full_name ? u.full_name.charAt(0) : u.username.charAt(0)}
                                   </div>
                                   <div>
-                                    <div className="font-semibold text-slate-800 flex items-center gap-2">
+                                    <div className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                       {u.full_name || u.username}
                                       {isSelf && (
-                                        <span className="text-[10px] font-semibold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md">
+                                        <span className="text-[10px] font-semibold bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded-md">
                                           {t('access.you')}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-xs text-slate-400">@{u.username}</div>
+                                    <div className="text-xs text-slate-400 dark:text-slate-500">@{u.username}</div>
                                   </div>
                                 </div>
                               </td>
@@ -410,25 +410,25 @@ export const Users: React.FC = () => {
                               <td className="px-5 py-3.5">
                                 <div className="flex flex-col gap-1 items-start">
                                   {u.is_active ? (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800">
                                       <CheckCircle2 size={12} />
                                       {t('access.active')}
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800">
                                       <Ban size={12} />
                                       {t('access.inactive')}
                                     </span>
                                   )}
                                   {u.must_change_password && (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200" title={t('access.requirePasswordChangeDesc')}>
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded-md border border-amber-200 dark:border-amber-800" title={t('access.requirePasswordChangeDesc')}>
                                       <KeyRound size={10} />
                                       {t('access.mustChangePasswordBadge')}
                                     </span>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-3.5 text-xs text-slate-500">
+                              <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-slate-400">
                                 {u.last_login_at
                                   ? new Date(u.last_login_at).toLocaleString()
                                   : t('access.never')}
@@ -437,7 +437,7 @@ export const Users: React.FC = () => {
                                 <div className="inline-flex items-center gap-1">
                                   <button
                                     onClick={() => handleOpenEditUser(u)}
-                                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                                     title={t('access.editUser')}
                                   >
                                     <Edit2 size={16} />
@@ -448,7 +448,7 @@ export const Users: React.FC = () => {
                                       setNewPassword('');
                                       setResetPasswordModalOpen(true);
                                     }}
-                                    className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg transition-colors cursor-pointer"
                                     title={t('access.resetPassword')}
                                   >
                                     <KeyRound size={16} />
@@ -457,8 +457,8 @@ export const Users: React.FC = () => {
                                     <button
                                       onClick={() => setPendingToggleBlockUser(u)}
                                       className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active
-                                        ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                        : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                        ? 'text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                                        : 'text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
                                         }`}
                                       title={u.is_active ? t('access.blockUser') : t('access.unblockUser')}
                                     >
@@ -484,15 +484,15 @@ export const Users: React.FC = () => {
 
       {/* 1. Create / Edit User Modal */}
       {userModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-base text-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">
                 {editingUser ? t('access.editUser') : t('access.addUser')}
               </h3>
               <button
                 onClick={() => setUserModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -500,7 +500,7 @@ export const Users: React.FC = () => {
 
             <form onSubmit={handleSaveUser} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('access.username')} {!editingUser && <span className="text-red-500">*</span>}
                 </label>
                 <input
@@ -510,12 +510,12 @@ export const Users: React.FC = () => {
                   value={formUsername}
                   onChange={(e) => setFormUsername(e.target.value.toLowerCase().replace(/\s+/g, ''))}
                   placeholder="e.g. johndoe"
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 disabled:opacity-60 font-mono"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 disabled:opacity-60 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('access.fullName')}
                 </label>
                 <input
@@ -523,13 +523,13 @@ export const Users: React.FC = () => {
                   value={formFullName}
                   onChange={(e) => setFormFullName(e.target.value)}
                   placeholder="e.g. John Doe"
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
               {!editingUser && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                     {t('access.initialPassword')} <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -539,19 +539,19 @@ export const Users: React.FC = () => {
                     value={formPassword}
                     onChange={(e) => setFormPassword(e.target.value)}
                     placeholder={t('access.min6Chars')}
-                    className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                    className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('access.role')}
                 </label>
                 <select
                   value={formRoleId}
                   onChange={(e) => setFormRoleId(e.target.value)}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 cursor-pointer"
                 >
                   {roles.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -568,9 +568,9 @@ export const Users: React.FC = () => {
                     id="userActive"
                     checked={formIsActive}
                     onChange={(e) => setFormIsActive(e.target.checked)}
-                    className="w-4 h-4 text-orange-600 border-slate-300 rounded-sm focus:ring-orange-500"
+                    className="w-4 h-4 text-orange-600 border-slate-300 dark:border-slate-600 rounded-sm focus:ring-orange-500"
                   />
-                  <label htmlFor="userActive" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
+                  <label htmlFor="userActive" className="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                     {t('access.activeAccount')}
                   </label>
                 </div>
@@ -581,19 +581,19 @@ export const Users: React.FC = () => {
                     id="userMustChangePassword"
                     checked={formMustChangePassword}
                     onChange={(e) => setFormMustChangePassword(e.target.checked)}
-                    className="w-4 h-4 text-orange-600 border-slate-300 rounded-sm focus:ring-orange-500"
+                    className="w-4 h-4 text-orange-600 border-slate-300 dark:border-slate-600 rounded-sm focus:ring-orange-500"
                   />
-                  <label htmlFor="userMustChangePassword" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
+                  <label htmlFor="userMustChangePassword" className="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                     {t('access.requirePasswordChangeOnLogin')}
                   </label>
                 </div>
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setUserModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
                 >
                   {t('cancel')}
                 </button>
@@ -615,25 +615,25 @@ export const Users: React.FC = () => {
 
       {/* 2. Reset Password Modal */}
       {resetPasswordModalOpen && userToResetPassword && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-base text-slate-800">{t('access.resetPassword')}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">{t('access.resetPassword')}</h3>
               <button
                 onClick={() => setResetPasswordModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleResetPasswordSubmit} className="p-6 space-y-4">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t('access.resetPasswordFor', { username: userToResetPassword.username })}
               </p>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
                   {t('access.newPassword')}
                 </label>
                 <input
@@ -643,7 +643,7 @@ export const Users: React.FC = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder={t('access.min6Chars')}
-                  className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
@@ -653,18 +653,18 @@ export const Users: React.FC = () => {
                   id="resetMustChangePassword"
                   checked={resetMustChangePassword}
                   onChange={(e) => setResetMustChangePassword(e.target.checked)}
-                  className="w-4 h-4 text-orange-600 border-slate-300 rounded-sm focus:ring-orange-500"
+                  className="w-4 h-4 text-orange-600 border-slate-300 dark:border-slate-600 rounded-sm focus:ring-orange-500"
                 />
-                <label htmlFor="resetMustChangePassword" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
+                <label htmlFor="resetMustChangePassword" className="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                   {t('access.requirePasswordChangeOnLogin')}
                 </label>
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+              <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setResetPasswordModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
                 >
                   {t('cancel')}
                 </button>

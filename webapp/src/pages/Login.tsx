@@ -15,10 +15,14 @@ import {
   ArrowLeft,
   Loader2,
   Fingerprint,
+  Sun,
+  Moon,
+  Monitor,
 } from '@/components/icons';
 import { api } from '../api/client';
 import { isApiError, getErrorMessage, isPasskeySupported } from '@hubsight/sdk';
 import { AppFooter } from '../components/AppFooter';
+import { useTheme } from '../context/ThemeContext';
 
 const Login = () => {
   // Step: 'credentials' or '2fa'
@@ -44,8 +48,19 @@ const Login = () => {
   const usernameInputRef = useRef<HTMLInputElement>(null);
 
   const { checkAuth } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { t, locale, setLocale } = useTranslation();
   const navigate = useNavigate();
+
+  const cycleTheme = () => {
+    if (theme === 'system') {
+      setTheme('light');
+    } else if (theme === 'light') {
+      setTheme('dark');
+    } else {
+      setTheme('system');
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -197,20 +212,36 @@ const Login = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-slate-900/20" />
       </div>
 
-      <div className="absolute top-overlay-safe right-overlay-safe z-20">
+      <div className="absolute top-overlay-safe right-overlay-safe z-20 flex items-center gap-2">
+        {/* Quick Theme Toggle on Login Page */}
+        <button
+          onClick={cycleTheme}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-pointer"
+          title={theme === 'system' ? t('settings.themeSystem') : theme === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
+        >
+          {theme === 'dark' ? (
+            <Moon size={14} className="text-indigo-400" />
+          ) : theme === 'light' ? (
+            <Sun size={14} className="text-amber-500" />
+          ) : (
+            <Monitor size={14} className="text-slate-400 dark:text-slate-500" />
+          )}
+          <span className="capitalize">{theme}</span>
+        </button>
+
         <button
           onClick={handleSwitchLocale}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm rounded-xl text-xs font-semibold text-slate-700 hover:bg-white transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-pointer"
         >
-          <Globe size={14} className="text-slate-400" />
+          <Globe size={14} className="text-slate-400 dark:text-slate-500" />
           <span>{locale === 'vi' ? '🇻🇳 Tiếng Việt' : '🇬🇧 English'}</span>
         </button>
       </div>
 
       <div className="relative z-10 w-full sm:max-w-[420px] flex-1 sm:flex-none flex flex-col min-h-0 pt-[calc(env(safe-area-inset-top,0px)+3.25rem)] sm:pt-0 sm:my-auto">
-        <div className="flex-1 sm:flex-none flex flex-col bg-white/95 backdrop-blur-xl border-t border-slate-200/70 sm:border sm:border-slate-200/80 rounded-t-[1.75rem] sm:rounded-3xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 md:p-9 shadow-[0_-12px_40px_rgba(15,23,42,0.14)] sm:shadow-[0_0_0_0.5px_rgba(15,23,42,0.04),0_1px_1px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.08)]">
+        <div className="flex-1 sm:flex-none flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/70 sm:border sm:border-slate-200/80 dark:border-slate-800 rounded-t-[1.75rem] sm:rounded-3xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 md:p-9 shadow-[0_-12px_40px_rgba(15,23,42,0.14)] sm:shadow-[0_0_0_0.5px_rgba(15,23,42,0.04),0_1px_1px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.08)]">
           <div className="sm:hidden flex justify-center pb-3 pt-0.5" aria-hidden>
-            <span className="block w-10 h-1 rounded-full bg-slate-300/90" />
+            <span className="block w-10 h-1 rounded-full bg-slate-300/90 dark:bg-slate-700" />
           </div>
 
           {/* Header */}
@@ -222,17 +253,17 @@ const Login = () => {
                 <Camera className="w-6 h-6 sm:w-7 sm:h-7" />
               )}
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               {step === '2fa' ? t('login.twoFactorTitle') : t('login.title')}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
               {step === '2fa' ? t('login.twoFactorSubtitle') : t('login.subtitle')}
             </p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm font-medium flex items-start gap-2 animate-fade-in">
+            <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-300 text-xs sm:text-sm font-medium flex items-start gap-2 animate-fade-in">
               <span className="text-red-500 mt-0.5">•</span>
               <span className="flex-1">{error}</span>
             </div>
@@ -243,7 +274,7 @@ const Login = () => {
             <div className="space-y-4 sm:space-y-5 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                     {t('login.username')}
                   </label>
                   <div className="relative">
@@ -265,13 +296,13 @@ const Login = () => {
                         if (error) setError('');
                       }}
                       placeholder={t('login.usernamePlaceholder')}
-                      className="w-full pl-11 pr-4 py-3 sm:py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
+                      className="w-full pl-11 pr-4 py-3 sm:py-2.5 bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-base sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                     {t('login.password')}
                   </label>
                   <div className="relative">
@@ -288,13 +319,13 @@ const Login = () => {
                         if (error) setError('');
                       }}
                       placeholder={t('login.passwordPlaceholder')}
-                      className="w-full pl-11 pr-12 py-3 sm:py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
+                      className="w-full pl-11 pr-12 py-3 sm:py-2.5 bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-base sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      className="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-slate-600 active:text-slate-800 transition-colors cursor-pointer touch-manipulation"
+                      className="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:text-slate-800 transition-colors cursor-pointer touch-manipulation"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -326,9 +357,9 @@ const Login = () => {
                 <div className="pt-0.5">
                   <div className="relative my-4 flex items-center justify-center">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-200" />
+                      <div className="w-full border-t border-slate-200 dark:border-slate-800" />
                     </div>
-                    <div className="relative bg-white px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                    <div className="relative bg-white dark:bg-slate-900 px-3 text-[11px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                       {t('login.or')}
                     </div>
                   </div>
@@ -337,7 +368,7 @@ const Login = () => {
                     type="button"
                     onClick={handlePasskeyLogin}
                     disabled={passkeyLoading || loading}
-                    className="group w-full min-h-[46px] sm:min-h-[44px] py-2.5 px-4 bg-white hover:bg-orange-50/60 active:bg-orange-100/50 text-slate-700 hover:text-orange-600 border border-slate-200 hover:border-orange-300 active:scale-[0.99] font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs hover:shadow-sm touch-manipulation"
+                    className="group w-full min-h-[46px] sm:min-h-[44px] py-2.5 px-4 bg-white dark:bg-slate-800/80 hover:bg-orange-50/60 dark:hover:bg-orange-950/20 active:bg-orange-100/50 text-slate-700 dark:text-slate-200 hover:text-orange-600 dark:hover:text-orange-400 border border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-500/50 active:scale-[0.99] font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs hover:shadow-sm touch-manipulation"
                   >
                     {passkeyLoading ? (
                       <Loader2 size={19} className="animate-spin text-orange-600" />
@@ -354,7 +385,7 @@ const Login = () => {
             <form onSubmit={handleVerify2FA} className="space-y-4 sm:space-y-5 flex-1 animate-fade-in">
               {!useRecoveryCode ? (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                     {t('login.twoFactorCode')}
                   </label>
                   <div className="relative">
@@ -368,13 +399,13 @@ const Login = () => {
                       value={twoFactorCode}
                       onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
                       placeholder={t('login.twoFactorCodePlaceholder')}
-                      className="w-full text-center tracking-[0.4em] font-mono text-xl font-bold py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
+                      className="w-full text-center tracking-[0.4em] font-mono text-xl font-bold py-3 bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
                     />
                   </div>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                     {t('login.recoveryCode')}
                   </label>
                   <div className="relative">
@@ -385,7 +416,7 @@ const Login = () => {
                       value={recoveryCode}
                       onChange={(e) => setRecoveryCode(e.target.value)}
                       placeholder={t('login.recoveryCodePlaceholder')}
-                      className="w-full text-center font-mono text-base font-bold py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-slate-800 uppercase focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
+                      className="w-full text-center font-mono text-base font-bold py-3 bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 uppercase focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all touch-manipulation"
                     />
                   </div>
                 </div>
@@ -399,7 +430,7 @@ const Login = () => {
                     setUseRecoveryCode(!useRecoveryCode);
                     setError('');
                   }}
-                  className="text-xs text-orange-600 hover:text-orange-700 font-semibold hover:underline cursor-pointer"
+                  className="text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-semibold hover:underline cursor-pointer"
                 >
                   {useRecoveryCode ? t('login.useTotpCode') : t('login.useRecoveryCode')}
                 </button>
@@ -421,7 +452,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={handleBackToCredentials}
-                  className="w-full py-2.5 px-4 text-slate-500 hover:text-slate-800 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-4 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <ArrowLeft size={14} />
                   <span>{t('login.backToLogin')}</span>
@@ -430,7 +461,7 @@ const Login = () => {
             </form>
           )}
 
-          <div className="pt-4 mt-auto sm:mt-6 border-t border-slate-100">
+          <div className="pt-4 mt-auto sm:mt-6 border-t border-slate-100 dark:border-slate-800">
             <AppFooter className="pb-0 pt-2" />
           </div>
         </div>

@@ -280,21 +280,21 @@ const Devices = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-5 sm:mb-6 md:mb-8 gap-3 max-w-7xl w-full mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-sm">
             <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                 {t('devices.title')}
               </h1>
               {devices.length > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200/80 text-slate-700">
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                   {devices.length}
                 </span>
               )}
             </div>
-            <p className="text-slate-500 text-xs sm:text-sm hidden sm:block mt-0.5">
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm hidden sm:block mt-0.5">
               {t('devices.subtitle')}
             </p>
           </div>
@@ -313,14 +313,14 @@ const Devices = () => {
           <DevicesSkeleton />
         ) : devices.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-6 sm:py-10 w-full">
-            <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-12 text-center shadow-sm w-full max-w-xl flex flex-col items-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-orange-50 border border-orange-100/80 flex items-center justify-center text-orange-600 mb-4 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-12 text-center shadow-sm w-full max-w-xl flex flex-col items-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-orange-50 dark:bg-orange-950/30 border border-orange-100/80 dark:border-orange-800/40 flex items-center justify-center text-orange-600 dark:text-orange-400 mb-4 shadow-sm">
                 <Video className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
-              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-slate-800 tracking-tight">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-slate-800 dark:text-slate-100 tracking-tight">
                 {t('devices.noDevicesTitle')}
               </h3>
-              <p className="text-slate-500 text-xs sm:text-sm mb-6 max-w-md leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mb-6 max-w-md leading-relaxed">
                 {t('devices.noDevicesSubtitle')}
               </p>
               <AddDeviceSplitButton
@@ -332,32 +332,32 @@ const Devices = () => {
 
             {/* Quick feature highlights / Preset info on desktop */}
             <div className="hidden sm:grid grid-cols-3 gap-4 mt-6 w-full max-w-xl text-left">
-              <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs">
-                <div className="font-semibold text-xs text-slate-800 mb-1 flex items-center gap-1.5">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-xs">
+                <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-orange-500" />
                   Preset Generators
                 </div>
-                <p className="text-[11px] text-slate-500 leading-normal">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                   Auto-build URLs for Dahua, Hikvision, Imou, Ezviz, TP-Link & Uniview.
                 </p>
               </div>
 
-              <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs">
-                <div className="font-semibold text-xs text-slate-800 mb-1 flex items-center gap-1.5">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-xs">
+                <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-green-500" />
                   Zero-CPU Copy
                 </div>
-                <p className="text-[11px] text-slate-500 leading-normal">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                   Direct stream copy recording with nearly 0% CPU consumption.
                 </p>
               </div>
 
-              <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs">
-                <div className="font-semibold text-xs text-slate-800 mb-1 flex items-center gap-1.5">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-xs">
+                <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
                   Smart Retention
                 </div>
-                <p className="text-[11px] text-slate-500 leading-normal">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                   Automatic rolling disk quota management and storage pruning.
                 </p>
               </div>

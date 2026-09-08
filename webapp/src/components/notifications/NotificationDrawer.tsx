@@ -210,16 +210,16 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
         <div
           ref={drawerRef}
-          className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200/90 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-right duration-300 pointer-events-auto"
+          className="w-screen max-w-md bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200/90 dark:border-slate-800 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-right duration-300 pointer-events-auto"
         >
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-800/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+              <div className="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
                 <Bell size={18} />
               </div>
               <div>
-                <h3 className="font-bold text-base text-slate-800 flex items-center gap-2">
+                <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   {t('notifications.title')}
                   {unreadCount > 0 && (
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500 text-white leading-none">
@@ -227,7 +227,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     </span>
                   )}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                   {t('notifications.subtitle')}
                 </p>
               </div>
@@ -235,7 +235,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -243,15 +243,15 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
           {/* Web Push Banner (If not yet enabled) */}
           {isPushNotificationSupported() && pushStatus !== 'granted' && (
-            <div className="m-3 p-3.5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/80 flex items-start gap-3 shadow-xs">
+            <div className="m-3 p-3.5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200/80 dark:border-orange-800/50 flex items-start gap-3 shadow-xs">
               <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0">
                 <Smartphone size={16} />
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-xs text-slate-800">
+                <h4 className="font-bold text-xs text-slate-800 dark:text-slate-100">
                   {t('notifications.enablePushTitle')}
                 </h4>
-                <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
                   {t('notifications.enablePushDesc')}
                 </p>
                 <button
@@ -266,13 +266,13 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
           )}
 
           {/* Toolbar: Filter + Mark all read */}
-          <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl text-xs font-semibold">
+          <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl text-xs font-semibold">
               <button
                 onClick={() => setFilter('all')}
                 className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${filter === 'all'
-                  ? 'bg-white text-slate-800 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
               >
                 {t('common.all')} ({notifications.length})
@@ -280,8 +280,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               <button
                 onClick={() => setFilter('unread')}
                 className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${filter === 'unread'
-                  ? 'bg-white text-slate-800 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
               >
                 {t('notifications.unread')} ({unreadCount})
@@ -291,7 +291,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={handleTestPush}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
+                className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold cursor-pointer"
                 title="Test Push Notification"
               >
                 <Bell size={14} />
@@ -300,7 +300,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold cursor-pointer"
+                  className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-700 font-semibold cursor-pointer"
                 >
                   <CheckCheck size={14} />
                   {t('notifications.markAllRead')}
@@ -309,7 +309,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               {notifications.length > 0 && (
                 <button
                   onClick={() => setConfirmClear(true)}
-                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-600 font-semibold cursor-pointer"
+                  className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 font-semibold cursor-pointer"
                 >
                   <Trash2 size={14} />
                   {t('notifications.clearAll')}
@@ -323,7 +323,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             {isLoading && notifications.length === 0 ? (
               <div className="space-y-3 p-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />
+                  <div key={i} className="h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse" />
                 ))}
               </div>
             ) : filteredNotifications.length > 0 ? (
@@ -338,13 +338,13 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     onClick={() => handleItemClick(n)}
                     className={`p-3.5 rounded-2xl border transition-all duration-150 cursor-pointer flex items-start gap-3 relative group overflow-hidden ${!n.is_read
                       ? isFamily
-                        ? 'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50/70'
+                        ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30'
                         : isGuest
-                          ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50/70'
+                          ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/40 hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
                           : isStranger
-                            ? 'bg-red-50/50 border-red-200 hover:bg-red-50/80'
-                            : 'bg-orange-50/40 border-orange-200'
-                      : 'bg-white hover:bg-slate-50 border-slate-200/80'
+                            ? 'bg-red-50/50 dark:bg-red-950/25 border-red-200 dark:border-red-800/40 hover:bg-red-50/80 dark:hover:bg-red-950/35'
+                            : 'bg-orange-50/40 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800/40'
+                      : 'bg-white dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/70 border-slate-200/80 dark:border-slate-800'
                       }`}
                   >
                     {/* Unread indicator bar */}
@@ -364,12 +364,12 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     {/* Category Icon */}
                     <div
                       className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${isFamily
-                        ? 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
                         : isGuest
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
                           : isStranger
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-slate-100 text-slate-700'
+                            ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                         }`}
                     >
                       {isFamily ? (
@@ -387,25 +387,25 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     <div className="flex-1 min-w-0 pr-6">
                       <div className="flex items-center justify-between gap-1">
                         <h4
-                          className={`text-xs font-bold truncate ${!n.is_read ? 'text-slate-900' : 'text-slate-700'
+                          className={`text-xs font-bold truncate ${!n.is_read ? 'text-slate-900 dark:text-slate-100' : 'text-slate-700 dark:text-slate-300'
                             }`}
                         >
                           {n.title}
                         </h4>
                         <span
-                          className="text-[10px] text-slate-400 shrink-0 font-mono"
+                          className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0 font-mono"
                           title={formatDateTime(n.created_at)}
                         >
                           {dayjs(n.created_at).fromNow()}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                         {formatNotificationBody(n.body, n.created_at)}
                       </p>
 
                       {n.camera_id && (
-                        <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-orange-600">
+                        <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-orange-600 dark:text-orange-400">
                           <Video size={12} />
                           <span>{t('notifications.viewCamera')}</span>
                         </div>
@@ -415,7 +415,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     {/* Delete button */}
                     <button
                       onClick={(e) => handleDelete(e, n.id)}
-                      className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                      className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                       title={t('common.delete')}
                     >
                       <Trash2 size={13} />
@@ -424,7 +424,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                 );
               })
             ) : (
-              <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
+              <div className="py-16 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center gap-2">
                 <Check size={32} className="text-emerald-500 opacity-60" />
                 <p className="text-xs font-medium">{t('notifications.noNotifications')}</p>
               </div>

@@ -49,13 +49,13 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
         {t('device.brandPreset')}
       </label>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="input-field w-full flex items-center justify-between text-left cursor-pointer bg-white hover:border-orange-300 transition-colors"
+        className="input-field w-full flex items-center justify-between text-left cursor-pointer bg-white dark:bg-slate-900 hover:border-orange-300 dark:hover:border-orange-500 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
           <span
@@ -65,7 +65,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
           >
             {selectedPreset.tag}
           </span>
-          <span className="font-medium text-slate-800 truncate">{selectedPreset.name}</span>
+          <span className="font-medium text-slate-800 dark:text-slate-200 truncate">{selectedPreset.name}</span>
         </div>
         <ChevronDown
           size={18}
@@ -74,9 +74,9 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-80">
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl dark:shadow-2xl z-50 overflow-hidden flex flex-col max-h-80">
           {/* Search Box */}
-          <div className="p-2 border-b border-slate-100 bg-slate-50/70 sticky top-0 z-10">
+          <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/80 sticky top-0 z-10">
             <div className="relative flex items-center">
               <Search size={15} className="absolute left-2.5 text-slate-400 pointer-events-none" />
               <input
@@ -85,13 +85,13 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('device.brandSearchPlaceholder')}
-                className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 >
                   <X size={14} />
                 </button>
@@ -100,7 +100,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
           </div>
 
           {/* List of Presets */}
-          <div className="overflow-y-auto py-1 divide-y divide-slate-50">
+          <div className="overflow-y-auto py-1 divide-y divide-slate-50 dark:divide-slate-800/60">
             {filteredPresets.length === 0 ? (
               <div className="px-4 py-4 text-center text-xs text-slate-400">
                 {t('device.brandNotFound')}
@@ -115,8 +115,8 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
                   }}
                   className={`px-3.5 py-2 flex items-center justify-between cursor-pointer transition-colors ${
                     selectedBrand === b.id
-                      ? 'bg-orange-50/80 font-semibold'
-                      : 'hover:bg-slate-50 text-slate-700'
+                      ? 'bg-orange-50/80 dark:bg-orange-950/30 font-semibold'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2 flex-1">
@@ -132,7 +132,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
                     <div className="min-w-0 flex-1">
                       <div
                         className={`text-xs font-medium truncate ${
-                          selectedBrand === b.id ? 'text-orange-950 font-bold' : 'text-slate-800'
+                          selectedBrand === b.id ? 'text-orange-950 dark:text-orange-300 font-bold' : 'text-slate-800 dark:text-slate-200'
                         }`}
                       >
                         {b.name}
@@ -145,7 +145,7 @@ export const DeviceBrandDropdown: React.FC<DeviceBrandDropdownProps> = ({
                     </div>
                   </div>
                   {selectedBrand === b.id && (
-                    <Check size={16} className="text-orange-600 shrink-0 ml-2" />
+                    <Check size={16} className="text-orange-600 dark:text-orange-400 shrink-0 ml-2" />
                   )}
                 </div>
               ))

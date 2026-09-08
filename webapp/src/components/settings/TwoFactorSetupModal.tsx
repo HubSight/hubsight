@@ -170,36 +170,36 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200/60 flex items-center justify-center text-orange-600">
+            <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/60 dark:border-orange-500/30 flex items-center justify-center text-orange-600 dark:text-orange-500">
               {mode === 'disable' ? <ShieldAlert size={20} /> : <ShieldCheck size={20} />}
             </div>
             <div>
-              <h3 className="font-bold text-base text-slate-800">
+              <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">
                 {mode === 'setup'
                   ? t('settings.twoFactorModalTitle')
                   : mode === 'regenerate'
                   ? t('settings.regenRecoveryBtn')
                   : t('settings.disable2faBtn')}
               </h3>
-              <p className="text-xs text-slate-500">{t('settings.twoFactorTitle')}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('settings.twoFactorTitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-5">
+        <div className="p-6 overflow-y-auto space-y-5 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs flex items-center gap-2 animate-fade-in">
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-red-600 dark:text-red-400 text-xs flex items-center gap-2 animate-fade-in">
               <AlertCircle size={16} className="shrink-0" />
               <span>{error}</span>
             </div>
@@ -208,22 +208,22 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
           {/* STEP: Display Recovery Codes after enabling or regenerating */}
           {step === 'codes' ? (
             <div className="space-y-4">
-              <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl">
-                <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
-                  <KeyRound size={18} className="text-amber-600" />
+              <div className="p-4 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-sm">
+                  <KeyRound size={18} className="text-amber-600 dark:text-amber-400" />
                   <span>{t('settings.recoveryCodesTitle')}</span>
                 </div>
-                <p className="text-xs text-amber-700 mt-1">
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
                   {t('settings.recoveryCodesDesc')}
                 </p>
               </div>
 
               {/* Grid of codes */}
-              <div className="grid grid-cols-2 gap-2.5 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="grid grid-cols-2 gap-2.5 p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl">
                 {recoveryCodes.map((code, idx) => (
                   <div
                     key={idx}
-                    className="px-3 py-2 bg-white border border-slate-200/80 rounded-xl font-mono text-sm font-semibold text-slate-800 text-center tracking-wider shadow-2xs"
+                    className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-xl font-mono text-sm font-semibold text-slate-800 dark:text-slate-100 text-center tracking-wider shadow-2xs"
                   >
                     {code}
                   </div>
@@ -235,12 +235,12 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyAllCodes}
-                  className="flex-1 py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 px-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
                 >
                   {copiedCodes ? (
                     <>
-                      <Check size={14} className="text-emerald-600" />
-                      <span className="text-emerald-600">{t('settings.copiedCodes')}</span>
+                      <Check size={14} className="text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-emerald-600 dark:text-emerald-400">{t('settings.copiedCodes')}</span>
                     </>
                   ) : (
                     <>
@@ -252,7 +252,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
                 <button
                   type="button"
                   onClick={handleDownloadCodes}
-                  className="flex-1 py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 px-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
                 >
                   <Download size={14} />
                   <span>{t('settings.downloadCodes')}</span>
@@ -260,14 +260,14 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
               </div>
 
               {/* Confirmation checkbox */}
-              <label className="flex items-start gap-3 p-3 bg-slate-50/80 border border-slate-200/70 rounded-xl cursor-pointer">
+              <label className="flex items-start gap-3 p-3 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700 rounded-xl cursor-pointer">
                 <input
                   type="checkbox"
                   checked={hasSavedCodes}
                   onChange={(e) => setHasSavedCodes(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                  className="mt-0.5 rounded border-slate-300 dark:border-slate-600 text-orange-600 focus:ring-orange-500"
                 />
-                <span className="text-xs text-slate-700 font-medium">
+                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                   {t('settings.confirmSavedCodes')}
                 </span>
               </label>
@@ -294,10 +294,10 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
             ) : setupData ? (
               <form onSubmit={handleEnable2FA} className="space-y-4">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700 mb-2.5">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2.5">
                     {t('settings.twoFactorScanStep')}
                   </p>
-                  <div className="flex flex-col items-center justify-center p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl">
                     <img
                       src={setupData.qr_code}
                       alt="TOTP QR Code"
@@ -308,27 +308,27 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
 
                 {/* Secret key fallback */}
                 <div className="space-y-1.5">
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     {t('settings.twoFactorManualKey')}
                   </p>
-                  <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    <span className="font-mono text-xs font-semibold text-slate-700 tracking-wider flex-1 select-all break-all">
+                  <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                    <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-200 tracking-wider flex-1 select-all break-all">
                       {setupData.secret}
                     </span>
                     <button
                       type="button"
                       onClick={handleCopySecret}
-                      className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg transition-colors cursor-pointer shrink-0"
+                      className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shrink-0"
                       title="Copy secret"
                     >
-                      {copiedSecret ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                      {copiedSecret ? <Check size={14} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={14} />}
                     </button>
                   </div>
                 </div>
 
                 {/* 6-digit confirmation code input */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                     {t('settings.twoFactorVerifyStep')}
                   </label>
                   <input
@@ -340,7 +340,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                     placeholder="000000"
-                    className="w-full text-center tracking-[0.4em] font-mono text-lg font-bold py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    className="w-full text-center tracking-[0.4em] font-mono text-lg font-bold py-2.5 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
 
@@ -359,7 +359,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
           ) : mode === 'regenerate' ? (
             /* Regenerate Backup Codes: Password confirmation */
             <form onSubmit={handleRegenerateCodes} className="space-y-4">
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 {t('settings.regenConfirmPrompt')}
               </p>
               <div>
@@ -370,7 +370,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t('login.passwordPlaceholder')}
-                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  className="w-full py-2.5 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
               <button
@@ -385,7 +385,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
           ) : (
             /* Disable 2FA: Password confirmation */
             <form onSubmit={handleDisable2FA} className="space-y-4">
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 {t('settings.disableConfirmPrompt')}
               </p>
               <div>
@@ -396,7 +396,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t('login.passwordPlaceholder')}
-                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  className="w-full py-2.5 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
               <button

@@ -320,7 +320,7 @@ const Playback = () => {
 
   if (initialLoading && cameras.length === 0) {
     return (
-      <div className="h-full overflow-y-auto bg-slate-50/50 p-4 md:p-6">
+      <div className="h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-4 md:p-6">
         <PlaybackSkeleton />
       </div>
     );
@@ -328,7 +328,7 @@ const Playback = () => {
 
   return (
     <div className="h-full flex min-h-0 min-w-0">
-      <PullToRefresh onRefresh={handleRefresh} className="flex-1 min-w-0 h-full bg-slate-50/50 playback-scrollbar">
+      <PullToRefresh onRefresh={handleRefresh} className="flex-1 min-w-0 h-full bg-slate-50/50 dark:bg-slate-950 playback-scrollbar">
         <div className="flex flex-col min-w-0 pb-8 max-w-[1920px]">
           {/* 1. YouTube-style Video Player (Sticky on mobile top, static on desktop) */}
           <div className="sticky top-0 z-30 w-full bg-black shadow-md md:static md:shadow-none">
@@ -377,7 +377,7 @@ const Playback = () => {
       </PullToRefresh>
 
       {enableAi && selectedCam && (
-        <aside className="hidden lg:flex flex-col w-[22rem] xl:w-[26rem] 2xl:w-[28rem] shrink-0 h-full min-h-0 border-l border-slate-200 bg-white">
+        <aside className="hidden lg:flex flex-col w-[22rem] xl:w-[26rem] 2xl:w-[28rem] shrink-0 h-full min-h-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <RecognitionLogSidebar cameraId={selectedCam} variant="docked" />
         </aside>
       )}

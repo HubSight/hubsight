@@ -231,6 +231,42 @@ func UpdateTimezoneHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, updated)
 }
 
+// UpdateThemeHandler updates the preferred UI theme mode (system, light, dark).
+func UpdateThemeHandler(c *gin.Context) {
+	userObj, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	u := userObj.(*models.User)
+
+	var req UpdateThemeRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.Theme == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Theme is required"})
+		return
+	}
+
+	if req.Theme != string(models.ThemeSystem) && req.Theme != string(models.ThemeLight) && req.Theme != string(models.ThemeDark) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid theme. Allowed values: system, light, dark"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("theme", req.Theme).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update theme in database"})
+		return
+	}
+
+	var updated models.User
+	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
+}
+
 func UpdatePreferencesHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
@@ -252,6 +288,9 @@ func UpdatePreferencesHandler(c *gin.Context) {
 	}
 	if req.Timezone != nil && *req.Timezone != "" {
 		updates["timezone"] = *req.Timezone
+	}
+	if req.Theme != nil && (*req.Theme == string(models.ThemeSystem) || *req.Theme == string(models.ThemeLight) || *req.Theme == string(models.ThemeDark)) {
+		updates["theme"] = models.Theme(*req.Theme)
 	}
 	if req.PushPreferences != nil {
 		updates["push_preferences"] = req.PushPreferences

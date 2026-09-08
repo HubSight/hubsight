@@ -307,9 +307,9 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
-      <div className="bg-white w-full h-full overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-900 w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-5 pb-4 pt-[max(env(safe-area-inset-top),1rem)] pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+        <div className="px-5 pb-4 pt-[max(env(safe-area-inset-top),1rem)] pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/80 shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="relative shrink-0">
               {currentAvatarUrl ? (
@@ -319,34 +319,34 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                   className="w-12 h-12 rounded-2xl object-cover border-2 border-orange-500/30 shadow-xs"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600 font-bold text-lg">
+                <div className="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-lg">
                   {member.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white bg-emerald-500" />
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 bg-emerald-500" />
             </div>
 
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-lg font-bold text-slate-800 truncate">
+                <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">
                   {member.name}
                 </h2>
                 {member.role === 'family' ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <ShieldCheck size={11} className="text-emerald-600" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    <ShieldCheck size={11} className="text-emerald-600 dark:text-emerald-400" />
                     {t('members.roleFamily')}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                    <HeartHandshake size={11} className="text-blue-600" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    <HeartHandshake size={11} className="text-blue-600 dark:text-blue-400" />
                     {t('members.roleNeighbor')}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
                 <span>{t('gallery.title')}</span>
                 <span>•</span>
-                <span className="font-semibold text-orange-600">
+                <span className="font-semibold text-orange-600 dark:text-orange-400">
                   {totalFaces}/{MAX_SAMPLES_PER_MEMBER} {t('members.faceSamplesCount')}
                 </span>
               </p>
@@ -357,7 +357,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
             <button
               onClick={onClose}
               disabled={isUploading || isDeleting}
-              className="p-3 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-3 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <X size={28} />
             </button>
@@ -376,9 +376,9 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         />
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pl-[max(env(safe-area-inset-left),1rem)] pr-[max(env(safe-area-inset-right),1rem)] space-y-5 bg-slate-50/40">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pl-[max(env(safe-area-inset-left),1rem)] pr-[max(env(safe-area-inset-right),1rem)] space-y-5 bg-slate-50/40 dark:bg-slate-950/40">
           {error && (
-            <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium flex items-center justify-between">
+            <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-medium flex items-center justify-between">
               <span>{error}</span>
               <button onClick={() => setError('')} className="p-1 text-red-400 hover:text-red-600">
                 <X size={14} />
@@ -387,17 +387,17 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           )}
 
           {/* AI Guide / Guidelines Banner */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="bg-white dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 mt-0.5">
                 <Sparkles size={18} />
               </div>
               <div className="text-xs">
-                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   {t('gallery.aiTipsTitle')}
                   <Info size={12} className="text-slate-400" />
                 </div>
-                <div className="text-slate-500 text-[11px] mt-0.5 space-y-0.5">
+                <div className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5 space-y-0.5">
                   <div>• {t('gallery.aiTip1')}</div>
                   <div>• {t('gallery.aiTip2')}</div>
                 </div>
@@ -414,12 +414,12 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
             }}
             className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center gap-2 transition-all group ${
               isUploading || isDeleting || totalFaces >= MAX_SAMPLES_PER_MEMBER
-                ? 'border-slate-200 bg-slate-50/50 cursor-not-allowed opacity-60'
-                : 'border-slate-300 hover:border-orange-500 bg-white hover:bg-orange-50/20 cursor-pointer'
+                ? 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 cursor-not-allowed opacity-60'
+                : 'border-slate-300 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 bg-white dark:bg-slate-900 hover:bg-orange-50/20 dark:hover:bg-orange-950/20 cursor-pointer'
             }`}
           >
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-              isUploading || isDeleting ? 'bg-slate-100 text-slate-400' : 'bg-slate-50 group-hover:bg-orange-100 text-slate-400 group-hover:text-orange-600 group-hover:scale-105'
+              isUploading || isDeleting ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500' : 'bg-slate-50 dark:bg-slate-800 group-hover:bg-orange-100 dark:group-hover:bg-orange-950/50 text-slate-400 dark:text-slate-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 group-hover:scale-105'
             }`}>
               {isUploading ? (
                 <div className="w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -427,7 +427,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                 <Upload size={22} />
               )}
             </div>
-            <div className={`text-xs font-bold text-center ${isUploading || isDeleting ? 'text-slate-500' : 'text-slate-700 group-hover:text-orange-600'}`}>
+            <div className={`text-xs font-bold text-center ${isUploading || isDeleting ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300 group-hover:text-orange-600 dark:group-hover:text-orange-400'}`}>
               {isUploading
                 ? t('gallery.uploadingProgress', {
                     current: uploadProgress?.current ?? 0,
@@ -435,7 +435,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                   })
                 : t('gallery.uploadPhotos')}
             </div>
-            <p className="text-[11px] text-slate-400 text-center max-w-md">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center max-w-md">
               {t('gallery.uploadMultipleHint')}
             </p>
           </div>
@@ -444,7 +444,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           <div>
             {/* Action Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 px-1">
-              <div className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Layers size={14} className="text-slate-400" />
                 {t('members.tabFaces')} ({totalFaces})
               </div>
@@ -455,14 +455,14 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
-                      className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 outline-none focus:border-orange-500 cursor-pointer"
+                      className="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-600 dark:text-slate-300 outline-none focus:border-orange-500 cursor-pointer"
                     >
                       <option value="created_at">{t('gallery.sortNewest')}</option>
                       <option value="quality_score">{t('gallery.sortQuality')}</option>
                     </select>
                     <button
                       onClick={() => setSelectionMode(true)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
                       {t('gallery.selectMultiple')}
                     </button>
@@ -477,7 +477,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                           setSelectedFaceIds(new Set(faces.map((f) => f.id)));
                         }
                       }}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
                       {selectedFaceIds.size === faces.length ? t('gallery.deselectAll') : t('gallery.selectAllPage')}
                     </button>
@@ -486,7 +486,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                         setSelectionMode(false);
                         setSelectedFaceIds(new Set());
                       }}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
                       {t('common.cancel')}
                     </button>
@@ -513,8 +513,8 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                     return (
                       <div
                         key={f.id}
-                        className={`group relative bg-white rounded-2xl overflow-hidden border shadow-xs transition-all flex flex-col aspect-square hover:shadow-md ${
-                          isAvatar ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
+                        className={`group relative bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border shadow-xs transition-all flex flex-col aspect-square hover:shadow-md ${
+                          isAvatar ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 dark:border-slate-700'
                         } ${isSelected ? 'ring-2 ring-orange-500 border-orange-500' : ''}`}
                       >
                         {/* Image */}
@@ -614,7 +614,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                 {/* Loading More / Intersection Target */}
                 <div
                   ref={observerTarget}
-                  className="w-full h-14 flex items-center justify-center text-xs text-slate-400 mt-4"
+                  className="w-full h-14 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500 mt-4"
                 >
                   {isLoadingFaces && (
                     <div className="flex items-center gap-2">
@@ -627,14 +627,14 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
               </>
             ) : (
               !isLoadingFaces && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center flex flex-col items-center justify-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center">
+                <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 p-10 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-orange-500 dark:text-orange-400 flex items-center justify-center">
                     <Sparkles size={26} />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-800">
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
                     {t('members.noFaceSamplesYet')}
                   </h3>
-                  <p className="text-xs text-slate-400 max-w-md">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 max-w-md">
                     {t('gallery.emptyHint')}
                   </p>
                 </div>
@@ -650,7 +650,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] border-t border-slate-100 flex items-center justify-between bg-slate-50/70 text-xs text-slate-500 shrink-0">
+        <div className="px-5 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/80 text-xs text-slate-500 dark:text-slate-400 shrink-0">
           <div className="flex items-center gap-2 font-medium">
             <Sparkles size={13} className="text-orange-500" />
             <span>{t('gallery.vectorCount')}: {totalFaces * 512} floats</span>

@@ -6,6 +6,12 @@
   :root {
     --bg-dark: #f8fafc;
     --accent-color: #ea580c; /* orange-600 */
+    color-scheme: light;
+  }
+
+  html.dark, :root.dark {
+    --bg-dark: #090d16;
+    color-scheme: dark;
   }
   
   body {
@@ -16,6 +22,12 @@
     -webkit-font-smoothing: antialiased;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark body {
+    background-color: #090d16;
+    color: #f1f5f9;
   }
 }
 
@@ -72,11 +84,11 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl;
+    @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-2xl text-slate-800 dark:text-slate-100;
   }
   
   .input-field {
-    @apply bg-white border border-slate-300 text-slate-800 px-4 py-3 rounded-xl text-base transition-all duration-200 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20;
+    @apply bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 dark:placeholder-slate-500 px-4 py-3 rounded-xl text-base transition-all duration-200 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20;
   }
   
   .btn {
@@ -84,23 +96,23 @@
   }
   
   .btn-secondary {
-    @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95;
+    @apply bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-400 dark:hover:border-slate-600 active:scale-95;
   }
   
   .nav-link {
-    @apply flex items-center gap-2.5 mx-3 px-3 py-2 text-slate-600 no-underline transition-all duration-150 font-medium text-sm rounded-xl hover:bg-slate-100 hover:text-slate-900;
+    @apply flex items-center gap-2.5 mx-3 px-3 py-2 text-slate-600 dark:text-slate-400 no-underline transition-all duration-150 font-medium text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100;
   }
   
   .nav-link.active {
-    @apply bg-orange-600 text-white font-semibold shadow-sm hover:bg-orange-600 hover:text-white;
+    @apply bg-orange-600 text-white font-semibold shadow-sm hover:bg-orange-600 hover:text-white dark:bg-orange-600 dark:text-white;
   }
 
   .timeline-item {
-    @apply flex items-center px-4 py-3 border-b border-slate-100 cursor-pointer transition-colors duration-200 hover:bg-slate-50;
+    @apply flex items-center px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 cursor-pointer transition-colors duration-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200;
   }
 
   .timeline-item.playing {
-    @apply border-l-4 border-orange-600 bg-orange-50;
+    @apply border-l-4 border-orange-600 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-500;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -114,8 +126,14 @@
     background-color: #cbd5e1;
     border-radius: 20px;
   }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #334155;
+  }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: #94a3b8;
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #475569;
   }
 }
 
@@ -145,6 +163,9 @@
   font-family: inherit;
   color: #0f172a;
 }
+.dark .react-calendar {
+  color: #f1f5f9;
+}
 .react-calendar__navigation button {
   min-width: 44px;
   background: none;
@@ -153,9 +174,16 @@
   border-radius: 8px;
   border: none;
 }
+.dark .react-calendar__navigation button {
+  color: #f1f5f9;
+}
 .react-calendar__navigation button:hover,
 .react-calendar__navigation button:focus {
   background: rgba(0,0,0,0.05);
+}
+.dark .react-calendar__navigation button:hover,
+.dark .react-calendar__navigation button:focus {
+  background: rgba(255,255,255,0.08);
 }
 .react-calendar__month-view__weekdays {
   text-align: center;
@@ -165,6 +193,9 @@
   color: #64748b;
   padding-bottom: 8px;
 }
+.dark .react-calendar__month-view__weekdays {
+  color: #94a3b8;
+}
 .react-calendar__month-view__days__day {
   color: #0f172a;
   background: none;
@@ -172,13 +203,24 @@
   border-radius: 8px;
   padding: 8px;
 }
+.dark .react-calendar__month-view__days__day {
+  color: #f1f5f9;
+}
 .react-calendar__tile:enabled:hover,
 .react-calendar__tile:enabled:focus {
   background: rgba(0,0,0,0.05);
 }
+.dark .react-calendar__tile:enabled:hover,
+.dark .react-calendar__tile:enabled:focus {
+  background: rgba(255,255,255,0.08);
+}
 .react-calendar__tile--now {
   background: rgba(234,88,12,0.1) !important;
   color: #ea580c;
+}
+.dark .react-calendar__tile--now {
+  background: rgba(234,88,12,0.2) !important;
+  color: #fb923c;
 }
 .react-calendar__tile--active {
   background: #ea580c !important;
@@ -187,6 +229,9 @@
 }
 .react-calendar__month-view__days__day--neighboringMonth {
   color: #94a3b8 !important;
+}
+.dark .react-calendar__month-view__days__day--neighboringMonth {
+  color: #475569 !important;
 }
 
 /* Custom Scrollbar for Playback */
@@ -201,6 +246,12 @@
   background: rgba(148, 163, 184, 0.3);
   border-radius: 10px;
 }
+.dark .playback-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+}
 .playback-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.6);
+}
+.dark .playback-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
 }

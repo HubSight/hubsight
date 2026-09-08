@@ -306,7 +306,7 @@ export const MultiView: React.FC = () => {
 
         {/* Mobile Drawer Sidebar */}
         <div
-          className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-900 shadow-2xl transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
           <MultiViewSidebar

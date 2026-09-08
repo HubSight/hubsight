@@ -89,6 +89,9 @@ import {
   faFileCode,
   faQrcode,
   faFileShield,
+  faSun,
+  faMoon,
+  faDesktop,
 } from '@fortawesome/free-solid-svg-icons';
 
 
@@ -188,3 +191,7 @@ export const Volume2 = createFaIcon(faVolumeHigh);
 export const VolumeX = createFaIcon(faVolumeXmark);
 export const X = createFaIcon(faXmark);
 export const Zap = createFaIcon(faBolt);
+export const Sun = createFaIcon(faSun);
+export const Moon = createFaIcon(faMoon);
+export const Monitor = createFaIcon(faDesktop);
+export const Desktop = createFaIcon(faDesktop);

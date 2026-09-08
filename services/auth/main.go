@@ -140,6 +140,7 @@ func main() {
 		protected.POST("/verify-password", auth.VerifyPasswordHandler)
 		protected.PUT("/locale", auth.UpdateLocaleHandler)
 		protected.PUT("/timezone", auth.UpdateTimezoneHandler)
+		protected.PUT("/theme", auth.UpdateThemeHandler)
 		protected.PUT("/preferences", auth.UpdatePreferencesHandler)
 
 		// Two-Factor Authentication (2FA) Management

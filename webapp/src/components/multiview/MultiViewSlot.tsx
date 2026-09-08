@@ -131,11 +131,11 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
         onClick={() => onOpenSelector?.(slotIndex)}
         className={`group relative w-full h-full flex flex-col items-center justify-center border-2 border-dashed rounded-2xl transition-all cursor-pointer select-none p-4 ${isDragOver
             ? 'border-orange-500 bg-orange-500/10 scale-[0.99] ring-2 ring-orange-500/30'
-            : 'border-slate-300/80 bg-slate-900/5 hover:border-orange-400 hover:bg-orange-50/20'
+            : 'border-slate-300/80 dark:border-slate-800 bg-slate-900/5 dark:bg-slate-900/40 hover:border-orange-400 dark:hover:border-orange-500/60 hover:bg-orange-50/20 dark:hover:bg-orange-950/20'
           }`}
       >
         {/* Slot Number Badge */}
-        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-white/80 border border-slate-200 text-[11px] font-bold text-slate-500 shadow-xs">
+        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 dark:text-slate-400 shadow-xs">
           {t('multiview.slot', { num: (slotIndex + 1).toString() })}
         </div>
 
@@ -143,16 +143,16 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
           <div
             className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${isDragOver
                 ? 'bg-orange-500 text-white shadow-md scale-110'
-                : 'bg-white text-slate-400 border border-slate-200 group-hover:text-orange-600 group-hover:border-orange-200 group-hover:scale-105 shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-400 border border-slate-200 dark:border-slate-700 group-hover:text-orange-600 dark:group-hover:text-orange-400 group-hover:border-orange-200 dark:group-hover:border-orange-500 group-hover:scale-105 shadow-xs'
               }`}
           >
             <Plus size={20} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-700 group-hover:text-orange-600 transition-colors">
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
               {t('multiview.dropHere')}
             </p>
-            <p className="text-[10px] text-slate-400 mt-0.5">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
               {t('multiview.clickToSelect')}
             </p>
           </div>

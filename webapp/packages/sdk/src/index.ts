@@ -106,6 +106,7 @@ export type {
   Permission,
   UserRole,
   Locale,
+  ThemePreference,
   UserPreferences,
   CreateUserRequest,
   UpdateUserRequest,

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { HubSightProvider } from '@hubsight/sdk/react';
 import api from './api/client';
 import { TimezoneProvider } from './context/TimezoneContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { I18nProvider } from './i18n';
 import { LocaleSync } from './components/LocaleSync';
 import MainLayout from './layouts/MainLayout';
@@ -74,104 +75,106 @@ const App = () => {
   return (
     <I18nProvider>
       <AuthProvider>
-        <LocaleSync />
-        <TimezoneProvider>
-          <HubSightProvider client={api}>
-              <AuthRealtimeWatcher />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
+        <ThemeProvider>
+          <LocaleSync />
+          <TimezoneProvider>
+            <HubSightProvider client={api}>
+                <AuthRealtimeWatcher />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
 
-                  <Route
-                    path="/"
-                    element={
-                      <ProtectedRoute>
-                        <MainLayout />
-                      </ProtectedRoute>
-                    }
-                  >
-                    <Route index element={<IndexRedirect />} />
                     <Route
-                      path="devices"
+                      path="/"
                       element={
-                        <AdminRoute>
-                          <Devices />
-                        </AdminRoute>
+                        <ProtectedRoute>
+                          <MainLayout />
+                        </ProtectedRoute>
                       }
-                    />
-                    <Route
-                      path="members"
-                      element={
-                        <AdminRoute>
-                          <Members />
-                        </AdminRoute>
-                      }
-                    />
-                    <Route path="multiview" element={<MultiView />} />
-                    <Route path="playback" element={<Playback />} />
-                    <Route
-                      path="recorder"
-                      element={
-                        <AdminRoute>
-                          <NvrMonitor />
-                        </AdminRoute>
-                      }
-                    />
-                    <Route
-                      path="pool"
-                      element={
-                        <AdminRoute>
-                          <PoolMonitor />
-                        </AdminRoute>
-                      }
-                    />
-                    <Route
-                      path="users"
-                      element={
-                        <AdminRoute>
-                          <Users />
-                        </AdminRoute>
-                      }
-                    />
-                    <Route
-                      path="roles"
-                      element={
-                        <AdminRoute>
-                          <Roles />
-                        </AdminRoute>
-                      }
-                    />
-                    <Route
-                      path="clients"
-                      element={
-                        <AdminRoute>
-                          <Clients />
-                        </AdminRoute>
-                      }
-                    />
-                    <Route
-                      path="service-accounts"
-                      element={
-                        <PermissionRoute permission="service_accounts:manage">
-                          <GoogleServiceAccounts />
-                        </PermissionRoute>
-                      }
-                    />
-                    <Route
-                      path="app-configs"
-                      element={
-                        <PermissionRoute permission={["app_configs:manage", "mobile_configs:manage"]}>
-                          <AppConfigs />
-                        </PermissionRoute>
-                      }
-                    />
-                    <Route path="mobile-configs" element={<Navigate to="/app-configs" replace />} />
-                    <Route path="access" element={<Navigate to="/users" replace />} />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </HubSightProvider>
-        </TimezoneProvider>
+                    >
+                      <Route index element={<IndexRedirect />} />
+                      <Route
+                        path="devices"
+                        element={
+                          <AdminRoute>
+                            <Devices />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="members"
+                        element={
+                          <AdminRoute>
+                            <Members />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route path="multiview" element={<MultiView />} />
+                      <Route path="playback" element={<Playback />} />
+                      <Route
+                        path="recorder"
+                        element={
+                          <AdminRoute>
+                            <NvrMonitor />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="pool"
+                        element={
+                          <AdminRoute>
+                            <PoolMonitor />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="users"
+                        element={
+                          <AdminRoute>
+                            <Users />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="roles"
+                        element={
+                          <AdminRoute>
+                            <Roles />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="clients"
+                        element={
+                          <AdminRoute>
+                            <Clients />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="service-accounts"
+                        element={
+                          <PermissionRoute permission="service_accounts:manage">
+                            <GoogleServiceAccounts />
+                          </PermissionRoute>
+                        }
+                      />
+                      <Route
+                        path="app-configs"
+                        element={
+                          <PermissionRoute permission={["app_configs:manage", "mobile_configs:manage"]}>
+                            <AppConfigs />
+                          </PermissionRoute>
+                        }
+                      />
+                      <Route path="mobile-configs" element={<Navigate to="/app-configs" replace />} />
+                      <Route path="access" element={<Navigate to="/users" replace />} />
+                    </Route>
+                  </Routes>
+                </BrowserRouter>
+              </HubSightProvider>
+          </TimezoneProvider>
+        </ThemeProvider>
       </AuthProvider>
     </I18nProvider>
   );

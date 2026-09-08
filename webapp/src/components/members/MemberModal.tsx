@@ -205,20 +205,20 @@ export const MemberModal: React.FC<MemberModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/80">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
               {isEditing ? t('members.editMember') : t('members.addMember')}
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {t('members.modalSubtitle')}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -227,13 +227,13 @@ export const MemberModal: React.FC<MemberModalProps> = ({
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400 text-xs font-medium">
               {error}
             </div>
           )}
 
           {/* Avatar Selector Section */}
-          <div className="flex items-center gap-4 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+          <div className="flex items-center gap-4 p-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl">
             <input
               type="file"
               ref={avatarInputRef}
@@ -251,7 +251,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                   className="w-16 h-16 rounded-2xl object-cover border-2 border-orange-500/30 shadow-xs"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-2xl bg-orange-100/70 border border-orange-200 flex items-center justify-center text-orange-600 font-bold text-xl shadow-xs">
+                <div className="w-16 h-16 rounded-2xl bg-orange-100/70 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800/60 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-xl shadow-xs">
                   {formData.name.trim() ? (
                     formData.name.trim().charAt(0).toUpperCase()
                   ) : (
@@ -277,7 +277,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
 
             {/* Avatar Controls */}
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-slate-800 mb-1">
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
                 {t('members.avatar')}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -285,12 +285,12 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={uploadingAvatar}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {uploadingAvatar ? (
                     <div className="w-3.5 h-3.5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Camera size={13} className="text-orange-600" />
+                    <Camera size={13} className="text-orange-600 dark:text-orange-400" />
                   )}
                   {uploadingAvatar
                     ? t('common.saving')
@@ -316,7 +316,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                         setError(err?.response?.data?.error || t('common.errorOccurred'));
                       }
                     }}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-semibold text-red-600 transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-800 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 transition-colors cursor-pointer"
                   >
                     <Trash2 size={13} />
                     {t('members.removeAvatar')}
@@ -328,7 +328,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
 
           {/* Name Input */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               {t('members.fullName')} *
             </label>
             <input
@@ -343,7 +343,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
 
           {/* Role Selection */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               {t('members.role')}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -352,18 +352,18 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                 onClick={() => setFormData({ ...formData, role: 'family' })}
                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   formData.role === 'family'
-                    ? 'border-emerald-500 bg-emerald-50/50 shadow-sm ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-800/40'
                 }`}
               >
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
                   <ShieldCheck size={18} />
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-slate-800">
+                  <div className="font-bold text-xs text-slate-800 dark:text-slate-100">
                     {t('members.roleFamily')} {t('members.roleColorGreen')}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                     {t('members.roleFamilyDesc')}
                   </div>
                 </div>
@@ -374,18 +374,18 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                 onClick={() => setFormData({ ...formData, role: 'neighbor' })}
                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   formData.role === 'neighbor' || formData.role === 'guest'
-                    ? 'border-blue-500 bg-blue-50/50 shadow-sm ring-2 ring-blue-500/20'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 shadow-sm ring-2 ring-blue-500/20'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-800/40'
                 }`}
               >
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0 mt-0.5">
                   <HeartHandshake size={18} />
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-slate-800">
+                  <div className="font-bold text-xs text-slate-800 dark:text-slate-100">
                     {t('members.roleNeighbor')} {t('members.roleColorBlue')}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                     {t('members.roleNeighborDesc')}
                   </div>
                 </div>
@@ -394,11 +394,11 @@ export const MemberModal: React.FC<MemberModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
+          <div className="pt-4 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
             >
               {t('common.cancel')}
             </button>

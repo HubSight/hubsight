@@ -7,9 +7,11 @@
 
 export type UserRole = 'admin' | 'viewer';
 export type Locale = 'vi' | 'en';
+export type ThemePreference = 'system' | 'light' | 'dark';
 
 export interface UserPreferences {
   push_preferences?: Record<string, boolean>;
+  theme?: ThemePreference;
   [key: string]: unknown;
 }
 
@@ -44,6 +46,7 @@ export interface User {
   permissions?: string[];
   locale?: Locale;
   timezone?: string;
+  theme?: ThemePreference;
   is_active: boolean;
   must_change_password?: boolean;
   two_factor_enabled?: boolean;
