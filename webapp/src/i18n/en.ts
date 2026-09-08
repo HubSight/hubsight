@@ -585,6 +585,8 @@ const en: Record<TranslationKey, string> = {
   'common.edit': 'Edit',
   'common.errorOccurred': 'An error occurred',
   'common.at': 'at',
+  'common.copy': 'Copy',
+  'common.copied': 'Copied!',
 
   // === Notifications ===
   'notifications.title': 'Notifications',

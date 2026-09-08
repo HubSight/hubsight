@@ -364,7 +364,7 @@ const Devices = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-5 pb-6">
+          <div className="grid grid-cols-1 min-[960px]:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-5 pb-6">
             {devices.map((dev) => (
               <DeviceCard
                 key={dev.id}

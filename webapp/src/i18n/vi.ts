@@ -583,6 +583,8 @@ const vi = {
   'common.edit': 'Sửa',
   'common.errorOccurred': 'Đã xảy ra lỗi',
   'common.at': 'lúc',
+  'common.copy': 'Sao chép',
+  'common.copied': 'Đã sao chép!',
 
   // === Notifications ===
   'notifications.title': 'Thông báo',
