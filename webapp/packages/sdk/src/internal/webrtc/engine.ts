@@ -46,7 +46,7 @@ export class InternalWebRtcEngine {
     this.http = options.http;
     this.jitterBufferMs = options.jitterBufferMs ?? 800;
     this.heartbeatMs = options.heartbeatMs ?? 15_000;
-    this.iceGatherTimeoutMs = options.iceGatherTimeoutMs ?? 400;
+    this.iceGatherTimeoutMs = options.iceGatherTimeoutMs ?? 1000;
     this.statsIntervalMs = options.statsIntervalMs ?? 1000;
 
     this.mediaStream = new MediaStream();
@@ -71,7 +71,9 @@ export class InternalWebRtcEngine {
 
   attach(video: HTMLVideoElement): void {
     this.videoElement = video;
-    video.srcObject = this.mediaStream;
+    if (this.mediaStream.getTracks().length > 0) {
+      video.srcObject = this.mediaStream;
+    }
     if (this.state === 'live') {
       video.play().catch(() => { });
     }
@@ -125,6 +127,12 @@ export class InternalWebRtcEngine {
         bundlePolicy: 'max-bundle',
       });
 
+      this.pc.onconnectionstatechange = () => {
+        if (this.pc?.connectionState === 'failed') {
+          this.fail(new HubSightMediaError('WebRTC peer connection failed'));
+        }
+      };
+
       this.setupTracks();
       await this.negotiate();
       this.startHeartbeat();
@@ -169,6 +177,9 @@ export class InternalWebRtcEngine {
       if (!this.mediaStream.getTracks().includes(track)) {
         this.mediaStream.addTrack(track);
       }
+      if (this.videoElement && this.videoElement.srcObject !== this.mediaStream) {
+        this.videoElement.srcObject = this.mediaStream;
+      }
     };
 
     const applyJitterBuffer = (receiver: RTCRtpReceiver) => {
@@ -198,6 +209,7 @@ export class InternalWebRtcEngine {
         track.addEventListener('unmute', () => attachTrack(track), { once: true });
         return;
       }
+      // Video track: attach immediately
       attachTrack(track);
     };
 
@@ -205,12 +217,17 @@ export class InternalWebRtcEngine {
       if (!this.active) return;
       if (event.receiver) applyJitterBuffer(event.receiver);
       if (event.track) handleTrack(event.track);
-      event.streams?.[0]?.getTracks().forEach(handleTrack);
 
-      this.setState('live');
+      // Dedicated stream: keep silent/unbuffered audio track OUT of <video>
+      // Attaching an audio track with no incoming packets stalls Firefox and Chrome video playback on A/V sync.
       if (this.videoElement) {
+        if (this.videoElement.srcObject !== this.mediaStream && this.mediaStream.getTracks().length > 0) {
+          this.videoElement.srcObject = this.mediaStream;
+        }
         this.videoElement.play().catch(() => { });
       }
+
+      this.setState('live');
 
       if (this.statsIntervalMs > 0 && this.pc && this.videoElement && !this.statsPoller) {
         this.statsPoller = createStatsPoller(

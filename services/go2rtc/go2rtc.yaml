@@ -14,13 +14,11 @@ rtsp:
 webrtc:
   listen: ":8555"
   candidates:
+    - 10.20.0.101:8555
+    - 127.0.0.1:8555
     - stun:8555
     - rtc.quoctran.space:8555
     - 138.2.87.35:8555
-  # No 127.0.0.1 candidate: on a laptop it points the browser at the container's
-  # NAT'd port, which mangles WebRTC UDP media (black video). Local dev runs
-  # webrtc-service with network_mode: host (docker-compose.override.yml) so go2rtc
-  # auto-advertises a directly reachable host address.
 
 # Leave this as a BARE key. go2rtc's config patcher cannot parse flow-style
 # `streams: {}` and rejects every `PUT /api/streams` with HTTP 400, so no camera
