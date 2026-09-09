@@ -41,14 +41,14 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: null,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
         navigateFallback: '/index.html',
         // These paths are backend-proxied by the gateway, not SPA routes — the SW
         // must not answer them with the cached index.html (blank page otherwise).
-        navigateFallbackDenylist: [/^\/api/, /^\/healthz/, /^\/webrtc/, /^\/relay/],
+        navigateFallbackDenylist: [/^\/api/, /^\/healthz/, /^\/webrtc/, /^\/relay/, /^\/docs/],
         importScripts: ['/custom-sw.js'],
       },
       manifest: {

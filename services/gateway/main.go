@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -14,6 +15,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+//go:embed docs/*
+var docsFS embed.FS
 
 func resolvePublicDir() string {
 	candidates := []string{}
@@ -110,8 +114,44 @@ func main() {
 				"auth":   "/api/auth/*",
 				"relay":  "/relay/*",
 				"webrtc": "/webrtc/*",
+				"docs":   "/docs",
 			},
 		})
+	})
+
+	// Swagger UI & OpenAPI 3.0 Documentation Routes (/docs, /docs/*, /openapi.json)
+	serveSwaggerUI := func(c *gin.Context) {
+		indexData, err := docsFS.ReadFile("docs/index.html")
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Documentation UI not found")
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", indexData)
+	}
+
+	serveOpenAPISpec := func(c *gin.Context) {
+		specData, err := docsFS.ReadFile("docs/openapi.json")
+		if err != nil {
+			c.String(http.StatusInternalServerError, "OpenAPI specification not found")
+			return
+		}
+		c.Data(http.StatusOK, "application/json; charset=utf-8", specData)
+	}
+
+	docMethods := []string{"GET", "HEAD"}
+	r.Match(docMethods, "/docs", serveSwaggerUI)
+	r.Match(docMethods, "/openapi.json", serveOpenAPISpec)
+	r.Match(docMethods, "/docs/*filepath", func(c *gin.Context) {
+		param := strings.TrimPrefix(c.Param("filepath"), "/")
+		if param == "" || param == "index.html" {
+			serveSwaggerUI(c)
+			return
+		}
+		if param == "openapi.json" {
+			serveOpenAPISpec(c)
+			return
+		}
+		c.String(http.StatusNotFound, "Asset not found")
 	})
 
 	// 1. Relay Service & Real-time WebSocket Proxy (/relay and /relay/*)
@@ -264,7 +304,7 @@ func main() {
 		path := c.Request.URL.Path
 
 		// If the request is for an API route that wasn't matched, return 404 JSON
-		if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/relay") || strings.HasPrefix(path, "/webrtc") {
+		if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/relay") || strings.HasPrefix(path, "/webrtc") || strings.HasPrefix(path, "/docs") {
 			c.JSON(http.StatusNotFound, gin.H{"error": "route not found in gateway"})
 			return
 		}
@@ -282,6 +322,25 @@ func main() {
 				c.Writer.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 			}
 			c.File(file)
+			return
+		}
+
+		// DO NOT fall back to index.html for missing static assets (JS, CSS, images, maps, fonts)
+		// Returning HTML for a .js request causes "SyntaxError: Unexpected token '<'" and a white blank page!
+		if strings.HasPrefix(path, "/assets/") ||
+			strings.HasSuffix(path, ".js") ||
+			strings.HasSuffix(path, ".css") ||
+			strings.HasSuffix(path, ".map") ||
+			strings.HasSuffix(path, ".ico") ||
+			strings.HasSuffix(path, ".png") ||
+			strings.HasSuffix(path, ".jpg") ||
+			strings.HasSuffix(path, ".jpeg") ||
+			strings.HasSuffix(path, ".svg") ||
+			strings.HasSuffix(path, ".woff2") ||
+			strings.HasSuffix(path, ".woff") ||
+			strings.HasSuffix(path, ".json") ||
+			strings.HasSuffix(path, ".webmanifest") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "asset not found"})
 			return
 		}
 

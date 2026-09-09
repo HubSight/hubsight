@@ -68,8 +68,8 @@ func AppKillSwitchMiddleware() gin.HandlerFunc {
 				"status":      "error",
 				"code":        "APP_API_DISABLED",
 				"maintenance": true,
-				"message":     "Dịch vụ kết nối ứng dụng di động & máy tính hiện đang tạm dừng để bảo trì hệ thống. Vui lòng liên hệ Quản trị viên hoặc sử dụng giao diện web.",
-				"message_en":  "HubSight mobile & desktop app access is temporarily disabled by administrator. Please access via the web portal.",
+				"message":     "Hệ thống đang tạm dừng kết nối ứng dụng. Vui lòng sử dụng phiên bản web hoặc thử lại sau.",
+				"message_en":  "App connection is temporarily paused. Please use the web portal or try again later.",
 			})
 			return
 		}

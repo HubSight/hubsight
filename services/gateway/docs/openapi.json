@@ -1,0 +1,1790 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HubSight CCTV - Unified API Gateway",
+    "version": "1.0.0",
+    "description": "Tài liệu đặc tả toàn diện cho toàn bộ hệ sinh thái HubSight CCTV Surveillance & Analytics Platform.\n\nTất cả các request từ Web App, Mobile App (iOS/Android), Desktop Client (Windows/macOS/Linux) đều kết nối thông qua **API Gateway Entrypoint** (`:8088`).",
+    "contact": {
+      "name": "HubSight Engineering Team",
+      "url": "https://cctv.quoctran.space"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "API Gateway Current Host (Automatic Origin)"
+    },
+    {
+      "url": "http://localhost:8088",
+      "description": "Local Development Gateway"
+    },
+    {
+      "url": "https://cctv.quoctran.space",
+      "description": "Production Cloud Gateway"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System & Health",
+      "description": "Kiểm tra tình trạng sức khỏe và tính sẵn sàng của Gateway & Microservices"
+    },
+    {
+      "name": "Authentication & Session",
+      "description": "Đăng nhập, Refresh Token, Đăng xuất, OIDC và Quản lý Phiên làm việc"
+    },
+    {
+      "name": "Two-Factor Auth & Passkeys",
+      "description": "Xác thực 2 bước (TOTP) và Sinh trắc học / Khóa bảo mật FIDO2 / WebAuthn"
+    },
+    {
+      "name": "User & Access Governance",
+      "description": "Quản lý Người dùng, Vai trò (RBAC), Danh sách Phân quyền và Client API Keys"
+    },
+    {
+      "name": "Cameras & Devices",
+      "description": "Quản lý Camera, Thêm/Sửa/Xóa, Quét mạng nội bộ (Scan) và Khởi chạy luồng stream"
+    },
+    {
+      "name": "Live Streaming & WebRTC",
+      "description": "Đàm phán WHEP/WebRTC SDP Offer-Answer và Quản trị Connection Pool"
+    },
+    {
+      "name": "Recordings & Archive",
+      "description": "Lưu trữ NVR, Timeline video phân đoạn MP4, Thumbnail và Phát lại"
+    },
+    {
+      "name": "AI & Face Recognition",
+      "description": "Thành viên, Vector nhận diện khuôn mặt (pgvector) và Nhật ký phát hiện"
+    },
+    {
+      "name": "Notifications & Web Push",
+      "description": "Sự kiện cảnh báo, Đăng ký Push Token, VAPID Web Push và Test Push"
+    },
+    {
+      "name": "Mobile & Desktop App API (v1)",
+      "description": "Các API chuyên biệt dành cho ứng dụng di động & máy tính (/api/app/v1/*)"
+    },
+    {
+      "name": "App Configurations (.hscfg)",
+      "description": "Tạo container mã hóa cấu hình ứng dụng không chạm, QR Code và Google Service Accounts"
+    },
+    {
+      "name": "System & NVR Settings",
+      "description": "Công tắc khẩn cấp Kill-Switch, Cài đặt lưu trữ và Trạng thái NVR / Pool"
+    }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "System & Health"
+        ],
+        "summary": "Kiểm tra sức khỏe API Gateway",
+        "description": "Trả về trạng thái hoạt động của Gateway và danh sách các route chính.",
+        "responses": {
+          "200": {
+            "description": "Gateway đang hoạt động bình thường",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication & Session"
+        ],
+        "summary": "Đăng nhập tài khoản hệ thống",
+        "description": "Xác thực bằng Username và Password. Trả về JWT Access Token, Refresh Token hoặc 2FA Challenge Token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đăng nhập thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thông tin đăng nhập không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication & Session"
+        ],
+        "summary": "Làm mới Access Token",
+        "description": "Gửi refresh_token để nhận cặp token mới khi access token hết hạn.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refresh_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token được làm mới thành công"
+          },
+          "401": {
+            "description": "Refresh token không hợp lệ hoặc đã hết hạn"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication & Session"
+        ],
+        "summary": "Đăng xuất tài khoản",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Đăng xuất thành công và thu hồi phiên làm việc"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication & Session"
+        ],
+        "summary": "Lấy thông tin người dùng đang đăng nhập",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin chi tiết người dùng, vai trò và phân quyền"
+          }
+        }
+      }
+    },
+    "/api/auth/password": {
+      "put": {
+        "tags": [
+          "Authentication & Session"
+        ],
+        "summary": "Đổi mật khẩu người dùng",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "old_password": {
+                    "type": "string"
+                  },
+                  "new_password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mật khẩu đã được cập nhật thành công"
+          }
+        }
+      }
+    },
+    "/api/auth/2fa/verify": {
+      "post": {
+        "tags": [
+          "Two-Factor Auth & Passkeys"
+        ],
+        "summary": "Xác thực mã 2FA TOTP hoặc Recovery Code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "two_factor_token": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Xác thực 2FA thành công"
+          }
+        }
+      }
+    },
+    "/api/auth/2fa/setup": {
+      "post": {
+        "tags": [
+          "Two-Factor Auth & Passkeys"
+        ],
+        "summary": "Khởi tạo mã QR thiết lập 2FA",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trả về Secret Key và QR Code Base64"
+          }
+        }
+      }
+    },
+    "/api/auth/2fa/enable": {
+      "post": {
+        "tags": [
+          "Two-Factor Auth & Passkeys"
+        ],
+        "summary": "Bật xác thực 2 bước (2FA)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đã kích hoạt 2FA thành công kèm danh sách mã khôi phục"
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/login/options": {
+      "post": {
+        "tags": [
+          "Two-Factor Auth & Passkeys"
+        ],
+        "summary": "Lấy challenge xác thực Passkey FIDO2 để đăng nhập",
+        "responses": {
+          "200": {
+            "description": "WebAuthn PublicKeyCredentialRequestOptions"
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/login/verify": {
+      "post": {
+        "tags": [
+          "Two-Factor Auth & Passkeys"
+        ],
+        "summary": "Xác thực chữ ký sinh trắc học Passkey",
+        "responses": {
+          "200": {
+            "description": "Đăng nhập bằng Passkey thành công"
+          }
+        }
+      }
+    },
+    "/api/auth/users": {
+      "get": {
+        "tags": [
+          "User & Access Governance"
+        ],
+        "summary": "Danh sách người dùng hệ thống",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách người dùng kèm vai trò"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "User & Access Governance"
+        ],
+        "summary": "Tạo tài khoản người dùng mới",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Người dùng đã được tạo thành công"
+          }
+        }
+      }
+    },
+    "/api/auth/roles": {
+      "get": {
+        "tags": [
+          "User & Access Governance"
+        ],
+        "summary": "Danh sách các vai trò (Roles) trong hệ thống",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách vai trò và phân quyền"
+          }
+        }
+      }
+    },
+    "/api/auth/clients": {
+      "get": {
+        "tags": [
+          "User & Access Governance"
+        ],
+        "summary": "Danh sách Client API Keys ứng dụng",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách Client ID và trạng thái API Key"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "User & Access Governance"
+        ],
+        "summary": "Tạo Client API Key mới cho ứng dụng",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Client API Key đã được tạo thành công"
+          }
+        }
+      }
+    },
+    "/api/devices": {
+      "get": {
+        "tags": [
+          "Cameras & Devices"
+        ],
+        "summary": "Liệt kê danh sách tất cả camera & thiết bị",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách camera kèm thông số RTSP, AI và trạng thái",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CameraItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cameras & Devices"
+        ],
+        "summary": "Thêm camera giám sát mới",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Camera đã được thêm thành công"
+          }
+        }
+      }
+    },
+    "/api/devices/{id}": {
+      "put": {
+        "tags": [
+          "Cameras & Devices"
+        ],
+        "summary": "Cập nhật thông số camera",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cập nhật camera thành công"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cameras & Devices"
+        ],
+        "summary": "Xóa camera",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Xóa camera thành công"
+          }
+        }
+      }
+    },
+    "/api/devices/{id}/start": {
+      "post": {
+        "tags": [
+          "Cameras & Devices"
+        ],
+        "summary": "Khởi chạy luồng stream camera",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Camera stream started"
+          }
+        }
+      }
+    },
+    "/api/devices/{id}/stop": {
+      "post": {
+        "tags": [
+          "Cameras & Devices"
+        ],
+        "summary": "Dừng luồng stream camera",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Camera stream stopped"
+          }
+        }
+      }
+    },
+    "/api/devices/scan": {
+      "post": {
+        "tags": [
+          "Cameras & Devices"
+        ],
+        "summary": "Bắt đầu quét tìm camera tự động trong mạng nội bộ (ONVIF/RTSP scan)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scan task started"
+          }
+        }
+      }
+    },
+    "/api/live/{id}/webrtc": {
+      "post": {
+        "tags": [
+          "Live Streaming & WebRTC"
+        ],
+        "summary": "Đàm phán WebRTC WHEP SDP Offer/Answer để xem trực tiếp",
+        "description": "Gửi SDP Offer của trình duyệt, backend điều phối Connection Pool và trả về SDP Answer từ go2rtc.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ClientIdAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/sdp": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SDP Answer từ media server",
+            "content": {
+              "application/sdp": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "SDP Answer created"
+          }
+        }
+      }
+    },
+    "/api/live-status/{id}": {
+      "get": {
+        "tags": [
+          "Live Streaming & WebRTC"
+        ],
+        "summary": "Lấy trạng thái luồng phát trực tiếp của camera",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin trạng thái live, số lượng viewer"
+          }
+        }
+      }
+    },
+    "/api/live/{id}/heartbeat": {
+      "post": {
+        "tags": [
+          "Live Streaming & WebRTC"
+        ],
+        "summary": "Gửi heartbeat duy trì phiên xem camera (chu kỳ 30s)",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ClientIdAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Heartbeat acknowledged"
+          }
+        }
+      }
+    },
+    "/api/live/{id}/release": {
+      "post": {
+        "tags": [
+          "Live Streaming & WebRTC"
+        ],
+        "summary": "Giải phóng phiên xem stream trực tiếp",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ClientIdAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stream released successfully"
+          }
+        }
+      }
+    },
+    "/api/archive/timeline": {
+      "get": {
+        "tags": [
+          "Recordings & Archive"
+        ],
+        "summary": "Lấy timeline danh sách các đoạn video ghi hình (MP4 Segments)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "2026-09-09"
+            }
+          },
+          {
+            "name": "only_ai",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách các block ghi hình theo mốc thời gian"
+          }
+        }
+      }
+    },
+    "/api/archive/{id}/available-days": {
+      "get": {
+        "tags": [
+          "Recordings & Archive"
+        ],
+        "summary": "Lấy danh sách các ngày có dữ liệu video của camera",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mảng các ngày định dạng YYYY-MM-DD"
+          }
+        }
+      }
+    },
+    "/api/archive/{id}/stream": {
+      "get": {
+        "tags": [
+          "Recordings & Archive"
+        ],
+        "summary": "Phát video đoạn ghi hình (MP4 streaming qua HTTP Range)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Toàn bộ file video MP4"
+          },
+          "206": {
+            "description": "Partial Content (HTTP Range Request cho tua video)"
+          }
+        }
+      }
+    },
+    "/api/archive/{id}/thumbnail": {
+      "get": {
+        "tags": [
+          "Recordings & Archive"
+        ],
+        "summary": "Lấy ảnh đại diện (thumbnail) của đoạn video",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hình ảnh JPEG thumbnail"
+          }
+        }
+      }
+    },
+    "/api/members": {
+      "get": {
+        "tags": [
+          "AI & Face Recognition"
+        ],
+        "summary": "Danh sách thành viên đăng ký nhận diện khuôn mặt",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách thành viên kèm avatar và vector khuôn mặt"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AI & Face Recognition"
+        ],
+        "summary": "Tạo hồ sơ thành viên mới",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Thành viên đã được tạo"
+          }
+        }
+      }
+    },
+    "/api/upload/image": {
+      "post": {
+        "tags": [
+          "AI & Face Recognition"
+        ],
+        "summary": "Upload ảnh khuôn mặt vào hệ thống lưu trữ S3 / OCI Object Storage",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ảnh tải lên thành công, trả về URL"
+          }
+        }
+      }
+    },
+    "/api/cameras/{id}/recognition-logs": {
+      "get": {
+        "tags": [
+          "AI & Face Recognition"
+        ],
+        "summary": "Lấy nhật ký AI nhận diện khuôn mặt của camera",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lịch sử nhận diện người/khuôn mặt"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "Notifications & Web Push"
+        ],
+        "summary": "Danh sách thông báo cảnh báo phân trang",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách thông báo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NotificationItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "tags": [
+          "Notifications & Web Push"
+        ],
+        "summary": "Đánh dấu đã đọc 1 thông báo",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Đã cập nhật trạng thái thông báo"
+          }
+        }
+      }
+    },
+    "/api/notifications/push-config": {
+      "get": {
+        "tags": [
+          "Notifications & Web Push"
+        ],
+        "summary": "Lấy cấu hình Web Push VAPID Key & Firebase Web Config",
+        "responses": {
+          "200": {
+            "description": "VAPID Public Key và Firebase Web Client parameters"
+          }
+        }
+      }
+    },
+    "/api/notifications/subscribe-push": {
+      "post": {
+        "tags": [
+          "Notifications & Web Push"
+        ],
+        "summary": "Đăng ký nhận thông báo đẩy trình duyệt Web Push (VAPID)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Đăng ký push subscription thành công"
+          }
+        }
+      }
+    },
+    "/api/app/v1/system/status": {
+      "get": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "Kiểm tra readiness & feature flags cho ứng dụng App",
+        "description": "Yêu cầu header X-API-Key hợp lệ. Nếu Kill-Switch đang tắt, sẽ trả về HTTP 503.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hệ thống sẵn sàng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSystemStatusResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Cổng API đang tạm khóa để bảo trì",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "Đăng nhập dành riêng cho ứng dụng App",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đăng nhập thành công, trả về JWT và thông tin user"
+          }
+        }
+      }
+    },
+    "/api/app/v1/profile": {
+      "get": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "Lấy thông tin cá nhân và cài đặt ứng dụng",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin profile người dùng"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "Cập nhật profile, ngôn ngữ, múi giờ, giao diện",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile cập nhật thành công"
+          }
+        }
+      }
+    },
+    "/api/app/v1/cameras": {
+      "get": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "Danh sách camera dành cho ứng dụng",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách camera với trạng thái live stream"
+          }
+        }
+      }
+    },
+    "/api/app/v1/cameras/{id}/live/webrtc": {
+      "post": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "Đàm phán WebRTC WHEP xem live 1 camera",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/sdp": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SDP Answer WebRTC"
+          }
+        }
+      }
+    },
+    "/api/app/v1/cameras/live/batch-webrtc": {
+      "post": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "[Multi-View] Đàm phán WebRTC song song cho nhiều camera",
+        "description": "Gửi danh sách SDP Offers của tối đa 16 camera trong 1 request duy nhất để tối ưu mạng.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "streams": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "camera_id": {
+                          "type": "string"
+                        },
+                        "offer": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Danh sách SDP Answers tương ứng"
+          }
+        }
+      }
+    },
+    "/api/app/v1/cameras/live/batch-heartbeat": {
+      "post": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "[Multi-View] Gửi heartbeat hàng loạt tiết kiệm pin cho điện thoại",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "camera_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch heartbeat acknowledged"
+          }
+        }
+      }
+    },
+    "/api/app/v1/notifications/push-token": {
+      "post": {
+        "tags": [
+          "Mobile & Desktop App API (v1)"
+        ],
+        "summary": "Đăng ký FCM Device Token để nhận Push Notifications",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "android",
+                      "ios",
+                      "desktop"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FCM device token registered"
+          }
+        }
+      }
+    },
+    "/api/app-configs": {
+      "get": {
+        "tags": [
+          "App Configurations (.hscfg)"
+        ],
+        "summary": "Danh sách các cấu hình ứng dụng (.hscfg)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách profile cấu hình ứng dụng"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "App Configurations (.hscfg)"
+        ],
+        "summary": "Tạo container cấu hình ứng dụng mã hóa (.hscfg)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Tạo container cấu hình thành công"
+          }
+        }
+      }
+    },
+    "/api/app-configs/{id}/download": {
+      "get": {
+        "tags": [
+          "App Configurations (.hscfg)"
+        ],
+        "summary": "Tải về tệp mã hóa .hscfg cho ứng dụng",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File nhị phân container mã hóa HubSight .hscfg"
+          }
+        }
+      }
+    },
+    "/api/app-configs/{id}/qr": {
+      "get": {
+        "tags": [
+          "App Configurations (.hscfg)"
+        ],
+        "summary": "Lấy dữ liệu mã QR để quét cấu hình nhanh không chạm",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "QR Code payload và URL tải container"
+          }
+        }
+      }
+    },
+    "/api/google-service-accounts": {
+      "get": {
+        "tags": [
+          "App Configurations (.hscfg)"
+        ],
+        "summary": "Danh sách Google Service Accounts kết nối Firebase",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách tài khoản dịch vụ GCP/Firebase"
+          }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "System & NVR Settings"
+        ],
+        "summary": "Lấy toàn bộ cài đặt hệ thống (bao gồm Kill-Switch)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cài đặt hệ thống, trạng thái App API Gateway"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "System & NVR Settings"
+        ],
+        "summary": "Cập nhật cài đặt hệ thống (Bật/Tắt Cổng API, Cài đặt lưu trữ)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "app_api_enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cài đặt đã được cập nhật"
+          }
+        }
+      }
+    },
+    "/api/recorder/status": {
+      "get": {
+        "tags": [
+          "System & NVR Settings"
+        ],
+        "summary": "Trạng thái hoạt động của NVR Recorder",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trạng thái recorder, dung lượng ổ đĩa, tác vụ ngầm"
+          }
+        }
+      }
+    },
+    "/api/pool/status": {
+      "get": {
+        "tags": [
+          "System & NVR Settings"
+        ],
+        "summary": "Trạng thái Connection Pool của WebRTC Stream",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách connection pool #0, #1, #2+ theo từng camera"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Nhập JWT Access Token nhận được sau khi đăng nhập thành công."
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Bắt buộc cho tất cả request vào nhóm Mobile & Desktop App API (`/api/app/v1/*`)."
+      },
+      "ClientIdAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Client-ID",
+        "description": "Client ID định danh ứng dụng gọi API."
+      },
+      "ServiceKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Service-Key",
+        "description": "M2M Internal Service Key dùng cho giao tiếp nội bộ giữa các microservices."
+      }
+    },
+    "schemas": {
+      "StandardError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Mô tả chi tiết lỗi"
+          },
+          "code": {
+            "type": "string",
+            "example": "INVALID_CREDENTIALS"
+          },
+          "status": {
+            "type": "string",
+            "example": "error"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "example": "123Qwe!@"
+          },
+          "client_id": {
+            "type": "string",
+            "example": "hs_web_default"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "refresh_token": {
+            "type": "string",
+            "example": "rt_9876543210abcdef..."
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "usr_c81j239kd9"
+              },
+              "username": {
+                "type": "string",
+                "example": "admin"
+              },
+              "full_name": {
+                "type": "string",
+                "example": "System Administrator"
+              },
+              "role": {
+                "type": "string",
+                "example": "admin"
+              },
+              "permissions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "require_2fa": {
+            "type": "boolean",
+            "example": false
+          },
+          "two_factor_token": {
+            "type": "string",
+            "example": "2fa_temp_token_xyz"
+          }
+        }
+      },
+      "CameraItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "cam_01h9x8y7z6a5b4c3d2e1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Cổng Chính (Main Gate)"
+          },
+          "stream_url": {
+            "type": "string",
+            "example": "rtsp://admin:pass@192.168.1.100:554/stream1"
+          },
+          "sub_stream_url": {
+            "type": "string",
+            "example": "rtsp://admin:pass@192.168.1.100:554/stream2"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "enable_ai": {
+            "type": "boolean",
+            "example": true
+          },
+          "enable_nvr": {
+            "type": "boolean",
+            "example": true
+          },
+          "retention_days": {
+            "type": "integer",
+            "example": 7
+          },
+          "status": {
+            "type": "string",
+            "example": "online"
+          }
+        }
+      },
+      "AppSystemStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "app_api_version": {
+            "type": "string",
+            "example": "v1"
+          },
+          "app_api_enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "features": {
+            "type": "object",
+            "properties": {
+              "live_streaming": {
+                "type": "boolean",
+                "example": true
+              },
+              "multi_live": {
+                "type": "boolean",
+                "example": true
+              },
+              "archive_playback": {
+                "type": "boolean",
+                "example": true
+              },
+              "push_notifications": {
+                "type": "boolean",
+                "example": true
+              },
+              "profile_management": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          }
+        }
+      },
+      "NotificationItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "notif_21charnanoid123"
+          },
+          "camera_id": {
+            "type": "string",
+            "example": "cam_01h9x8y7z6a5b4c3d2e1"
+          },
+          "camera_name": {
+            "type": "string",
+            "example": "Cổng Chính"
+          },
+          "type": {
+            "type": "string",
+            "example": "person_detected"
+          },
+          "title": {
+            "type": "string",
+            "example": "Phát hiện người tại Cổng Chính"
+          },
+          "message": {
+            "type": "string",
+            "example": "Hệ thống AI phát hiện đối tượng xâm nhập"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "example": "/api/archive/rec_123/thumbnail"
+          },
+          "is_read": {
+            "type": "boolean",
+            "example": false
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

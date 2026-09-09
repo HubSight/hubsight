@@ -26,7 +26,7 @@ interface AppSettingsModalProps {
 }
 
 export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) => {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { timezone, setTimezone } = useTimezone();
   const { user, setUser } = useAuth();
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -138,7 +138,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               <div className="hidden sm:block min-w-0">
                 <span className="block font-bold truncate">{t('settings.tabSecurity')}</span>
                 <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal block truncate">
-                  2FA • Sinh trắc học
+                  {t('settings.tabSecuritySub')}
                 </span>
               </div>
               <span className="sm:hidden font-bold">{t('settings.tabSecurity')}</span>
@@ -166,7 +166,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               <div className="hidden sm:block min-w-0">
                 <span className="block font-bold truncate">{t('settings.tabNotifications')}</span>
                 <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal block truncate">
-                  Cảnh báo • Phân loại
+                  {t('settings.tabPushSub')}
                 </span>
               </div>
               <span className="sm:hidden font-bold">{t('settings.tabNotifications')}</span>
@@ -194,7 +194,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
               <div className="hidden sm:block min-w-0">
                 <span className="block font-bold truncate">{t('settings.tabGeneral')}</span>
                 <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal block truncate">
-                  Giao diện • Múi giờ
+                  {t('settings.tabGeneralSub')}
                 </span>
               </div>
               <span className="sm:hidden font-bold">{t('settings.tabGeneral')}</span>
@@ -402,7 +402,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                         {t('settings.themeSystem')}
                       </span>
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block leading-tight">
-                        {t('settings.themeSystemDesc')} {theme === 'system' && `(${resolvedTheme === 'dark' ? (locale === 'vi' ? 'Đang áp dụng: Tối' : 'Currently: Dark') : (locale === 'vi' ? 'Đang áp dụng: Sáng' : 'Currently: Light')})`}
+                        {t('settings.themeSystemDesc')} {theme === 'system' && `(${resolvedTheme === 'dark' ? t('settings.themeCurrentlyDark') : t('settings.themeCurrentlyLight')})`}
                       </span>
                     </button>
 

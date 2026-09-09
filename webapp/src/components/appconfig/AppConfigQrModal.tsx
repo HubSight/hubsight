@@ -30,7 +30,7 @@ export const AppConfigQrModal: React.FC<AppConfigQrModalProps> = ({
     if (!qrData?.download_url) return;
     navigator.clipboard.writeText(qrData.download_url);
     setCopied(true);
-    toast.success(t('clients.copySuccess') || 'Đã sao chép đường dẫn!');
+    toast.success(t('qrModal.copySuccess'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -66,7 +66,7 @@ export const AppConfigQrModal: React.FC<AppConfigQrModalProps> = ({
           {loading ? (
             <div className="w-64 h-64 flex flex-col items-center justify-center gap-3 text-slate-400">
               <RotateCw size={32} className="animate-spin text-orange-600 dark:text-orange-400" />
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Đang sinh mã QR an toàn...</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('qrModal.generating')}</span>
             </div>
           ) : qrData?.qr_code_base64 ? (
             <div className="flex flex-col items-center gap-3">
@@ -78,19 +78,19 @@ export const AppConfigQrModal: React.FC<AppConfigQrModalProps> = ({
                 />
               </div>
               <span className="text-[11px] text-slate-400 font-medium">
-                Mã QR có hiệu lực trong 24 giờ
+                {t('qrModal.validDuration')}
               </span>
             </div>
           ) : (
             <div className="w-64 h-64 flex flex-col items-center justify-center gap-2 text-slate-400">
-              <p className="text-xs text-red-500 dark:text-red-400 font-medium">Không thể tạo mã QR</p>
+              <p className="text-xs text-red-500 dark:text-red-400 font-medium">{t('qrModal.error')}</p>
               {onRefreshQr && (
                 <button
                   type="button"
                   onClick={onRefreshQr}
                   className="text-xs text-orange-600 dark:text-orange-400 font-semibold hover:underline cursor-pointer"
                 >
-                  Thử lại
+                  {t('qrModal.retry')}
                 </button>
               )}
             </div>
@@ -101,12 +101,12 @@ export const AppConfigQrModal: React.FC<AppConfigQrModalProps> = ({
         <div className="bg-orange-50/60 dark:bg-orange-950/30 rounded-2xl p-4 border border-orange-100/80 dark:border-orange-900/40 space-y-2">
           <div className="flex items-center gap-2 text-xs font-bold text-orange-800 dark:text-orange-300">
             <Shield size={14} className="text-orange-600 dark:text-orange-400" />
-            <span>Hướng dẫn nạp cấu hình trên HubSight (Mobile & Desktop):</span>
+            <span>{t('qrModal.guideTitle')}</span>
           </div>
           <ol className="text-xs text-orange-950/80 dark:text-orange-200/90 space-y-1 pl-4 list-decimal leading-relaxed">
-            <li>Mở ứng dụng <strong>HubSight</strong> trên điện thoại hoặc máy tính.</li>
-            <li>Tại màn hình khởi động, chọn <strong>Quét mã QR / Nạp file cấu hình (.hscfg)</strong>.</li>
-            <li>Quét mã hoặc chọn file tải về, sau đó <strong>nhập mã PIN 6 số</strong> bạn đã đặt để giải mã cấu hình.</li>
+            <li>{t('qrModal.guideStep1')}</li>
+            <li>{t('qrModal.guideStep2')}</li>
+            <li>{t('qrModal.guideStep3')}</li>
           </ol>
         </div>
 
@@ -119,7 +119,7 @@ export const AppConfigQrModal: React.FC<AppConfigQrModalProps> = ({
               className="w-full sm:flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shrink-0 whitespace-nowrap"
             >
               {copied ? <Check size={14} className="text-emerald-600 shrink-0" /> : <Copy size={14} className="shrink-0" />}
-              <span>{copied ? 'Đã sao chép link' : 'Sao chép link tải'}</span>
+              <span>{copied ? t('qrModal.copiedLink') : t('qrModal.copyDownloadLink')}</span>
             </button>
           )}
           <button

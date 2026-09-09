@@ -92,6 +92,9 @@ export const AppConfigs: React.FC = () => {
   const [configToDelete, setConfigToDelete] = useState<AppConfig | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Kill-Switch Modal
+  const [killSwitchModalOpen, setKillSwitchModalOpen] = useState(false);
+
   // Load data
   const fetchData = async () => {
     setLoading(true);
@@ -110,31 +113,31 @@ export const AppConfigs: React.FC = () => {
         setAppApiEnabled(sysSettings.app_api_enabled);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi tải danh sách cấu hình';
+      const msg = err instanceof Error ? err.message : t('appConfigs.loadError');
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleToggleAppApi = async () => {
-    const nextState = !appApiEnabled;
-    const confirmMsg = nextState
-      ? 'Bạn có chắc chắn muốn MỞ LẠI cổng API dành cho ứng dụng di động & máy tính (/api/app/v1/*)?'
-      : 'CẢNH BÁO: Tắt cổng API sẽ khiến TẤT CẢ ứng dụng di động và máy tính bị ngắt kết nối ngay lập tức và nhận mã lỗi HTTP 503 Service Unavailable. Bạn có chắc chắn muốn tắt?';
-    if (!window.confirm(confirmMsg)) return;
+  const handleToggleAppApi = () => {
+    setKillSwitchModalOpen(true);
+  };
 
+  const handleConfirmToggleAppApi = async () => {
+    const nextState = !appApiEnabled;
     setIsTogglingApi(true);
     try {
       await api.recorder.updateSettings({ app_api_enabled: nextState });
       setAppApiEnabled(nextState);
       toast.success(
         nextState
-          ? 'Đã mở cổng API cho Mobile & Desktop App.'
-          : 'Đã tạm khóa cổng API Mobile & Desktop (HTTP 503).'
+          ? t('appConfigs.killSwitchEnabledSuccess')
+          : t('appConfigs.killSwitchDisabledSuccess')
       );
+      setKillSwitchModalOpen(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi cập nhật trạng thái cổng API';
+      const msg = err instanceof Error ? err.message : t('appConfigs.killSwitchUpdateError');
       toast.error(msg);
     } finally {
       setIsTogglingApi(false);
@@ -244,15 +247,15 @@ export const AppConfigs: React.FC = () => {
   // Submit Wizard
   const handleGenerate = async () => {
     if (!formName.trim()) {
-      toast.error('Vui lòng nhập tên cấu hình');
+      toast.error(t('appConfigs.nameRequiredError'));
       return;
     }
     if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
-      toast.error('Mã PIN phải đúng 6 chữ số');
+      toast.error(t('appConfigs.pinLengthError'));
       return;
     }
     if (pin !== confirmPin) {
-      toast.error('Mã PIN xác nhận không khớp');
+      toast.error(t('appConfigs.pinMismatchError'));
       return;
     }
 
@@ -278,10 +281,10 @@ export const AppConfigs: React.FC = () => {
         toast.success(res.message || t('appConfigs.generateSuccess'));
         fetchData();
       } else {
-        toast.error(res.message || 'Lỗi tạo cấu hình');
+        toast.error(res.message || t('appConfigs.createFailed'));
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Không thể tạo file cấu hình';
+      const msg = err instanceof Error ? err.message : t('appConfigs.createFailedGeneric');
       toast.error(msg);
     } finally {
       setIsGenerating(false);
@@ -297,7 +300,7 @@ export const AppConfigs: React.FC = () => {
       const res = await api.appConfigs.getQr(config.id);
       setQrData(res);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi lấy mã QR';
+      const msg = err instanceof Error ? err.message : t('appConfigs.qrFailed');
       toast.error(msg);
     } finally {
       setLoadingQr(false);
@@ -313,7 +316,7 @@ export const AppConfigs: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    toast.success('Đang tải file .hscfg...');
+    toast.success(t('appConfigs.downloadingToast'));
     setTimeout(fetchData, 1500);
   };
 
@@ -328,7 +331,7 @@ export const AppConfigs: React.FC = () => {
       setConfigToDelete(null);
       fetchData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi xóa cấu hình';
+      const msg = err instanceof Error ? err.message : t('appConfigs.deleteFailed');
       toast.error(msg);
     } finally {
       setIsDeleting(false);
@@ -337,7 +340,7 @@ export const AppConfigs: React.FC = () => {
 
   const copyText = (txt: string) => {
     navigator.clipboard.writeText(txt);
-    toast.success(t('serviceAccounts.copied') || 'Đã sao chép');
+    toast.success(t('serviceAccounts.copied'));
   };
 
   return (
@@ -367,7 +370,7 @@ export const AppConfigs: React.FC = () => {
             >
               <Plus size={15} />
               <span className="hidden sm:inline">{t('appConfigs.createProfile')}</span>
-              <span className="sm:hidden">Tạo mới</span>
+              <span className="sm:hidden">{t('appConfigs.createShort')}</span>
             </button>
           </div>
         </div>
@@ -376,47 +379,40 @@ export const AppConfigs: React.FC = () => {
       {/* Main Scrollable Content */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-20">
         {/* App API Gateway Kill-Switch Master Control */}
-        <div className={`p-4 sm:p-5 rounded-2xl border transition-all shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+        <div className={`p-3.5 sm:p-4 rounded-2xl border transition-all shadow-xs flex items-center justify-between gap-4 ${
           appApiEnabled
             ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/30 dark:border-emerald-500/20'
             : 'bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/30 dark:border-rose-500/20'
         }`}>
-          <div className="flex items-start gap-3.5">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
               appApiEnabled
                 ? 'bg-emerald-500 text-white'
                 : 'bg-rose-500 text-white'
             }`}>
-              <Shield size={22} />
+              <Shield size={20} />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
-                  Cổng API Ứng dụng Di động & Máy tính (Mobile & Desktop App Gateway)
-                </h2>
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide ${
-                  appApiEnabled
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 animate-pulse'
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${appApiEnabled ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                  {appApiEnabled ? 'HOẠT ĐỘNG (ACTIVE)' : 'TẠM KHÓA (HTTP 503)'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
-                {appApiEnabled
-                  ? 'Các ứng dụng Mobile & Desktop được phép kết nối qua cổng /api/app/v1/* với API Key hợp lệ. Live stream, Push notifications và Profile hoạt động bình thường.'
-                  : 'Cổng API dành cho app đang TẮT. Mọi yêu cầu từ ứng dụng ngoài sẽ bị chặn và phản hồi HTTP 503 Service Unavailable kèm thông điệp bảo trì hệ thống.'}
-              </p>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                {t('appConfigs.killSwitchTitle')}
+              </h2>
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide ${
+                appApiEnabled
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 animate-pulse'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${appApiEnabled ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                {appApiEnabled ? t('appConfigs.killSwitchActive') : t('appConfigs.killSwitchPaused')}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end md:self-center shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               disabled={isTogglingApi}
               onClick={handleToggleAppApi}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
+              className={`px-3.5 py-2 sm:px-4 sm:py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
                 appApiEnabled
                   ? 'bg-rose-600 hover:bg-rose-700 active:scale-95 text-white shadow-rose-600/20'
                   : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-emerald-600/20'
@@ -425,17 +421,17 @@ export const AppConfigs: React.FC = () => {
               {isTogglingApi ? (
                 <>
                   <RotateCw size={14} className="animate-spin" />
-                  <span>Đang xử lý...</span>
+                  <span>{t('appConfigs.killSwitchProcessing')}</span>
                 </>
               ) : appApiEnabled ? (
                 <>
                   <Lock size={14} />
-                  <span>Tắt cổng API (Kill-Switch)</span>
+                  <span>{t('appConfigs.killSwitchDisableBtn')}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 size={14} />
-                  <span>Mở lại cổng API</span>
+                  <span>{t('appConfigs.killSwitchEnableBtn')}</span>
                 </>
               )}
             </button>
@@ -492,7 +488,7 @@ export const AppConfigs: React.FC = () => {
           </div>
 
           <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium text-right sm:text-left whitespace-nowrap px-1">
-            Hiển thị {filteredConfigs.length} cấu hình
+            {t('appConfigs.showingCount', { count: filteredConfigs.length })}
           </span>
         </div>
 
@@ -549,7 +545,7 @@ export const AppConfigs: React.FC = () => {
                                 </span>
                               )}
                               {!cfg.has_android_fcm && !cfg.has_ios_fcm && (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0 whitespace-nowrap">Không có FCM</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0 whitespace-nowrap">{t('appConfigs.noFcm')}</span>
                               )}
                             </div>
                           </div>
@@ -570,7 +566,7 @@ export const AppConfigs: React.FC = () => {
                               type="button"
                               onClick={() => copyText(cfg.client_id)}
                               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer shrink-0"
-                              title="Sao chép Client ID"
+                              title={t('appConfigs.copyClientId')}
                             >
                               <Copy size={11} />
                             </button>
@@ -596,7 +592,7 @@ export const AppConfigs: React.FC = () => {
                           {dayjs(cfg.created_at).format('DD/MM/YYYY HH:mm')}
                         </div>
                         <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {cfg.download_count} lượt tải
+                          {t('appConfigs.downloadCount', { count: cfg.download_count })}
                         </span>
                       </td>
 
@@ -676,7 +672,7 @@ export const AppConfigs: React.FC = () => {
                     <div>
                       <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{cfg.name}</h4>
                       <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                        {dayjs(cfg.created_at).format('DD/MM/YYYY HH:mm')} • {cfg.download_count} lượt tải
+                        {dayjs(cfg.created_at).format('DD/MM/YYYY HH:mm')} • {t('appConfigs.downloadCount', { count: cfg.download_count })}
                       </p>
                     </div>
                   </div>
@@ -707,16 +703,16 @@ export const AppConfigs: React.FC = () => {
                     className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
                   >
                     <Download size={13} />
-                    <span>Tải .hscfg</span>
+                    <span>{t('appConfigs.downloadFile')}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleOpenQr(cfg)}
                     className="px-2.5 py-2 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1 border border-sky-200 dark:border-sky-800 shrink-0"
-                    title="Mã QR"
+                    title={t('appConfigs.viewQr')}
                   >
                     <QrCode size={13} />
-                    <span className="hidden xs:inline">Mã QR</span>
+                    <span className="hidden xs:inline">{t('appConfigs.viewQr')}</span>
                   </button>
                   <button
                     type="button"
@@ -814,26 +810,26 @@ export const AppConfigs: React.FC = () => {
               <div className="space-y-4 py-2">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Tên cấu hình <span className="text-red-500">*</span>
+                    {t('appConfigs.profileNameLabel')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    placeholder="Ví dụ: HubSight Client - Đội Bảo Vệ"
+                    placeholder={t('appConfigs.namePlaceholder')}
                     className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Mô tả (tùy chọn)
+                    {t('appConfigs.descLabel')}
                   </label>
                   <textarea
                     value={formDesc}
                     onChange={(e) => setFormDesc(e.target.value)}
                     rows={2}
-                    placeholder="Ghi chú về mục đích sử dụng của file cấu hình này..."
+                    placeholder={t('appConfigs.descPlaceholder')}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
@@ -841,8 +837,8 @@ export const AppConfigs: React.FC = () => {
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Tự động tạo Client API Key mới (Mobile & Desktop)</span>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Khuyên dùng: Mỗi file cấu hình có một API Key riêng biệt để dễ dàng khóa thu hồi khi cần.</p>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('appConfigs.autoCreateClient')}</span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('appConfigs.autoCreateClientHint')}</p>
                     </div>
                     <input
                       type="checkbox"
@@ -855,14 +851,14 @@ export const AppConfigs: React.FC = () => {
                   {!autoCreateClient && (
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Chọn Client Ứng dụng có sẵn
+                        {t('appConfigs.selectExistingClient')}
                       </label>
                       <select
                         value={selectedClientID}
                         onChange={(e) => setSelectedClientID(e.target.value)}
                         className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                       >
-                        <option value="">-- Chọn Client --</option>
+                        <option value="">{t('appConfigs.selectClientPlaceholder')}</option>
                         {clients.map((cl) => (
                           <option key={cl.client_id} value={cl.client_id}>
                             {cl.name} ({cl.client_id})
@@ -880,23 +876,23 @@ export const AppConfigs: React.FC = () => {
               <div className="space-y-4 py-2">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Chọn Google Service Account (Tải từ Firebase Console)
+                    {t('appConfigs.selectSaHint')}
                   </label>
                   <select
                     value={selectedSaID}
                     onChange={(e) => handleSelectServiceAccount(e.target.value)}
                     className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                   >
-                    <option value="">-- Không tích hợp FCM (Chỉ cấu hình Server) --</option>
+                    <option value="">{t('appConfigs.noFcmOption')}</option>
                     {serviceAccounts.map((sa) => (
                       <option key={sa.id} value={sa.id}>
                         {sa.client_email.includes('firebase-adminsdk') ? '🔥 [Firebase Console] ' : ''}
-                        {sa.name} ({sa.project_id}) {sa.is_active ? '★ Đang Active' : ''}
+                        {sa.name} ({sa.project_id}) {sa.is_active ? t('appConfigs.saActiveBadge') : ''}
                       </option>
                     ))}
                   </select>
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                    Hệ thống sẽ tự động gọi Google Firebase Management API để tải file cấu hình <code>google-services.json</code> & <code>GoogleService-Info.plist</code>.
+                    {t('appConfigs.saFirebaseApiHint')}
                   </p>
                 </div>
 
@@ -906,14 +902,14 @@ export const AppConfigs: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                         <Cloud size={14} className="text-orange-600 dark:text-orange-400" />
-                        Trạng thái ứng dụng trên Firebase:
+                        {t('appConfigs.firebaseAppsStatus')}
                       </span>
                       {preflightLoading && <RotateCw size={13} className="animate-spin text-orange-600 dark:text-orange-400" />}
                     </div>
 
                     {preflightLoading ? (
                       <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
-                        Đang kết nối Firebase kiểm tra ứng dụng Android & iOS...
+                        {t('appConfigs.firebaseConnecting')}
                       </div>
                     ) : preflightData ? (
                       <div className="space-y-2.5 text-xs">
@@ -921,35 +917,35 @@ export const AppConfigs: React.FC = () => {
                           <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs">
                             <p className="font-bold flex items-center gap-1.5"><AlertCircle size={13} /> {preflightData.error}</p>
                             <p className="text-[11px] mt-1 text-rose-600 dark:text-rose-400">
-                              Mẹo: Nếu API chưa bật, truy cập Google Cloud Console &gt; APIs & Services &gt; Bật &quot;Firebase Management API&quot; cho dự án này.
+                              {t('appConfigs.firebaseTip')}
                             </p>
                           </div>
                         )}
 
                         {/* Android Apps */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
-                          <span className="font-semibold text-slate-700 dark:text-slate-200">Cấu hình Android (google-services.json):</span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">{t('appConfigs.androidConfigLabel')}</span>
                           {preflightData.android_apps && preflightData.android_apps.length > 0 ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 shrink-0 whitespace-nowrap self-start sm:self-auto">
-                              <Check size={11} /> {preflightData.android_apps[0].packageName || 'Đã tìm thấy'}
+                              <Check size={11} /> {preflightData.android_apps[0].packageName || t('appConfigs.appFound')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800 shrink-0 whitespace-nowrap self-start sm:self-auto">
-                              <AlertCircle size={11} /> Chưa có Android App
+                              <AlertCircle size={11} /> {t('appConfigs.noAndroidApp')}
                             </span>
                           )}
                         </div>
 
                         {/* iOS Apps */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
-                          <span className="font-semibold text-slate-700 dark:text-slate-200">Cấu hình iOS (GoogleService-Info.plist):</span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">{t('appConfigs.iosConfigLabel')}</span>
                           {preflightData.ios_apps && preflightData.ios_apps.length > 0 ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-md border border-sky-200 dark:border-sky-800 shrink-0 whitespace-nowrap self-start sm:self-auto">
-                              <Check size={11} /> {preflightData.ios_apps[0].bundleId || 'Đã tìm thấy'}
+                              <Check size={11} /> {preflightData.ios_apps[0].bundleId || t('appConfigs.appFound')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800 shrink-0 whitespace-nowrap self-start sm:self-auto">
-                              <AlertCircle size={11} /> Chưa có iOS App
+                              <AlertCircle size={11} /> {t('appConfigs.noIosApp')}
                             </span>
                           )}
                         </div>
@@ -957,13 +953,13 @@ export const AppConfigs: React.FC = () => {
                         {((!preflightData.android_apps || preflightData.android_apps.length === 0) ||
                           (!preflightData.ios_apps || preflightData.ios_apps.length === 0)) && (
                           <div className="text-[11px] text-slate-500 dark:text-amber-200/80 bg-amber-50/60 dark:bg-amber-950/30 p-2.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50">
-                            💡 <b>Lưu ý</b>: Nếu dự án chưa có ứng dụng Android/iOS, hãy mở <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-orange-600 dark:text-orange-400 underline font-semibold">console.firebase.google.com</a> &gt; Bấm <b>Thêm ứng dụng (Add App)</b> để đăng ký Package Name / Bundle ID.
+                            💡 {t('appConfigs.firebaseAppHint')}
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800">
-                        Không thể kết nối hoặc dự án chưa kích hoạt Firebase Management API.
+                        {t('appConfigs.firebaseConnectError')}
                       </div>
                     )}
                   </div>
@@ -978,12 +974,12 @@ export const AppConfigs: React.FC = () => {
                 <div className="p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/50 text-xs text-blue-950 dark:text-blue-200 space-y-1.5">
                   <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
                     <Globe size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
-                    <span>Kiến trúc Mạng Triển khai (API Gateway Unified):</span>
+                    <span>{t('appConfigs.networkArchTitle')}</span>
                   </div>
                   <p className="text-[11px] text-blue-900/90 dark:text-blue-200/90 leading-relaxed">
-                    Khi triển khai (Production), tất cả traffic API REST và WebSocket đều được <b>hợp nhất (unified)</b> đi qua <b>API Gateway</b> sau <b>Nginx Reverse Proxy</b> trên Domain bên ngoài (cổng 80/443, không kèm port nội bộ).
+                    {t('appConfigs.networkArchDesc')}
                     <br />
-                    <b>Ngoại lệ duy nhất là WebRTC</b>: Media stream video RTP/ICE truyền trực tiếp qua cổng <b>:8555</b>.
+                    {t('appConfigs.networkArchWebrtc')}
                   </p>
                 </div>
 
@@ -1014,11 +1010,11 @@ export const AppConfigs: React.FC = () => {
                     type="text"
                     value={gatewayUrl}
                     onChange={(e) => handleGatewayUrlChange(e.target.value)}
-                    placeholder="https://cctv.yourdomain.com hoặc http://localhost:8088"
+                    placeholder={t('appConfigs.gatewayPlaceholder')}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-mono"
                   />
                   <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                    Đổi Domain sẽ tự động đồng bộ API Base URL, Relay WebSocket URL và WebRTC Base URL (:8555).
+                    {t('appConfigs.domainSyncHint')}
                   </p>
                 </div>
 
@@ -1073,16 +1069,16 @@ export const AppConfigs: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Lock size={15} className="text-orange-600 dark:text-orange-400 shrink-0" />
                     <span className="text-xs font-bold text-orange-950 dark:text-orange-200">
-                      Thiết lập Mã PIN 6 số (Khóa mã hóa Argon2id) <span className="text-red-500">*</span>
+                      {t('appConfigs.pinStepTitle')} <span className="text-red-500">*</span>
                     </span>
                   </div>
                   <p className="text-[11px] text-orange-900/80 dark:text-orange-200/80">
-                    Mã PIN này sẽ dùng để mã hóa AES-256-GCM. Người dùng ứng dụng (Mobile hoặc Desktop) bắt buộc phải nhập mã PIN này để giải mã cấu hình.
+                    {t('appConfigs.pinStepDesc')}
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Mã PIN (6 số)</label>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{t('appConfigs.pinLabel')}</label>
                       <input
                         type="password"
                         maxLength={6}
@@ -1093,7 +1089,7 @@ export const AppConfigs: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Xác nhận lại PIN</label>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{t('appConfigs.confirmPinLabel')}</label>
                       <input
                         type="password"
                         maxLength={6}
@@ -1117,20 +1113,20 @@ export const AppConfigs: React.FC = () => {
 
                 <div>
                   <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                    Đã tạo và mã hóa file .hscfg thành công!
+                    {t('appConfigs.successTitle')}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
-                    Hồ sơ đã được lưu trữ an toàn trên hệ thống với định dạng bảo mật cao nhiều lớp.
+                    {t('appConfigs.successSubtitle')}
                   </p>
                 </div>
 
                 <div className="w-full bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 text-left text-xs space-y-1.5 font-mono">
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Tên file:</span>
+                    <span className="text-slate-500 dark:text-slate-400">{t('appConfigs.fileName')}</span>
                     <span className="font-semibold text-slate-700 dark:text-slate-200">hubsight_{generatedConfig.name}.hscfg</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Dung lượng:</span>
+                    <span className="text-slate-500 dark:text-slate-400">{t('appConfigs.fileSize')}</span>
                     <span className="font-semibold text-slate-700 dark:text-slate-200">{(generatedConfig.file_size / 1024).toFixed(1)} KB</span>
                   </div>
                   <div className="flex justify-between">
@@ -1148,7 +1144,7 @@ export const AppConfigs: React.FC = () => {
                     className="w-full sm:flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0 whitespace-nowrap"
                   >
                     <Download size={16} className="shrink-0" />
-                    <span>Tải ngay file .hscfg</span>
+                    <span>{t('appConfigs.downloadNow')}</span>
                   </button>
                   <button
                     type="button"
@@ -1159,7 +1155,7 @@ export const AppConfigs: React.FC = () => {
                     className="w-full sm:w-auto px-4 py-3 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 border border-sky-200 dark:border-sky-800 shrink-0 whitespace-nowrap"
                   >
                     <QrCode size={16} className="shrink-0" />
-                    <span>Mã QR</span>
+                    <span>{t('appConfigs.viewQr')}</span>
                   </button>
                 </div>
               </div>
@@ -1174,7 +1170,7 @@ export const AppConfigs: React.FC = () => {
                   className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
                 >
                   <ArrowLeft size={13} className="shrink-0" />
-                  <span>Quay lại</span>
+                  <span>{t('appConfigs.btnBack')}</span>
                 </button>
               ) : (
                 <div />
@@ -1185,14 +1181,14 @@ export const AppConfigs: React.FC = () => {
                   type="button"
                   onClick={() => {
                     if (wizardStep === 1 && !formName.trim()) {
-                      toast.error('Vui lòng nhập tên cấu hình');
+                      toast.error(t('appConfigs.nameRequiredError'));
                       return;
                     }
                     setWizardStep((s) => (s + 1) as 2 | 3);
                   }}
                   className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap"
                 >
-                  <span>Tiếp tục</span>
+                  <span>{t('appConfigs.btnNext')}</span>
                   <ArrowRight size={13} className="shrink-0" />
                 </button>
               ) : wizardStep === 3 ? (
@@ -1203,7 +1199,7 @@ export const AppConfigs: React.FC = () => {
                   className="px-5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50 shrink-0 whitespace-nowrap"
                 >
                   {isGenerating ? <RotateCw size={13} className="animate-spin shrink-0" /> : <Shield size={13} className="shrink-0" />}
-                  <span>{isGenerating ? 'Đang mã hóa & lưu trữ an toàn...' : 'Tạo & Mã hóa Container'}</span>
+                  <span>{isGenerating ? t('appConfigs.btnEncrypting') : t('appConfigs.btnCreateEncrypt')}</span>
                 </button>
               ) : (
                 <button
@@ -1211,7 +1207,7 @@ export const AppConfigs: React.FC = () => {
                   onClick={() => setIsWizardOpen(false)}
                   className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                 >
-                  Đóng
+                  {t('appConfigs.close')}
                 </button>
               )}
             </div>
@@ -1230,7 +1226,7 @@ export const AppConfigs: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                    Chi tiết Cấu hình Ứng dụng
+                    {t('appConfigs.detailTitle')}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
                     {selectedConfigForDetail.id}
@@ -1248,7 +1244,7 @@ export const AppConfigs: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-1.5">
-                <span className="font-bold text-slate-700 dark:text-slate-200 block">Thông số mạng (URLs):</span>
+                <span className="font-bold text-slate-700 dark:text-slate-200 block">{t('appConfigs.networkSection')}</span>
                 <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
                   <div>API: {selectedConfigForDetail.api_base_url}</div>
                   <div>WebRTC: {selectedConfigForDetail.webrtc_base_url}</div>
@@ -1257,12 +1253,12 @@ export const AppConfigs: React.FC = () => {
               </div>
 
               <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-1.5">
-                <span className="font-bold text-slate-700 dark:text-slate-200 block">Bảo mật & Toàn vẹn:</span>
+                <span className="font-bold text-slate-700 dark:text-slate-200 block">{t('appConfigs.securitySection')}</span>
                 <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 space-y-1 break-all">
-                  <div>Kích thước: {(selectedConfigForDetail.file_size / 1024).toFixed(1)} KB</div>
-                  <div>Tệp lưu trữ: {selectedConfigForDetail.object_key}</div>
+                  <div>{t('appConfigs.fileSizeVal', { size: (selectedConfigForDetail.file_size / 1024).toFixed(1) })}</div>
+                  <div>{t('appConfigs.storedFile', { key: selectedConfigForDetail.object_key })}</div>
                   <div>SHA256: {selectedConfigForDetail.sha256_checksum}</div>
-                  <div>Thuật toán: Argon2id (64MB) + AES-256-GCM + Ed25519</div>
+                  <div>{t('appConfigs.algorithm')}</div>
                 </div>
               </div>
             </div>
@@ -1277,14 +1273,75 @@ export const AppConfigs: React.FC = () => {
                 className="w-full sm:w-auto px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap"
               >
                 <Download size={13} className="shrink-0" />
-                <span>Tải file .hscfg</span>
+                <span>{t('appConfigs.downloadFile')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setDetailModalOpen(false)}
                 className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer shrink-0 whitespace-nowrap"
               >
-                Đóng
+                {t('appConfigs.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Kill-Switch Toggle Confirmation Modal */}
+      {killSwitchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
+                appApiEnabled
+                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+              }`}>
+                {appApiEnabled ? <AlertCircle size={22} /> : <CheckCircle2 size={22} />}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                  {appApiEnabled
+                    ? t('appConfigs.killSwitchModalTitleDisable')
+                    : t('appConfigs.killSwitchModalTitleEnable')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {t('appConfigs.killSwitchTitle')}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              {appApiEnabled
+                ? t('appConfigs.killSwitchConfirmDisable')
+                : t('appConfigs.killSwitchConfirmEnable')}
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={isTogglingApi}
+                onClick={() => setKillSwitchModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer shrink-0 whitespace-nowrap disabled:opacity-50"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmToggleAppApi}
+                disabled={isTogglingApi}
+                className={`px-4 py-2 text-xs font-semibold text-white rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                  appApiEnabled
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                {isTogglingApi && <RotateCw size={13} className="animate-spin shrink-0" />}
+                <span>
+                  {appApiEnabled
+                    ? t('appConfigs.killSwitchDisableBtn')
+                    : t('appConfigs.killSwitchEnableBtn')}
+                </span>
               </button>
             </div>
           </div>

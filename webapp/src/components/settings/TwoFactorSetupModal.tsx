@@ -60,9 +60,9 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
       setSetupData(data);
     } catch (err) {
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Không thể khởi tạo 2FA'));
+        setError(getErrorMessage(err, t('settings.twoFactorInitError')));
       } else {
-        setError('Không thể khởi tạo 2FA. Vui lòng thử lại.');
+        setError(t('settings.twoFactorInitRetry'));
       }
     } finally {
       setLoading(false);
@@ -114,9 +114,9 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
       setStep('codes');
     } catch (err) {
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Mật khẩu không chính xác'));
+        setError(getErrorMessage(err, t('settings.twoFactorIncorrectPassword')));
       } else {
-        setError('Không thể tạo lại mã khôi phục');
+        setError(t('settings.twoFactorRegenError'));
       }
     } finally {
       setLoading(false);
@@ -135,9 +135,9 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
       onClose();
     } catch (err) {
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Mật khẩu không chính xác'));
+        setError(getErrorMessage(err, t('settings.twoFactorIncorrectPassword')));
       } else {
-        setError('Không thể tắt 2FA. Vui lòng kiểm tra lại mật khẩu.');
+        setError(t('settings.twoFactorDisableError'));
       }
     } finally {
       setLoading(false);

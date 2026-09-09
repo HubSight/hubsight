@@ -292,7 +292,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         {enableAi && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-950/70 text-purple-200 border border-purple-500/40 backdrop-blur shadow-lg pointer-events-none select-none animate-in fade-in duration-300">
             <Sparkles size={13} className="text-purple-400 animate-spin" style={{ animationDuration: '4s' }} />
-            <span>AI Integrated</span>
+            <span>{t('device.aiIntegrated')}</span>
           </div>
         )}
 

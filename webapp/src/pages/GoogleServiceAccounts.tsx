@@ -63,7 +63,7 @@ export const GoogleServiceAccounts: React.FC = () => {
       const data = await api.googleServiceAccounts.list();
       setAccounts(data);
     } catch (err: any) {
-      toast.error(err?.message || 'Không thể tải danh sách Google Service Accounts');
+      toast.error(err?.message || t('serviceAccounts.loadError'));
     } finally {
       setLoading(false);
     }
@@ -108,22 +108,22 @@ export const GoogleServiceAccounts: React.FC = () => {
     try {
       const obj = JSON.parse(trimmed);
       if (obj.type !== 'service_account') {
-        setJsonValidationError(`Tệp không phải service_account (phát hiện type: '${obj.type || 'unknown'}')`);
+        setJsonValidationError(t('serviceAccounts.errNotServiceAccount', { type: obj.type || 'unknown' }));
         setParsedPreview(null);
         return;
       }
       if (!obj.project_id) {
-        setJsonValidationError('Thiếu trường "project_id" trong file JSON.');
+        setJsonValidationError(t('serviceAccounts.errMissingProjectId'));
         setParsedPreview(null);
         return;
       }
       if (!obj.client_email) {
-        setJsonValidationError('Thiếu trường "client_email" trong file JSON.');
+        setJsonValidationError(t('serviceAccounts.errMissingClientEmail'));
         setParsedPreview(null);
         return;
       }
       if (!obj.private_key || !obj.private_key.includes('BEGIN PRIVATE KEY')) {
-        setJsonValidationError('Trường "private_key" không đúng định dạng RSA PEM chuẩn.');
+        setJsonValidationError(t('serviceAccounts.errInvalidPrivateKey'));
         setParsedPreview(null);
         return;
       }
@@ -139,7 +139,7 @@ export const GoogleServiceAccounts: React.FC = () => {
         setCustomName(obj.project_id);
       }
     } catch {
-      setJsonValidationError('Cú pháp JSON không hợp lệ. Vui lòng kiểm tra lại.');
+      setJsonValidationError(t('serviceAccounts.errInvalidJson'));
       setParsedPreview(null);
     }
   };
@@ -167,7 +167,7 @@ export const GoogleServiceAccounts: React.FC = () => {
   const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!jsonText.trim() || jsonValidationError || !parsedPreview) {
-      toast.error('Vui lòng chọn hoặc dán file JSON Google Service Account hợp lệ');
+      toast.error(t('serviceAccounts.invalidJsonFile'));
       return;
     }
 
@@ -179,7 +179,7 @@ export const GoogleServiceAccounts: React.FC = () => {
         is_active: setActiveOnImport,
       });
 
-      toast.success(res.message || 'Nhập Google Service Account thành công');
+      toast.success(res.message || t('serviceAccounts.importSuccess'));
       if (res.warning) {
         toast(() => (
           <span className="text-amber-700 text-xs font-medium">
@@ -194,7 +194,7 @@ export const GoogleServiceAccounts: React.FC = () => {
       resetImportForm();
       await fetchAccounts();
     } catch (err: any) {
-      toast.error(err?.message || 'Không thể nhập Service Account');
+      toast.error(err?.message || t('serviceAccounts.importError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -226,7 +226,7 @@ export const GoogleServiceAccounts: React.FC = () => {
         setDetailAccount(updated);
       }
     } catch (err: any) {
-      toast.error(err?.message || 'Kiểm tra kết nối thất bại');
+      toast.error(err?.message || t('serviceAccounts.testError'));
     } finally {
       setTestingId(null);
     }
@@ -243,7 +243,7 @@ export const GoogleServiceAccounts: React.FC = () => {
         setDetailAccount({ ...detailAccount, is_active: true });
       }
     } catch (err: any) {
-      toast.error(err?.message || 'Không thể kích hoạt tài khoản');
+      toast.error(err?.message || t('serviceAccounts.activateError'));
     } finally {
       setActivatingId(null);
     }
@@ -262,7 +262,7 @@ export const GoogleServiceAccounts: React.FC = () => {
       }
       await fetchAccounts();
     } catch (err: any) {
-      toast.error(err?.message || 'Không thể xóa tài khoản');
+      toast.error(err?.message || t('serviceAccounts.deleteError'));
     } finally {
       setIsDeleting(false);
     }
@@ -320,7 +320,7 @@ export const GoogleServiceAccounts: React.FC = () => {
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('serviceAccounts.activeProject')}</p>
             <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={activeAccount?.project_id || '—'}>
-              {activeAccount?.project_id || 'Chưa thiết lập'}
+              {activeAccount?.project_id || t('serviceAccounts.notSetup')}
             </p>
           </div>
         </div>
@@ -346,11 +346,11 @@ export const GoogleServiceAccounts: React.FC = () => {
             <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
               {activeAccount
                 ? activeAccount.status === 'active'
-                  ? 'Đã kết nối Google'
+                  ? t('serviceAccounts.connectedGoogle')
                   : activeAccount.status === 'error'
-                  ? 'Lỗi kết nối'
-                  : 'Chưa kiểm tra'
-                : 'Chưa cấu hình'}
+                  ? t('serviceAccounts.connError')
+                  : t('serviceAccounts.notTested')
+                : t('serviceAccounts.notConfigured')}
             </p>
           </div>
         </div>
@@ -364,7 +364,7 @@ export const GoogleServiceAccounts: React.FC = () => {
             <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
               {activeAccount?.last_tested_at
                 ? dayjs(activeAccount.last_tested_at).format('HH:mm DD/MM/YYYY')
-                : 'Chưa kiểm tra'}
+                : t('serviceAccounts.notTested')}
             </p>
           </div>
         </div>
@@ -388,7 +388,7 @@ export const GoogleServiceAccounts: React.FC = () => {
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
           <RotateCw size={28} className="animate-spin text-orange-600 dark:text-orange-400 mb-3" />
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Đang tải danh sách Google Service Accounts...</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('serviceAccounts.loadingList')}</p>
         </div>
       ) : filteredAccounts.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center">
@@ -396,10 +396,10 @@ export const GoogleServiceAccounts: React.FC = () => {
             <Cloud size={28} />
           </div>
           <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
-            {search ? 'Không tìm thấy tài khoản phù hợp' : t('serviceAccounts.noAccounts')}
+            {search ? t('serviceAccounts.noFiltered') : t('serviceAccounts.noAccounts')}
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mb-5">
-            {search ? 'Thử tìm kiếm với từ khóa khác' : t('serviceAccounts.noAccountsDesc')}
+            {search ? t('serviceAccounts.noFilteredDesc') : t('serviceAccounts.noAccountsDesc')}
           </p>
           {!search && (
             <button
@@ -454,7 +454,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                                 </span>
                               )}
                               {acc.client_email.includes('firebase-adminsdk') && (
-                                <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0 whitespace-nowrap" title="Service Account tải trực tiếp từ Firebase Console">
+                                <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0 whitespace-nowrap" title={t('serviceAccounts.directDownloadTag')}>
                                   🔥 Firebase Admin SDK
                                 </span>
                               )}
@@ -475,7 +475,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                           <button
                             onClick={() => handleCopy(acc.client_email, `email-${acc.id}`)}
                             className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                            title="Sao chép email"
+                            title={t('serviceAccounts.copyEmailTitle')}
                           >
                             {copiedId === `email-${acc.id}` ? (
                               <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
@@ -533,7 +533,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                             onClick={() => handleTestConnection(acc)}
                             disabled={testingId === acc.id}
                             className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
-                            title="Kiểm tra kết nối với Google STS"
+                            title={t('serviceAccounts.testConnTitle')}
                           >
                             <RotateCw size={12} className={testingId === acc.id ? 'animate-spin text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'} />
                             <span>{testingId === acc.id ? t('serviceAccounts.testing') : t('serviceAccounts.testBtn')}</span>
@@ -615,7 +615,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                         ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                         : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                     }`}>
-                      {acc.status === 'active' ? 'Đã kết nối' : acc.status === 'error' ? 'Lỗi' : 'Chưa kiểm tra'}
+                      {acc.status === 'active' ? t('serviceAccounts.statusConnected') : acc.status === 'error' ? t('serviceAccounts.statusError') : t('serviceAccounts.notTested')}
                     </span>
                   </div>
                 </div>
@@ -701,13 +701,24 @@ export const GoogleServiceAccounts: React.FC = () => {
               <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 text-xs text-amber-950 dark:text-amber-200 space-y-1.5">
                 <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
                   <Shield size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Nguồn tệp: Tải trực tiếp từ Firebase Console</span>
+                  <span>{t('serviceAccounts.sourceTitle')}</span>
                 </div>
                 <ol className="list-decimal list-inside space-y-1 text-[11px] text-amber-900/90 dark:text-amber-300/90 pl-1 leading-relaxed">
-                  <li>Truy cập <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="font-semibold underline hover:text-amber-800 dark:hover:text-amber-200">console.firebase.google.com</a> và chọn dự án.</li>
-                  <li>Bấm biểu tượng <b>Cài đặt (bánh răng ⚙️)</b> &gt; Chọn <b>Cài đặt dự án (Project settings)</b>.</li>
-                  <li>Chuyển sang tab <b>Tài khoản dịch vụ (Service accounts)</b>.</li>
-                  <li>Bấm nút <b>Tạo khóa riêng tư mới (Generate new private key)</b> và tải file JSON về máy tính.</li>
+                  {(() => {
+                    const parts = t('serviceAccounts.guideStep1', { url: '___URL___' }).split('___URL___');
+                    return (
+                      <li>
+                        {parts[0]}
+                        <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="font-semibold underline hover:text-amber-800 dark:hover:text-amber-200">
+                          console.firebase.google.com
+                        </a>
+                        {parts[1] || ''}
+                      </li>
+                    );
+                  })()}
+                  <li>{t('serviceAccounts.guideStep2')}</li>
+                  <li>{t('serviceAccounts.guideStep3')}</li>
+                  <li>{t('serviceAccounts.guideStep4')}</li>
                 </ol>
               </div>
 
@@ -764,7 +775,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                           {importFile.name}
                         </p>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                          {(importFile.size / 1024).toFixed(1)} KB • Bấm để chọn file khác
+                          {t('serviceAccounts.clickToChangeFile', { size: (importFile.size / 1024).toFixed(1) })}
                         </p>
                       </div>
                     ) : (
@@ -938,7 +949,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                       className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       <Copy size={12} />
-                      <span>{copiedId === 'detail-email' ? 'Đã copy' : 'Copy'}</span>
+                      <span>{copiedId === 'detail-email' ? t('serviceAccounts.copiedShort') : t('serviceAccounts.copy')}</span>
                     </button>
                   </div>
                   <span className="font-mono text-slate-800 dark:text-slate-100 font-semibold break-all">
@@ -985,10 +996,10 @@ export const GoogleServiceAccounts: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-xs">
                       {detailAccount.status === 'active'
-                        ? 'Google OAuth2 STS: Xác thực hợp lệ'
+                        ? t('serviceAccounts.stsValid')
                         : detailAccount.status === 'error'
-                        ? 'Google OAuth2 STS: Lỗi xác thực'
-                        : 'Google OAuth2 STS: Chưa kiểm tra'}
+                        ? t('serviceAccounts.stsInvalid')
+                        : t('serviceAccounts.stsUntested')}
                     </p>
                     {detailAccount.last_error && (
                       <p className="text-[11px] font-mono mt-1 text-rose-700 dark:text-rose-400 break-all">
@@ -997,7 +1008,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                     )}
                     {detailAccount.last_tested_at && (
                       <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                        Kiểm tra lần cuối: {dayjs(detailAccount.last_tested_at).format('HH:mm:ss DD/MM/YYYY')}
+                        {t('serviceAccounts.lastTestedAt', { time: dayjs(detailAccount.last_tested_at).format('HH:mm:ss DD/MM/YYYY') })}
                       </p>
                     )}
                   </div>

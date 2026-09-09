@@ -129,7 +129,7 @@ export const DeviceNvrTab: React.FC<DeviceNvrTabProps> = ({ formData, onChange }
             {t('device.nvrModeLabel')}
           </span>
           <span className="text-xs text-slate-400 font-normal">
-            Mỗi camera có cài đặt độc lập
+            {t('device.nvrIndependentSettings')}
           </span>
         </label>
 
@@ -163,7 +163,7 @@ export const DeviceNvrTab: React.FC<DeviceNvrTabProps> = ({ formData, onChange }
                 {isSelected && (
                   <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center gap-1.5 text-[11px] font-medium text-slate-700 dark:text-slate-300">
                     <CheckCircle2 size={13} className={mode.iconColor} />
-                    <span>Đang kích hoạt chế độ này</span>
+                    <span>{t('device.nvrActiveMode')}</span>
                   </div>
                 )}
               </div>
@@ -233,7 +233,7 @@ export const DeviceNvrTab: React.FC<DeviceNvrTabProps> = ({ formData, onChange }
             ))}
           </div>
           <p className="text-[11px] text-slate-400 mt-1.5">
-            Thời lượng mỗi tệp video phân đoạn được cắt và đồng bộ lên hệ thống lưu trữ.
+            {t('device.nvrSegmentDurationHint')}
           </p>
         </div>
       )}

@@ -3,6 +3,26 @@ import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { registerSW } from 'virtual:pwa-register';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+
+// Auto reload when a Vite chunk fails to load (e.g. after a new deployment)
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('[Vite] Preload error detected, reloading to fetch latest bundle...', event);
+  window.location.reload();
+});
+
+// Catch unhandled dynamic module script errors
+window.addEventListener('error', (e) => {
+  const msg = e.message || '';
+  if (
+    msg.includes('dynamically imported module') ||
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed')
+  ) {
+    console.warn('[App] Dynamic module import failed, reloading...');
+    window.location.reload();
+  }
+});
 
 // Register Service Worker with active update checking and automatic refresh
 if ('serviceWorker' in navigator) {
@@ -46,9 +66,10 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>,
 );

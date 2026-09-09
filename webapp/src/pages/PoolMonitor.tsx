@@ -308,7 +308,7 @@ export const PoolMonitor = () => {
                                     <span className={isFull ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'}>
                                       {conn.active_users} / {max}
                                     </span>
-                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">clients</span>
+                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">{t('pool.clientsLabel')}</span>
                                   </div>
                                 </div>
 

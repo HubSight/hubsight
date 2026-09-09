@@ -223,7 +223,7 @@ export const Users: React.FC = () => {
         >
           <Plus size={16} />
           <span className="hidden sm:inline">{t('access.addUser')}</span>
-          <span className="sm:hidden">Thêm</span>
+          <span className="sm:hidden">{t('users.addShort')}</span>
         </button>
       </div>
 

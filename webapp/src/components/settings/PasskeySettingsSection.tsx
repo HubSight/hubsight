@@ -34,6 +34,7 @@ export const PasskeySettingsSection: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     isPasskeySupported().then(setSupported);
@@ -57,7 +58,7 @@ export const PasskeySettingsSection: React.FC = () => {
       ? 'MacBook Touch ID'
       : typeof navigator !== 'undefined' && navigator.userAgent.includes('Windows')
       ? 'Windows Hello'
-      : 'Khóa bảo mật';
+      : t('settings.passkeyFallbackName');
     setNewPasskeyName(defaultName);
     setError('');
     setSuccess('');
@@ -85,9 +86,9 @@ export const PasskeySettingsSection: React.FC = () => {
         return;
       }
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Không thể liên kết thiết bị'));
+        setError(getErrorMessage(err, t('settings.passkeyLinkErrorGeneric')));
       } else {
-        setError(err?.message || 'Không thể liên kết trên thiết bị này');
+        setError(err?.message || t('settings.passkeyLinkErrorDevice'));
       }
     } finally {
       setRegistering(false);
@@ -110,22 +111,27 @@ export const PasskeySettingsSection: React.FC = () => {
       setEditingId(null);
     } catch (err) {
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Lỗi đổi tên thiết bị'));
+        setError(getErrorMessage(err, t('settings.passkeyRenameError')));
       }
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('settings.confirmDeletePasskey'))) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
     setActionLoading(true);
     try {
-      await api.auth.deletePasskey(id);
-      setPasskeys((prev) => prev.filter((k) => k.id !== id));
+      await api.auth.deletePasskey(deleteTargetId);
+      setPasskeys((prev) => prev.filter((k) => k.id !== deleteTargetId));
+      setDeleteTargetId(null);
     } catch (err) {
       if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Lỗi xóa thiết bị'));
+        setError(getErrorMessage(err, t('settings.passkeyDeleteError')));
       }
     } finally {
       setActionLoading(false);
@@ -354,6 +360,51 @@ export const PasskeySettingsSection: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Passkey Confirmation Modal */}
+      {deleteTargetId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+              <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center shrink-0">
+                <AlertCircle size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                  {t('settings.deletePasskey')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  {passkeys.find((p) => p.id === deleteTargetId)?.name}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              {t('settings.confirmDeletePasskey')}
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => setDeleteTargetId(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer shrink-0 whitespace-nowrap disabled:opacity-50"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5 shrink-0 whitespace-nowrap"
+              >
+                {actionLoading && <Loader2 size={13} className="animate-spin shrink-0" />}
+                <span>{t('delete')}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
