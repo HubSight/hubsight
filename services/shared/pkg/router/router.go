@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	cctvapi "cctv/shared/pkg/api"
+	"cctv/shared/pkg/appapi"
 	"cctv/shared/pkg/auth"
 	"cctv/shared/pkg/device"
 	"cctv/shared/pkg/live"
@@ -52,6 +53,9 @@ func New() *gin.Engine {
 		// Public Web Push / FCM config (VAPID public key + Firebase web config).
 		// These values are designed to be embedded in the client and service worker.
 		api.GET("/notifications/push-config", notification.GetPushConfigHandler)
+
+		// Dedicated Mobile & Desktop App routes (/api/app/v1/*)
+		appapi.RegisterAppRoutes(api)
 
 		// Protected domain routes (Validated via auth-service)
 		protected := api.Group("/")

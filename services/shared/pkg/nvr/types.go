@@ -52,6 +52,7 @@ type NvrStatusResponse struct {
 	ServiceName            string                 `json:"service_name"`
 	Status                 string                 `json:"status"`
 	IsGlobalEnabled        bool                   `json:"is_global_enabled"`
+	AppApiEnabled          bool                   `json:"app_api_enabled"`
 	Timestamp              time.Time              `json:"timestamp"`
 	System                 SystemStats            `json:"system"`
 	Storage                StorageStats           `json:"storage"`

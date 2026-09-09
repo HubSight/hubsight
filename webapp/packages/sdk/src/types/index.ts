@@ -475,14 +475,25 @@ export interface NvrStatusResponse {
     retention_days: number;
   };
   active_live_streams_count: number;
+  app_api_enabled?: boolean;
   cameras: NvrCameraStatus[];
   _timestamp?: string;
+}
+
+export interface SystemSettings {
+  id?: number;
+  nvr_status: boolean;
+  storage_quota_gb: number;
+  retention_days: number;
+  app_api_enabled: boolean;
+  updated_at?: string;
 }
 
 export interface SettingsInput {
   nvr_status?: string | boolean;
   storage_quota_gb?: number;
   retention_days?: number;
+  app_api_enabled?: boolean;
   [key: string]: unknown;
 }
 

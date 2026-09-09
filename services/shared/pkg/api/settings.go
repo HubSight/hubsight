@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"cctv/shared/pkg/appapi"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/storage"
@@ -16,6 +17,7 @@ type SettingsRequest struct {
 	NvrStatus      *bool `json:"nvr_status"`
 	StorageQuotaGb *int  `json:"storage_quota_gb"`
 	RetentionDays  *int  `json:"retention_days"`
+	AppApiEnabled  *bool `json:"app_api_enabled"`
 }
 
 func getOrCreateSettings(ctx context.Context) (*models.Setting, error) {
@@ -32,6 +34,7 @@ func getOrCreateSettings(ctx context.Context) (*models.Setting, error) {
 		NvrStatus:      true,
 		StorageQuotaGB: 50,
 		RetentionDays:  4,
+		AppApiEnabled:  true,
 	}
 	if err := database.DB.WithContext(ctx).Create(&s).Error; err != nil {
 		return nil, err
@@ -78,11 +81,17 @@ func UpdateSettings(c *gin.Context) {
 	if req.RetentionDays != nil {
 		updates["retention_days"] = *req.RetentionDays
 	}
+	if req.AppApiEnabled != nil {
+		updates["app_api_enabled"] = *req.AppApiEnabled
+	}
 
 	if len(updates) > 0 {
 		if err := database.DB.WithContext(ctx).Model(&models.Setting{}).Where("id = ?", current.ID).Updates(updates).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update settings"})
 			return
+		}
+		if req.AppApiEnabled != nil {
+			appapi.SetKillSwitchState(*req.AppApiEnabled)
 		}
 	}
 

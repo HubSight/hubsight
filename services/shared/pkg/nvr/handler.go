@@ -198,6 +198,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 		ServiceName:            "HubSight NVR Engine",
 		Status:                 "healthy",
 		IsGlobalEnabled:        true,
+		AppApiEnabled:          globalSettings.AppApiEnabled,
 		Timestamp:              now,
 		System:                 sysStats,
 		Storage:                storeStats,

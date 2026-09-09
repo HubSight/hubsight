@@ -103,6 +103,7 @@ export {
 export {
   createRecorderResource,
   getNvrStatus,
+  getSettings,
   updateRecorderSettings,
   cleanupStorage,
   type RecorderResource,

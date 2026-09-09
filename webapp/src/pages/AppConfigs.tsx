@@ -73,6 +73,10 @@ export const AppConfigs: React.FC = () => {
   // Result of generation
   const [generatedConfig, setGeneratedConfig] = useState<AppConfig | null>(null);
 
+  // App API Gateway Kill-Switch State
+  const [appApiEnabled, setAppApiEnabled] = useState<boolean>(true);
+  const [isTogglingApi, setIsTogglingApi] = useState(false);
+
   // QR Modal
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedConfigForQr, setSelectedConfigForQr] = useState<AppConfig | null>(null);
@@ -92,20 +96,48 @@ export const AppConfigs: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [cfgList, saList, clientList] = await Promise.all([
+      const [cfgList, saList, clientList, sysSettings] = await Promise.all([
         api.appConfigs.list(),
         api.googleServiceAccounts.list(),
         api.clients.list(),
+        api.recorder.getSettings().catch(() => null),
       ]);
       setConfigs(cfgList || []);
       setServiceAccounts(saList || []);
       // Filter mobile or all clients
       setClients(clientList || []);
+      if (sysSettings && typeof sysSettings.app_api_enabled === 'boolean') {
+        setAppApiEnabled(sysSettings.app_api_enabled);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi tải danh sách cấu hình';
       toast.error(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleAppApi = async () => {
+    const nextState = !appApiEnabled;
+    const confirmMsg = nextState
+      ? 'Bạn có chắc chắn muốn MỞ LẠI cổng API dành cho ứng dụng di động & máy tính (/api/app/v1/*)?'
+      : 'CẢNH BÁO: Tắt cổng API sẽ khiến TẤT CẢ ứng dụng di động và máy tính bị ngắt kết nối ngay lập tức và nhận mã lỗi HTTP 503 Service Unavailable. Bạn có chắc chắn muốn tắt?';
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsTogglingApi(true);
+    try {
+      await api.recorder.updateSettings({ app_api_enabled: nextState });
+      setAppApiEnabled(nextState);
+      toast.success(
+        nextState
+          ? 'Đã mở cổng API cho Mobile & Desktop App.'
+          : 'Đã tạm khóa cổng API Mobile & Desktop (HTTP 503).'
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi cập nhật trạng thái cổng API';
+      toast.error(msg);
+    } finally {
+      setIsTogglingApi(false);
     }
   };
 
@@ -343,6 +375,73 @@ export const AppConfigs: React.FC = () => {
 
       {/* Main Scrollable Content */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-20">
+        {/* App API Gateway Kill-Switch Master Control */}
+        <div className={`p-4 sm:p-5 rounded-2xl border transition-all shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+          appApiEnabled
+            ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/30 dark:border-emerald-500/20'
+            : 'bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/30 dark:border-rose-500/20'
+        }`}>
+          <div className="flex items-start gap-3.5">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+              appApiEnabled
+                ? 'bg-emerald-500 text-white'
+                : 'bg-rose-500 text-white'
+            }`}>
+              <Shield size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                  Cổng API Ứng dụng Di động & Máy tính (Mobile & Desktop App Gateway)
+                </h2>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide ${
+                  appApiEnabled
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 animate-pulse'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${appApiEnabled ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                  {appApiEnabled ? 'HOẠT ĐỘNG (ACTIVE)' : 'TẠM KHÓA (HTTP 503)'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                {appApiEnabled
+                  ? 'Các ứng dụng Mobile & Desktop được phép kết nối qua cổng /api/app/v1/* với API Key hợp lệ. Live stream, Push notifications và Profile hoạt động bình thường.'
+                  : 'Cổng API dành cho app đang TẮT. Mọi yêu cầu từ ứng dụng ngoài sẽ bị chặn và phản hồi HTTP 503 Service Unavailable kèm thông điệp bảo trì hệ thống.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-end md:self-center shrink-0">
+            <button
+              type="button"
+              disabled={isTogglingApi}
+              onClick={handleToggleAppApi}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
+                appApiEnabled
+                  ? 'bg-rose-600 hover:bg-rose-700 active:scale-95 text-white shadow-rose-600/20'
+                  : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-emerald-600/20'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isTogglingApi ? (
+                <>
+                  <RotateCw size={14} className="animate-spin" />
+                  <span>Đang xử lý...</span>
+                </>
+              ) : appApiEnabled ? (
+                <>
+                  <Lock size={14} />
+                  <span>Tắt cổng API (Kill-Switch)</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={14} />
+                  <span>Mở lại cổng API</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* KPI Stats Widgets */}
         <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
           <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">

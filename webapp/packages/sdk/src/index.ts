@@ -153,6 +153,7 @@ export type {
   PoolStatusSummary,
   NvrCameraStatus,
   NvrStatusResponse,
+  SystemSettings,
   SettingsInput,
   StorageCleanupResult,
   Recording,
