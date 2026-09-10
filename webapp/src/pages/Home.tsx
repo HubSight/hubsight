@@ -7,7 +7,6 @@ import {
   Layers,
   Activity,
   Cpu,
-  Server,
   RefreshCw,
   Video,
   AlertTriangle,
@@ -23,7 +22,6 @@ import {
   Gauge,
   Sliders,
   UserCog,
-  Database,
 } from '@/components/icons';
 import { api } from '../api/client';
 import type { CameraType, PoolStatusSummary, NvrStatusResponse, NotificationItem } from '@hubsight/sdk';
@@ -57,17 +55,6 @@ interface ServiceHealthMetric {
   lastChecked: Date;
 }
 
-const formatUptime = (seconds: number) => {
-  if (!seconds) return '0m';
-  const d = Math.floor(seconds / (3600 * 24));
-  const h = Math.floor((seconds % (3600 * 24)) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const parts = [];
-  if (d > 0) parts.push(`${d}d`);
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0 || parts.length === 0) parts.push(`${m}m`);
-  return parts.join(' ');
-};
 
 export const Home: React.FC = () => {
   const { t } = useTranslation();
@@ -754,7 +741,158 @@ export const Home: React.FC = () => {
 
         </div>
 
-        {/* ── NEW TIER: Vivid Real-Time Charts Section ────────────────────── */}
+        {/* ── Section 2: Live Camera Fleet Matrix (Full Width) ──────────── */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <Radio size={18} className="text-orange-500" />
+                {t('home.cameraMatrix')}
+              </h2>
+              <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
+                {t('home.cameraMatrixDesc')}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/devices')}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              >
+                <Plus size={13} />
+                <span>{t('devices.addManual')}</span>
+              </button>
+              <button
+                onClick={() => navigate('/devices')}
+                className="flex items-center gap-1 text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
+              >
+                <span>{t('common.all')}</span>
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-36 bg-slate-100 dark:bg-slate-800/60 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : cameras.length === 0 ? (
+            <div className="text-center py-10 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+              <Camera size={32} className="mx-auto text-slate-400 dark:text-slate-600 mb-2" />
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
+                {t('home.noCamerasFound')}
+              </p>
+              <button
+                onClick={() => navigate('/devices')}
+                className="mt-3 px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold cursor-pointer transition-colors"
+              >
+                {t('home.addFirstCamera')}
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {cameras.map((cam) => {
+                const isLive = cam.is_active && !cam.is_stopped;
+                const viewersCount = cameraViewersMap.get(cam.id) || 0;
+                const nvrInfo = cameraNvrMap.get(cam.id);
+
+                return (
+                  <div
+                    key={cam.id}
+                    className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 rounded-2xl p-4 transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Header: Name + Status */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                              !isLive
+                                ? 'bg-slate-400'
+                                : 'bg-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-950/80 shadow-xs'
+                            }`}
+                          />
+                          <h3
+                            className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate"
+                            title={cam.name}
+                          >
+                            {cam.name}
+                          </h3>
+                        </div>
+
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            isLive
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          {isLive ? 'Online' : 'Offline'}
+                        </span>
+                      </div>
+
+                      {/* Tech specs row */}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
+                        {cam.brand && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                            {cam.brand}
+                          </span>
+                        )}
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                          {cam.rtsp_transport || 'TCP'}
+                        </span>
+                        {cam.enable_ai && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
+                            AI YOLO
+                          </span>
+                        )}
+                        {cam.nvr_mode && cam.nvr_mode !== 'disabled' && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
+                            NVR {cam.nvr_mode}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Telemetry row */}
+                      <div className="mt-3 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-200/60 dark:border-slate-800 pt-2 font-mono">
+                        <span className="flex items-center gap-1">
+                          <Users size={12} className="text-indigo-500" />
+                          {viewersCount} {t('pool.clientsLabel')}
+                        </span>
+                        {nvrInfo && (
+                          <span className="text-slate-400 dark:text-slate-500">
+                            {nvrInfo.total_segments} segs
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quick Jump Buttons */}
+                    <div className="grid grid-cols-2 gap-2 mt-3 pt-2">
+                      <button
+                        onClick={() => navigate(`/multiview`)}
+                        className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200/80 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
+                      >
+                        <Tv size={13} className="text-orange-500" />
+                        <span>{t('home.viewLive')}</span>
+                      </button>
+                      <button
+                        onClick={() => navigate(`/playback?camera_id=${cam.id}`)}
+                        className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200/80 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
+                      >
+                        <Video size={13} className="text-blue-500" />
+                        <span>{t('home.viewPlayback')}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Section 3: Real-Time Telemetry & NVR Storage Matrix ──────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* Chart 1: Real-time Live Telemetry Wave Chart (7 of 12 cols) */}
@@ -934,7 +1072,7 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* Chart 2: Real NVR Storage Donut Chart (5 of 12 cols) */}
+          {/* Chart 2: Unified NVR Storage & Recorded Segments (5 of 12 cols) */}
           <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -958,7 +1096,7 @@ export const Home: React.FC = () => {
 
               {/* Donut Chart & Center Metric */}
               <div className="flex items-center justify-center gap-6 py-2">
-                <div className="relative w-32 h-32 shrink-0">
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0">
                   <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                     {/* Background Ring */}
                     <circle
@@ -1001,7 +1139,7 @@ export const Home: React.FC = () => {
                 </div>
 
                 {/* Legend list */}
-                <div className="space-y-2 text-xs font-semibold">
+                <div className="space-y-1.5 text-xs font-semibold">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
                     <span className="text-slate-500 dark:text-slate-400">{t('home.storageUsedLabel')}:</span>
@@ -1025,235 +1163,78 @@ export const Home: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Comparative Segment Bars (Embedded in Storage Panel) */}
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Activity size={13} className="text-blue-500" />
+                    {t('home.chartCameraStorageTitle')}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {nvrStatus?.cameras?.length || 0} cameras
+                  </span>
+                </div>
+
+                {nvrStatus?.cameras && nvrStatus.cameras.length > 0 ? (
+                  <div className="space-y-2 max-h-[140px] overflow-y-auto custom-scrollbar pr-1">
+                    {nvrStatus.cameras.map((c) => {
+                      const maxSegs = Math.max(1, ...nvrStatus.cameras.map((cam) => cam.total_segments || 0));
+                      const percent = Math.min(100, Math.round(((c.total_segments || 0) / maxSegs) * 100));
+
+                      return (
+                        <div key={c.camera_id} className="space-y-1">
+                          <div className="flex items-center justify-between text-[11px] font-semibold">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                  c.status === 'recording' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                                }`}
+                              />
+                              <span className="text-slate-800 dark:text-slate-200 truncate">
+                                {c.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-500 dark:text-slate-400 shrink-0">
+                              <span className="text-slate-800 dark:text-slate-200 font-bold">{c.total_segments} segs</span>
+                              {c.latest_segment_at && (
+                                <span className="hidden sm:inline text-slate-400">• {dayjs(c.latest_segment_at).fromNow()}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-blue-600 to-indigo-500 h-full rounded-full transition-all duration-500"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-slate-400 py-2 text-center">
+                    {t('home.noCamerasFound')}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="mt-3 text-[11px] text-slate-400 flex items-center justify-between font-mono pt-2 border-t border-slate-100 dark:border-slate-800">
-              <span>Đo đạc từ Linux statvfs / NVMe mount</span>
+            <div className="mt-2 text-[11px] text-slate-400 flex items-center justify-between font-mono pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span>Đo đạc từ Linux statvfs</span>
               <span>Auto-retention active</span>
             </div>
           </div>
 
         </div>
 
-        {/* ── Tier 2: Operational Matrix (Left: 65% / Right: 35%) ────────── */}
+        {/* ── Section 4: AI Security & Event Intelligence ─────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* Left Column (8 of 12 cols = 66.6%) */}
-          <div className="lg:col-span-8 space-y-6">
-
-            {/* Block A: Live Camera Fleet Matrix */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                    <Radio size={18} className="text-orange-500" />
-                    {t('home.cameraMatrix')}
-                  </h2>
-                  <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
-                    {t('home.cameraMatrixDesc')}
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate('/devices')}
-                  className="flex items-center gap-1 text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
-                >
-                  <span>{t('common.all')}</span>
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-
-              {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-36 bg-slate-100 dark:bg-slate-800/60 rounded-2xl animate-pulse" />
-                  ))}
-                </div>
-              ) : cameras.length === 0 ? (
-                <div className="text-center py-10 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-                  <Camera size={32} className="mx-auto text-slate-400 dark:text-slate-600 mb-2" />
-                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-                    {t('home.noCamerasFound')}
-                  </p>
-                  <button
-                    onClick={() => navigate('/devices')}
-                    className="mt-3 px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold cursor-pointer transition-colors"
-                  >
-                    {t('home.addFirstCamera')}
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
-                  {cameras.map((cam) => {
-                    const isLive = cam.is_active && !cam.is_stopped;
-                    const viewersCount = cameraViewersMap.get(cam.id) || 0;
-                    const nvrInfo = cameraNvrMap.get(cam.id);
-
-                    return (
-                      <div
-                        key={cam.id}
-                        className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 rounded-2xl p-4 transition-all flex flex-col justify-between"
-                      >
-                        <div>
-                          {/* Header: Name + Status */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                  !isLive
-                                    ? 'bg-slate-400'
-                                    : 'bg-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-950/80 shadow-xs'
-                                }`}
-                              />
-                              <h3
-                                className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate"
-                                title={cam.name}
-                              >
-                                {cam.name}
-                              </h3>
-                            </div>
-
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                isLive
-                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                              }`}
-                            >
-                              {isLive ? 'Online' : 'Offline'}
-                            </span>
-                          </div>
-
-                          {/* Tech specs row */}
-                          <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
-                            {cam.brand && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                                {cam.brand}
-                              </span>
-                            )}
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                              {cam.rtsp_transport || 'TCP'}
-                            </span>
-                            {cam.enable_ai && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                                AI YOLO
-                              </span>
-                            )}
-                            {cam.nvr_mode && cam.nvr_mode !== 'disabled' && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
-                                NVR {cam.nvr_mode}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Telemetry row */}
-                          <div className="mt-3 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-200/60 dark:border-slate-800 pt-2 font-mono">
-                            <span className="flex items-center gap-1">
-                              <Users size={12} className="text-indigo-500" />
-                              {viewersCount} {t('pool.clientsLabel')}
-                            </span>
-                            {nvrInfo && (
-                              <span className="text-slate-400 dark:text-slate-500">
-                                {nvrInfo.total_segments} segs
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Quick Jump Buttons */}
-                        <div className="grid grid-cols-2 gap-2 mt-3 pt-2">
-                          <button
-                            onClick={() => navigate(`/multiview`)}
-                            className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200/80 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
-                          >
-                            <Tv size={13} className="text-orange-500" />
-                            <span>{t('home.viewLive')}</span>
-                          </button>
-                          <button
-                            onClick={() => navigate(`/playback?camera_id=${cam.id}`)}
-                            className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200/80 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
-                          >
-                            <Video size={13} className="text-blue-500" />
-                            <span>{t('home.viewPlayback')}</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Block B: Comparative Camera Segments Bar Chart */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Activity size={18} className="text-blue-500" />
-                  <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
-                    {t('home.chartCameraStorageTitle')}
-                  </h3>
-                </div>
-                <button
-                  onClick={() => navigate('/recorder')}
-                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                >
-                  <span>{t('nav.nvrMonitor')}</span>
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-
-              {/* Comparative Segment Bars */}
-              {nvrStatus?.cameras && nvrStatus.cameras.length > 0 ? (
-                <div className="space-y-3.5">
-                  {nvrStatus.cameras.map((c) => {
-                    const maxSegs = Math.max(1, ...nvrStatus.cameras.map((cam) => cam.total_segments || 0));
-                    const percent = Math.min(100, Math.round(((c.total_segments || 0) / maxSegs) * 100));
-
-                    return (
-                      <div key={c.camera_id} className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs font-semibold">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span
-                              className={`w-2 h-2 rounded-full shrink-0 ${
-                                c.status === 'recording' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-                              }`}
-                            />
-                            <span className="text-slate-800 dark:text-slate-200 truncate">
-                              {c.name}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 shrink-0">
-                            <span className="text-slate-800 dark:text-slate-200 font-bold">{c.total_segments} segs</span>
-                            {c.latest_segment_at && (
-                              <span className="hidden sm:inline text-slate-400">• {dayjs(c.latest_segment_at).fromNow()}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Progress bar */}
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-blue-600 to-indigo-500 h-full rounded-full transition-all duration-500"
-                            style={{ width: `${percent}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-xs text-slate-400 py-4 text-center">
-                  {t('home.noCamerasFound')}
-                </div>
-              )}
-            </div>
-
-          </div>
-
-          {/* Right Column (4 of 12 cols = 33.3%) */}
-          <div className="lg:col-span-4 space-y-6">
-
-            {/* Chart 4: 24-Hour AI Security Activity Histogram */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6">
+          {/* Chart 4: 24-Hour AI Security Activity Histogram (6 of 12 cols) */}
+          <div className="lg:col-span-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6 flex flex-col justify-between">
+            <div>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={18} className="text-emerald-500" />
@@ -1268,16 +1249,16 @@ export const Home: React.FC = () => {
               </p>
 
               {/* Histogram Bars */}
-              <div className="flex items-end justify-between gap-2 h-28 pt-4 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-end justify-between gap-2 h-36 pt-4 pb-1 border-b border-slate-100 dark:border-slate-800">
                 {hourlyActivityBuckets.map((bucket) => {
-                  const barHeight = bucket.total > 0 ? Math.max(12, Math.round((bucket.total / maxBucketCount) * 85)) : 4;
+                  const barHeight = bucket.total > 0 ? Math.max(14, Math.round((bucket.total / maxBucketCount) * 110)) : 4;
                   const strangerRatio = bucket.total > 0 ? (bucket.strangers / bucket.total) * 100 : 0;
 
                   return (
                     <div key={bucket.label} className="flex-1 flex flex-col items-center gap-1.5 group">
-                      <div className="w-full flex items-end justify-center h-20">
+                      <div className="w-full flex items-end justify-center h-28">
                         <div
-                          className="w-full max-w-[28px] rounded-t-lg transition-all duration-500 overflow-hidden flex flex-col justify-end group-hover:scale-105"
+                          className="w-full max-w-[32px] rounded-t-lg transition-all duration-500 overflow-hidden flex flex-col justify-end group-hover:scale-105"
                           style={{ height: `${barHeight}px` }}
                           title={`${bucket.label}: ${bucket.total} (${bucket.strangers} người lạ)`}
                         >
@@ -1312,317 +1293,188 @@ export const Home: React.FC = () => {
               </div>
             </div>
 
-            {/* Block C: Real-Time AI Security Activity Feed */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle size={18} className="text-red-500" />
-                    <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
-                      {t('home.recentEvents')}
-                    </h3>
-                  </div>
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <div className="mt-2 text-[11px] text-slate-400 flex items-center justify-between font-mono pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span>Đo đạc từ sự kiện nhận diện khuôn mặt YOLO & relay</span>
+              <span>24 giờ qua</span>
+            </div>
+          </div>
+
+          {/* Block C: Real-Time AI Security Activity Feed (6 of 12 cols) */}
+          <div className="lg:col-span-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={18} className="text-red-500" />
+                  <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                    {t('home.recentEvents')}
+                  </h3>
                 </div>
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              </div>
 
-                <p className="text-xs text-slate-400 dark:text-slate-400 mb-4">
-                  {t('home.recentEventsDesc')}
-                </p>
+              <p className="text-xs text-slate-400 dark:text-slate-400 mb-3">
+                {t('home.recentEventsDesc')}
+              </p>
 
-                {/* Event list */}
-                <div className="space-y-2.5 max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
-                  {notifications.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500">
-                      {t('home.noEventsToday')}
-                    </div>
-                  ) : (
-                    notifications.map((n) => {
-                      const isStranger = n.category === 'stranger';
-                      const isFamily = n.category === 'family' || n.category === 'member';
+              {/* Event list */}
+              <div className="space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500">
+                    {t('home.noEventsToday')}
+                  </div>
+                ) : (
+                  notifications.map((n) => {
+                    const isStranger = n.category === 'stranger';
+                    const isFamily = n.category === 'family' || n.category === 'member';
 
-                      return (
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n)}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer group flex items-start gap-2.5 ${
+                          isStranger
+                            ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 hover:bg-red-50/80 dark:hover:bg-red-950/40'
+                            : isFamily
+                              ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30'
+                              : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                        title={t('home.clickToPlayback')}
+                      >
+                        {/* Icon Category */}
                         <div
-                          key={n.id}
-                          onClick={() => handleNotificationClick(n)}
-                          className={`p-3 rounded-2xl border transition-all cursor-pointer group flex items-start gap-2.5 ${
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                             isStranger
-                              ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 hover:bg-red-50/80 dark:hover:bg-red-950/40'
+                              ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400'
                               : isFamily
-                                ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30'
-                                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
                           }`}
-                          title={t('home.clickToPlayback')}
                         >
-                          {/* Icon Category */}
-                          <div
-                            className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                              isStranger
-                                ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400'
-                                : isFamily
-                                  ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400'
-                                  : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
-                            }`}
-                          >
-                            {isStranger ? (
-                              <AlertTriangle size={14} />
-                            ) : isFamily ? (
-                              <ShieldCheck size={14} />
-                            ) : (
-                              <HeartHandshake size={14} />
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
-                                {n.title}
-                              </h4>
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0">
-                                {dayjs(n.created_at).fromNow()}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-1 mt-0.5">
-                              {formatNotificationBody(n.body, n.created_at)}
-                            </p>
-                          </div>
+                          {isStranger ? (
+                            <AlertTriangle size={14} />
+                          ) : isFamily ? (
+                            <ShieldCheck size={14} />
+                          ) : (
+                            <HeartHandshake size={14} />
+                          )}
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  onClick={() => navigate('/playback')}
-                  className="w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Video size={13} />
-                  <span>{t('home.viewAllEvents')}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Block D: Admin Quick Operations Hub */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6">
-              <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
-                <Sliders size={16} className="text-orange-500" />
-                {t('home.quickActions')}
-              </h3>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  onClick={() => navigate('/devices')}
-                  className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-orange-50 dark:hover:bg-orange-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-800/60 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <Plus size={15} />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
-                    {t('home.actionAddCamera')}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/members')}
-                  className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-800/60 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <Users size={15} />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
-                    {t('home.actionManageMembers')}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/recorder')}
-                  className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800/60 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <HardDrive size={15} />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
-                    {t('home.actionNvrSettings')}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/app-configs')}
-                  className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <FileShield size={15} />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
-                    {t('home.actionAppConfigs')}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/users')}
-                  className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-purple-200 dark:hover:border-purple-800/60 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <UserCog size={15} />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
-                    {t('home.actionManageUsers')}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/pool')}
-                  className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-cyan-200 dark:hover:border-cyan-800/60 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <Layers size={15} />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
-                    {t('home.actionViewPool')}
-                  </span>
-                </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                              {n.title}
+                            </h4>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0">
+                              {dayjs(n.created_at).fromNow()}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-1 mt-0.5">
+                            {formatNotificationBody(n.body, n.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
+            <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => navigate('/playback')}
+                className="w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Video size={13} />
+                <span>{t('home.viewAllEvents')}</span>
+              </button>
+            </div>
           </div>
 
         </div>
 
-        {/* ── Tier 3: 100% Genuine Microservice Cluster Telemetry ────────── */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Server size={18} className="text-emerald-500" />
-              <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
-                {t('home.servicesHealth')}
-              </h3>
-            </div>
-            
-            {nvrStatus?.system && (
-              <div className="flex items-center gap-3 text-xs font-mono text-slate-500 dark:text-slate-400">
-                <span>CPU: {nvrStatus.system.cpu_usage_percent?.toFixed(1) || 0}%</span>
-                <span>•</span>
-                <span>RAM: {nvrStatus.system.memory_alloc_mb?.toFixed(0) || 0} MB</span>
-                <span>•</span>
-                <span>Uptime: {formatUptime(nvrStatus.system.uptime_seconds)}</span>
-                <span>•</span>
-                <span>{nvrStatus.system.goroutines || 0} goroutines</span>
+        {/* ── Section 5: Admin Quick Operations Hub (Full Width Ribbon) ──── */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 sm:p-6">
+          <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 mb-3.5 flex items-center gap-2">
+            <Sliders size={16} className="text-orange-500" />
+            {t('home.quickActions')}
+          </h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <button
+              onClick={() => navigate('/devices')}
+              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-orange-50 dark:hover:bg-orange-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-800/60 transition-all text-left group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <Plus size={16} />
               </div>
-            )}
-          </div>
-
-          {/* Genuine Measured Health Pills with exact ping in ms */}
-          <div className="flex items-center gap-2.5 flex-wrap text-xs font-semibold">
-            {/* Gateway */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  serviceHealth.gateway.status === 'healthy'
-                    ? 'bg-emerald-500'
-                    : serviceHealth.gateway.status === 'degraded'
-                      ? 'bg-amber-500'
-                      : 'bg-rose-500'
-                }`}
-              />
-              <span>{t('home.gateway')} (:8088)</span>
-              <span className="font-mono text-[10px] text-slate-400">{serviceHealth.gateway.pingMs}ms</span>
-            </div>
-
-            {/* Core Service */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  serviceHealth.core.status === 'healthy'
-                    ? 'bg-emerald-500'
-                    : serviceHealth.core.status === 'degraded'
-                      ? 'bg-amber-500'
-                      : 'bg-rose-500'
-                }`}
-              />
-              <span>{t('home.coreService')}</span>
-              <span className="font-mono text-[10px] text-slate-400">{serviceHealth.core.pingMs}ms</span>
-            </div>
-
-            {/* Auth Service */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  serviceHealth.auth.status === 'healthy'
-                    ? 'bg-emerald-500'
-                    : serviceHealth.auth.status === 'degraded'
-                      ? 'bg-amber-500'
-                      : 'bg-rose-500'
-                }`}
-              />
-              <span>{t('home.authService')}</span>
-              <span className="font-mono text-[10px] text-slate-400">{serviceHealth.auth.pingMs}ms</span>
-            </div>
-
-            {/* Pool Service */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  serviceHealth.pool.status === 'healthy'
-                    ? 'bg-emerald-500'
-                    : serviceHealth.pool.status === 'degraded'
-                      ? 'bg-amber-500'
-                      : 'bg-rose-500'
-                }`}
-              />
-              <span>{t('home.poolService')}</span>
-              <span className="font-mono text-[10px] text-slate-400">{serviceHealth.pool.pingMs}ms</span>
-            </div>
-
-            {/* NVR Engine */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  serviceHealth.nvr.status === 'healthy'
-                    ? 'bg-emerald-500'
-                    : serviceHealth.nvr.status === 'degraded'
-                      ? 'bg-amber-500'
-                      : 'bg-rose-500'
-                }`}
-              />
-              <span>{t('home.nvrService')}</span>
-              <span className="font-mono text-[10px] text-slate-400">{serviceHealth.nvr.pingMs}ms</span>
-            </div>
-
-            {/* WebRTC (go2rtc) */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span className={`w-2 h-2 rounded-full ${poolStatus ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-              <span>{t('home.webrtcService')} (:8555)</span>
-              <span className="font-mono text-[10px] text-slate-400">
-                {poolStatus ? `${poolStatus.total_live_streams || 0} streams` : 'idle'}
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                {t('home.actionAddCamera')}
               </span>
-            </div>
+            </button>
 
-            {/* Vision YOLO */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span className={`w-2 h-2 rounded-full ${cvStreams > 0 ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-              <span>{t('home.visionService')}</span>
-              <span className="font-mono text-[10px] text-slate-400">
-                {cvStreams > 0 ? `${cvStreams} active` : 'standby'}
+            <button
+              onClick={() => navigate('/members')}
+              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-800/60 transition-all text-left group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <Users size={16} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                {t('home.actionManageMembers')}
               </span>
-            </div>
+            </button>
 
-            {/* Relay Socket.IO */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span className={`w-2 h-2 rounded-full ${isSocketConnected ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-              <span>{t('home.relayService')}</span>
-              <span className="font-mono text-[10px] text-slate-400">{socketStatus}</span>
-            </div>
+            <button
+              onClick={() => navigate('/recorder')}
+              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800/60 transition-all text-left group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <HardDrive size={16} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                {t('home.actionNvrSettings')}
+              </span>
+            </button>
 
-            {/* PostgreSQL + Vector */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-slate-700 dark:text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <Database size={13} className="text-emerald-500" />
-              <span>{t('home.dbService')}</span>
-              <span className="font-mono text-[10px] text-slate-400">connected</span>
-            </div>
+            <button
+              onClick={() => navigate('/app-configs')}
+              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-all text-left group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <FileShield size={16} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                {t('home.actionAppConfigs')}
+              </span>
+            </button>
+
+            <button
+              onClick={() => navigate('/users')}
+              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-purple-200 dark:hover:border-purple-800/60 transition-all text-left group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <UserCog size={16} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                {t('home.actionManageUsers')}
+              </span>
+            </button>
+
+            <button
+              onClick={() => navigate('/pool')}
+              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-cyan-200 dark:hover:border-cyan-800/60 transition-all text-left group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-cyan-100 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <Layers size={16} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                {t('home.actionViewPool')}
+              </span>
+            </button>
           </div>
         </div>
+
+
 
       </div>
     </div>
