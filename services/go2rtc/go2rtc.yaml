@@ -41,3 +41,39 @@ streams:
     - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
   cam_XbXVEFntLOe5bNHVUtm3R:
     - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_1879HuMucA6NnJT5n1p0q_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_oZ4MQQucLz8xB9ohKcnby_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_rXxWiTEcPaO-6apLYkiFZ_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_iB8MbbQpKFigznv5MZVLX_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_eNhLTEz3SKu77QB-x-zZq_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_OpXKVxVQQd2wipzH1JuwW_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_TU4eJdsy-9TQUGcyTcFbw_live_2:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_eNhLTEz3SKu77QB-x-zZq_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_rXxWiTEcPaO-6apLYkiFZ_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_iB8MbbQpKFigznv5MZVLX_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_1879HuMucA6NnJT5n1p0q_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_OpXKVxVQQd2wipzH1JuwW_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_oZ4MQQucLz8xB9ohKcnby_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_TU4eJdsy-9TQUGcyTcFbw_live_3:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_iB8MbbQpKFigznv5MZVLX_live_4:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_OpXKVxVQQd2wipzH1JuwW_live_4:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_eNhLTEz3SKu77QB-x-zZq_live_4:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
+  cam_1879HuMucA6NnJT5n1p0q_live_4:
+    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
