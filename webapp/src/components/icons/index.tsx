@@ -1,5 +1,43 @@
 import { createFaIcon, type IconProps } from './factory';
 export type { IconProps };
+// ── Font Awesome 7 Classic Regular Icons ─────────────────────────────────────
+import {
+  faBell,
+  faCalendarDays,
+  faCamera,
+  faCircleCheck,
+  faCircleDot,
+  faCircleQuestion,
+  faCircleUser,
+  faClock,
+  faClone,
+  faCloud,
+  faComment,
+  faCopy,
+  faEnvelope,
+  faEye,
+  faEyeSlash,
+  faFile,
+  faFileCode,
+  faFolder,
+  faFolderOpen,
+  faHandshake,
+  faHardDrive,
+  faHouse,
+  faImage,
+  faImages,
+  faMoon,
+  faPenToSquare,
+  faSquare,
+  faStar,
+  faSun,
+  faTrashCan,
+  faUser,
+  faWindowMaximize,
+  faWindowMinimize,
+} from '@fortawesome/free-regular-svg-icons';
+
+// ── Font Awesome 7 Classic / Stroke Icons (where only available in solid set) ──
 import {
   faChartLine,
   faCircleExclamation,
@@ -9,13 +47,9 @@ import {
   faArrowLeft,
   faArrowRight,
   faBan,
-  faBell,
   faRobot,
-  faCalendarDays,
-  faCamera,
   faCheck,
   faCheckDouble,
-  faCircleCheck,
   faChevronDown,
   faChevronLeft,
   faChevronRight,
@@ -23,15 +57,9 @@ import {
   faAnglesLeft,
   faAnglesRight,
   faUpDown,
-  faClock,
-  faCopy,
   faMicrochip,
   faDatabase,
   faDownload,
-  faPenToSquare,
-  faPen,
-  faEye,
-  faEyeSlash,
   faForward,
   faFilm,
   faFingerprint,
@@ -40,9 +68,6 @@ import {
   faGlobe,
   faTableCellsLarge,
   faGripVertical,
-  faHardDrive,
-  faHandshake,
-  faHouse,
   faCircleInfo,
   faKey,
   faLock,
@@ -68,13 +93,9 @@ import {
   faSliders,
   faMobileScreen,
   faWandMagicSparkles,
-  faSquare,
-  faStar,
   faTable,
-  faTrashCan,
   faTv,
   faUpload,
-  faUser,
   faUserCheck,
   faUserGear,
   faUserXmark,
@@ -87,12 +108,8 @@ import {
   faXmark,
   faBolt,
   faPowerOff,
-  faCloud,
-  faFileCode,
   faQrcode,
   faFileShield,
-  faSun,
-  faMoon,
   faDesktop,
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -158,7 +175,7 @@ export const Menu = createFaIcon(faBars);
 export const Minimize = createFaIcon(faCompress);
 export const Minimize2 = createFaIcon(faCompress);
 export const Pause = createFaIcon(faPause);
-export const Pencil = createFaIcon(faPen);
+export const Pencil = createFaIcon(faPenToSquare);
 export const Play = createFaIcon(faPlay);
 export const Plus = createFaIcon(faPlus);
 export const Power = createFaIcon(faPowerOff);
@@ -200,3 +217,16 @@ export const Sun = createFaIcon(faSun);
 export const Moon = createFaIcon(faMoon);
 export const Monitor = createFaIcon(faDesktop);
 export const Desktop = createFaIcon(faDesktop);
+export const CircleUser = createFaIcon(faCircleUser);
+export const CircleDot = createFaIcon(faCircleDot);
+export const CircleQuestion = createFaIcon(faCircleQuestion);
+export const Clone = createFaIcon(faClone);
+export const Comment = createFaIcon(faComment);
+export const Envelope = createFaIcon(faEnvelope);
+export const File = createFaIcon(faFile);
+export const Folder = createFaIcon(faFolder);
+export const FolderOpen = createFaIcon(faFolderOpen);
+export const Image = createFaIcon(faImage);
+export const Images = createFaIcon(faImages);
+export const WindowMaximize = createFaIcon(faWindowMaximize);
+export const WindowMinimize = createFaIcon(faWindowMinimize);
