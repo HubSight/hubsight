@@ -21,8 +21,16 @@ import {
 } from '@/components/icons';
 import { api } from '../api/client';
 import { isApiError, getErrorMessage, isPasskeySupported } from '@hubsight/sdk';
+import type { User as UserType } from '@hubsight/sdk';
 import { AppFooter } from '../components/AppFooter';
 import { useTheme } from '../context/ThemeContext';
+
+/** Returns the default post-login route based on the user's role and permissions. */
+function getDefaultRoute(user: UserType | null | undefined): string {
+  if (!user) return '/playback';
+  if (user.role === 'admin') return '/';
+  return '/playback';
+}
 
 const Login = () => {
   // Step: 'credentials' or '2fa'
@@ -91,7 +99,7 @@ const Login = () => {
         return;
       }
       await checkAuth();
-      navigate('/devices');
+      navigate(getDefaultRoute(api.auth.getUser()));
     } catch (err) {
       if (isApiError(err)) {
         setError(getErrorMessage(err, t('login.authFailed')));
@@ -115,7 +123,7 @@ const Login = () => {
         recovery_code: useRecoveryCode ? recoveryCode.trim() : undefined,
       });
       await checkAuth();
-      navigate('/devices');
+      navigate(getDefaultRoute(api.auth.getUser()));
     } catch (err) {
       if (isApiError(err)) {
         setError(getErrorMessage(err, t('login.invalid2faCode')));
@@ -141,7 +149,7 @@ const Login = () => {
     try {
       await api.auth.loginWithPasskey(trimmedUser);
       await checkAuth();
-      navigate('/devices');
+      navigate(getDefaultRoute(api.auth.getUser()));
     } catch (err: any) {
       if (err.name === 'NotAllowedError' || err.message?.includes('cancel')) {
         return;

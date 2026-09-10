@@ -369,13 +369,13 @@ const MainLayout = () => {
           <div className="px-5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
             {t('nav.sectionSurveillance')}
           </div>
-          <NavLink to="/multiview" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <LayoutGrid size={18} />
-            {t('nav.multiview')}
-          </NavLink>
           <NavLink to="/playback" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Video size={18} />
             {t('nav.playback')}
+          </NavLink>
+          <NavLink to="/multiview" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <LayoutGrid size={18} />
+            {t('nav.multiview')}
           </NavLink>
 
           {/* Section 2: Quản lý (Management) */}
