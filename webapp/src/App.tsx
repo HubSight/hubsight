@@ -21,6 +21,7 @@ import Clients from './pages/Clients';
 import GoogleServiceAccounts from './pages/GoogleServiceAccounts';
 import AppConfigs from './pages/AppConfigs';
 import Preferences from './pages/Preferences';
+import Home from './pages/Home';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
@@ -67,11 +68,6 @@ const PermissionRoute = ({ children, permission }: { children: ReactNode; permis
   return <>{children}</>;
 };
 
-const IndexRedirect = () => {
-  const { user } = useAuth();
-  return <Navigate to={user?.role === 'viewer' ? '/playback' : '/devices'} replace />;
-};
-
 const App = () => {
   return (
     <I18nProvider>
@@ -93,7 +89,14 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     >
-                      <Route index element={<IndexRedirect />} />
+                      <Route
+                        index
+                        element={
+                          <AdminRoute>
+                            <Home />
+                          </AdminRoute>
+                        }
+                      />
                       <Route
                         path="devices"
                         element={

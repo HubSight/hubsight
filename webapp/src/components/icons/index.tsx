@@ -41,6 +41,7 @@ import {
   faGripVertical,
   faHardDrive,
   faHandshake,
+  faHouse,
   faCircleInfo,
   faKey,
   faLock,
@@ -140,6 +141,8 @@ export const Grid2X2 = createFaIcon(faTableCellsLarge);
 export const GripVertical = createFaIcon(faGripVertical);
 export const HardDrive = createFaIcon(faHardDrive);
 export const HeartHandshake = createFaIcon(faHandshake);
+export const House = createFaIcon(faHouse);
+export const HomeIcon = createFaIcon(faHouse);
 export const Info = createFaIcon(faCircleInfo);
 export const KeyRound = createFaIcon(faKey);
 export const Layers = createFaIcon(faLayerGroup);

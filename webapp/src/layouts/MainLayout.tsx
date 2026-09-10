@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield, Sun, Moon, Monitor, Sliders } from '@/components/icons';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield, Sun, Moon, Monitor, Sliders, Gauge } from '@/components/icons';
 import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
@@ -108,7 +108,7 @@ const MainLayout = () => {
       {/* Mobile Header (In flex-flow on mobile: shrink-0, hidden on desktop) */}
       <header className="md:hidden shrink-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 z-30 pt-[env(safe-area-inset-top)] shadow-xs">
         <div className="h-14 flex items-center justify-between px-4">
-          <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
+          <NavLink to={user?.role === 'admin' ? '/' : '/playback'} className="flex items-center gap-2.5 no-underline group cursor-pointer">
             <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
               <Camera size={18} />
             </div>
@@ -171,7 +171,7 @@ const MainLayout = () => {
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
       `}>
         <div className="flex items-center justify-between px-4 pt-2 pb-1 md:pt-0 mb-2">
-          <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
+          <NavLink to={user?.role === 'admin' ? '/' : '/playback'} className="flex items-center gap-2.5 no-underline group cursor-pointer">
             <div className="w-8 h-8 rounded-md bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
               <Camera size={18} />
             </div>
@@ -350,6 +350,21 @@ const MainLayout = () => {
         </div>
 
         <nav className="flex-1 flex flex-col overflow-y-auto custom-scrollbar space-y-0.5 pb-2">
+          {/* Admin Dashboard */}
+          {user?.role === 'admin' && (
+            <div className="mb-1">
+              <NavLink
+                to="/"
+                end
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              >
+                <Gauge size={18} />
+                {t('nav.home')}
+              </NavLink>
+            </div>
+          )}
+
           {/* Section 1: Giám sát (Surveillance) */}
           <div className="px-5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
             {t('nav.sectionSurveillance')}
