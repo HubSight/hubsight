@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield, Sun, Moon, Monitor, Sliders, Gauge } from '@/components/icons';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, FileShield, Sun, Moon, Monitor, Sliders, House, Google } from '@/components/icons';
 import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
@@ -359,7 +359,7 @@ const MainLayout = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
               >
-                <Gauge size={18} />
+                <House size={18} />
                 {t('nav.home')}
               </NavLink>
             </div>
@@ -438,7 +438,7 @@ const MainLayout = () => {
               )}
               {(user?.role === 'admin' || user?.permissions?.includes('service_accounts:manage') || user?.permissions?.includes('*')) && (
                 <NavLink to="/service-accounts" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  <Cloud size={18} />
+                  <Google size={18} />
                   {t('nav.serviceAccounts')}
                 </NavLink>
               )}

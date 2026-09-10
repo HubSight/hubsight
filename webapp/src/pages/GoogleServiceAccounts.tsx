@@ -3,7 +3,7 @@ import { useTranslation } from '../i18n';
 import { api } from '../api/client';
 import type { GoogleServiceAccount } from '@hubsight/sdk';
 import {
-  Cloud,
+  Google,
   Plus,
   Search,
   CheckCircle2,
@@ -274,7 +274,7 @@ export const GoogleServiceAccounts: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/70 dark:border-orange-800/70 flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-2xs shrink-0">
-            <Cloud size={22} />
+            <Google size={22} />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
@@ -305,7 +305,7 @@ export const GoogleServiceAccounts: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 my-6">
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 shrink-0">
-            <Cloud size={18} />
+            <Google size={18} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('serviceAccounts.total')}</p>
@@ -393,7 +393,7 @@ export const GoogleServiceAccounts: React.FC = () => {
       ) : filteredAccounts.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center">
           <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-3">
-            <Cloud size={28} />
+            <Google size={28} />
           </div>
           <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
             {search ? t('serviceAccounts.noFiltered') : t('serviceAccounts.noAccounts')}
@@ -440,7 +440,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-xs shrink-0 border border-orange-100 dark:border-orange-900/50">
-                            <Cloud size={15} />
+                            <Google size={15} />
                           </div>
                           <div className="min-w-0 flex flex-col gap-1">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -584,7 +584,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-900/50 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-sm shrink-0">
-                      <Cloud size={18} />
+                      <Google size={18} />
                     </div>
                     <div>
                       <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">
@@ -676,7 +676,7 @@ export const GoogleServiceAccounts: React.FC = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-800/80 text-orange-600 dark:text-orange-400 flex items-center justify-center shadow-2xs">
-                  <Cloud size={18} />
+                  <Google size={18} />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
@@ -903,7 +903,7 @@ export const GoogleServiceAccounts: React.FC = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-                  <Cloud size={18} />
+                  <Google size={18} />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">

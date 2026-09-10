@@ -1,5 +1,9 @@
 import { createFaIcon, type IconProps } from './factory';
 export type { IconProps };
+
+// ── Font Awesome 7 Brands Icons ─────────────────────────────────────────────
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+
 // ── Font Awesome 7 Classic Regular Icons ─────────────────────────────────────
 import {
   faBell,
@@ -156,6 +160,7 @@ export const Fingerprint = createFaIcon(faFingerprint);
 export const Flame = createFaIcon(faFire);
 export const Gauge = createFaIcon(faGaugeHigh);
 export const Globe = createFaIcon(faGlobe);
+export const Google = createFaIcon(faGoogle);
 export const Grid2X2 = createFaIcon(faTableCellsLarge);
 export const GripVertical = createFaIcon(faGripVertical);
 export const HardDrive = createFaIcon(faHardDrive);

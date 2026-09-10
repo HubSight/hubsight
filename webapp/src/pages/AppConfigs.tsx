@@ -23,6 +23,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Cloud,
+  Google,
   Shield,
   ArrowRight,
   ArrowLeft,
@@ -578,7 +579,7 @@ export const AppConfigs: React.FC = () => {
                       <td className="py-3.5 px-5 whitespace-nowrap">
                         {cfg.project_id ? (
                           <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-mono shrink-0 whitespace-nowrap">
-                            <Cloud size={12} className="text-orange-600 dark:text-orange-400 shrink-0" />
+                            <Google size={12} className="text-orange-600 dark:text-orange-400 shrink-0" />
                             <span>{cfg.project_id}</span>
                           </div>
                         ) : (
@@ -901,7 +902,7 @@ export const AppConfigs: React.FC = () => {
                   <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                        <Cloud size={14} className="text-orange-600 dark:text-orange-400" />
+                        <Google size={14} className="text-orange-600 dark:text-orange-400" />
                         {t('appConfigs.firebaseAppsStatus')}
                       </span>
                       {preflightLoading && <RotateCw size={13} className="animate-spin text-orange-600 dark:text-orange-400" />}
