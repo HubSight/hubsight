@@ -5,6 +5,7 @@ import {
   faCircleExclamation,
   faTriangleExclamation,
   faArrowDown,
+  faArrowDownAZ,
   faArrowLeft,
   faArrowRight,
   faBan,
@@ -101,6 +102,7 @@ export const Activity = createFaIcon(faChartLine);
 export const AlertCircle = createFaIcon(faCircleExclamation);
 export const AlertTriangle = createFaIcon(faTriangleExclamation);
 export const ArrowDown = createFaIcon(faArrowDown);
+export const ArrowDownAZ = createFaIcon(faArrowDownAZ);
 export const ArrowLeft = createFaIcon(faArrowLeft);
 export const ArrowRight = createFaIcon(faArrowRight);
 export const Ban = createFaIcon(faBan);

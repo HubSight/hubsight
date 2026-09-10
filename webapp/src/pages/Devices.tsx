@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, Video } from '@/components/icons';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Camera, Video, Search, X, ArrowDownAZ } from '@/components/icons';
 import { api } from '../api/client';
 import type { DeviceType, DeviceFormData } from '../types/device';
 import { DeviceCard } from '../components/device/DeviceCard';
@@ -9,6 +9,7 @@ import { AddDeviceSplitButton } from '../components/device/AddDeviceSplitButton'
 import { BRAND_PRESETS, parseRtspUrl } from '../constants/devicePresets';
 import { useTranslation } from '../i18n';
 import { DevicesSkeleton } from '../components/common/Skeleton';
+import { Pagination } from '../components/common/Pagination';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
@@ -51,6 +52,56 @@ const Devices = () => {
   const [pendingStopId, setPendingStopId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
+
+  // Search, Sort & Pagination
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState<'name_asc' | 'name_desc' | 'created_desc' | 'created_asc'>('name_asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
+
+  // Filtered devices by search query
+  const filteredDevices = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return devices;
+    return devices.filter((d) =>
+      d.name.toLowerCase().includes(q) ||
+      (d.brand && d.brand.toLowerCase().includes(q)) ||
+      (d.host && d.host.toLowerCase().includes(q)) ||
+      (d.id && d.id.toLowerCase().includes(q))
+    );
+  }, [devices, searchQuery]);
+
+  // Sorted devices
+  const sortedDevices = useMemo(() => {
+    const list = [...filteredDevices];
+    switch (sortOption) {
+      case 'name_asc':
+        return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      case 'name_desc':
+        return list.sort((a, b) => b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' }));
+      case 'created_desc':
+        return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      case 'created_asc':
+        return list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      default:
+        return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    }
+  }, [filteredDevices, sortOption]);
+
+  const totalPages = Math.ceil(sortedDevices.length / pageSize) || 1;
+
+  // Clamp page if item count shrinks
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  // Paginated slice
+  const paginatedDevices = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sortedDevices.slice(start, start + pageSize);
+  }, [sortedDevices, currentPage, pageSize]);
 
   const fetchDevices = async () => {
     try {
@@ -319,7 +370,7 @@ const Devices = () => {
               </h1>
               {devices.length > 0 && (
                 <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  {devices.length}
+                  {searchQuery ? `${filteredDevices.length}/${devices.length}` : devices.length}
                 </span>
               )}
             </div>
@@ -335,6 +386,60 @@ const Devices = () => {
           onScan={() => setShowScan(true)}
         />
       </div>
+
+      {/* Search & Sort Toolbar */}
+      {devices.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-5 sm:mb-6 bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
+          {/* Search Box */}
+          <div className="relative flex-1 max-w-md">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder={t('devices.searchPlaceholder')}
+              className="w-full pl-9 pr-9 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
+                title={t('devices.clearSearch')}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700 rounded-xl px-3 py-1.5">
+              <ArrowDownAZ size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+              <span className="text-[11px] text-slate-400 font-medium hidden md:inline">{t('devices.sortBy')}</span>
+              <select
+                value={sortOption}
+                onChange={(e) => {
+                  setSortOption(e.target.value as any);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="name_asc" className="dark:bg-slate-900 dark:text-slate-200">{t('devices.sortNameAsc')}</option>
+                <option value="name_desc" className="dark:bg-slate-900 dark:text-slate-200">{t('devices.sortNameDesc')}</option>
+                <option value="created_desc" className="dark:bg-slate-900 dark:text-slate-200">{t('devices.sortNewest')}</option>
+                <option value="created_asc" className="dark:bg-slate-900 dark:text-slate-200">{t('devices.sortOldest')}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Device Content Area */}
       <div className="flex-1 flex flex-col w-full">
@@ -392,23 +497,63 @@ const Devices = () => {
               </div>
             </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 min-[960px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 pb-6">
-            {devices.map((dev) => (
-              <DeviceCard
-                key={dev.id}
-                device={dev}
-                onEdit={handleOpenModal}
-                onClone={handleCloneDevice}
-                onDelete={handleDeleteDevice}
-                onStop={handleStopDevice}
-                onStart={handleStartDevice}
-                onRestart={handleRestartDevice}
-                isToggling={togglingId === dev.id}
-                isCloning={cloningId === dev.id}
-              />
-            ))}
+        ) : filteredDevices.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+              <Search size={22} />
+            </div>
+            <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">
+              {t('devices.noSearchResults')} &ldquo;{searchQuery}&rdquo;
+            </h4>
+            <p className="text-xs text-slate-400 max-w-sm mb-4">
+              {t('devices.noSearchSubtitle')}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer"
+            >
+              {t('devices.clearSearch')}
+            </button>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 min-[960px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 pb-5">
+              {paginatedDevices.map((dev) => (
+                <DeviceCard
+                  key={dev.id}
+                  device={dev}
+                  onEdit={handleOpenModal}
+                  onClone={handleCloneDevice}
+                  onDelete={handleDeleteDevice}
+                  onStop={handleStopDevice}
+                  onStart={handleStartDevice}
+                  onRestart={handleRestartDevice}
+                  isToggling={togglingId === dev.id}
+                  isCloning={cloningId === dev.id}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Component */}
+            <div className="pb-6">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredDevices.length}
+                pageSize={pageSize}
+                pageSizeOptions={[8, 12, 24, 48]}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                itemLabel={t('devices.deviceLabel')}
+              />
+            </div>
+          </>
         )}
       </div>
 

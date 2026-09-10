@@ -10,6 +10,7 @@ interface PaginationProps {
   onPageSizeChange?: (pageSize: number) => void;
   pageSizeOptions?: number[];
   className?: string;
+  itemLabel?: string;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -20,6 +21,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   onPageSizeChange,
   pageSizeOptions = [10, 20, 50],
   className = '',
+  itemLabel,
 }) => {
   const { t } = useTranslation();
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
@@ -55,7 +57,9 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* Left: Summary text & Page Size Selector */}
       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
         <span className="font-medium text-slate-600 dark:text-slate-300">
-          {t('pagination.showing', { start: startItem, end: endItem, total: totalItems })}
+          {itemLabel
+            ? t('pagination.showingWithLabel', { start: startItem, end: endItem, total: totalItems, label: itemLabel })
+            : t('pagination.showing', { start: startItem, end: endItem, total: totalItems })}
         </span>
 
         {onPageSizeChange && (
