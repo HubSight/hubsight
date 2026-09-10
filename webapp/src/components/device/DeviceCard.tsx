@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Play, Square, Trash2, RotateCw, Copy, Check } from '@/components/icons';
+import { Pencil, Play, Square, Trash2, RotateCw, Copy, Check, Loader2 } from '@/components/icons';
 import type { DeviceType } from '../../types/device';
 import { BRAND_PRESETS, getBrandBadgeColor } from '../../constants/devicePresets';
 import { useTranslation } from '../../i18n';
@@ -7,21 +7,25 @@ import { useTranslation } from '../../i18n';
 export interface DeviceCardProps {
   device: DeviceType;
   onEdit: (device: DeviceType) => void;
+  onClone: (device: DeviceType) => void;
   onDelete: (id: string) => void;
   onStop: (device: DeviceType) => void;
   onStart: (device: DeviceType) => void;
   onRestart: (device: DeviceType) => void;
   isToggling?: boolean;
+  isCloning?: boolean;
 }
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({
   device,
   onEdit,
+  onClone,
   onDelete,
   onStop,
   onStart,
   onRestart,
   isToggling = false,
+  isCloning = false,
 }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -106,6 +110,17 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
               aria-label={t('devices.editDevice')}
             >
               <Pencil size={14} />
+            </button>
+            <button
+              onClick={() => onClone(device)}
+              disabled={isCloning}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-violet-600 hover:bg-white dark:hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+              title={t('devices.cloneDevice')}
+              aria-label={t('devices.cloneDevice')}
+            >
+              {isCloning
+                ? <Loader2 size={13} className="animate-spin" />
+                : <Copy size={13} />}
             </button>
             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" />
             <button

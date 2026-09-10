@@ -519,6 +519,7 @@ const vi = {
   'devices.stopDevice': 'Tắt camera',
   'devices.startDevice': 'Bật camera',
   'devices.restartDevice': 'Khởi động lại stream',
+  'devices.cloneDevice': 'Nhân bản thiết bị',
   'devices.stoppedBadge': 'Đã tắt',
   'devices.confirmStopTitle': 'Tắt camera này?',
   'devices.confirmStop': 'Mọi kết nối live, NVR và AI của camera sẽ đóng ngay. Camera không bị xoá — bạn có thể bật lại bất cứ lúc nào.',

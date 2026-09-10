@@ -50,6 +50,7 @@ const Devices = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [pendingStopId, setPendingStopId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
 
   const fetchDevices = async () => {
     try {
@@ -260,6 +261,34 @@ const Devices = () => {
     }
   };
 
+  const handleCloneDevice = async (dev: DeviceType) => {
+    try {
+      setCloningId(dev.id);
+      await api.cameras.create({
+        name: `Copy ${dev.name}`,
+        host: dev.host,
+        brand: dev.brand || 'generic',
+        rtsp_port: dev.rtsp_port || 554,
+        rtsp_transport: dev.rtsp_transport || 'tcp',
+        segment_duration: dev.segment_duration || 1800,
+        video_codec: dev.video_codec || 'copy',
+        audio_mode: dev.audio_mode || 'auto',
+        extra_args: dev.extra_args || '',
+        is_active: false,          // start stopped — operator can Start manually
+        enable_ai: dev.enable_ai || false,
+        show_bbox: dev.show_bbox !== false,
+        nvr_mode: dev.nvr_mode || 'event',
+        record_quality: dev.record_quality || 'standard',
+      });
+      fetchDevices();
+    } catch (err) {
+      console.error('Failed to clone device', err);
+      setError(t('common.errorOccurred'));
+    } finally {
+      setCloningId(null);
+    }
+  };
+
   const executeDeleteDevice = async () => {
     if (!pendingDeleteId) return;
     try {
@@ -370,11 +399,13 @@ const Devices = () => {
                 key={dev.id}
                 device={dev}
                 onEdit={handleOpenModal}
+                onClone={handleCloneDevice}
                 onDelete={handleDeleteDevice}
                 onStop={handleStopDevice}
                 onStart={handleStartDevice}
                 onRestart={handleRestartDevice}
                 isToggling={togglingId === dev.id}
+                isCloning={cloningId === dev.id}
               />
             ))}
           </div>
