@@ -453,8 +453,8 @@ export const Home: React.FC = () => {
   const waveSvgPath = useMemo(() => {
     if (telemetryHistory.length < 2) return { line: '', area: '' };
 
-    const width = 600;
-    const height = 140;
+    const width = 900;
+    const height = 180;
     const padding = 12;
     const plotW = width - padding * 2;
     const plotH = height - padding * 2;
@@ -497,8 +497,8 @@ export const Home: React.FC = () => {
   }, [telemetryHistory, activeTelemetryTab]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 lg:p-8 space-y-6 w-full">
+      <div className="w-full space-y-6">
 
         {/* ── Top Header & Operations Ribbon ─────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900/90 p-5 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs backdrop-blur-md">
@@ -833,13 +833,13 @@ export const Home: React.FC = () => {
               </div>
 
               {/* Wave SVG Chart Canvas */}
-              <div className="mt-3 relative w-full h-36 flex items-center justify-center">
+              <div className="mt-3 relative w-full h-44 sm:h-52 flex items-center justify-center">
                 {telemetryHistory.length < 2 ? (
                   <div className="text-xs text-slate-400 animate-pulse">
                     Đang thu thập mẫu đo đạc thời gian thực...
                   </div>
                 ) : (
-                  <svg viewBox="0 0 600 140" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                  <svg viewBox="0 0 900 180" className="w-full h-full overflow-visible" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
@@ -856,9 +856,9 @@ export const Home: React.FC = () => {
                     </defs>
 
                     {/* Subtle Grid Guidelines */}
-                    <line x1="0" y1="20" x2="600" y2="20" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
-                    <line x1="0" y1="70" x2="600" y2="70" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
-                    <line x1="0" y1="120" x2="600" y2="120" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" />
+                    <line x1="0" y1="30" x2="900" y2="30" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
+                    <line x1="0" y1="90" x2="900" y2="90" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
+                    <line x1="0" y1="150" x2="900" y2="150" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" />
 
                     {/* Filled Area */}
                     <path
@@ -1063,8 +1063,8 @@ export const Home: React.FC = () => {
               </div>
 
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {[1, 2].map((i) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
+                  {[1, 2, 3].map((i) => (
                     <div key={i} className="h-36 bg-slate-100 dark:bg-slate-800/60 rounded-2xl animate-pulse" />
                   ))}
                 </div>
@@ -1082,7 +1082,7 @@ export const Home: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
                   {cameras.map((cam) => {
                     const isLive = cam.is_active && !cam.is_stopped;
                     const viewersCount = cameraViewersMap.get(cam.id) || 0;
