@@ -218,8 +218,8 @@ export const Preferences: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
       {/* ── TOP HEADER ── */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-8 pt-4 sm:pt-6 pb-4 shrink-0">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 pb-4 shrink-0">
+        <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-2xs">
               <Sliders size={22} />
@@ -277,8 +277,8 @@ export const Preferences: React.FC = () => {
       </div>
 
       {/* ── HORIZONTAL NAVIGATION TABS BAR (TOP LEVEL) ── */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-8 shadow-2xs shrink-0">
-        <div className="max-w-5xl mx-auto flex items-center gap-2 sm:gap-4 overflow-x-auto scrollbar-none py-1.5">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 md:px-8 shadow-2xs shrink-0">
+        <div className="w-full flex items-center gap-2 sm:gap-4 overflow-x-auto scrollbar-none py-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -310,8 +310,8 @@ export const Preferences: React.FC = () => {
       </div>
 
       {/* ── MAIN CONTENT AREA (FULL-WIDTH BALANCED CONTAINER) ── */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
-        <div className="max-w-5xl mx-auto pb-16">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar">
+        <div className="w-full pb-16">
           {/* ══════════════════════════════════════════════════════════════════
               TAB 1: PROFILE & ACCOUNT
              ══════════════════════════════════════════════════════════════════ */}
@@ -349,7 +349,7 @@ export const Preferences: React.FC = () => {
                 </div>
 
                 {/* Profile Metadata Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                   {/* User ID */}
                   <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800/60">
                     <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
@@ -436,7 +436,7 @@ export const Preferences: React.FC = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleChangePassword} className="space-y-4 max-w-xl">
+                <form onSubmit={handleChangePassword} className="space-y-4 max-w-2xl">
                   {/* Old Password */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
