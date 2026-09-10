@@ -235,7 +235,7 @@ export const Users: React.FC = () => {
             <span className="text-sm font-medium">{t('loading')}</span>
           </div>
         ) : (
-          <div className="space-y-4 max-w-6xl mx-auto">
+          <div className="space-y-4 w-full">
             {/* Search toolbar */}
             <div className="flex items-center justify-between gap-3">
               <div className="relative flex-1 max-w-md">

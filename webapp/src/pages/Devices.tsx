@@ -278,7 +278,7 @@ const Devices = () => {
   return (
     <PullToRefresh onRefresh={fetchDevices} className="p-4 sm:p-6 md:p-8 h-full flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-5 sm:mb-6 md:mb-8 gap-3 max-w-7xl w-full mx-auto">
+      <div className="flex justify-between items-center mb-5 sm:mb-6 md:mb-8 gap-3 w-full">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-sm">
             <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -308,7 +308,7 @@ const Devices = () => {
       </div>
 
       {/* Device Content Area */}
-      <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex flex-col w-full">
         {isLoading ? (
           <DevicesSkeleton />
         ) : devices.length === 0 ? (
@@ -364,7 +364,7 @@ const Devices = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 min-[960px]:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-5 pb-6">
+          <div className="grid grid-cols-1 min-[960px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 pb-6">
             {devices.map((dev) => (
               <DeviceCard
                 key={dev.id}

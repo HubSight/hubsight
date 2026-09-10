@@ -111,7 +111,7 @@ const Members: React.FC = () => {
 
   return (
     <PullToRefresh onRefresh={fetchMembers} className="h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-y-auto">
-      <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+      <div className="w-full p-4 md:p-6 lg:p-8 space-y-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
           <div>
@@ -231,14 +231,14 @@ const Members: React.FC = () => {
 
         {/* Members Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="h-44 bg-white/70 dark:bg-slate-800/70 rounded-2xl animate-pulse border border-slate-200 dark:border-slate-700" />
             ))}
           </div>
         ) : members.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
               {members.map((member) => (
                 <MemberCard
                   key={member.id}

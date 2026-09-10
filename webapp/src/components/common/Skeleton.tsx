@@ -54,8 +54,8 @@ export const DeviceCardSkeleton: React.FC = () => {
 
 export const DevicesSkeleton: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in">
-      {Array.from({ length: 6 }).map((_, index) => (
+    <div className="grid grid-cols-1 min-[960px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 animate-fade-in">
+      {Array.from({ length: 8 }).map((_, index) => (
         <DeviceCardSkeleton key={index} />
       ))}
     </div>

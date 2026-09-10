@@ -261,7 +261,7 @@ export const Roles: React.FC = () => {
             <span className="text-sm font-medium">{t('loading')}</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
             {/* Left Column: Roles list */}
             <div className="lg:col-span-4 space-y-3">
               <div className="flex items-center justify-between px-1">
@@ -388,7 +388,7 @@ export const Roles: React.FC = () => {
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                               {perms.map((perm) => {
                                 const checked = selectedRolePermIds.has(perm.id);
                                 return (
