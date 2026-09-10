@@ -289,7 +289,7 @@ const Devices = () => {
                 {t('devices.title')}
               </h1>
               {devices.length > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                   {devices.length}
                 </span>
               )}

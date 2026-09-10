@@ -228,7 +228,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                       </p>
                     </div>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 self-start sm:self-auto ${
+                      className={`px-3 py-1 rounded text-xs font-bold shrink-0 self-start sm:self-auto ${
                         user?.two_factor_enabled
                           ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/50'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
@@ -393,7 +393,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                           <Monitor size={16} />
                         </div>
                         {theme === 'system' && (
-                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded">
                             Active
                           </span>
                         )}
@@ -421,7 +421,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                           <Sun size={16} />
                         </div>
                         {theme === 'light' && (
-                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded">
                             Active
                           </span>
                         )}
@@ -449,7 +449,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
                           <Moon size={16} />
                         </div>
                         {theme === 'dark' && (
-                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 rounded">
                             Active
                           </span>
                         )}

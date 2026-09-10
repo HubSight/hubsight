@@ -6,6 +6,18 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    borderRadius: {
+      'none': '0px',
+      'xs': '2px',
+      'sm': '2px',
+      DEFAULT: '3px',
+      'md': '4px',
+      'lg': '4px',
+      'xl': '5px',
+      '2xl': '6px',
+      '3xl': '6px',
+      'full': '9999px',
+    },
     extend: {
       colors: {
         slate: {

@@ -127,7 +127,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
               <span className="font-bold text-sm sm:text-base tracking-tight text-white">
                 {t('timeline.title')}
               </span>
-              <span className="flex items-center gap-1 text-xs bg-slate-800 text-slate-300 font-mono px-2.5 py-0.5 rounded-full border border-slate-700 shadow-sm">
+              <span className="flex items-center gap-1 text-xs bg-slate-800 text-slate-300 font-mono px-2.5 py-0.5 rounded border border-slate-700 shadow-sm">
                 <Calendar size={11} className="text-orange-400" />
                 {currentDate}
               </span>

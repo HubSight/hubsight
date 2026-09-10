@@ -222,7 +222,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                 <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   {t('notifications.title')}
                   {unreadCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500 text-white leading-none">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-red-500 text-white leading-none">
                       {unreadCount}
                     </span>
                   )}

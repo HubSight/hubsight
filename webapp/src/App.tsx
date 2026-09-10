@@ -20,6 +20,7 @@ import Roles from './pages/Roles';
 import Clients from './pages/Clients';
 import GoogleServiceAccounts from './pages/GoogleServiceAccounts';
 import AppConfigs from './pages/AppConfigs';
+import Preferences from './pages/Preferences';
 import { AppLoadingSkeleton } from './components/common/Skeleton';
 import { AuthRealtimeWatcher } from './components/auth/AuthRealtimeWatcher';
 import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
@@ -159,14 +160,16 @@ const App = () => {
                           </PermissionRoute>
                         }
                       />
-                      <Route
-                        path="app-configs"
+                      <Route path="app-configs"
                         element={
                           <PermissionRoute permission={["app_configs:manage", "mobile_configs:manage"]}>
                             <AppConfigs />
                           </PermissionRoute>
                         }
                       />
+                      <Route path="preferences" element={<Preferences />} />
+                      <Route path="profile" element={<Navigate to="/preferences" replace />} />
+                      <Route path="settings" element={<Navigate to="/preferences" replace />} />
                       <Route path="mobile-configs" element={<Navigate to="/app-configs" replace />} />
                       <Route path="access" element={<Navigate to="/users" replace />} />
                     </Route>

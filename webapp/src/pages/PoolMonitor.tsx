@@ -70,7 +70,7 @@ export const PoolMonitor = () => {
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
                 {t('pool.title')}
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Active Pool
                 </span>
@@ -194,7 +194,7 @@ export const PoolMonitor = () => {
                             {cam.camera_name}
                           </h3>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${cam.is_active
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${cam.is_active
                               ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                               : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                               }`}
@@ -202,7 +202,7 @@ export const PoolMonitor = () => {
                             {cam.is_active ? 'Online' : 'Disabled'}
                           </span>
                           {cam.enable_ai && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
                               <Sparkles size={10} />
                               AI YOLO & Face
                             </span>
@@ -221,7 +221,7 @@ export const PoolMonitor = () => {
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                           {t('pool.cvSectionTitle')}
                         </span>
-                        <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">
                           Stream #0
                         </span>
                       </div>
@@ -253,7 +253,7 @@ export const PoolMonitor = () => {
                         <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                           {t('pool.nvrSectionTitle')}
                         </span>
-                        <span className="text-[10px] font-bold bg-slate-700 dark:bg-slate-600 text-white px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold bg-slate-700 dark:bg-slate-600 text-white px-2 py-0.5 rounded">
                           Stream #1
                         </span>
                       </div>

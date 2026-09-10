@@ -279,7 +279,7 @@ export const GoogleServiceAccounts: React.FC = () => {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
               {t('serviceAccounts.title')}
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 GCP / Firebase
               </span>
             </h1>
@@ -448,13 +448,13 @@ export const GoogleServiceAccounts: React.FC = () => {
                                 {acc.name || acc.project_id}
                               </span>
                               {acc.is_active && (
-                                <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0 whitespace-nowrap">
+                                <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded inline-flex items-center gap-1 shrink-0 whitespace-nowrap">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                   {t('serviceAccounts.activeBadge')}
                                 </span>
                               )}
                               {acc.client_email.includes('firebase-adminsdk') && (
-                                <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0 whitespace-nowrap" title={t('serviceAccounts.directDownloadTag')}>
+                                <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded inline-flex items-center gap-1 shrink-0 whitespace-nowrap" title={t('serviceAccounts.directDownloadTag')}>
                                   🔥 Firebase Admin SDK
                                 </span>
                               )}
@@ -496,7 +496,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                       {/* Status */}
                       <td className="py-3.5 px-5 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold w-fit border shrink-0 whitespace-nowrap ${
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold w-fit border shrink-0 whitespace-nowrap ${
                             acc.status === 'active'
                               ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                               : acc.status === 'error'
@@ -598,17 +598,17 @@ export const GoogleServiceAccounts: React.FC = () => {
 
                   <div className="flex flex-col items-end gap-1">
                     {acc.is_active && (
-                      <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                      <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded inline-flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         {t('serviceAccounts.activeBadge')}
                       </span>
                     )}
                     {acc.client_email.includes('firebase-adminsdk') && (
-                      <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                      <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded inline-flex items-center gap-1">
                         🔥 Firebase Console
                       </span>
                     )}
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
                       acc.status === 'active'
                         ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                         : acc.status === 'error'
@@ -909,7 +909,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                   <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     {detailAccount.name || detailAccount.project_id}
                     {detailAccount.is_active && (
-                      <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded">
                         {t('serviceAccounts.activeBadge')}
                       </span>
                     )}

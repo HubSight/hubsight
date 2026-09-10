@@ -136,7 +136,7 @@ export const NvrMonitorSkeleton: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-48 rounded" />
-          <Skeleton className="h-5 w-24 rounded-full" />
+          <Skeleton className="h-5 w-24 rounded" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {Array.from({ length: 3 }).map((_, idx) => (
@@ -149,7 +149,7 @@ export const NvrMonitorSkeleton: React.FC = () => {
                   <Skeleton className="w-2.5 h-2.5 rounded-full" />
                   <Skeleton className="h-5 w-32 rounded" />
                 </div>
-                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-16 rounded" />
               </div>
               <Skeleton className="h-10 w-full rounded-lg" />
               <div className="flex justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -168,7 +168,7 @@ export const AppLoadingSkeleton: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 dark:bg-black p-4 select-none">
       <div className="flex flex-col items-center text-center animate-fade-in">
-        <div className="w-20 h-20 rounded-[22px] bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-5">
+        <div className="w-20 h-20 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-5">
           <Camera size={40} />
         </div>
         <h1 className="text-2xl sm:text-[26px] font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-1.5">

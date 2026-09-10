@@ -3,9 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield, Sun, Moon, Monitor } from '@/components/icons';
-import ChangePasswordModal from '../components/ChangePasswordModal';
-import { AppSettingsModal } from '../components/settings/AppSettingsModal';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, Cloud, FileShield, Sun, Moon, Monitor, Sliders } from '@/components/icons';
 import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
@@ -21,8 +19,6 @@ const MainLayout = () => {
   const { t, locale, setLocale } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -174,10 +170,10 @@ const MainLayout = () => {
         ${isMobileMenuOpen ? 'translate-x-0 w-[270px]' : '-translate-x-full w-[270px] md:translate-x-0'}
         ${isSidebarCollapsed ? 'md:w-0 md:min-w-0 md:opacity-0 md:border-none' : 'md:w-[260px] md:min-w-[260px] md:opacity-100'}
       `}>
-        <div className="flex items-center justify-between px-5 pt-2 pb-1 md:pt-0 mb-3 md:mb-4">
+        <div className="flex items-center justify-between px-4 pt-2 pb-1 md:pt-0 mb-2">
           <NavLink to="/" className="flex items-center gap-2.5 no-underline group cursor-pointer">
-            <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
-              <Camera size={20} />
+            <div className="w-8 h-8 rounded-md bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+              <Camera size={18} />
             </div>
             <div>
               <h1 className="font-bold text-base leading-none text-slate-800 dark:text-slate-100 group-hover:text-orange-600 transition-colors">HubSight</h1>
@@ -185,11 +181,172 @@ const MainLayout = () => {
             </div>
           </NavLink>
           <button
-            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="md:hidden p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <X size={22} />
+            <X size={20} />
           </button>
+        </div>
+
+        {/* Top User Workspace & Quick Controls (Linear / Slack pattern) */}
+        <div className="relative px-3 mb-2 shrink-0" ref={userMenuRef}>
+          {/* User Row with Bell Button */}
+          <div className="flex items-center gap-1.5">
+            {/* Profile Button */}
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className={`flex-1 min-w-0 flex items-center gap-2 p-1.5 rounded-md border transition-all text-left cursor-pointer group ${
+                location.pathname === '/preferences'
+                  ? 'bg-orange-50/70 dark:bg-orange-950/40 border-orange-300 dark:border-orange-500/40 shadow-xs'
+                  : isUserMenuOpen
+                  ? 'bg-orange-50/50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/50 shadow-xs'
+                  : 'bg-slate-50/80 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800'
+                }`}
+            >
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${user?.role === 'admin'
+                  ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/40'
+                  : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40'
+                  }`}
+              >
+                <UserIcon size={14} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p
+                  className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight"
+                  title={user?.full_name || user?.username}
+                >
+                  {user?.full_name || user?.username}
+                </p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span
+                    className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider shrink-0 border leading-none ${user?.role === 'admin'
+                      ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50'
+                      : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50'
+                      }`}
+                  >
+                    {user?.role === 'admin' ? t('admin') : t('viewer')}
+                  </span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate">
+                    @{user?.username}
+                  </span>
+                </div>
+              </div>
+              <ChevronsUpDown size={13} className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0 transition-colors" />
+            </button>
+
+            {/* Notification Bell Button */}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setShowNotificationDrawer(true);
+              }}
+              className="relative p-2 rounded-md border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-slate-50/80 dark:bg-slate-800/50 shadow-2xs"
+              title={t('notifications.title')}
+              aria-label={t('notifications.title')}
+            >
+              <Bell size={16} />
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full text-[9px] font-bold bg-red-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-slate-900 leading-none animate-pulse">
+                  {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Language & 3-Way Theme Switcher Bar */}
+          <div className="flex items-center justify-between gap-1 mt-1.5 p-1 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-200/80 dark:border-slate-800">
+            {/* Language Switch */}
+            <button
+              onClick={handleSwitchLocale}
+              className="flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700/70 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+              title={t('lang.switch')}
+            >
+              <Globe size={13} className="text-slate-400 dark:text-slate-400 shrink-0" />
+              <span>{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
+            </button>
+
+            {/* 3-Way Theme Segmented Control */}
+            <div className="flex items-center p-0.5 bg-slate-200/60 dark:bg-slate-900/80 rounded border border-slate-200/80 dark:border-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`p-1 rounded transition-all cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-white dark:bg-slate-800 text-amber-500 shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                title={t('settings.themeLight')}
+                aria-label={t('settings.themeLight')}
+              >
+                <Sun size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`p-1 rounded transition-all cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-white dark:bg-slate-800 text-indigo-400 shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                title={t('settings.themeDark')}
+                aria-label={t('settings.themeDark')}
+              >
+                <Moon size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('system')}
+                className={`p-1 rounded transition-all cursor-pointer ${
+                  theme === 'system'
+                    ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                title={t('settings.themeSystem')}
+                aria-label={t('settings.themeSystem')}
+              >
+                <Monitor size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* User Popover Menu - Opens DOWNWARD */}
+          {isUserMenuOpen && (
+            <div className="absolute top-full left-3 right-3 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-xl dark:shadow-slate-950/60 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                  {user?.full_name || user?.username}
+                </p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono truncate">
+                  @{user?.username} • {user?.role === 'admin' ? t('admin') : t('viewer')}
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  navigate('/preferences');
+                }}
+                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
+              >
+                <Sliders size={14} className="text-orange-600 shrink-0" />
+                <span>{t('nav.preferences')}</span>
+              </button>
+
+              <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-colors cursor-pointer"
+              >
+                <LogOut size={14} className="shrink-0" />
+                <span>{t('nav.logout')}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 flex flex-col overflow-y-auto custom-scrollbar space-y-0.5 pb-2">
@@ -280,178 +437,9 @@ const MainLayout = () => {
           )}
         </nav>
 
-        {/* Sidebar Bottom Footer: Language & Theme Switch + User Profile */}
-        <div className="shrink-0 border-t border-slate-200/90 dark:border-slate-800 pt-2 px-3 pb-1 space-y-1.5 bg-white dark:bg-slate-900">
-          {/* Language & 3-Way Theme Switcher Bar */}
-          <div className="flex items-center justify-between gap-2 p-1 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-            {/* Language Switch */}
-            <button
-              onClick={handleSwitchLocale}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700/70 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
-              title={t('lang.switch')}
-            >
-              <Globe size={14} className="text-slate-400 dark:text-slate-400 shrink-0" />
-              <span>{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
-            </button>
-
-            {/* 3-Way Theme Segmented Control */}
-            <div className="flex items-center p-0.5 bg-slate-200/60 dark:bg-slate-900/80 rounded-xl border border-slate-200/80 dark:border-slate-800 shrink-0">
-              <button
-                type="button"
-                onClick={() => setTheme('light')}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  theme === 'light'
-                    ? 'bg-white dark:bg-slate-800 text-amber-500 shadow-2xs'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-                title={t('settings.themeLight')}
-                aria-label={t('settings.themeLight')}
-              >
-                <Sun size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme('dark')}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  theme === 'dark'
-                    ? 'bg-white dark:bg-slate-800 text-indigo-400 shadow-2xs'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-                title={t('settings.themeDark')}
-                aria-label={t('settings.themeDark')}
-              >
-                <Moon size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme('system')}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  theme === 'system'
-                    ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-2xs'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-                title={t('settings.themeSystem')}
-                aria-label={t('settings.themeSystem')}
-              >
-                <Monitor size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* Compact Bottom User Profile & Actions Popover */}
-          <div className="relative" ref={userMenuRef}>
-            {/* User Popover Menu */}
-            {isUserMenuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-slate-950/60 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
-                    {user?.full_name || user?.username}
-                  </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono truncate">
-                    @{user?.username} • {user?.role === 'admin' ? t('admin') : t('viewer')}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setShowSettingsModal(true);
-                    setIsUserMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-                >
-                  <Shield size={15} className="text-orange-600 shrink-0" />
-                  {t('nav.security')}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowPasswordModal(true);
-                    setIsUserMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-                >
-                  <KeyRound size={15} className="text-slate-500 shrink-0" />
-                  {t('nav.changePassword')}
-                </button>
-
-                <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-
-                <button
-                  onClick={() => {
-                    setIsUserMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
-                >
-                  <LogOut size={15} className="shrink-0" />
-                  {t('nav.logout')}
-                </button>
-              </div>
-            )}
-
-            {/* Interactive User Row with Bell Button next to Profile */}
-            <div className="flex items-center gap-1.5">
-              {/* Profile Button */}
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className={`flex-1 min-w-0 flex items-center gap-2.5 p-2 rounded-xl border transition-all text-left cursor-pointer group ${isUserMenuOpen
-                  ? 'bg-orange-50/50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/50 shadow-xs'
-                  : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent hover:border-slate-200 dark:hover:border-slate-700'
-                  }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold transition-colors ${user?.role === 'admin'
-                    ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/40'
-                    : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40'
-                    }`}
-                >
-                  <UserIcon size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight"
-                    title={user?.full_name || user?.username}
-                  >
-                    {user?.full_name || user?.username}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border leading-none ${user?.role === 'admin'
-                        ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50'
-                        : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50'
-                        }`}
-                    >
-                      {user?.role === 'admin' ? t('admin') : t('viewer')}
-                    </span>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono truncate">
-                      @{user?.username}
-                    </span>
-                  </div>
-                </div>
-                <ChevronsUpDown size={14} className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0 transition-colors" />
-              </button>
-
-              {/* Notification Bell Button */}
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setShowNotificationDrawer(true);
-                }}
-                className="relative p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-white dark:bg-slate-800/60 shadow-2xs"
-                title={t('notifications.title')}
-                aria-label={t('notifications.title')}
-              >
-                <Bell size={18} />
-                {unreadNotifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-slate-900 leading-none animate-pulse">
-                    {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            <AppFooter className="mt-2 pt-2 border-t border-slate-100/80 dark:border-slate-800/80" />
-          </div>
+        {/* Sidebar Bottom Footer */}
+        <div className="shrink-0 border-t border-slate-200/80 dark:border-slate-800/80 px-4 py-2.5 bg-white dark:bg-slate-900">
+          <AppFooter />
         </div>
       </aside>
 
@@ -469,9 +457,6 @@ const MainLayout = () => {
       <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden relative pb-[env(safe-area-inset-bottom)] md:pb-0">
         <Outlet />
       </main>
-
-      {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
-      {showSettingsModal && <AppSettingsModal onClose={() => setShowSettingsModal(false)} />}
     </div>
   );
 };

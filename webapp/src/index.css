@@ -84,15 +84,15 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-2xl text-slate-800 dark:text-slate-100;
+    @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl dark:shadow-2xl text-slate-800 dark:text-slate-100;
   }
   
   .input-field {
-    @apply bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 dark:placeholder-slate-500 px-4 py-3 rounded-xl text-base transition-all duration-200 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20;
+    @apply bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 dark:placeholder-slate-500 px-4 py-3 rounded-md text-base transition-all duration-200 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20;
   }
   
   .btn {
-    @apply bg-orange-600 text-white border-none px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-150 inline-flex items-center justify-center gap-2 hover:bg-orange-700 active:scale-95;
+    @apply bg-orange-600 text-white border-none px-5 py-2.5 rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 inline-flex items-center justify-center gap-2 hover:bg-orange-700 active:scale-95;
   }
   
   .btn-secondary {
@@ -100,7 +100,7 @@
   }
   
   .nav-link {
-    @apply flex items-center gap-2.5 mx-3 px-3 py-2 text-slate-600 dark:text-slate-400 no-underline transition-all duration-150 font-medium text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100;
+    @apply flex items-center gap-2.5 mx-3 px-3 py-2 text-slate-600 dark:text-slate-400 no-underline transition-all duration-150 font-medium text-sm rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100;
   }
   
   .nav-link.active {
@@ -124,7 +124,7 @@
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: #cbd5e1;
-    border-radius: 20px;
+    border-radius: 3px;
   }
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: #27272a;
@@ -171,7 +171,7 @@
   background: none;
   color: #0f172a;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 4px;
   border: none;
 }
 .dark .react-calendar__navigation button {
@@ -200,7 +200,7 @@
   color: #0f172a;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 8px;
 }
 .dark .react-calendar__month-view__days__day {
@@ -244,7 +244,7 @@
 }
 .playback-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.3);
-  border-radius: 10px;
+  border-radius: 3px;
 }
 .dark .playback-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.2);

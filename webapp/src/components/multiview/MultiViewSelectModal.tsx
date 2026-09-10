@@ -98,7 +98,7 @@ export const MultiViewSelectModal: React.FC<MultiViewSelectModalProps> = ({
                   </div>
 
                   {currentSlot !== -1 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shrink-0 ml-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shrink-0 ml-2">
                       {t('multiview.slotBadge', { num: (currentSlot + 1).toString() })}
                     </span>
                   )}

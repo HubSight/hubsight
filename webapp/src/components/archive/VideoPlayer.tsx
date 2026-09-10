@@ -393,7 +393,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Mode = LIVE: Pulsing LIVE badge at top left */}
       {mode === 'live' && isLive && cameraId && !liveOffline && (
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-          <div className="flex items-center gap-2 bg-orange-600 text-white px-3.5 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md">
+          <div className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md">
             <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
             LIVE
           </div>
@@ -408,7 +408,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         >
           {/* Top-Left: Archive Segment Time Badge */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-slate-900/85 text-amber-300 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide border border-amber-500/30 shadow-md backdrop-blur-md">
+            <div className="flex items-center gap-2 bg-slate-900/85 text-amber-300 px-3 py-1 rounded-md text-xs font-semibold tracking-wide border border-amber-500/30 shadow-md backdrop-blur-md">
               <span className="w-2 h-2 rounded-full bg-amber-400" />
               <span>
                 {formatAbsoluteTime(activeRecording.start_at)} – {formatAbsoluteTime(activeRecording.end_at)}
@@ -421,7 +421,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             {onGoLive && cameraId && (
               <button
                 onClick={onGoLive}
-                className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-md transition-all cursor-pointer backdrop-blur-md active:scale-95"
+                className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white px-3 py-1 rounded-md text-xs font-bold tracking-wide shadow-md transition-all cursor-pointer backdrop-blur-md active:scale-95"
               >
                 <Radio size={14} className="text-white" />
                 <span>{t('playback.switchToLive')}</span>

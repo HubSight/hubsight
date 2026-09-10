@@ -124,7 +124,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
           isDragging.current ? 'duration-0' : 'duration-300 ease-out'
         }`}
       >
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 border border-slate-200 shadow-md backdrop-blur-md text-xs font-semibold text-slate-700 transform">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/95 border border-slate-200 shadow-md backdrop-blur-md text-xs font-semibold text-slate-700 transform">
           {isRefreshing ? (
             <>
               <RefreshCw size={14} className="animate-spin text-orange-600" />

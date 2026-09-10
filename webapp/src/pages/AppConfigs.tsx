@@ -396,7 +396,7 @@ export const AppConfigs: React.FC = () => {
               <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
                 {t('appConfigs.killSwitchTitle')}
               </h2>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide ${
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide ${
                 appApiEnabled
                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
                   : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 animate-pulse'
