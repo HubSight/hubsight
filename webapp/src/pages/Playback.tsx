@@ -329,7 +329,7 @@ const Playback = () => {
   return (
     <div className="h-full flex min-h-0 min-w-0">
       <PullToRefresh onRefresh={handleRefresh} className="flex-1 min-w-0 h-full bg-slate-50/50 dark:bg-slate-950 playback-scrollbar">
-        <div className="flex flex-col min-w-0 pb-8 max-w-[1920px]">
+        <div className="flex flex-col min-w-0 w-full pb-8">
           {/* 1. YouTube-style Video Player (Sticky on mobile top, static on desktop) */}
           <div className="sticky top-0 z-30 w-full bg-black shadow-md md:static md:shadow-none">
             <VideoPlayer
