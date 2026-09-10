@@ -85,6 +85,62 @@ export const Home: React.FC = () => {
 
   const isPollingRef = useRef(false);
 
+  // ── Camera Snapshot Cache ─────────────────────────────────────────────────
+  // Maps cameraId → { dataUrl: string; fetchedAt: number }
+  // Refreshes automatically if older than SNAPSHOT_TTL_MS
+  interface SnapshotEntry { dataUrl: string; fetchedAt: number; }
+  const snapshotCacheRef = useRef<Map<string, SnapshotEntry>>(new Map());
+  const [snapshotRevision, setSnapshotRevision] = useState(0);
+  const SNAPSHOT_TTL_MS = 90_000; // 90 seconds
+
+  /** Pick best stream name for snapshot: cv > nvr > null (offline cameras have no stream) */
+  const getSnapshotStreamName = useCallback((cam: CameraType): string | null => {
+    if (!cam.is_active || cam.is_stopped) return null;
+    if (cam.enable_ai) return `cam_${cam.id}_cv`;
+    if (cam.nvr_mode && cam.nvr_mode !== 'disabled') return `cam_${cam.id}_nvr`;
+    return null; // live-only cams have no persistent named stream without a viewer
+  }, []);
+
+  /** Fetch a snapshot JPEG blob from go2rtc via the gateway and store as data URL */
+  const fetchSnapshot = useCallback(async (cam: CameraType): Promise<void> => {
+    const streamName = getSnapshotStreamName(cam);
+    if (!streamName) return;
+
+    const now = Date.now();
+    const cached = snapshotCacheRef.current.get(cam.id);
+    if (cached && now - cached.fetchedAt < SNAPSHOT_TTL_MS) return; // still fresh
+
+    try {
+      const res = await fetch(`/webrtc/api/frame.jpeg?src=${encodeURIComponent(streamName)}`, {
+        credentials: 'include',
+        headers: { 'X-API-Key': 'hs_web_client_core', 'X-Client-ID': 'hs_web_client_core' },
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      if (!blob.type.startsWith('image/')) return;
+
+      // Revoke any previous object URL to avoid memory leak
+      const prev = snapshotCacheRef.current.get(cam.id);
+      if (prev?.dataUrl.startsWith('blob:')) URL.revokeObjectURL(prev.dataUrl);
+
+      snapshotCacheRef.current.set(cam.id, {
+        dataUrl: URL.createObjectURL(blob),
+        fetchedAt: now,
+      });
+      setSnapshotRevision((r) => r + 1); // trigger re-render
+    } catch {
+      // Silently ignore — camera may simply not have an active stream yet
+    }
+  }, [getSnapshotStreamName, SNAPSHOT_TTL_MS]);
+
+  /** Kick off snapshot fetches for all live cameras (staggered to avoid burst) */
+  const refreshSnapshots = useCallback((cams: CameraType[]) => {
+    cams.forEach((cam, idx) => {
+      setTimeout(() => void fetchSnapshot(cam), idx * 200);
+    });
+  }, [fetchSnapshot]);
+
   // Digital clock tick
   useEffect(() => {
     const timer = setInterval(() => {
@@ -164,7 +220,10 @@ export const Home: React.FC = () => {
       let curMem = 0;
       let curViewers = 0;
 
-      if (camsRes.status === 'fulfilled') setCameras(camsRes.value);
+      if (camsRes.status === 'fulfilled') {
+        setCameras(camsRes.value);
+        refreshSnapshots(camsRes.value);
+      }
       if (poolRes.status === 'fulfilled') {
         setPoolStatus(poolRes.value);
         curViewers = poolRes.value.total_active_viewers || 0;
@@ -190,7 +249,7 @@ export const Home: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [verifyServiceHealth]);
+  }, [verifyServiceHealth, refreshSnapshots]);
 
   // Initial Load
   useEffect(() => {
@@ -237,6 +296,14 @@ export const Home: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [verifyServiceHealth]);
+
+  // Periodic Snapshot Refresh (every 90 seconds — matches TTL so snapshots stay fresh)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshSnapshots(cameras);
+    }, 90_000);
+    return () => clearInterval(interval);
+  }, [cameras, refreshSnapshots]);
 
   // Real-time Event Subscriptions (WebSockets via Relay)
   useOnNotification((newNotif: unknown) => {
@@ -774,7 +841,14 @@ export const Home: React.FC = () => {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-36 bg-slate-100 dark:bg-slate-800/60 rounded-2xl animate-pulse" />
+                <div key={i} className="rounded-2xl overflow-hidden bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 animate-pulse">
+                  <div className="w-full aspect-video bg-slate-200 dark:bg-zinc-800" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-2/3" />
+                    <div className="h-3 bg-slate-200 dark:bg-zinc-800 rounded w-1/3" />
+                    <div className="h-7 bg-slate-200 dark:bg-zinc-800 rounded-xl mt-2" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : cameras.length === 0 ? (
@@ -792,98 +866,128 @@ export const Home: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {/* snapshotRevision is used to trigger re-reads from the cache map when blobs are fetched */}
               {cameras.map((cam) => {
                 const isLive = cam.is_active && !cam.is_stopped;
                 const viewersCount = cameraViewersMap.get(cam.id) || 0;
                 const nvrInfo = cameraNvrMap.get(cam.id);
+                const snapshot = snapshotRevision >= 0 ? snapshotCacheRef.current.get(cam.id) : undefined;
+                const hasSnapshot = Boolean(snapshot?.dataUrl);
+                const snapshotAgeS = snapshot ? Math.round((Date.now() - snapshot.fetchedAt) / 1000) : 0;
 
                 return (
                   <div
                     key={cam.id}
-                    className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 rounded-2xl p-4 transition-all flex flex-col justify-between"
+                    className="bg-slate-50/80 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 rounded-2xl transition-all flex flex-col overflow-hidden"
                   >
-                    <div>
-                      {/* Header: Name + Status */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                              !isLive
-                                ? 'bg-slate-400'
-                                : 'bg-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-950/80 shadow-xs'
-                            }`}
-                          />
-                          <h3
-                            className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate"
-                            title={cam.name}
-                          >
-                            {cam.name}
-                          </h3>
+                    {/* ── Thumbnail Area ── */}
+                    <div className="relative w-full aspect-video bg-zinc-950 overflow-hidden rounded-t-2xl">
+                      {hasSnapshot ? (
+                        <img
+                          src={snapshot!.dataUrl}
+                          alt={cam.name}
+                          className="w-full h-full object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        /* No-signal placeholder */
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                          <div className="w-9 h-9 rounded-full bg-zinc-800/80 flex items-center justify-center">
+                            <Camera size={18} className="text-zinc-500" />
+                          </div>
+                          <span className="text-[10px] font-mono text-zinc-600 tracking-wider uppercase">
+                            {isLive ? 'No stream' : 'Offline'}
+                          </span>
                         </div>
+                      )}
 
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                            isLive
-                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                          }`}
-                        >
-                          {isLive ? 'Online' : 'Offline'}
+                      {/* Status badge overlay (top-left) */}
+                      <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider backdrop-blur-sm ${
+                          isLive
+                            ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60'
+                            : 'bg-zinc-900/80 text-zinc-400 border border-zinc-700/60'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-500'}`} />
+                          {isLive ? 'LIVE' : 'OFFLINE'}
                         </span>
                       </div>
 
-                      {/* Tech specs row */}
-                      <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
-                        {cam.brand && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                            {cam.brand}
-                          </span>
-                        )}
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                          {cam.rtsp_transport || 'TCP'}
-                        </span>
+                      {/* AI / NVR badges (top-right) */}
+                      <div className="absolute top-2 right-2 flex gap-1">
                         {cam.enable_ai && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                            AI YOLO
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-950/80 text-violet-300 border border-violet-800/60 backdrop-blur-sm">
+                            AI
                           </span>
                         )}
                         {cam.nvr_mode && cam.nvr_mode !== 'disabled' && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
-                            NVR {cam.nvr_mode}
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800/60 backdrop-blur-sm">
+                            NVR
                           </span>
                         )}
                       </div>
 
+                      {/* Snapshot age hint (bottom-right, only when snapshot exists) */}
+                      {hasSnapshot && (
+                        <div className="absolute bottom-1.5 right-2">
+                          <span className="text-[9px] font-mono text-white/50 bg-black/40 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                            {snapshotAgeS < 60 ? `${snapshotAgeS}s ago` : `${Math.round(snapshotAgeS / 60)}m ago`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Info Section ── */}
+                    <div className="flex flex-col justify-between flex-1 p-3">
+                      {/* Name + tech tags */}
+                      <div>
+                        <div className="flex items-center gap-2 min-w-0 mb-2">
+                          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate flex-1" title={cam.name}>
+                            {cam.name}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {cam.brand && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-mono">
+                              {cam.brand}
+                            </span>
+                          )}
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/70 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-mono">
+                            {cam.rtsp_transport?.toUpperCase() || 'TCP'}
+                          </span>
+                        </div>
+                      </div>
+
                       {/* Telemetry row */}
-                      <div className="mt-3 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-200/60 dark:border-slate-800 pt-2 font-mono">
+                      <div className="mt-2.5 text-[11px] text-slate-500 dark:text-zinc-500 flex items-center justify-between border-t border-slate-200/60 dark:border-zinc-800 pt-2 font-mono">
                         <span className="flex items-center gap-1">
                           <Users size={12} className="text-indigo-500" />
                           {viewersCount} {t('pool.clientsLabel')}
                         </span>
                         {nvrInfo && (
-                          <span className="text-slate-400 dark:text-slate-500">
+                          <span className="text-slate-400 dark:text-zinc-600">
                             {nvrInfo.total_segments} segs
                           </span>
                         )}
                       </div>
-                    </div>
 
-                    {/* Quick Jump Buttons */}
-                    <div className="grid grid-cols-2 gap-2 mt-3 pt-2">
-                      <button
-                        onClick={() => navigate(`/multiview`)}
-                        className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200/80 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
-                      >
-                        <Tv size={13} className="text-orange-500" />
-                        <span>{t('home.viewLive')}</span>
-                      </button>
-                      <button
-                        onClick={() => navigate(`/playback?camera_id=${cam.id}`)}
-                        className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200/80 dark:border-slate-700/80 transition-all cursor-pointer shadow-2xs"
-                      >
-                        <Video size={13} className="text-blue-500" />
-                        <span>{t('home.viewPlayback')}</span>
-                      </button>
+                      {/* Quick Jump Buttons */}
+                      <div className="grid grid-cols-2 gap-2 mt-2.5">
+                        <button
+                          onClick={() => navigate(`/multiview`)}
+                          className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold border border-slate-200/80 dark:border-zinc-700/80 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <Tv size={13} className="text-orange-500" />
+                          <span>{t('home.viewLive')}</span>
+                        </button>
+                        <button
+                          onClick={() => navigate(`/playback?camera_id=${cam.id}`)}
+                          className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold border border-slate-200/80 dark:border-zinc-700/80 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <Video size={13} className="text-blue-500" />
+                          <span>{t('home.viewPlayback')}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
