@@ -222,7 +222,6 @@ export const Home: React.FC = () => {
 
       if (camsRes.status === 'fulfilled') {
         setCameras(camsRes.value);
-        refreshSnapshots(camsRes.value);
       }
       if (poolRes.status === 'fulfilled') {
         setPoolStatus(poolRes.value);
@@ -249,7 +248,7 @@ export const Home: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [verifyServiceHealth, refreshSnapshots]);
+  }, [verifyServiceHealth]);
 
   // Initial Load
   useEffect(() => {
@@ -297,13 +296,26 @@ export const Home: React.FC = () => {
     return () => clearInterval(interval);
   }, [verifyServiceHealth]);
 
-  // Periodic Snapshot Refresh (every 90 seconds — matches TTL so snapshots stay fresh)
+  // Top 4 cameras displayed on dashboard (prioritizes live/active, then natural name A-Z)
+  const displayedCameras = useMemo(() => {
+    const sorted = [...cameras].sort((a, b) => {
+      const aLive = a.is_active && !a.is_stopped ? 1 : 0;
+      const bLive = b.is_active && !b.is_stopped ? 1 : 0;
+      if (aLive !== bLive) return bLive - aLive;
+      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+    });
+    return sorted.slice(0, 4);
+  }, [cameras]);
+
+  // Periodic Snapshot Refresh (every 90 seconds for top 4 dashboard cameras)
   useEffect(() => {
+    if (displayedCameras.length === 0) return;
+    refreshSnapshots(displayedCameras);
     const interval = setInterval(() => {
-      refreshSnapshots(cameras);
+      refreshSnapshots(displayedCameras);
     }, 90_000);
     return () => clearInterval(interval);
-  }, [cameras, refreshSnapshots]);
+  }, [displayedCameras, refreshSnapshots]);
 
   // Real-time Event Subscriptions (WebSockets via Relay)
   useOnNotification((newNotif: unknown) => {
@@ -832,7 +844,10 @@ export const Home: React.FC = () => {
                 onClick={() => navigate('/devices')}
                 className="flex items-center gap-1 text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
               >
-                <span>{t('common.all')}</span>
+                <span>
+                  {t('common.all')}
+                  {cameras.length > 4 ? ` (${cameras.length})` : ''}
+                </span>
                 <ChevronRight size={14} />
               </button>
             </div>
@@ -867,7 +882,7 @@ export const Home: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {/* snapshotRevision is used to trigger re-reads from the cache map when blobs are fetched */}
-              {cameras.map((cam) => {
+              {displayedCameras.map((cam) => {
                 const isLive = cam.is_active && !cam.is_stopped;
                 const viewersCount = cameraViewersMap.get(cam.id) || 0;
                 const nvrInfo = cameraNvrMap.get(cam.id);
