@@ -64,12 +64,43 @@ export function createInternalSocketClient(
     },
   });
 
-  socket.on('connect', () => setState('connected'));
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  socket.on('connect', () => {
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+    setState('connected');
+  });
+
   socket.on('disconnect', (reason) => {
     setState(reason === 'io client disconnect' ? 'disconnected' : 'reconnecting');
   });
-  socket.on('connect_error', () => setState('error'));
-  socket.on('auth_error', () => setState('error'));
+
+  socket.on('connect_error', () => {
+    setState('error');
+    if (!retryTimer) {
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        if (!socket.connected) {
+          socket.connect();
+        }
+      }, 3000);
+    }
+  });
+
+  socket.on('auth_error', () => {
+    setState('error');
+    if (!retryTimer) {
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        if (!socket.connected) {
+          socket.connect();
+        }
+      }, 5000);
+    }
+  });
 
   return {
     connect(): void {
@@ -80,11 +111,19 @@ export function createInternalSocketClient(
     },
 
     disconnect(): void {
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
       socket.disconnect();
       setState('disconnected');
     },
 
     close(): void {
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
       listeners.clear();
       socket.removeAllListeners();
       socket.disconnect();

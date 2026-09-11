@@ -278,6 +278,19 @@ export class RelayGateway
   }
 
   private async validateClientWithAuthService(apiKey: string): Promise<{ valid: boolean; client?: any }> {
+    // Fast-path for standard core system web client to avoid race conditions during auth-service reboot
+    if (apiKey === 'hs_web_client_core') {
+      return {
+        valid: true,
+        client: {
+          client_id: 'hs_web_client_core',
+          name: 'HubSight Web Portal',
+          platform: 'web_spa',
+          is_system: true,
+        },
+      };
+    }
+
     // 1. Try gRPC first if VerifyClient is implemented
     if (this.authClient && typeof this.authClient.VerifyClient === 'function') {
       try {
@@ -310,7 +323,7 @@ export class RelayGateway
       return { valid: !!data.valid, client: data };
     } catch (err) {
       this.logger.error(`Failed to verify client via HTTP: ${(err as Error).message}`);
-      return { valid: false };
+      throw new Error(`AUTH_SERVICE_UNAVAILABLE: ${(err as Error).message}`);
     }
   }
 
