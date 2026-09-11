@@ -32,6 +32,7 @@ import {
 } from '@/components/icons';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
+import { PageHeader } from '../components/common/PageHeader';
 import AppConfigQrModal from '../components/appconfig/AppConfigQrModal';
 
 export const AppConfigs: React.FC = () => {
@@ -346,36 +347,30 @@ export const AppConfigs: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
-      {/* Top Header */}
-      <div className="shrink-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs shrink-0">
-              <FileShield size={18} />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-slate-800 dark:text-slate-100 leading-snug">
-                {t('appConfigs.title')}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 hidden sm:block font-medium">
-                {t('appConfigs.subtitle')}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={openWizard}
-              className="px-3 py-2 sm:px-4 sm:py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-98 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap"
-            >
-              <Plus size={15} />
-              <span className="hidden sm:inline">{t('appConfigs.createProfile')}</span>
-              <span className="sm:hidden">{t('appConfigs.createShort')}</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={FileShield}
+        title={t('appConfigs.title')}
+        subtitle={t('appConfigs.subtitle')}
+        badge={
+          configs.length > 0 ? (
+            <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {configs.length}
+            </span>
+          ) : undefined
+        }
+        actions={
+          <button
+            type="button"
+            onClick={openWizard}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-98 rounded-lg shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">{t('appConfigs.createProfile')}</span>
+            <span className="sm:hidden">{t('appConfigs.createShort')}</span>
+          </button>
+        }
+      />
 
       {/* Main Scrollable Content */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-20">
@@ -400,7 +395,7 @@ export const AppConfigs: React.FC = () => {
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide ${
                 appApiEnabled
                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 animate-pulse'
+                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
               }`}>
                 <span className={`w-2 h-2 rounded-full ${appApiEnabled ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                 {appApiEnabled ? t('appConfigs.killSwitchActive') : t('appConfigs.killSwitchPaused')}

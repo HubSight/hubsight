@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/fingerprint"
 	"cctv/shared/pkg/models"
 
 	"github.com/gin-gonic/gin"
@@ -36,13 +38,19 @@ func LoginHandler(c *gin.Context) {
 		clientID = "hs_web_client_core"
 	}
 
-	session, token, refreshToken, err := Login(c.Request.Context(), req.Username, req.Password, req.IsPWA, clientID)
+	devInfo := fingerprint.DetectWithClientInfo(c.Request, req.DeviceInfo)
+	session, token, refreshToken, err := LoginWithDevice(c.Request.Context(), req.Username, req.Password, req.IsPWA, &devInfo, clientID)
 	if err != nil {
 		if errors.Is(err, ErrTwoFactorRequired) {
 			c.JSON(http.StatusOK, gin.H{
 				"status":         "2fa_required",
 				"pre_auth_token": token,
 			})
+			return
+		}
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "Quá nhiều lần") {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": errMsg})
 			return
 		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -323,7 +331,8 @@ func Verify2FAHandler(c *gin.Context) {
 		return
 	}
 
-	session, token, refreshToken, err := Verify2FALogin(c.Request.Context(), req.PreAuthToken, req.Code, req.RecoveryCode, req.IsPWA)
+	devInfo := fingerprint.DetectWithClientInfo(c.Request, req.DeviceInfo)
+	session, token, refreshToken, err := Verify2FALogin(c.Request.Context(), req.PreAuthToken, req.Code, req.RecoveryCode, req.IsPWA, &devInfo)
 	if err != nil {
 		if errors.Is(err, ErrInvalidPreAuth) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Two-factor session expired. Please log in again."})
@@ -540,7 +549,8 @@ func PasskeyLoginVerifyHandler(c *gin.Context) {
 	}
 
 	origin := c.Request.Header.Get("Origin")
-	session, token, refreshToken, err := FinishPasskeyLogin(c.Request.Context(), req.ChallengeID, req.Credential, req.IsPWA, origin)
+	devInfo := fingerprint.DetectWithClientInfo(c.Request, req.DeviceInfo)
+	session, token, refreshToken, err := FinishPasskeyLogin(c.Request.Context(), req.ChallengeID, req.Credential, req.IsPWA, origin, &devInfo)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -618,5 +628,157 @@ func DeletePasskeyHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+// SessionItemResponse models the public audit representation of a login session.
+type SessionItemResponse struct {
+	ID                string     `json:"id"`
+	IPAddress         string     `json:"ip_address"`
+	UserAgent         string     `json:"user_agent"`
+	DeviceFingerprint string     `json:"device_fingerprint"`
+	DeviceLabel       string     `json:"device_label"`
+	ClientType        string     `json:"client_type"`
+	GeoCity           string     `json:"geo_city"`
+	GeoCountry        string     `json:"geo_country"`
+	IsNewDevice       bool       `json:"is_new_device"`
+	IsPWA             bool       `json:"is_pwa"`
+	IsActive          bool       `json:"is_active"`
+	IsCurrent         bool       `json:"is_current"`
+	CreatedAt         time.Time  `json:"created_at"`
+	LastActiveAt      *time.Time `json:"last_active_at,omitempty"`
+	ExpiresAt         time.Time  `json:"expires_at"`
+	RevokedAt         *time.Time `json:"revoked_at,omitempty"`
+	RevokeReason      string     `json:"revoke_reason,omitempty"`
+}
+
+// ListSessionsHandler returns all sessions (active and past history) for the authenticated user.
+func ListSessionsHandler(c *gin.Context) {
+	userObj, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	user := userObj.(*models.User)
+
+	currentSessionID, _ := c.Get("session_id")
+	currID, _ := currentSessionID.(string)
+
+	sessions, err := ListSessions(c.Request.Context(), user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list sessions"})
+		return
+	}
+
+	result := make([]SessionItemResponse, 0, len(sessions))
+	for _, s := range sessions {
+		item := SessionItemResponse{
+			ID:                s.ID,
+			IPAddress:         s.IPAddress,
+			UserAgent:         s.UserAgent,
+			DeviceFingerprint: s.DeviceFingerprint,
+			DeviceLabel:       s.DeviceLabel,
+			ClientType:        s.ClientType,
+			GeoCity:           s.GeoCity,
+			GeoCountry:        s.GeoCountry,
+			IsNewDevice:       s.IsNewDevice,
+			IsPWA:             s.IsPwa,
+			IsActive:          s.IsActive(),
+			IsCurrent:         currID != "" && s.ID == currID,
+			CreatedAt:         s.CreatedAt,
+			LastActiveAt:      s.LastSeenAt,
+			ExpiresAt:         s.ExpiresAt,
+			RevokedAt:         s.RevokedAt,
+			RevokeReason:      s.RevokeReason,
+		}
+		if item.DeviceLabel == "" {
+			item.DeviceLabel = "Trình duyệt Web"
+		}
+		if item.ClientType == "" {
+			item.ClientType = "web"
+		}
+		if item.IPAddress == "" {
+			item.IPAddress = "127.0.0.1"
+		}
+		if item.GeoCity == "" {
+			item.GeoCity = "Mạng nội bộ"
+			item.GeoCountry = "LAN"
+		}
+		result = append(result, item)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "ok",
+		"sessions": result,
+	})
+}
+
+// RevokeSessionHandler revokes a specific session belonging to the user.
+func RevokeSessionHandler(c *gin.Context) {
+	sessionID := c.Param("id")
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID required"})
+		return
+	}
+
+	userObj, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	user := userObj.(*models.User)
+
+	currentSessionID, _ := c.Get("session_id")
+	currID, _ := currentSessionID.(string)
+
+	if currID != "" && sessionID == currID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Không thể thu hồi phiên hiện tại từ màn hình này. Vui lòng sử dụng chức năng Đăng xuất.",
+		})
+		return
+	}
+
+	var sess models.Session
+	if err := database.DB.WithContext(c.Request.Context()).Where("id = ?", sessionID).First(&sess).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+
+	if sess.UserID != user.ID && user.Role != models.RoleAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
+		return
+	}
+
+	if err := RevokeSession(c.Request.Context(), sessionID, "user_logout"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke session"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "ok",
+		"message": "Session revoked successfully",
+	})
+}
+
+// RevokeAllOtherSessionsHandler revokes all active sessions for this user except the current one.
+func RevokeAllOtherSessionsHandler(c *gin.Context) {
+	userObj, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	user := userObj.(*models.User)
+
+	currentSessionID, _ := c.Get("session_id")
+	currID, _ := currentSessionID.(string)
+
+	if err := RevokeAllOtherSessions(c.Request.Context(), user.ID, currID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke other sessions"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "ok",
+		"message": "All other sessions revoked successfully",
+	})
 }
 

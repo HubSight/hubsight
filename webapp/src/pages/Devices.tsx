@@ -11,6 +11,7 @@ import { useTranslation } from '../i18n';
 import { DevicesSkeleton } from '../components/common/Skeleton';
 import { Pagination } from '../components/common/Pagination';
 import { PullToRefresh } from '../components/common/PullToRefresh';
+import { PageHeader } from '../components/common/PageHeader';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 const initialFormData: DeviceFormData = {
@@ -356,36 +357,29 @@ const Devices = () => {
   };
 
   return (
-    <PullToRefresh onRefresh={fetchDevices} className="p-4 sm:p-6 md:p-8 h-full flex flex-col overflow-y-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-5 sm:mb-6 md:mb-8 gap-3 w-full">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-sm">
-            <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                {t('devices.title')}
-              </h1>
-              {devices.length > 0 && (
-                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  {searchQuery ? `${filteredDevices.length}/${devices.length}` : devices.length}
-                </span>
-              )}
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm hidden sm:block mt-0.5">
-              {t('devices.subtitle')}
-            </p>
-          </div>
-        </div>
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={Camera}
+        title={t('devices.title')}
+        subtitle={t('devices.subtitle')}
+        badge={
+          devices.length > 0 ? (
+            <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {searchQuery ? `${filteredDevices.length}/${devices.length}` : devices.length}
+            </span>
+          ) : undefined
+        }
+        actions={
+          <AddDeviceSplitButton
+            className={`shrink-0 ${devices.length === 0 ? 'hidden sm:inline-flex' : ''}`}
+            onManual={() => handleOpenModal()}
+            onScan={() => setShowScan(true)}
+          />
+        }
+      />
 
-        <AddDeviceSplitButton
-          className={`shrink-0 ${devices.length === 0 ? 'hidden sm:inline-flex' : ''}`}
-          onManual={() => handleOpenModal()}
-          onScan={() => setShowScan(true)}
-        />
-      </div>
+      <PullToRefresh onRefresh={fetchDevices} className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 md:p-8 flex flex-col">
 
       {/* Search & Sort Toolbar */}
       {devices.length > 0 && (
@@ -607,6 +601,7 @@ const Devices = () => {
         }}
       />
     </PullToRefresh>
+    </div>
   );
 };
 

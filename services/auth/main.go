@@ -15,6 +15,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/pb"
+	"cctv/shared/pkg/redis"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -42,6 +43,11 @@ func main() {
 		log.Printf("RabbitMQ connection failed: %v", err)
 	} else {
 		defer mq.Close()
+	}
+
+	redisURL := os.Getenv("REDIS_URL")
+	if err := redis.Init(redisURL); err != nil {
+		log.Printf("Warning: Valkey/Redis init in auth-service: %v", err)
 	}
 
 	port := os.Getenv("PORT")
@@ -176,6 +182,11 @@ func main() {
 		protected.PUT("/clients/:id/toggle", auth.RequirePermission("clients:manage"), auth.ToggleClientHandler)
 		protected.POST("/clients/:id/rotate-key", auth.RequirePermission("clients:manage"), auth.RotateClientKeyHandler)
 		protected.DELETE("/clients/:id", auth.RequirePermission("clients:manage"), auth.DeleteClientHandler)
+
+		// Session & Device Management
+		protected.GET("/sessions", auth.ListSessionsHandler)
+		protected.DELETE("/sessions/:id", auth.RevokeSessionHandler)
+		protected.POST("/sessions/revoke-others", auth.RevokeAllOtherSessionsHandler)
 	}
 
 	log.Printf("Auth Service listening on :%s", port)
@@ -191,6 +202,7 @@ type ValidateTokenRequest struct {
 type ValidateTokenResponse struct {
 	Valid              bool         `json:"valid"`
 	User               *models.User `json:"user,omitempty"`
+	SessionID          string       `json:"session_id,omitempty"`
 	Role               string       `json:"role,omitempty"`
 	Username           string       `json:"username,omitempty"`
 	FullName           string       `json:"full_name,omitempty"`
@@ -217,8 +229,8 @@ func handleValidateToken(c *gin.Context) {
 		return
 	}
 
-	u, err := auth.GetUserBySession(c.Request.Context(), req.Token)
-	if err != nil || u == nil {
+	sess, u, err := auth.GetSessionAndUser(c.Request.Context(), req.Token)
+	if err != nil || u == nil || sess == nil {
 		c.JSON(http.StatusOK, ValidateTokenResponse{Valid: false})
 		return
 	}
@@ -226,6 +238,7 @@ func handleValidateToken(c *gin.Context) {
 	c.JSON(http.StatusOK, ValidateTokenResponse{
 		Valid:              true,
 		User:               u,
+		SessionID:          sess.ID,
 		Role:               string(u.Role),
 		Username:           u.Username,
 		FullName:           u.FullName,
@@ -244,13 +257,14 @@ func (s *grpcAuthServer) VerifyToken(ctx context.Context, req *pb.VerifyTokenReq
 		return &pb.VerifyTokenResponse{Valid: false}, nil
 	}
 
-	u, err := auth.GetUserBySession(ctx, req.Token)
-	if err != nil || u == nil {
+	sess, u, err := auth.GetSessionAndUser(ctx, req.Token)
+	if err != nil || u == nil || sess == nil {
 		return &pb.VerifyTokenResponse{Valid: false}, nil
 	}
 
 	return &pb.VerifyTokenResponse{
-		Valid: true,
+		Valid:     true,
+		SessionId: sess.ID,
 		User: &pb.UserData{
 			Id:       u.ID,
 			Username: u.Username,

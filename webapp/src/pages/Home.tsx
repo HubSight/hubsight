@@ -35,6 +35,8 @@ import {
 } from '@hubsight/sdk/react';
 import { useTranslation } from '../i18n';
 import { useTimezone } from '../context/TimezoneContext';
+import { PageHeader } from '../components/common/PageHeader';
+import { PullToRefresh } from '../components/common/PullToRefresh';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -563,45 +565,33 @@ export const Home: React.FC = () => {
   }, [telemetryHistory, activeTelemetryTab]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black p-4 sm:p-6 lg:p-8 space-y-6 w-full">
-      <div className="w-full space-y-6">
-
-        {/* ── Top Header & Operations Ribbon ─────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900/90 p-5 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs backdrop-blur-md">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
-              <Gauge size={24} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                  {t('home.title')}
-                </h1>
-                <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                    isClusterAllHealthy
-                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80'
-                      : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/80'
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isClusterAllHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                    }`}
-                  />
-                  {isClusterAllHealthy ? t('home.allHealthy') : t('home.degraded')}
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {t('home.subtitle')}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={Gauge}
+        title={t('home.title')}
+        subtitle={t('home.subtitle')}
+        badge={
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold border ${
+              isClusterAllHealthy
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80'
+                : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/80'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isClusterAllHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+              }`}
+            />
+            {isClusterAllHealthy ? t('home.allHealthy') : t('home.degraded')}
+          </span>
+        }
+        actions={
+          <>
             {/* Live Socket Status Pill */}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold font-mono ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold font-mono ${
                 isSocketConnected
                   ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                   : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800'
@@ -613,7 +603,7 @@ export const Home: React.FC = () => {
             </div>
 
             {/* Live Clock */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-xs font-mono font-bold text-slate-700 dark:text-slate-200">
+            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-xs font-mono font-bold text-slate-700 dark:text-slate-200">
               <Clock size={14} className="text-orange-500" />
               <span>{currentTime}</span>
             </div>
@@ -622,14 +612,18 @@ export const Home: React.FC = () => {
             <button
               onClick={() => fetchDashboardData(false)}
               disabled={refreshing}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-all border border-slate-200/80 dark:border-slate-700/80 cursor-pointer disabled:opacity-50"
+              className="h-9 w-9 min-w-9 min-h-9 aspect-square flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-all border border-slate-200/80 dark:border-slate-700/80 cursor-pointer disabled:opacity-50 shrink-0"
               title={t('home.refresh')}
             >
               <RefreshCw size={14} className={refreshing ? 'animate-spin text-orange-500' : ''} />
-              <span className="hidden xs:inline">{t('home.refresh')}</span>
             </button>
-          </div>
-        </div>
+          </>
+        }
+      />
+
+      {/* ── Scrollable Dashboard Content with PullToRefresh ───────────── */}
+      <PullToRefresh onRefresh={() => fetchDashboardData(false)} className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="w-full space-y-6">
 
         {/* ── Tier 1: 4 High-Impact KPI Quick-Look Cards ─────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1595,7 +1589,8 @@ export const Home: React.FC = () => {
 
 
 
-      </div>
+        </div>
+      </PullToRefresh>
     </div>
   );
 };

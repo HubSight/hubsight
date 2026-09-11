@@ -111,7 +111,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <button
             ref={cancelRef}
             type="button"
-            onClick={onCancel}
+            onClick={() => {
+              if (!isLoading) onCancel();
+            }}
             disabled={isLoading}
             className="px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -119,7 +121,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => {
+              if (!isLoading) onConfirm();
+            }}
             disabled={isLoading}
             className={`px-4 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2 ${
               isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'

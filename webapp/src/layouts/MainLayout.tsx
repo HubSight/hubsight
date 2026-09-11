@@ -118,7 +118,7 @@ const MainLayout = () => {
           <div className="flex items-center gap-1">
             {/* Quick Theme Toggle on Mobile */}
             <button
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation cursor-pointer shrink-0"
               onClick={cycleTheme}
               aria-label="Toggle theme"
               title={theme === 'system' ? t('settings.themeSystem') : theme === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
@@ -134,7 +134,7 @@ const MainLayout = () => {
 
             {/* Notification Bell on Mobile */}
             <button
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation relative cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation relative cursor-pointer shrink-0"
               onClick={() => setShowNotificationDrawer(true)}
               aria-label="Notifications"
             >
@@ -145,7 +145,7 @@ const MainLayout = () => {
             </button>
 
             <button
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-100 dark:active:bg-slate-800 transition-colors touch-manipulation cursor-pointer shrink-0"
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Open navigation menu"
             >
@@ -181,7 +181,7 @@ const MainLayout = () => {
             </div>
           </NavLink>
           <button
-            className="md:hidden p-1.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <X size={20} />
@@ -241,7 +241,7 @@ const MainLayout = () => {
                 setIsMobileMenuOpen(false);
                 setShowNotificationDrawer(true);
               }}
-              className="relative p-2 rounded-md border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-slate-50/80 dark:bg-slate-800/50 shadow-2xs"
+              className="relative w-9 h-9 rounded-md border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center bg-slate-50/80 dark:bg-slate-800/50 shadow-2xs"
               title={t('notifications.title')}
               aria-label={t('notifications.title')}
             >
@@ -267,11 +267,11 @@ const MainLayout = () => {
             </button>
 
             {/* 3-Way Theme Segmented Control */}
-            <div className="flex items-center p-0.5 bg-slate-200/60 dark:bg-slate-900/80 rounded border border-slate-200/80 dark:border-slate-800 shrink-0">
+            <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/60 dark:bg-slate-900/80 rounded border border-slate-200/80 dark:border-slate-800 shrink-0">
               <button
                 type="button"
                 onClick={() => setTheme('light')}
-                className={`p-1 rounded transition-all cursor-pointer ${
+                className={`w-6 h-6 flex items-center justify-center rounded transition-all cursor-pointer ${
                   theme === 'light'
                     ? 'bg-white dark:bg-slate-800 text-amber-500 shadow-2xs'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
@@ -284,7 +284,7 @@ const MainLayout = () => {
               <button
                 type="button"
                 onClick={() => setTheme('dark')}
-                className={`p-1 rounded transition-all cursor-pointer ${
+                className={`w-6 h-6 flex items-center justify-center rounded transition-all cursor-pointer ${
                   theme === 'dark'
                     ? 'bg-white dark:bg-slate-800 text-indigo-400 shadow-2xs'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
@@ -297,7 +297,7 @@ const MainLayout = () => {
               <button
                 type="button"
                 onClick={() => setTheme('system')}
-                className={`p-1 rounded transition-all cursor-pointer ${
+                className={`w-6 h-6 flex items-center justify-center rounded transition-all cursor-pointer ${
                   theme === 'system'
                     ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-2xs'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'

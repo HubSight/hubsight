@@ -93,8 +93,10 @@ services:
       PORT: "8081"
       DATABASE_URL: "${DATABASE_URL}"
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
+      REDIS_URL: "redis://redis-service:6379"
     depends_on:
       - mq-service
+      - redis-service
 
   # ⚡ Dedicated Socket.IO Relay Microservice (Private, routed via API Gateway :8088/socket.io)
   relay-service:

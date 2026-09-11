@@ -10,6 +10,7 @@ import {
   type CameraEvent,
   type ForceLogoutEvent,
   type MemberFaceUpdatedEvent,
+  type SessionRevokedEvent,
   type VisionBoxesEvent,
 } from './events';
 import type {
@@ -51,6 +52,10 @@ export function createRealtimeManager(options: CreateRealtimeManagerOptions): Re
 
     onForceLogout(handler: (event: ForceLogoutEvent) => void): Unsubscribe {
       return subscribeInternal<ForceLogoutEvent>(INTERNAL_REALTIME_EVENTS.AUTH_FORCE_LOGOUT, handler);
+    },
+
+    onSessionRevoked(handler: (event: SessionRevokedEvent) => void): Unsubscribe {
+      return subscribeInternal<SessionRevokedEvent>(INTERNAL_REALTIME_EVENTS.SESSION_REVOKED, handler);
     },
 
     onNotification(handler: (item: NotificationItem) => void): Unsubscribe {

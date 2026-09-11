@@ -16,6 +16,7 @@ import type { User, Role } from '@hubsight/sdk';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { PageHeader } from '../components/common/PageHeader';
 import toast from 'react-hot-toast';
 
 export const Users: React.FC = () => {
@@ -46,6 +47,8 @@ export const Users: React.FC = () => {
   const [formMustChangePassword, setFormMustChangePassword] = useState(true);
   const [resetMustChangePassword, setResetMustChangePassword] = useState(true);
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
+  const [isSubmittingResetPassword, setIsSubmittingResetPassword] = useState(false);
+  const [isTogglingBlock, setIsTogglingBlock] = useState(false);
 
   // Load users and roles
   const loadData = useCallback(async () => {
@@ -93,6 +96,7 @@ export const Users: React.FC = () => {
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingUser) return;
     setIsSubmittingUser(true);
     try {
       if (editingUser) {
@@ -126,7 +130,8 @@ export const Users: React.FC = () => {
 
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userToResetPassword) return;
+    if (!userToResetPassword || isSubmittingResetPassword) return;
+    setIsSubmittingResetPassword(true);
     try {
       await api.users.resetPassword(userToResetPassword.id, newPassword, resetMustChangePassword);
       toast.success(t('access.resetPasswordSuccess'));
@@ -135,13 +140,16 @@ export const Users: React.FC = () => {
     } catch (err: any) {
       const msg = err?.response?.data?.error || t('common.errorOccurred');
       toast.error(msg);
+    } finally {
+      setIsSubmittingResetPassword(false);
     }
   };
 
   const handleToggleBlockUser = async () => {
-    if (!pendingToggleBlockUser) return;
+    if (!pendingToggleBlockUser || isTogglingBlock) return;
     const target = pendingToggleBlockUser;
     const willBlock = target.is_active;
+    setIsTogglingBlock(true);
     try {
       await api.users.block(target.id, willBlock);
       toast.success(willBlock ? t('access.blockUserSuccess') : t('access.unblockUserSuccess'));
@@ -150,6 +158,8 @@ export const Users: React.FC = () => {
     } catch (err: any) {
       const msg = err?.response?.data?.error || t('common.errorOccurred');
       toast.error(msg);
+    } finally {
+      setIsTogglingBlock(false);
     }
   };
 
@@ -200,32 +210,30 @@ export const Users: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-          <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-            <UserCog size={20} />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight truncate">
-              {t('users.title')}
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 hidden sm:block">
-              {t('users.subtitle')}
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={handleOpenCreateUser}
-          className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0 whitespace-nowrap"
-        >
-          <Plus size={16} />
-          <span className="hidden sm:inline">{t('access.addUser')}</span>
-          <span className="sm:hidden">{t('users.addShort')}</span>
-        </button>
-      </div>
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={UserCog}
+        title={t('users.title')}
+        subtitle={t('users.subtitle')}
+        badge={
+          users.length > 0 ? (
+            <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {users.length}
+            </span>
+          ) : undefined
+        }
+        actions={
+          <button
+            onClick={handleOpenCreateUser}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-98 rounded-lg shadow-2xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">{t('access.addUser')}</span>
+            <span className="sm:hidden">{t('users.addShort')}</span>
+          </button>
+        }
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 pb-20">
@@ -593,7 +601,8 @@ export const Users: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setUserModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+                  disabled={isSubmittingUser}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-50"
                 >
                   {t('cancel')}
                 </button>
@@ -605,7 +614,7 @@ export const Users: React.FC = () => {
                   {isSubmittingUser && (
                     <span className="w-3 h-3 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />
                   )}
-                  {t('save')}
+                  {isSubmittingUser ? t('common.saving') : t('save')}
                 </button>
               </div>
             </form>
@@ -621,7 +630,8 @@ export const Users: React.FC = () => {
               <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">{t('access.resetPassword')}</h3>
               <button
                 onClick={() => setResetPasswordModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
+                disabled={isSubmittingResetPassword}
+                className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer disabled:opacity-40"
               >
                 <X size={18} />
               </button>
@@ -664,14 +674,19 @@ export const Users: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setResetPasswordModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+                  disabled={isSubmittingResetPassword}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-50"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                  disabled={isSubmittingResetPassword}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-2"
                 >
+                  {isSubmittingResetPassword && (
+                    <span className="w-3 h-3 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />
+                  )}
                   {t('access.resetPassword')}
                 </button>
               </div>
@@ -692,8 +707,11 @@ export const Users: React.FC = () => {
         confirmLabel={pendingToggleBlockUser?.is_active ? t('access.blockUser') : t('access.unblockUser')}
         cancelLabel={t('common.cancel')}
         variant={pendingToggleBlockUser?.is_active ? 'danger' : 'primary'}
+        isLoading={isTogglingBlock}
         onConfirm={handleToggleBlockUser}
-        onCancel={() => setPendingToggleBlockUser(null)}
+        onCancel={() => {
+          if (!isTogglingBlock) setPendingToggleBlockUser(null);
+        }}
       />
     </div>
   );

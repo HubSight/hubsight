@@ -9,6 +9,7 @@ import { Pagination } from '../components/common/Pagination';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { useTranslation } from '../i18n';
 import { PullToRefresh } from '../components/common/PullToRefresh';
+import { PageHeader } from '../components/common/PageHeader';
 
 const Members: React.FC = () => {
   const { t } = useTranslation();
@@ -110,34 +111,32 @@ const Members: React.FC = () => {
   };
 
   return (
-    <PullToRefresh onRefresh={fetchMembers} className="h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-y-auto">
-      <div className="w-full p-4 md:p-6 lg:p-8 space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
-                <Users size={22} />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                  {t('members.title')}
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  {t('members.subtitle')}
-                </p>
-              </div>
-            </div>
-          </div>
-
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={Users}
+        title={t('members.title')}
+        subtitle={t('members.subtitle')}
+        badge={
+          totalMembers > 0 ? (
+            <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {totalMembers}
+            </span>
+          ) : undefined
+        }
+        actions={
           <button
             onClick={handleOpenAdd}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold rounded-2xl transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-98 rounded-lg shadow-2xs transition-all cursor-pointer whitespace-nowrap"
           >
             <Plus size={16} />
             {t('members.addMemberBtn')}
           </button>
-        </div>
+        }
+      />
+
+      <PullToRefresh onRefresh={fetchMembers} className="flex-1 min-h-0 overflow-y-auto">
+        <div className="w-full p-4 md:p-6 lg:p-8 space-y-6">
 
         {/* 4-Color Category Legend Banner */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -318,6 +317,7 @@ const Members: React.FC = () => {
         />
       </div>
     </PullToRefresh>
+    </div>
   );
 };
 

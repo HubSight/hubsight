@@ -6,13 +6,18 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/fingerprint"
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/mq"
+	"cctv/shared/pkg/nanoid"
+	"cctv/shared/pkg/redis"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -77,15 +82,103 @@ func GenerateToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-func createSessionForUser(ctx context.Context, userID string, isPWA bool, clientID ...string) (*models.Session, string, string, error) {
+func createSessionForUser(ctx context.Context, userID string, isPWA bool, devInfo *fingerprint.DeviceInfo, clientID ...string) (*models.Session, string, string, error) {
+	if devInfo == nil {
+		devInfo = &fingerprint.DeviceInfo{
+			ClientType:  "web",
+			DeviceLabel: "Trình duyệt Web",
+			IPAddress:   "127.0.0.1",
+			GeoCity:     "LAN",
+			GeoCountry:  "Mạng nội bộ",
+		}
+	}
+
+	// 1. Detect or register known device
+	isNewDevice := false
+	if devInfo.Fingerprint != "" {
+		var count int64
+		_ = database.DB.WithContext(ctx).Model(&models.KnownDevice{}).
+			Where("user_id = ? AND device_fingerprint = ?", userID, devInfo.Fingerprint).
+			Count(&count).Error
+		if count == 0 {
+			isNewDevice = true
+			kd := models.KnownDevice{
+				UserID:            userID,
+				DeviceFingerprint: devInfo.Fingerprint,
+				DeviceLabel:       devInfo.DeviceLabel,
+				ClientType:        devInfo.ClientType,
+				IsTrusted:         true,
+			}
+			_ = database.DB.WithContext(ctx).Create(&kd).Error
+			// Security alert for new device login
+			_ = mq.PublishEvent("notification.new", map[string]any{
+				"id":         nanoid.New(),
+				"title":      "Thiết bị đăng nhập mới",
+				"message":    fmt.Sprintf("Phát hiện đăng nhập từ thiết bị mới: %s (%s, %s)", devInfo.DeviceLabel, devInfo.IPAddress, devInfo.GeoCity),
+				"type":       "security",
+				"user_id":    userID,
+				"created_at": time.Now(),
+			})
+		} else {
+			now := time.Now()
+			_ = database.DB.WithContext(ctx).Model(&models.KnownDevice{}).
+				Where("user_id = ? AND device_fingerprint = ?", userID, devInfo.Fingerprint).
+				Updates(map[string]any{
+					"last_seen_at": now,
+					"device_label": devInfo.DeviceLabel,
+				}).Error
+		}
+	}
+
+	// 2. Concurrent Session Limits by role (Section 5.2)
+	var u models.User
+	if err := database.DB.WithContext(ctx).First(&u, "id = ?", userID).Error; err == nil {
+		var maxConcurrent int
+		switch u.Role {
+		case models.RoleViewer:
+			maxConcurrent = 3
+		case models.RoleOperator:
+			maxConcurrent = 5
+		case models.RoleAdmin:
+			maxConcurrent = 0 // unlimited
+		default:
+			maxConcurrent = 5
+		}
+
+		if maxConcurrent > 0 {
+			var activeSessions []models.Session
+			now := time.Now()
+			if err := database.DB.WithContext(ctx).
+				Where("user_id = ? AND revoked_at IS NULL AND expires_at > ?", userID, now).
+				Order("created_at ASC").
+				Find(&activeSessions).Error; err == nil {
+				excess := len(activeSessions) - maxConcurrent + 1
+				if excess > 0 && excess <= len(activeSessions) {
+					for i := 0; i < excess; i++ {
+						_ = RevokeSession(ctx, activeSessions[i].ID, "concurrent_limit")
+					}
+				}
+			}
+		}
+	}
+
+	// 3. Create active session
 	token := GenerateToken()
 	expiresAt := time.Now().Add(24 * 7 * time.Hour) // 1 week
 
 	sess := models.Session{
-		UserID:    userID,
-		TokenHash: hashToken(token),
-		ExpiresAt: expiresAt,
-		IsPwa:     isPWA,
+		UserID:            userID,
+		TokenHash:         hashToken(token),
+		ExpiresAt:         expiresAt,
+		IsPwa:             isPWA,
+		IPAddress:         devInfo.IPAddress,
+		UserAgent:         devInfo.UserAgent,
+		DeviceFingerprint: devInfo.Fingerprint,
+		DeviceLabel:       devInfo.DeviceLabel,
+		ClientType:        devInfo.ClientType,
+		GeoCity:           devInfo.GeoCity,
+		GeoCountry:        devInfo.GeoCountry,
+		IsNewDevice:       isNewDevice,
 	}
 	if len(clientID) > 0 && clientID[0] != "" {
 		sess.ClientID = clientID[0]
@@ -104,7 +197,6 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool, client
 	now := time.Now()
 	_ = database.DB.WithContext(ctx).Model(&models.User{ID: userID}).Update("last_login_at", &now).Error
 
-	var u models.User
 	if err := database.DB.WithContext(ctx).Preload("RoleInfo.Permissions").First(&u, "id = ?", userID).Error; err == nil {
 		LoadUserPermissions(ctx, &u)
 		sess.User = &u
@@ -114,8 +206,23 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool, client
 }
 
 func Login(ctx context.Context, username, password string, isPWA bool, clientID ...string) (*models.Session, string, string, error) {
+	return LoginWithDevice(ctx, username, password, isPWA, nil, clientID...)
+}
+
+func LoginWithDevice(ctx context.Context, username, password string, isPWA bool, devInfo *fingerprint.DeviceInfo, clientID ...string) (*models.Session, string, string, error) {
+	if devInfo != nil && devInfo.IPAddress != "" {
+		// Anti brute-force protection (max 5 consecutive failures)
+		if redis.GetFailedLoginCount(ctx, devInfo.IPAddress) >= 5 {
+			return nil, "", "", errors.New("Quá nhiều lần thử đăng nhập thất bại. Vui lòng thử lại sau 5 phút.")
+		}
+	}
+
 	var u models.User
 	if err := database.DB.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
+		if devInfo != nil && devInfo.IPAddress != "" {
+			_, _ = redis.RecordFailedLogin(ctx, devInfo.IPAddress, 5*time.Minute)
+			_, _ = redis.RecordFailedLogin(ctx, username, 5*time.Minute)
+		}
 		return nil, "", "", errors.New("invalid credentials")
 	}
 
@@ -125,7 +232,37 @@ func Login(ctx context.Context, username, password string, isPWA bool, clientID 
 
 	match, err := verifyPassword(password, u.PasswordHash)
 	if err != nil || !match {
+		if devInfo != nil && devInfo.IPAddress != "" {
+			_, _ = redis.RecordFailedLogin(ctx, devInfo.IPAddress, 5*time.Minute)
+			_, _ = redis.RecordFailedLogin(ctx, username, 5*time.Minute)
+		}
 		return nil, "", "", errors.New("invalid credentials")
+	}
+
+	// Login successful: reset failed attempt counter
+	if devInfo != nil && devInfo.IPAddress != "" {
+		_ = redis.ClearFailedLogin(ctx, devInfo.IPAddress)
+		_ = redis.ClearFailedLogin(ctx, username)
+	}
+
+	// Impossible travel detection (Section 6)
+	if devInfo != nil && devInfo.GeoCountry != "" && devInfo.GeoCountry != "LAN" {
+		var lastSess models.Session
+		if err := database.DB.WithContext(ctx).
+			Where("user_id = ? AND geo_country != 'LAN' AND geo_country != ''", u.ID).
+			Order("created_at DESC").
+			First(&lastSess).Error; err == nil {
+			if lastSess.GeoCountry != devInfo.GeoCountry && time.Since(lastSess.CreatedAt) < 2*time.Hour {
+				_ = mq.PublishEvent("notification.new", map[string]any{
+					"id":         nanoid.New(),
+					"title":      "Cảnh báo bảo mật: Vị trí đăng nhập bất thường",
+					"message":    fmt.Sprintf("Phát hiện đăng nhập tài khoản %s từ %s (%s) trong vòng 2 giờ so với lần đăng nhập trước từ %s", u.Username, devInfo.GeoCountry, devInfo.GeoCity, lastSess.GeoCountry),
+					"type":       "security_alert",
+					"user_id":    u.ID,
+					"created_at": time.Now(),
+				})
+			}
+		}
 	}
 
 	// If 2FA is enabled, issue a temporary pre-auth challenge token
@@ -135,7 +272,7 @@ func Login(ctx context.Context, username, password string, isPWA bool, clientID 
 		return nil, preAuthToken, "", ErrTwoFactorRequired
 	}
 
-	return createSessionForUser(ctx, u.ID, isPWA, clientID...)
+	return createSessionForUser(ctx, u.ID, isPWA, devInfo, clientID...)
 }
 
 func RefreshPWASession(ctx context.Context, refreshToken string) (*models.Session, string, string, error) {
@@ -145,10 +282,27 @@ func RefreshPWASession(ctx context.Context, refreshToken string) (*models.Sessio
 
 	rHash := hashToken(refreshToken)
 	var sess models.Session
-	if err := database.DB.WithContext(ctx).
+	err := database.DB.WithContext(ctx).
 		Preload("User").
-		Where("is_pwa = ? AND refresh_token_hash = ?", true, rHash).
-		First(&sess).Error; err != nil {
+		Where("is_pwa = ? AND refresh_token_hash = ? AND revoked_at IS NULL AND expires_at > ?", true, rHash, time.Now()).
+		First(&sess).Error
+
+	if err != nil {
+		// Detect Reuse: check if this refresh_token_hash was ever used in a revoked/superseded session
+		var revokedSess models.Session
+		if rErr := database.DB.WithContext(ctx).Where("refresh_token_hash = ?", rHash).First(&revokedSess).Error; rErr == nil {
+			// Token reuse detected! Revoke all sessions for this user immediately
+			_ = RevokeAllUserSessions(ctx, revokedSess.UserID, "anomaly_detected")
+			_ = mq.PublishEvent("notification.new", map[string]any{
+				"id":         nanoid.New(),
+				"title":      "Cảnh báo bảo mật: Phát hiện Token tái sử dụng",
+				"message":    "Phát hiện Refresh Token cũ đã bị sử dụng lại (dấu hiệu lộ token). Toàn bộ các phiên đăng nhập đã bị thu hồi.",
+				"type":       "security_breach",
+				"user_id":    revokedSess.UserID,
+				"created_at": time.Now(),
+			})
+			return nil, "", "", errors.New("refresh token reuse detected; all sessions revoked")
+		}
 		return nil, "", "", errors.New("invalid refresh token")
 	}
 
@@ -182,27 +336,50 @@ func RefreshPWASession(ctx context.Context, refreshToken string) (*models.Sessio
 	return &sess, newToken, newRefreshToken, nil
 }
 
-func GetUserBySession(ctx context.Context, token string) (*models.User, error) {
+// GetSessionAndUser retrieves an active session and user by token, validating against DB and Redis blacklist.
+func GetSessionAndUser(ctx context.Context, token string) (*models.Session, *models.User, error) {
+	if token == "" {
+		return nil, nil, errors.New("missing token")
+	}
+
 	tokenHash := hashToken(token)
+	tokenHashHex := hex.EncodeToString(tokenHash)
+
+	// Fast Redis blacklist check: reject immediately without querying PostgreSQL
+	if redis.IsTokenHashRevoked(ctx, tokenHashHex) {
+		return nil, nil, errors.New("session revoked")
+	}
+
 	var sess models.Session
 	if err := database.DB.WithContext(ctx).
 		Preload("User").
-		Where("token_hash = ? AND expires_at > ?", tokenHash, time.Now()).
+		Where("token_hash = ? AND revoked_at IS NULL AND expires_at > ?", tokenHash, time.Now()).
 		First(&sess).Error; err != nil {
-		return nil, errors.New("unauthorized")
+		return nil, nil, errors.New("unauthorized")
+	}
+
+	// Fast Redis blacklist check by session ID
+	if redis.IsSessionRevoked(ctx, sess.ID) {
+		return nil, nil, errors.New("session revoked")
 	}
 
 	u := sess.User
 	if u == nil || !u.IsActive {
-		return nil, errors.New("unauthorized")
+		return nil, nil, errors.New("unauthorized")
 	}
 
-	// Update last_seen_at inline with context (matches Ent behavior)
+	// Update last_seen_at
 	now := time.Now()
 	_ = database.DB.WithContext(ctx).Model(&models.Session{ID: sess.ID}).Update("last_seen_at", &now).Error
+	sess.LastSeenAt = &now
 
 	LoadUserPermissions(ctx, u)
-	return u, nil
+	return &sess, u, nil
+}
+
+func GetUserBySession(ctx context.Context, token string) (*models.User, error) {
+	_, u, err := GetSessionAndUser(ctx, token)
+	return u, err
 }
 
 // LoadUserPermissions resolves and caches a user's permissions and role info.
@@ -246,10 +423,113 @@ func LoadUserPermissions(ctx context.Context, u *models.User) {
 	u.Permissions = []string{"cameras:view", "recordings:view"}
 }
 
+// RevokeSession marks a session as revoked in DB, sets fast cache in Redis, and broadcasts real-time kickout event.
+func RevokeSession(ctx context.Context, sessionID string, reason string) error {
+	if sessionID == "" {
+		return nil
+	}
+	if reason == "" {
+		reason = "user_logout"
+	}
+
+	// Retrieve session metadata before revocation to blacklist token hash and determine TTL
+	var sess models.Session
+	_ = database.DB.WithContext(ctx).
+		Select("id", "token_hash", "expires_at").
+		Where("id = ?", sessionID).
+		First(&sess).Error
+
+	now := time.Now()
+	if err := database.DB.WithContext(ctx).Model(&models.Session{}).
+		Where("id = ? AND revoked_at IS NULL", sessionID).
+		Updates(map[string]any{
+			"revoked_at":    &now,
+			"revoke_reason": reason,
+		}).Error; err != nil {
+		return err
+	}
+
+	ttl := 24 * time.Hour
+	if !sess.ExpiresAt.IsZero() {
+		rem := time.Until(sess.ExpiresAt)
+		if rem > 0 && rem < 30*24*time.Hour {
+			ttl = rem
+		}
+	}
+
+	// 1. Blacklist in Redis (zero-latency check for both session ID and token hash)
+	_ = redis.RevokeSession(ctx, sessionID, ttl)
+	if len(sess.TokenHash) > 0 {
+		_ = redis.RevokeTokenHash(ctx, hex.EncodeToString(sess.TokenHash), ttl)
+	}
+
+	// 2. Broadcast realtime event via RabbitMQ to relay-service
+	_ = mq.PublishEvent("relay.emit", map[string]any{
+		"room":  "session_" + sessionID,
+		"event": "session:revoked",
+		"data": map[string]any{
+			"session_id": sessionID,
+			"reason":     reason,
+			"message":    "Phiên đăng nhập đã bị thu hồi.",
+		},
+	})
+
+	return nil
+}
+
+// RevokeAllOtherSessions revokes all active sessions for a user except the specified currentSessionID.
+func RevokeAllOtherSessions(ctx context.Context, userID string, currentSessionID string) error {
+	var activeSessions []models.Session
+	err := database.DB.WithContext(ctx).
+		Where("user_id = ? AND id != ? AND revoked_at IS NULL AND expires_at > ?", userID, currentSessionID, time.Now()).
+		Find(&activeSessions).Error
+	if err != nil {
+		return err
+	}
+
+	for _, s := range activeSessions {
+		_ = RevokeSession(ctx, s.ID, "user_logout")
+	}
+	return nil
+}
+
+// RevokeAllUserSessions revokes every active session of a user (e.g. on account block, password reset, anomaly).
+func RevokeAllUserSessions(ctx context.Context, userID string, reason string) error {
+	var activeSessions []models.Session
+	err := database.DB.WithContext(ctx).
+		Where("user_id = ? AND revoked_at IS NULL AND expires_at > ?", userID, time.Now()).
+		Find(&activeSessions).Error
+	if err != nil {
+		return err
+	}
+
+	for _, s := range activeSessions {
+		_ = RevokeSession(ctx, s.ID, reason)
+	}
+	return nil
+}
+
+// ListSessions returns recent login sessions for a user (active and past history).
+func ListSessions(ctx context.Context, userID string) ([]models.Session, error) {
+	var sessions []models.Session
+	err := database.DB.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Limit(50).
+		Find(&sessions).Error
+	return sessions, err
+}
+
 func Logout(ctx context.Context, token string) error {
-	return database.DB.WithContext(ctx).
-		Where("token_hash = ?", hashToken(token)).
-		Delete(&models.Session{}).Error
+	if token == "" {
+		return nil
+	}
+	tokenHash := hashToken(token)
+	var sess models.Session
+	if err := database.DB.WithContext(ctx).Where("token_hash = ? AND revoked_at IS NULL", tokenHash).First(&sess).Error; err != nil {
+		return nil
+	}
+	return RevokeSession(ctx, sess.ID, "user_logout")
 }
 
 func CreateInitialUser(ctx context.Context, username, password string) error {

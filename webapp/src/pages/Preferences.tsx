@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTimezone, TIMEZONE_OPTIONS } from '../context/TimezoneContext';
@@ -7,6 +7,7 @@ import { useTranslation } from '../i18n';
 import { api } from '../api/client';
 import { isApiError, getErrorMessage } from '@hubsight/sdk';
 import { isPwa } from '../utils/pwa';
+import { PageHeader } from '../components/common/PageHeader';
 import {
   User as UserIcon,
   ShieldCheck,
@@ -26,13 +27,13 @@ import {
   Monitor,
   Globe,
   Smartphone,
-  ChevronRight,
 } from '@/components/icons';
 import { TwoFactorSetupModal } from '../components/settings/TwoFactorSetupModal';
 import { PasskeySettingsSection } from '../components/settings/PasskeySettingsSection';
+import { SessionsSettingsSection } from '../components/settings/SessionsSettingsSection';
 import dayjs from 'dayjs';
 
-type PreferencesTab = 'profile' | 'security' | 'preferences' | 'notifications';
+type PreferencesTab = 'profile' | 'security' | 'sessions' | 'preferences' | 'notifications';
 
 export const Preferences: React.FC = () => {
   const { t, locale, setLocale } = useTranslation();
@@ -44,7 +45,7 @@ export const Preferences: React.FC = () => {
   // Active Tab from query param with fallback to 'profile'
   const tabParam = searchParams.get('tab');
   const activeTab: PreferencesTab =
-    tabParam === 'security' || tabParam === 'preferences' || tabParam === 'notifications'
+    tabParam === 'security' || tabParam === 'sessions' || tabParam === 'preferences' || tabParam === 'notifications'
       ? tabParam
       : 'profile';
 
@@ -90,6 +91,7 @@ export const Preferences: React.FC = () => {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isChangingPassword) return;
     setPasswordError('');
     setPasswordSuccess('');
 
@@ -204,6 +206,11 @@ export const Preferences: React.FC = () => {
       icon: ShieldCheck,
     },
     {
+      id: 'sessions' as const,
+      label: t('settings.tabSessions'),
+      icon: Monitor,
+    },
+    {
       id: 'preferences' as const,
       label: t('settings.tabPreferences'),
       icon: Sliders,
@@ -217,68 +224,18 @@ export const Preferences: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      {/* ── TOP HEADER ── */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 pb-4 shrink-0">
-        <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-2xs">
-              <Sliders size={22} />
-            </div>
-            <div>
-              {/* Breadcrumb path */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 font-medium mb-0.5">
-                <Link to="/" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                  {t('settings.breadcrumbRoot')}
-                </Link>
-                <ChevronRight size={12} />
-                <span className="text-slate-700 dark:text-slate-300 font-semibold">
-                  {t('nav.preferences')}
-                </span>
-              </div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
-                {t('preferences.pageTitle')}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 hidden sm:block">
-                {t('preferences.pageSubtitle')}
-              </p>
-            </div>
-          </div>
-
-          {/* User Quick Info Pill */}
-          {user && (
-            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 px-3.5 py-2 rounded-2xl self-start sm:self-auto shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-orange-600 text-white font-bold text-xs flex items-center justify-center uppercase shrink-0 shadow-2xs">
-                {user.full_name ? user.full_name.charAt(0) : user.username.charAt(0)}
-              </div>
-              <div className="min-w-0 pr-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate max-w-[150px]">
-                    {user.full_name || user.username}
-                  </span>
-                  <span
-                    className={`inline-block w-2 h-2 rounded-full ring-2 ring-white dark:ring-slate-900 shrink-0 ${
-                      user.is_active ? 'bg-emerald-500' : 'bg-red-500'
-                    }`}
-                    title={user.is_active ? t('settings.onlineStatus') : t('settings.accountStatusInactive')}
-                  />
-                </div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] text-slate-400 dark:text-slate-400 font-mono">
-                    @{user.username}
-                  </span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50">
-                    {user.role === 'admin' ? t('admin') : t('viewer')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── HORIZONTAL NAVIGATION TABS BAR (TOP LEVEL) ── */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 md:px-8 shadow-2xs shrink-0">
-        <div className="w-full flex items-center gap-2 sm:gap-4 overflow-x-auto scrollbar-none py-1.5">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={Sliders}
+        title={t('preferences.pageTitle')}
+        subtitle={t('preferences.pageSubtitle')}
+        breadcrumbs={[
+          { label: t('settings.breadcrumbRoot'), href: '/' },
+          { label: t('nav.preferences') },
+        ]}
+      >
+        {/* Horizontal Navigation Tabs Bar */}
+        <div className="w-full flex items-center gap-2 sm:gap-4 overflow-x-auto scrollbar-none px-4 sm:px-6 md:px-8 py-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -287,27 +244,27 @@ export const Preferences: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive
                     ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border border-orange-200/90 dark:border-orange-500/30 shadow-2xs font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 border border-transparent'
                 }`}
               >
                 <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                  className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                     isActive
                       ? 'bg-orange-600 text-white shadow-2xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                   }`}
                 >
-                  <Icon size={15} />
+                  <Icon size={14} />
                 </div>
                 <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
-      </div>
+      </PageHeader>
 
       {/* ── MAIN CONTENT AREA (FULL-WIDTH BALANCED CONTAINER) ── */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar">
@@ -611,7 +568,16 @@ export const Preferences: React.FC = () => {
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              TAB 3: PREFERENCES & DISPLAY
+              TAB 3: SESSIONS & DEVICES
+             ══════════════════════════════════════════════════════════════════ */}
+          {activeTab === 'sessions' && (
+            <div className="space-y-6 animate-fade-in">
+              <SessionsSettingsSection />
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════════
+              TAB 4: PREFERENCES & DISPLAY
              ══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'preferences' && (
             <div className="space-y-6 animate-fade-in">
@@ -636,7 +602,7 @@ export const Preferences: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleSelectTheme('system')}
-                    className={`flex flex-col items-start p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    className={`flex flex-col items-start p-4 rounded-lg border text-left transition-all cursor-pointer ${
                       theme === 'system'
                         ? 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-500 ring-2 ring-orange-500/20 shadow-xs'
                         : 'bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600'
@@ -644,7 +610,7 @@ export const Preferences: React.FC = () => {
                   >
                     <div className="flex items-center justify-between w-full mb-3">
                       <div
-                        className={`p-2.5 rounded-xl ${
+                        className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
                           theme === 'system'
                             ? 'bg-orange-600 text-white shadow-2xs'
                             : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
@@ -676,7 +642,7 @@ export const Preferences: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleSelectTheme('light')}
-                    className={`flex flex-col items-start p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    className={`flex flex-col items-start p-4 rounded-lg border text-left transition-all cursor-pointer ${
                       theme === 'light'
                         ? 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-500 ring-2 ring-orange-500/20 shadow-xs'
                         : 'bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600'
@@ -684,7 +650,7 @@ export const Preferences: React.FC = () => {
                   >
                     <div className="flex items-center justify-between w-full mb-3">
                       <div
-                        className={`p-2.5 rounded-xl ${
+                        className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
                           theme === 'light'
                             ? 'bg-orange-600 text-white shadow-2xs'
                             : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
@@ -710,7 +676,7 @@ export const Preferences: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleSelectTheme('dark')}
-                    className={`flex flex-col items-start p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    className={`flex flex-col items-start p-4 rounded-lg border text-left transition-all cursor-pointer ${
                       theme === 'dark'
                         ? 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-500 ring-2 ring-orange-500/20 shadow-xs'
                         : 'bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600'
@@ -718,7 +684,7 @@ export const Preferences: React.FC = () => {
                   >
                     <div className="flex items-center justify-between w-full mb-3">
                       <div
-                        className={`p-2.5 rounded-xl ${
+                        className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
                           theme === 'dark'
                             ? 'bg-orange-600 text-white shadow-2xs'
                             : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'

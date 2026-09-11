@@ -34,6 +34,13 @@ export interface ForceLogoutEvent {
   _timestamp?: string;
 }
 
+export interface SessionRevokedEvent {
+  session_id: string;
+  reason?: string;
+  message?: string;
+  _timestamp?: string;
+}
+
 export interface CameraEvent {
   id?: string;
   name?: string;
@@ -50,11 +57,12 @@ export interface MemberFaceUpdatedEvent {
 }
 
 /**
- * Internal wire mapping for all 12 built-in HubSight realtime event names.
+ * Internal wire mapping for built-in HubSight realtime event names.
  * These are completely internal to the SDK and hidden from client consumers.
  */
 export const INTERNAL_REALTIME_EVENTS = {
   AUTH_FORCE_LOGOUT: 'auth:force_logout',
+  SESSION_REVOKED: 'session:revoked',
   VISION_PERSON_ENTERED: 'vision.person.entered',
   VISION_PERSON_UPDATE: 'vision.person.update',
   VISION_PERSON_LEFT: 'vision.person.left',
@@ -69,11 +77,12 @@ export const INTERNAL_REALTIME_EVENTS = {
 } as const;
 
 /**
- * Internal single source of truth for all 12 built-in HubSight realtime event payloads.
+ * Internal single source of truth for all built-in HubSight realtime event payloads.
  */
 export interface BuiltInRealtimeEvents {
   // Auth & Session
   'auth:force_logout': ForceLogoutEvent;
+  'session:revoked': SessionRevokedEvent;
 
   // Computer Vision
   'vision.person.entered': VisionBoxesEvent;

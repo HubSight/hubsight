@@ -66,6 +66,7 @@ export {
   type SessionStorageAdapter,
   type RefreshTokenStore,
   isPasskeySupported,
+  getOrCollectDeviceInfo,
 } from './auth';
 
 // ── Realtime & Event Payloads ────────────────────────────────────────────────
@@ -77,6 +78,7 @@ export type {
   OverlayBox,
   VisionBoxesEvent,
   ForceLogoutEvent,
+  SessionRevokedEvent,
   CameraEvent,
   MemberFaceUpdatedEvent,
   RealtimeClient,
@@ -113,10 +115,13 @@ export type {
   CreateRoleRequest,
   UpdateRoleRequest,
   ApiClient,
+  ApiClientType,
   CreateClientRequest,
   UpdateClientRequest,
   ClientPlatform,
   ClientType,
+  ClientDeviceInfo,
+  SessionItem,
   LoginRequest,
   LoginResponse,
   ChangePasswordRequest,

@@ -4,8 +4,9 @@ package models
 type RoleCode string
 
 const (
-	RoleAdmin  RoleCode = "admin"
-	RoleViewer RoleCode = "viewer"
+	RoleAdmin    RoleCode = "admin"
+	RoleOperator RoleCode = "operator"
+	RoleViewer   RoleCode = "viewer"
 )
 
 // Locale defines preferred UI languages.

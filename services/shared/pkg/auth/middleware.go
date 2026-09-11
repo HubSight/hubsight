@@ -54,8 +54,9 @@ func Middleware() gin.HandlerFunc {
 		if err == nil && resp.StatusCode == http.StatusOK {
 			defer resp.Body.Close()
 			var valResp struct {
-				Valid bool         `json:"valid"`
-				User  *models.User `json:"user"`
+				Valid     bool         `json:"valid"`
+				User      *models.User `json:"user"`
+				SessionID string       `json:"session_id"`
 			}
 			if err := json.NewDecoder(resp.Body).Decode(&valResp); err == nil && valResp.Valid && valResp.User != nil {
 				if valResp.User.MustChangePassword && !isAllowedWhilePasswordChangeRequired(c.Request.URL.Path) {
@@ -66,13 +67,17 @@ func Middleware() gin.HandlerFunc {
 					return
 				}
 				c.Set("user", valResp.User)
+				if valResp.SessionID != "" {
+					c.Set("session_id", valResp.SessionID)
+				}
+				c.Set("session_token", cookie)
 				c.Next()
 				return
 			}
 		}
 
 		// Fallback to local query if auth-service is unreachable during startup
-		user, err := GetUserBySession(c.Request.Context(), cookie)
+		sess, user, err := GetSessionAndUser(c.Request.Context(), cookie)
 		if err != nil || !user.IsActive {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
@@ -87,6 +92,10 @@ func Middleware() gin.HandlerFunc {
 		}
 
 		c.Set("user", user)
+		if sess != nil {
+			c.Set("session_id", sess.ID)
+		}
+		c.Set("session_token", cookie)
 		c.Next()
 	}
 }

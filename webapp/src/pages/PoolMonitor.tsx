@@ -12,6 +12,7 @@ import {
 import { api } from '../api/client';
 import type { PoolStatusSummary } from '../types/pool';
 import { useTranslation } from '../i18n';
+import { PageHeader } from '../components/common/PageHeader';
 import { useOnPoolStatus } from '@hubsight/sdk/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -59,28 +60,22 @@ export const PoolMonitor = () => {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-950/50 p-4 sm:p-6 lg:p-8">
-      <div className="w-full space-y-6">
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <Layers size={24} />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
-                {t('pool.title')}
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Active Pool
-                </span>
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {t('pool.subtitle')}
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={Layers}
+        title={t('pool.title')}
+        subtitle={t('pool.subtitle')}
+        badge={
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Active Pool
+          </span>
+        }
+      />
+
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div className="w-full space-y-6">
 
         {/* Quick Metrics Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
@@ -398,5 +393,6 @@ export const PoolMonitor = () => {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };

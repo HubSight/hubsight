@@ -53,6 +53,7 @@ interface ValidateTokenResponse {
   role?: string;
   username?: string;
   full_name?: string;
+  session_id?: string;
 }
 
 @WebSocketGateway({
@@ -154,6 +155,7 @@ export class RelayGateway
           userId: authResult.user.id,
           username: authResult.user.username,
           role: authResult.role || authResult.user.role,
+          sessionId: authResult.session_id,
         };
 
         return next();
@@ -205,9 +207,12 @@ export class RelayGateway
     if (client.data?.userId) {
       client.join(`user_${client.data.userId}`);
       client.join(`role_${client.data.role}`);
+      if (client.data?.sessionId) {
+        client.join(`session_${client.data.sessionId}`);
+      }
 
       this.logger.log(
-        `[Client Authenticated] App: ${client.data.clientId} | User: ${client.data.username} (Role: ${client.data.role}, Socket: ${client.id})`,
+        `[Client Authenticated] App: ${client.data.clientId} | User: ${client.data.username} (Role: ${client.data.role}, Session: ${client.data.sessionId || 'none'}, Socket: ${client.id})`,
       );
     }
   }

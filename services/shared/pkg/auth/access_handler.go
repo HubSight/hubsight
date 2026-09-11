@@ -351,8 +351,8 @@ func UpdateUserHandler(c *gin.Context) {
 
 	// If user was blocked (deactivated), revoke all active sessions immediately and emit realtime kickout event
 	if isBlocking {
-		// 1. Invalidate all existing sessions in DB
-		_ = database.DB.WithContext(ctx).Where("user_id = ?", user.ID).Delete(&models.Session{}).Error
+		// 1. Soft-revoke all existing sessions in DB, blacklist in Redis, and emit realtime revocation
+		_ = RevokeAllUserSessions(ctx, user.ID, "admin_revoke")
 
 		// 2. Publish realtime event to RabbitMQ relay_queue so relay-service force-disconnects active sockets
 		_ = mq.PublishEvent("user.blocked", map[string]any{
@@ -409,7 +409,7 @@ func ResetUserPasswordHandler(c *gin.Context) {
 	}
 
 	// Invalidate user's existing sessions
-	_ = database.DB.WithContext(ctx).Where("user_id = ?", user.ID).Delete(&models.Session{}).Error
+	_ = RevokeAllUserSessions(ctx, user.ID, "admin_revoke")
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Password reset successfully"})
 }

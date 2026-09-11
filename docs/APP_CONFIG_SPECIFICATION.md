@@ -487,6 +487,43 @@ func main() {
 
 ---
 
+### 5.6. Gửi Thông tin Thiết bị Đăng nhập (Device Info & Fingerprint) khi Đăng nhập
+
+Khi ứng dụng Mobile/Desktop đăng nhập người dùng (`POST /api/auth/login` hoặc `POST /api/auth/2fa/verify`), ứng dụng phải gửi kèm thông tin thiết bị (`device_info`) trong JSON payload và các header `X-Device-*` tương ứng để hệ thống ghi lại lịch sử phiên đăng nhập chi tiết.
+
+#### Request mẫu:
+```http
+POST /api/auth/login HTTP/1.1
+Host: gateway.hubsight.internal
+Content-Type: application/json
+X-Client-ID: cli_1234567890
+X-Device-Fingerprint: 3b1a8d0ef9...
+X-Device-Label: Apple iPhone 15 Pro (iOS 17.5.1) • App v1.2.0
+X-Client-Type: mobile_ios
+
+{
+  "username": "user1",
+  "password": "SecretPassword123!",
+  "device_info": {
+    "fingerprint": "3b1a8d0ef9...",
+    "device_label": "Apple iPhone 15 Pro (iOS 17.5.1) • App v1.2.0",
+    "client_type": "mobile_ios",
+    "platform": "iOS",
+    "os_version": "17.5.1",
+    "model": "iPhone 15 Pro",
+    "manufacturer": "Apple",
+    "app_version": "1.2.0",
+    "screen_resolution": "1179x2556",
+    "language": "vi-VN",
+    "timezone": "Asia/Ho_Chi_Minh"
+  }
+}
+```
+
+Xem đặc tả chi tiết các trường dữ liệu và mẫu code Flutter tại [`docs/SECURITY_FOR_LOGIN.md`](./SECURITY_FOR_LOGIN.md#44-đặc-tả-gửi-thông-tin-thiết-bị-đăng-nhập-client-device-metadata-contract).
+
+---
+
 ## 6. Nguyên tắc An toàn & Best Practices
 
 1. **Không lưu trữ mã PIN**: Ứng dụng client chỉ giữ mã PIN trong bộ nhớ tạm (RAM) lúc giải mã, sau đó xóa sạch (`zeroize`) vùng nhớ.

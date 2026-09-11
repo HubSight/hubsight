@@ -16,6 +16,16 @@ export class RelayService {
     if (dto.room) {
       this.relayGateway.server.to(dto.room).emit(dto.event, payload);
       this.logger.log(`Emitted event "${dto.event}" to room "${dto.room}"`);
+
+      // If session is revoked, disconnect matching client sockets after brief delay
+      if (dto.event === 'session:revoked') {
+        const roomToKick = dto.room;
+        setTimeout(() => {
+          this.relayGateway.server.in(roomToKick).disconnectSockets(true);
+          this.logger.log(`Disconnected all sockets in room "${roomToKick}" following session revocation`);
+        }, 500);
+      }
+
       return { status: 'emitted', target: `room:${dto.room}`, event: dto.event };
     }
 

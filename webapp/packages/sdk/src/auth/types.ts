@@ -1,9 +1,11 @@
 import type {
   ChangePasswordRequest,
+  ClientDeviceInfo,
   Locale,
   LoginRequest,
   LoginResponse,
   PasskeyItem,
+  SessionItem,
   ThemePreference,
   TwoFactorSetupResponse,
   TwoFactorVerifyRequest,
@@ -62,7 +64,12 @@ export interface AuthManager {
   registerPasskey(name: string): Promise<PasskeyItem>;
   renamePasskey(id: string, name: string): Promise<void>;
   deletePasskey(id: string): Promise<void>;
-  loginWithPasskey(username: string, conditional?: boolean): Promise<LoginResponse>;
+  loginWithPasskey(username: string, conditional?: boolean, deviceInfo?: Partial<ClientDeviceInfo>): Promise<LoginResponse>;
+
+  // Session & Device Management
+  listSessions(): Promise<SessionItem[]>;
+  revokeSession(id: string): Promise<void>;
+  revokeAllOtherSessions(): Promise<void>;
 
   // Internal kernel handler for realtime kickout
   handleForceLogout(reason?: string, message?: string): void;

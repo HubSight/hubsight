@@ -20,6 +20,7 @@ import {
   Clock,
 } from '@/components/icons';
 import toast from 'react-hot-toast';
+import { PageHeader } from '../components/common/PageHeader';
 import dayjs from 'dayjs';
 
 export const GoogleServiceAccounts: React.FC = () => {
@@ -166,8 +167,8 @@ export const GoogleServiceAccounts: React.FC = () => {
   // Submit Import
   const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jsonText.trim() || jsonValidationError || !parsedPreview) {
-      toast.error(t('serviceAccounts.invalidJsonFile'));
+    if (isSubmitting || !jsonText.trim() || jsonValidationError || !parsedPreview) {
+      if (!isSubmitting) toast.error(t('serviceAccounts.invalidJsonFile'));
       return;
     }
 
@@ -269,40 +270,42 @@ export const GoogleServiceAccounts: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
-      {/* ── Top Header ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/70 dark:border-orange-800/70 flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-2xs shrink-0">
-            <Google size={22} />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-              {t('serviceAccounts.title')}
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                GCP / Firebase
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={Google}
+        title={t('serviceAccounts.title')}
+        subtitle={t('serviceAccounts.subtitle')}
+        badge={
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              GCP / Firebase
+            </span>
+            {accounts.length > 0 && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                {accounts.length}
               </span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              {t('serviceAccounts.subtitle')}
-            </p>
+            )}
           </div>
-        </div>
+        }
+        actions={
+          <button
+            onClick={() => {
+              resetImportForm();
+              setIsImportModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-98 rounded-lg shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+          >
+            <Plus size={16} />
+            <span>{t('serviceAccounts.importBtn')}</span>
+          </button>
+        }
+      />
 
-        <button
-          onClick={() => {
-            resetImportForm();
-            setIsImportModalOpen(true);
-          }}
-          className="btn flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 shrink-0 whitespace-nowrap"
-        >
-          <Plus size={16} />
-          <span>{t('serviceAccounts.importBtn')}</span>
-        </button>
-      </div>
-
-      {/* ── Overview Metrics Cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 my-6">
+      {/* ── Scrollable Body Content ─────────────────────────────── */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+        {/* ── Overview Metrics Cards ─────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 mb-6">
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 shrink-0">
             <Google size={18} />
@@ -868,7 +871,8 @@ export const GoogleServiceAccounts: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsImportModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {t('cancel')}
                 </button>
@@ -1090,6 +1094,7 @@ export const GoogleServiceAccounts: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

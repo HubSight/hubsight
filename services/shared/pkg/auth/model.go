@@ -1,9 +1,12 @@
 package auth
 
+import "cctv/shared/pkg/fingerprint"
+
 type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	IsPWA    bool   `json:"is_pwa"`
+	Username   string                        `json:"username"`
+	Password   string                        `json:"password"`
+	IsPWA      bool                          `json:"is_pwa"`
+	DeviceInfo *fingerprint.ClientDeviceInfo `json:"device_info,omitempty"`
 }
 
 type RefreshTokenRequest struct {
@@ -41,10 +44,11 @@ type UpdatePreferencesRequest struct {
 // ── 2FA Models ───────────────────────────────────────────────────────────────
 
 type Verify2FARequest struct {
-	PreAuthToken string `json:"pre_auth_token"`
-	Code         string `json:"code,omitempty"`
-	RecoveryCode string `json:"recovery_code,omitempty"`
-	IsPWA        bool   `json:"is_pwa"`
+	PreAuthToken string                        `json:"pre_auth_token"`
+	Code         string                        `json:"code,omitempty"`
+	RecoveryCode string                        `json:"recovery_code,omitempty"`
+	IsPWA        bool                          `json:"is_pwa"`
+	DeviceInfo   *fingerprint.ClientDeviceInfo `json:"device_info,omitempty"`
 }
 
 type Enable2FARequest struct {
@@ -74,12 +78,12 @@ type PasskeyLoginOptionsRequest struct {
 }
 
 type PasskeyLoginVerifyRequest struct {
-	ChallengeID string `json:"challenge_id"`
-	Credential  string `json:"credential"` // JSON stringified WebAuthn assertion response
-	IsPWA       bool   `json:"is_pwa"`
+	ChallengeID string                        `json:"challenge_id"`
+	Credential  string                        `json:"credential"` // JSON stringified WebAuthn assertion response
+	IsPWA       bool                          `json:"is_pwa"`
+	DeviceInfo  *fingerprint.ClientDeviceInfo `json:"device_info,omitempty"`
 }
 
 type RenamePasskeyRequest struct {
 	Name string `json:"name"`
 }
-

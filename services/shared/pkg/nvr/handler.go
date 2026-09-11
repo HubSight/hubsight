@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"cctv/shared/pkg/database"
@@ -20,7 +21,60 @@ import (
 
 var startTime = time.Now()
 
-// GetNvrStatusSnapshot computes full statistics of the NVR engine
+// storageCache caches expensive aggregate queries on recordings to avoid hammering
+// the database on every 10-second broadcast cycle.
+var storageCache struct {
+	mu             sync.Mutex
+	totalUsedBytes int64
+	totalCount     int64
+	oldestAt       *time.Time
+	newestAt       *time.Time
+	refreshedAt    time.Time
+}
+
+const storageCacheTTL = 30 * time.Second
+
+// refreshStorageCache recomputes the expensive aggregate stats and caches the result.
+// It is called at most once per storageCacheTTL interval.
+func refreshStorageCache(ctx context.Context) {
+	storageCache.mu.Lock()
+	defer storageCache.mu.Unlock()
+
+	if time.Since(storageCache.refreshedAt) < storageCacheTTL {
+		return
+	}
+
+	var totalUsedBytes int64
+	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).
+		Select("COALESCE(SUM(size_bytes), 0)").
+		Scan(&totalUsedBytes).Error
+
+	var totalCount int64
+	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).Count(&totalCount).Error
+
+	var oldestRec models.Recording
+	var oldestAt *time.Time
+	if err := database.DB.WithContext(ctx).Order("start_at ASC").First(&oldestRec).Error; err == nil {
+		t := oldestRec.StartAt
+		oldestAt = &t
+	}
+
+	var newestRec models.Recording
+	var newestAt *time.Time
+	if err := database.DB.WithContext(ctx).Order("end_at DESC").First(&newestRec).Error; err == nil {
+		t := newestRec.EndAt
+		newestAt = &t
+	}
+
+	storageCache.totalUsedBytes = totalUsedBytes
+	storageCache.totalCount = totalCount
+	storageCache.oldestAt = oldestAt
+	storageCache.newestAt = newestAt
+	storageCache.refreshedAt = time.Now()
+}
+
+// GetNvrStatusSnapshot computes full statistics of the NVR engine.
+// Expensive aggregate queries (SUM, COUNT on recordings) are cached for 30 seconds.
 func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 	// 1. Collect System / Runtime statistics
 	var memStats runtime.MemStats
@@ -36,26 +90,15 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 		UptimeSeconds: int64(time.Since(startTime).Seconds()),
 	}
 
-	// 2. Storage / Quota stats
-	var totalUsedBytes int64
-	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).
-		Select("COALESCE(SUM(size_bytes), 0)").
-		Scan(&totalUsedBytes).Error
+	// 2. Storage / Quota stats — served from cache (refreshed every 30s)
+	refreshStorageCache(ctx)
 
-	var totalRecordingsCount int64
-	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).Count(&totalRecordingsCount).Error
-
-	var oldestSegmentAt *time.Time
-	var oldestRec models.Recording
-	if err := database.DB.WithContext(ctx).Order("start_at ASC").First(&oldestRec).Error; err == nil {
-		oldestSegmentAt = &oldestRec.StartAt
-	}
-
-	var newestSegmentAt *time.Time
-	var newestRec models.Recording
-	if err := database.DB.WithContext(ctx).Order("end_at DESC").First(&newestRec).Error; err == nil {
-		newestSegmentAt = &newestRec.EndAt
-	}
+	storageCache.mu.Lock()
+	totalUsedBytes := storageCache.totalUsedBytes
+	totalRecordingsCount := storageCache.totalCount
+	oldestSegmentAt := storageCache.oldestAt
+	newestSegmentAt := storageCache.newestAt
+	storageCache.mu.Unlock()
 
 	// Get global settings
 	var globalSettings models.Setting
@@ -228,17 +271,21 @@ func BroadcastNvrStatus(ctx context.Context) error {
 	return mq.PublishEvent("nvr.status.update", res)
 }
 
-// StartNvrStatusBroadcaster starts a background ticker to publish real-time NVR status
+// StartNvrStatusBroadcaster starts a background ticker to publish real-time NVR status.
+// Interval is 10s (down from 3s) to reduce DB connection pressure.
+// Expensive aggregate queries are cached for 30s (see storageCache).
 func StartNvrStatusBroadcaster() {
 	go func() {
-		ticker := time.NewTicker(3 * time.Second)
+		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 
 		for range ticker.C {
 			if database.DB == nil {
 				continue
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			// Allow 12s for a full snapshot — long enough to avoid false timeouts
+			// on slow cloud DB, but short enough to not starve the pool indefinitely.
+			ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 			if err := BroadcastNvrStatus(ctx); err != nil {
 				// Silently skip if MQ or DB is temporarily busy
 			}
@@ -246,5 +293,5 @@ func StartNvrStatusBroadcaster() {
 		}
 		log.Println("[NVR] Real-time Status Broadcaster stopped")
 	}()
-	log.Println("[NVR] Real-time Status Broadcaster started (3s interval over RabbitMQ -> Socket.IO)")
+	log.Println("[NVR] Real-time Status Broadcaster started (10s interval, 30s aggregate cache)")
 }

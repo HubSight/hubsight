@@ -32,3 +32,5 @@ export {
   base64UrlToBuffer,
 } from './webauthn-client';
 
+export { getOrCollectDeviceInfo } from './device';
+

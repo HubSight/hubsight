@@ -20,6 +20,7 @@ import { useTranslation } from '../i18n';
 import { useOnNvrStatus } from '@hubsight/sdk/react';
 import { NvrMonitorSkeleton } from '../components/common/Skeleton';
 import { PullToRefresh } from '../components/common/PullToRefresh';
+import { PageHeader } from '../components/common/PageHeader';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -221,40 +222,42 @@ const NvrMonitor = () => {
   const totalCamsCount = data?.cameras.length || 0;
 
   return (
-    <PullToRefresh onRefresh={() => fetchStatus(false)} className="p-4 md:p-8 h-full overflow-y-auto pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3 text-slate-800 dark:text-slate-100">
-            <Activity className="text-orange-600 dark:text-orange-400" size={32} />
-            {t('nvr.title')}
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base">
-            {t('nvr.subtitle')}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap">
-          {/* Real-time WebSocket Live Status Badge */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 rounded-xl border border-emerald-200/80 dark:border-emerald-800 select-none whitespace-nowrap shrink-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <span className="flex items-center gap-1">
-              <Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-              {t('nvr.realtimeLive')}
+    <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden">
+      {/* ── Standard Unified Page Header ─────────────────────────────── */}
+      <PageHeader
+        icon={Activity}
+        title={t('nvr.title')}
+        subtitle={t('nvr.subtitle')}
+        badge={
+          totalCamsCount > 0 ? (
+            <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {recordingCamsCount}/{totalCamsCount} {t('nvr.recordingDevices')}
             </span>
-          </div>
+          ) : undefined
+        }
+        actions={
+          <>
+            {/* Real-time WebSocket Live Status Badge */}
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200/80 dark:border-emerald-800 select-none whitespace-nowrap shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{t('nvr.realtimeLive')}</span>
+            </div>
 
-          <button
-            onClick={() => fetchStatus(false)}
-            disabled={isRefreshing}
-            className="btn btn-secondary flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
-            title={t('refresh')}
-          >
-            <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-orange-600' : ''} />
-            <span>{t('refresh')}</span>
-          </button>
-        </div>
-      </div>
+            {/* Refresh Button */}
+            <button
+              onClick={() => fetchStatus(false)}
+              disabled={isRefreshing}
+              className="h-9 w-9 min-w-9 min-h-9 aspect-square flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80 cursor-pointer disabled:opacity-50 shrink-0 transition-all"
+              title={t('refresh')}
+            >
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-orange-600' : ''} />
+            </button>
+          </>
+        }
+      />
+
+      <PullToRefresh onRefresh={() => fetchStatus(false)} className="flex-1 min-h-0 overflow-y-auto p-4 md:p-8 pb-12">
 
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-6 md:mb-8">
@@ -736,6 +739,7 @@ const NvrMonitor = () => {
         </div>
       )}
     </PullToRefresh>
+    </div>
   );
 };
 

@@ -8,6 +8,7 @@ import type {
   CameraEvent,
   ForceLogoutEvent,
   MemberFaceUpdatedEvent,
+  SessionRevokedEvent,
   VisionBoxesEvent,
 } from './events';
 
@@ -37,6 +38,7 @@ export interface RealtimeManager {
 
   // ── Auth & Security ──────────────────────────────────────────────────────────
   onForceLogout(handler: (event: ForceLogoutEvent) => void): Unsubscribe;
+  onSessionRevoked(handler: (event: SessionRevokedEvent) => void): Unsubscribe;
 
   // ── Notifications ────────────────────────────────────────────────────────────
   onNotification(handler: (item: NotificationItem) => void): Unsubscribe;

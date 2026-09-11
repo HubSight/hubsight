@@ -22,6 +22,7 @@ export type {
   OverlayBox,
   VisionBoxesEvent,
   ForceLogoutEvent,
+  SessionRevokedEvent,
   CameraEvent,
   MemberFaceUpdatedEvent,
 } from './events';

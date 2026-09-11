@@ -1,10 +1,12 @@
 import type { InternalHttpClient } from '../internal/http/types';
 import type {
   ChangePasswordRequest,
+  ClientDeviceInfo,
   Locale,
   LoginRequest,
   LoginResponse,
   PasskeyItem,
+  SessionItem,
   ThemePreference,
   TwoFactorSetupResponse,
   TwoFactorVerifyRequest,
@@ -25,6 +27,7 @@ import type {
   Session,
   Unsubscribe,
 } from './types';
+import { getOrCollectDeviceInfo } from './device';
 
 export interface CreateAuthManagerOptions {
   http: InternalHttpClient;
@@ -102,10 +105,23 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
       const isPwa = storage.isPwa();
 
       try {
-        const res = await http.post<LoginResponse>('/auth/login', {
-          ...credentials,
-          is_pwa: isPwa,
-        });
+        const deviceInfo = await getOrCollectDeviceInfo(credentials.device_info);
+
+        const headers: Record<string, string> = {};
+        if (deviceInfo.fingerprint) headers['X-Device-Fingerprint'] = deviceInfo.fingerprint;
+        if (deviceInfo.device_label) headers['X-Device-Label'] = encodeURIComponent(deviceInfo.device_label);
+        if (deviceInfo.client_type) headers['X-Client-Type'] = deviceInfo.client_type;
+        if (deviceInfo.screen_resolution) headers['X-Screen-Resolution'] = deviceInfo.screen_resolution;
+
+        const res = await http.post<LoginResponse>(
+          '/auth/login',
+          {
+            ...credentials,
+            is_pwa: isPwa,
+            device_info: deviceInfo,
+          },
+          Object.keys(headers).length > 0 ? { headers } : undefined,
+        );
 
         if (res.status === '2fa_required') {
           currentState = 'unauthenticated';
@@ -274,10 +290,23 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
       const isPwa = storage.isPwa();
 
       try {
-        const res = await http.post<LoginResponse>('/auth/2fa/verify', {
-          ...payload,
-          is_pwa: isPwa,
-        });
+        const deviceInfo = await getOrCollectDeviceInfo(payload.device_info);
+
+        const headers: Record<string, string> = {};
+        if (deviceInfo.fingerprint) headers['X-Device-Fingerprint'] = deviceInfo.fingerprint;
+        if (deviceInfo.device_label) headers['X-Device-Label'] = encodeURIComponent(deviceInfo.device_label);
+        if (deviceInfo.client_type) headers['X-Client-Type'] = deviceInfo.client_type;
+        if (deviceInfo.screen_resolution) headers['X-Screen-Resolution'] = deviceInfo.screen_resolution;
+
+        const res = await http.post<LoginResponse>(
+          '/auth/2fa/verify',
+          {
+            ...payload,
+            is_pwa: isPwa,
+            device_info: deviceInfo,
+          },
+          Object.keys(headers).length > 0 ? { headers } : undefined,
+        );
 
         const token = res.refresh_token;
         if (isPwa && token) {
@@ -340,7 +369,7 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
       await http.delete(`/auth/passkeys/${id}`);
     },
 
-    async loginWithPasskey(username: string, conditional?: boolean): Promise<LoginResponse> {
+    async loginWithPasskey(username: string, conditional?: boolean, customDeviceInfo?: Partial<ClientDeviceInfo>): Promise<LoginResponse> {
       currentState = 'loading';
       const isPwa = storage.isPwa();
 
@@ -353,6 +382,14 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
       }
 
       try {
+        const deviceInfo = await getOrCollectDeviceInfo(customDeviceInfo);
+
+        const headers: Record<string, string> = {};
+        if (deviceInfo.fingerprint) headers['X-Device-Fingerprint'] = deviceInfo.fingerprint;
+        if (deviceInfo.device_label) headers['X-Device-Label'] = encodeURIComponent(deviceInfo.device_label);
+        if (deviceInfo.client_type) headers['X-Client-Type'] = deviceInfo.client_type;
+        if (deviceInfo.screen_resolution) headers['X-Screen-Resolution'] = deviceInfo.screen_resolution;
+
         const optRes = await http.post<{ publicKey: any; challenge_id: string }>(
           '/auth/passkeys/login/options',
           { username: trimmedUser }
@@ -368,11 +405,16 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
         }
 
         const serialized = serializeRequestResponse(credential);
-        const res = await http.post<LoginResponse>('/auth/passkeys/login/verify', {
-          challenge_id: optRes.challenge_id,
-          credential: serialized,
-          is_pwa: isPwa,
-        });
+        const res = await http.post<LoginResponse>(
+          '/auth/passkeys/login/verify',
+          {
+            challenge_id: optRes.challenge_id,
+            credential: serialized,
+            is_pwa: isPwa,
+            device_info: deviceInfo,
+          },
+          Object.keys(headers).length > 0 ? { headers } : undefined
+        );
 
         const token = res.refresh_token;
         if (isPwa && token) {
@@ -397,6 +439,19 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
         currentState = currentUser ? 'authenticated' : 'unauthenticated';
         throw err;
       }
+    },
+
+    async listSessions(): Promise<SessionItem[]> {
+      const res = await http.get<{ status: string; sessions: SessionItem[] }>('/auth/sessions');
+      return res.sessions || [];
+    },
+
+    async revokeSession(id: string): Promise<void> {
+      await http.delete(`/auth/sessions/${id}`);
+    },
+
+    async revokeAllOtherSessions(): Promise<void> {
+      await http.post('/auth/sessions/revoke-others');
     },
 
     handleForceLogout(reason?: string, message?: string): void {

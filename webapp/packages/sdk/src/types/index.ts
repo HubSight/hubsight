@@ -77,10 +77,30 @@ export interface ResetPasswordRequest {
   must_change_password?: boolean;
 }
 
+export interface SessionItem {
+  id: string;
+  ip_address: string;
+  user_agent: string;
+  device_fingerprint: string;
+  device_label: string;
+  client_type: 'web' | 'desktop_windows' | 'desktop_mac' | 'desktop_linux' | 'mobile_ios' | 'mobile_android' | 'third_party' | string;
+  geo_city: string;
+  geo_country: string;
+  is_new_device: boolean;
+  is_pwa: boolean;
+  is_active: boolean;
+  is_current: boolean;
+  created_at: string;
+  last_active_at?: string;
+  expires_at: string;
+  revoked_at?: string;
+  revoke_reason?: string;
+}
+
 // ── Application Clients (API Keys & OAuth2 Governance) ──────────────────────
 
 export type ClientPlatform = 'mobile' | 'flutter_mobile' | 'web_spa' | 'third_party';
-export type ClientType = 'public' | 'confidential';
+export type ApiClientType = 'public' | 'confidential';
 
 export interface ApiClient {
   id: string;
@@ -88,7 +108,7 @@ export interface ApiClient {
   api_key: string;
   name: string;
   platform: ClientPlatform | string;
-  client_type: ClientType | string;
+  client_type: ApiClientType | string;
   is_active: boolean;
   is_system: boolean;
   rate_limit_rps: number;
@@ -100,7 +120,7 @@ export interface ApiClient {
 export interface CreateClientRequest {
   name: string;
   platform: ClientPlatform | string;
-  client_type?: ClientType | string;
+  client_type?: ApiClientType | string;
   rate_limit_rps?: number;
 }
 
@@ -123,9 +143,36 @@ export interface UpdateRoleRequest {
   permission_ids?: string[];
 }
 
+export type ClientType =
+  | 'web'
+  | 'desktop_windows'
+  | 'desktop_mac'
+  | 'desktop_linux'
+  | 'desktop_app'
+  | 'mobile_ios'
+  | 'mobile_android'
+  | 'third_party';
+
+export interface ClientDeviceInfo {
+  fingerprint?: string;
+  device_label?: string;
+  client_type?: ClientType;
+  platform?: string;
+  os_version?: string;
+  browser_name?: string;
+  browser_version?: string;
+  app_version?: string;
+  model?: string;
+  manufacturer?: string;
+  screen_resolution?: string;
+  language?: string;
+  timezone?: string;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;
+  device_info?: ClientDeviceInfo;
 }
 
 export interface LoginResponse {
@@ -151,6 +198,7 @@ export interface TwoFactorVerifyRequest {
   code?: string;
   recovery_code?: string;
   is_pwa?: boolean;
+  device_info?: ClientDeviceInfo;
 }
 
 export interface TwoFactorEnableRequest {

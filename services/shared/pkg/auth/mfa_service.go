@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/fingerprint"
 	"cctv/shared/pkg/models"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -247,7 +248,7 @@ func RegenerateRecoveryCodes(ctx context.Context, u *models.User, password strin
 }
 
 // Verify2FALogin completes step 2 of login with either TOTP code or a one-time recovery code.
-func Verify2FALogin(ctx context.Context, preAuthToken, code, recoveryCode string, isPWA bool) (*models.Session, string, string, error) {
+func Verify2FALogin(ctx context.Context, preAuthToken, code, recoveryCode string, isPWA bool, devInfo ...*fingerprint.DeviceInfo) (*models.Session, string, string, error) {
 	userID, pwaFlag, ok := globalPreAuthStore.Pop(preAuthToken)
 	if !ok {
 		return nil, "", "", ErrInvalidPreAuth
@@ -289,7 +290,11 @@ func Verify2FALogin(ctx context.Context, preAuthToken, code, recoveryCode string
 
 	// Create authenticated session
 	usePWA := isPWA || pwaFlag
-	return createSessionForUser(ctx, u.ID, usePWA)
+	var dInfo *fingerprint.DeviceInfo
+	if len(devInfo) > 0 && devInfo[0] != nil {
+		dInfo = devInfo[0]
+	}
+	return createSessionForUser(ctx, u.ID, usePWA, dInfo)
 }
 
 // ── Passkey / WebAuthn Business Logic ─────────────────────────────────────────
@@ -420,7 +425,7 @@ func BeginPasskeyLogin(ctx context.Context, username, origin string) (any, strin
 }
 
 // FinishPasskeyLogin verifies assertion signature and creates an authenticated session.
-func FinishPasskeyLogin(ctx context.Context, challengeID, credentialJSON string, isPWA bool, origin string) (*models.Session, string, string, error) {
+func FinishPasskeyLogin(ctx context.Context, challengeID, credentialJSON string, isPWA bool, origin string, devInfo ...*fingerprint.DeviceInfo) (*models.Session, string, string, error) {
 	_ = EnsureDynamicOrigin(origin)
 	w, err := GetWebAuthn()
 	if err != nil {
@@ -485,7 +490,11 @@ func FinishPasskeyLogin(ctx context.Context, challengeID, credentialJSON string,
 	}).Error
 
 	// Generate authenticated session (Passkeys satisfy MFA requirement)
-	return createSessionForUser(ctx, u.ID, isPWA)
+	var dInfo *fingerprint.DeviceInfo
+	if len(devInfo) > 0 && devInfo[0] != nil {
+		dInfo = devInfo[0]
+	}
+	return createSessionForUser(ctx, u.ID, isPWA, dInfo)
 }
 
 // ListPasskeys retrieves all registered passkeys for a user.

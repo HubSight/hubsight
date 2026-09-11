@@ -9,6 +9,7 @@ import type {
   CameraEvent,
   ForceLogoutEvent,
   MemberFaceUpdatedEvent,
+  SessionRevokedEvent,
   VisionBoxesEvent,
 } from '../realtime/events';
 import type {
@@ -107,6 +108,13 @@ export function useOnForceLogout(
   deps?: unknown[],
 ): void {
   useOn((r, cb) => r.onForceLogout(cb), handler, deps);
+}
+
+export function useOnSessionRevoked(
+  handler: (event: SessionRevokedEvent) => void,
+  deps?: unknown[],
+): void {
+  useOn((r, cb) => r.onSessionRevoked(cb), handler, deps);
 }
 
 export function useOnVision(

@@ -21,6 +21,7 @@ export {
   useRealtimeSubscription,
   useOnNotification,
   useOnForceLogout,
+  useOnSessionRevoked,
   useOnVision,
   useOnVisionPersonEntered,
   useOnVisionPersonUpdate,
@@ -47,6 +48,7 @@ export type {
   OverlayBox,
   VisionBoxesEvent,
   ForceLogoutEvent,
+  SessionRevokedEvent,
   CameraEvent,
   MemberFaceUpdatedEvent,
 } from '../realtime/events';

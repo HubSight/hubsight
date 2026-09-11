@@ -88,6 +88,7 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || passkeyLoading) return;
     setError('');
     setLoading(true);
 
@@ -113,6 +114,7 @@ const Login = () => {
 
   const handleVerify2FA = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError('');
     setLoading(true);
 
@@ -136,6 +138,7 @@ const Login = () => {
   };
 
   const handlePasskeyLogin = async () => {
+    if (passkeyLoading || loading) return;
     setError('');
     const trimmedUser = username.trim();
     if (!trimmedUser) {

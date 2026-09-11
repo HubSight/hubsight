@@ -39,29 +39,29 @@ export const MultiViewToolbar: React.FC<MultiViewToolbarProps> = ({
   const navigate = useNavigate();
 
   return (
-    <header className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 select-none shadow-xs">
+    <header className="px-4 sm:px-6 md:px-8 py-3.5 sm:py-4 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 sm:gap-4 shrink-0 select-none shadow-xs">
       {/* Left side: Sidebar Toggle & Page Title */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3 sm:gap-3.5">
         {onToggleSidebar && (
           <button
             type="button"
             onClick={onToggleSidebar}
             title={t('nav.expandSidebar')}
-            className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <Menu size={18} />
           </button>
         )}
 
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-xs">
-            <LayoutGrid size={17} />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-2xs">
+            <LayoutGrid size={20} />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 leading-none">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               {t('multiview.title')}
-            </h2>
-            <p className="text-[11px] text-slate-400 mt-0.5 hidden sm:block">
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 hidden sm:block font-medium">
               {t('multiview.subtitle')}
             </p>
           </div>

@@ -18,6 +18,7 @@ message UserData {
 message VerifyTokenResponse {
   bool valid = 1;
   UserData user = 2;
+  string session_id = 3;
 }
 
 message VerifyClientRequest {

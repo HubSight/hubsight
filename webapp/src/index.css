@@ -29,6 +29,18 @@
     background-color: #000000;
     color: #f4f4f5;
   }
+
+  /* Universal disabled button handling: prevents double submission and dims button */
+  button:disabled,
+  button[disabled],
+  input[type="submit"]:disabled,
+  input[type="button"]:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed !important;
+    opacity: 0.55 !important;
+    pointer-events: none !important;
+    user-select: none !important;
+  }
 }
 
 /* Enable smooth iOS momentum scrolling and contain scroll events */

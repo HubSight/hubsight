@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOnForceLogout } from '@hubsight/sdk/react';
+import { useOnForceLogout, useOnSessionRevoked } from '@hubsight/sdk/react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../i18n';
 import { api } from '../../api/client';
@@ -24,6 +24,21 @@ export const AuthRealtimeWatcher: React.FC = () => {
         window.location.href = '/login?blocked=true';
       }, 300);
     }
+  });
+
+  useOnSessionRevoked((payload) => {
+    toast.error(payload.message || t('preferences.sessions.revokedAlert'), {
+      duration: 6000,
+    });
+
+    // Clear authentication cookie and state
+    api.auth.logout().catch(() => { });
+    setUser(null);
+
+    // Force immediate navigation to login page
+    setTimeout(() => {
+      window.location.href = '/login?revoked=true';
+    }, 300);
   });
 
   return null;
