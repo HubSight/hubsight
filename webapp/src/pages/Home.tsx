@@ -22,7 +22,6 @@ import {
   Gauge,
   Sliders,
   UserCog,
-  ChevronDown,
 } from '@/components/icons';
 import { api } from '../api/client';
 import type { CameraType, PoolStatusSummary, NvrStatusResponse, NotificationItem } from '@hubsight/sdk';
@@ -50,20 +49,11 @@ interface TelemetryPoint {
   viewers: number;
 }
 
-interface ServiceHealthMetric {
-  nameKey: string;
-  endpoint: string;
-  status: 'healthy' | 'degraded' | 'offline';
-  pingMs: number;
-  lastChecked: Date;
-}
-
-
 export const Home: React.FC = () => {
   const { t } = useTranslation();
   const { formatNotificationBody } = useTimezone();
   const navigate = useNavigate();
-  const { isConnected: isSocketConnected, status: socketStatus } = useRealtimeStatus();
+  const { isConnected: isSocketConnected } = useRealtimeStatus();
 
   const [cameras, setCameras] = useState<CameraType[]>([]);
   const [poolStatus, setPoolStatus] = useState<PoolStatusSummary | null>(null);
@@ -76,30 +66,6 @@ export const Home: React.FC = () => {
   // Rolling telemetry time-series buffer (up to 24 points)
   const [telemetryHistory, setTelemetryHistory] = useState<TelemetryPoint[]>([]);
   const [activeTelemetryTab, setActiveTelemetryTab] = useState<'cpu' | 'memory' | 'viewers'>('cpu');
-
-  // Real Service Health checks
-  const [serviceHealth, setServiceHealth] = useState<Record<string, ServiceHealthMetric>>({
-    gateway: { nameKey: 'home.gateway', endpoint: '/healthz', status: 'healthy', pingMs: 0, lastChecked: new Date() },
-    core: { nameKey: 'home.coreService', endpoint: '/api/cameras', status: 'healthy', pingMs: 0, lastChecked: new Date() },
-    auth: { nameKey: 'home.authService', endpoint: '/api/auth/me', status: 'healthy', pingMs: 0, lastChecked: new Date() },
-    pool: { nameKey: 'home.poolService', endpoint: '/api/pool/status', status: 'healthy', pingMs: 0, lastChecked: new Date() },
-    nvr: { nameKey: 'home.nvrService', endpoint: '/api/recorder/status', status: 'healthy', pingMs: 0, lastChecked: new Date() },
-  });
-
-  const [showHealthMenu, setShowHealthMenu] = useState(false);
-  const healthMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (healthMenuRef.current && !healthMenuRef.current.contains(e.target as Node)) {
-        setShowHealthMenu(false);
-      }
-    };
-    if (showHealthMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showHealthMenu]);
 
   const isPollingRef = useRef(false);
 
@@ -167,62 +133,6 @@ export const Home: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Measure genuine latency to a given endpoint
-  const pingEndpoint = useCallback(async (url: string): Promise<{ ok: boolean; ms: number }> => {
-    const start = performance.now();
-    try {
-      const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
-      const ms = Math.round(performance.now() - start);
-      return { ok: res.ok, ms };
-    } catch {
-      return { ok: false, ms: Math.round(performance.now() - start) };
-    }
-  }, []);
-
-  // Genuine System & Cluster Health Verification
-  const verifyServiceHealth = useCallback(async () => {
-    const [gwRes, coreRes, authRes, poolRes, nvrRes] = await Promise.allSettled([
-      pingEndpoint('/healthz'),
-      pingEndpoint('/api/cameras'),
-      pingEndpoint('/api/auth/me'),
-      pingEndpoint('/api/pool/status'),
-      pingEndpoint('/api/recorder/status'),
-    ]);
-
-    setServiceHealth((prev) => ({
-      gateway: {
-        ...prev.gateway,
-        status: gwRes.status === 'fulfilled' && gwRes.value.ok ? (gwRes.value.ms > 2500 ? 'degraded' : 'healthy') : 'offline',
-        pingMs: gwRes.status === 'fulfilled' ? gwRes.value.ms : 0,
-        lastChecked: new Date(),
-      },
-      core: {
-        ...prev.core,
-        status: coreRes.status === 'fulfilled' && coreRes.value.ok ? (coreRes.value.ms > 2500 ? 'degraded' : 'healthy') : 'offline',
-        pingMs: coreRes.status === 'fulfilled' ? coreRes.value.ms : 0,
-        lastChecked: new Date(),
-      },
-      auth: {
-        ...prev.auth,
-        status: authRes.status === 'fulfilled' && authRes.value.ok ? (authRes.value.ms > 2500 ? 'degraded' : 'healthy') : 'offline',
-        pingMs: authRes.status === 'fulfilled' ? authRes.value.ms : 0,
-        lastChecked: new Date(),
-      },
-      pool: {
-        ...prev.pool,
-        status: poolRes.status === 'fulfilled' && poolRes.value.ok ? (poolRes.value.ms > 2500 ? 'degraded' : 'healthy') : 'offline',
-        pingMs: poolRes.status === 'fulfilled' ? poolRes.value.ms : 0,
-        lastChecked: new Date(),
-      },
-      nvr: {
-        ...prev.nvr,
-        status: nvrRes.status === 'fulfilled' && nvrRes.value.ok ? (nvrRes.value.ms > 2500 ? 'degraded' : 'healthy') : 'offline',
-        pingMs: nvrRes.status === 'fulfilled' ? nvrRes.value.ms : 0,
-        lastChecked: new Date(),
-      },
-    }));
-  }, [pingEndpoint]);
-
   // Fetch all primary operational telemetry
   const fetchDashboardData = useCallback(async (isSilent = false) => {
     if (!isSilent) setRefreshing(true);
@@ -257,16 +167,13 @@ export const Home: React.FC = () => {
         const next = [...prev, { timestamp: Date.now(), cpu: curCpu, memory: curMem, viewers: curViewers }];
         return next.slice(-24);
       });
-
-      // Verify health
-      void verifyServiceHealth();
     } catch (err) {
       console.error('Failed to refresh dashboard telemetry:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [verifyServiceHealth]);
+  }, []);
 
   // Initial Load
   useEffect(() => {
@@ -302,8 +209,6 @@ export const Home: React.FC = () => {
           const next = [...prev, { timestamp: Date.now(), cpu: curCpu, memory: curMem, viewers: curViewers }];
           return next.slice(-24);
         });
-
-        void verifyServiceHealth();
       } catch {
         // Ignore background polling errors
       } finally {
@@ -312,7 +217,7 @@ export const Home: React.FC = () => {
     }, 3500);
 
     return () => clearInterval(interval);
-  }, [verifyServiceHealth]);
+  }, []);
 
   // Top 4 cameras displayed on dashboard (prioritizes live/active, then natural name A-Z)
   const displayedCameras = useMemo(() => {
@@ -463,29 +368,8 @@ export const Home: React.FC = () => {
     return map;
   }, [nvrStatus]);
 
-  // Overall system cluster status (100% verified)
-  const isClusterAllHealthy = useMemo(() => {
-    return (
-      isSocketConnected &&
-      Object.values(serviceHealth).every((s) => s.status === 'healthy')
-    );
-  }, [isSocketConnected, serviceHealth]);
-
-  // Detailed summary for tooltip
-  const healthTooltip = useMemo(() => {
-    const issues: string[] = [];
-    if (!isSocketConnected) {
-      issues.push(`WebSocket: ${socketStatus}`);
-    }
-    for (const [key, s] of Object.entries(serviceHealth)) {
-      if (s.status !== 'healthy') {
-        const name = t(s.nameKey as any) || key;
-        const reason = s.status === 'degraded' ? `${t('home.serviceDegraded')} (${s.pingMs}ms)` : t('home.serviceOffline');
-        issues.push(`${name}: ${reason}`);
-      }
-    }
-    return issues.length > 0 ? issues.join(' • ') : t('home.allHealthy');
-  }, [isSocketConnected, socketStatus, serviceHealth, t]);
+  // Overall system operational status
+  const isSystemOnline = isSocketConnected;
 
   const handleNotificationClick = (n: NotificationItem) => {
     if (n.camera_id) {
@@ -604,123 +488,23 @@ export const Home: React.FC = () => {
         title={t('home.title')}
         subtitle={t('home.subtitle')}
         badge={
-          <div className="relative" ref={healthMenuRef}>
-            <button
-              type="button"
-              onClick={() => setShowHealthMenu((prev) => !prev)}
-              title={healthTooltip}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer select-none active:scale-95 ${
-                isClusterAllHealthy
-                  ? 'bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80'
-                  : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/80'
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold border ${
+              isSystemOnline
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80'
+                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/80'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isSystemOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
               }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isClusterAllHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                }`}
-              />
-              <span>{isClusterAllHealthy ? t('home.allHealthy') : t('home.degraded')}</span>
-              <ChevronDown size={12} className={`opacity-60 transition-transform ${showHealthMenu ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Health Menu Popover */}
-            {showHealthMenu && (
-              <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 sm:w-80 p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                    <Activity size={14} className="text-orange-500" />
-                    {t('home.servicesHealth')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => void verifyServiceHealth()}
-                    className="text-[11px] font-medium text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <RefreshCw size={10} />
-                    {t('home.refresh')}
-                  </button>
-                </div>
-
-                <div className="space-y-1.5 text-xs">
-                  {/* WebSocket Relay */}
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${isSocketConnected ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                      <span className="font-semibold text-slate-700 dark:text-slate-200">{t('home.relayService')}</span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-md font-mono text-[11px] font-bold ${
-                      isSocketConnected
-                        ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300'
-                    }`}>
-                      {isSocketConnected ? 'Live' : socketStatus}
-                    </span>
-                  </div>
-
-                  {/* Microservices */}
-                  {Object.entries(serviceHealth).map(([key, s]) => {
-                    const isOk = s.status === 'healthy';
-                    const isDeg = s.status === 'degraded';
-                    return (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              isOk ? 'bg-emerald-500' : isDeg ? 'bg-amber-500' : 'bg-rose-500'
-                            }`}
-                          />
-                          <div>
-                            <div className="font-semibold text-slate-700 dark:text-slate-200">
-                              {t(s.nameKey as any) || key}
-                            </div>
-                            <div className="text-[10px] text-slate-400 font-mono">{s.endpoint}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                              isOk
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : isDeg
-                                  ? 'text-amber-600 dark:text-amber-400'
-                                  : 'text-rose-600 dark:text-rose-400'
-                            }`}
-                          >
-                            {isOk ? t('home.serviceHealthy') : isDeg ? t('home.serviceDegraded') : t('home.serviceOffline')}
-                          </div>
-                          {s.pingMs > 0 && (
-                            <div className="text-[10px] text-slate-400 font-mono">
-                              {s.pingMs} ms
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+            />
+            {isSystemOnline ? t('home.allHealthy') : t('home.serviceOffline')}
+          </span>
         }
         actions={
           <>
-            {/* Live Socket Status Pill */}
-            <div
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold font-mono ${
-                isSocketConnected
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800'
-              }`}
-              title={`Relay WebSocket: ${socketStatus}`}
-            >
-              <span className={`w-2 h-2 rounded-full ${isSocketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-              <span>WS: {isSocketConnected ? 'Live' : socketStatus}</span>
-            </div>
-
             {/* Live Clock */}
             <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-xs font-mono font-bold text-slate-700 dark:text-slate-200">
               <Clock size={14} className="text-orange-500" />
