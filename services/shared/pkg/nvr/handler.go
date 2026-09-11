@@ -73,6 +73,43 @@ func refreshStorageCache(ctx context.Context) {
 	storageCache.refreshedAt = time.Now()
 }
 
+var (
+	snapshotMu       sync.RWMutex
+	cachedSnapshot   *NvrStatusResponse
+	cachedSnapshotAt time.Time
+)
+
+const snapshotCacheTTL = 6 * time.Second
+
+// GetCachedNvrStatusSnapshot returns the cached NVR status if fresh (< 6s),
+// or recomputes a fresh snapshot and refreshes the cache.
+func GetCachedNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
+	snapshotMu.RLock()
+	if cachedSnapshot != nil && time.Since(cachedSnapshotAt) < snapshotCacheTTL {
+		snap := cachedSnapshot
+		snapshotMu.RUnlock()
+		return snap, nil
+	}
+	snapshotMu.RUnlock()
+
+	snapshotMu.Lock()
+	defer snapshotMu.Unlock()
+	if cachedSnapshot != nil && time.Since(cachedSnapshotAt) < snapshotCacheTTL {
+		return cachedSnapshot, nil
+	}
+
+	snap, err := GetNvrStatusSnapshot(ctx)
+	if err != nil {
+		if cachedSnapshot != nil {
+			return cachedSnapshot, nil // serve stale cache on transient db timeout
+		}
+		return nil, err
+	}
+	cachedSnapshot = snap
+	cachedSnapshotAt = time.Now()
+	return snap, nil
+}
+
 // GetNvrStatusSnapshot computes full statistics of the NVR engine.
 // Expensive aggregate queries (SUM, COUNT on recordings) are cached for 30 seconds.
 func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
@@ -128,27 +165,48 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 		RetentionStats:      &storage.CurrentRetentionStats,
 	}
 
-	// 3. Per-Camera Recorder Status
+	// 3. Per-Camera Recorder Status (Batch queried to eliminate N+1 latency to DB)
 	var cameras []models.Camera
 	if err := database.DB.WithContext(ctx).Find(&cameras).Error; err != nil {
 		return nil, err
+	}
+
+	type camCountSummary struct {
+		CameraID string `gorm:"column:camera_id"`
+		Count    int64  `gorm:"column:count"`
+	}
+	var countRows []camCountSummary
+	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).
+		Select("camera_id, count(*) as count").
+		Group("camera_id").
+		Scan(&countRows).Error
+	countMap := make(map[string]int64, len(countRows))
+	for _, cr := range countRows {
+		countMap[cr.CameraID] = cr.Count
+	}
+
+	type camLatestSummary struct {
+		CameraID        string    `gorm:"column:camera_id"`
+		EndAt           time.Time `gorm:"column:end_at"`
+		SizeBytes       int64     `gorm:"column:size_bytes"`
+		DurationSeconds int       `gorm:"column:duration_seconds"`
+	}
+	var latestRows []camLatestSummary
+	_ = database.DB.WithContext(ctx).Model(&models.Recording{}).
+		Select("DISTINCT ON (camera_id) camera_id, end_at, size_bytes, duration_seconds").
+		Order("camera_id, end_at DESC").
+		Scan(&latestRows).Error
+	latestMap := make(map[string]camLatestSummary, len(latestRows))
+	for _, lr := range latestRows {
+		latestMap[lr.CameraID] = lr
 	}
 
 	cameraStatuses := make([]CameraRecorderStatus, 0, len(cameras))
 	now := time.Now()
 
 	for _, cam := range cameras {
-		// Query latest segment for this camera
-		var latestRec models.Recording
-		hasLatest := database.DB.WithContext(ctx).
-			Where("camera_id = ?", cam.ID).
-			Order("end_at DESC").
-			First(&latestRec).Error == nil
-
-		var camSegCount int64
-		_ = database.DB.WithContext(ctx).Model(&models.Recording{}).
-			Where("camera_id = ?", cam.ID).
-			Count(&camSegCount).Error
+		latestRec, hasLatest := latestMap[cam.ID]
+		camSegCount := countMap[cam.ID]
 
 		status := "inactive"
 		var latestAt *time.Time
@@ -156,7 +214,8 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 		var latestDur int = 0
 
 		if hasLatest {
-			latestAt = &latestRec.EndAt
+			t := latestRec.EndAt
+			latestAt = &t
 			latestSize = latestRec.SizeBytes
 			latestDur = latestRec.DurationSeconds
 		}
@@ -254,7 +313,7 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 
 // NvrStatusHandler handles HTTP GET requests for initial load
 func NvrStatusHandler(c *gin.Context) {
-	res, err := GetNvrStatusSnapshot(c.Request.Context())
+	res, err := GetCachedNvrStatusSnapshot(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch NVR status: " + err.Error()})
 		return
@@ -268,6 +327,10 @@ func BroadcastNvrStatus(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	snapshotMu.Lock()
+	cachedSnapshot = res
+	cachedSnapshotAt = time.Now()
+	snapshotMu.Unlock()
 	return mq.PublishEvent("nvr.status.update", res)
 }
 
