@@ -61,8 +61,9 @@ Quản trị viên có toàn quyền kích hoạt công tắc khẩn cấp (Kill
 | | `PATCH /api/app/v1/profile` | Có | Cập nhật tên, múi giờ, ngôn ngữ (vi/en), theme, tùy chọn push |
 | | `GET /api/app/v1/profile/sessions` | Có | Liệt kê tất cả các phiên đăng nhập từ các thiết bị khác |
 | | `DELETE /api/app/v1/profile/sessions/:id`| Có | Đăng xuất/thu hồi phiên đăng nhập từ xa |
-| **Camera Live**| `GET /api/app/v1/cameras` | Có | Liệt kê danh sách camera kèm trạng thái hoạt động & luồng stream |
-| | `GET /api/app/v1/cameras/:id` | Có | Chi tiết cấu hình & thông số 1 camera |
+| **Camera Live**| `GET /api/app/v1/cameras` | Có | Liệt kê danh sách camera kèm trạng thái hoạt động, `thumbnail_url` & `stream_name` |
+| | `GET /api/app/v1/cameras/:id` | Có | Chi tiết cấu hình, `thumbnail_url` & thông số 1 camera |
+| | `GET /api/app/v1/cameras/:id/thumbnail`| Có | **[Trực quan App]** Lấy ảnh frame trực tiếp (JPEG 640p 15FPS) làm thumbnail |
 | | `POST /api/app/v1/cameras/:id/live/webrtc` | Có | Trao đổi SDP Offer/Answer WebRTC xem trực tiếp |
 | | `POST /api/app/v1/cameras/:id/live/heartbeat`| Có | Giữ phiên xem stream trực tiếp (chu kỳ 30s) |
 | | `POST /api/app/v1/cameras/:id/live/release` | Có | Đóng phiên xem stream giải phóng tài nguyên go2rtc |
@@ -165,7 +166,83 @@ Request Body:
 
 ---
 
-### 3.3. Live Streaming & Multi-View Song song
+### 3.3. Danh sách Camera & Ảnh Thu nhỏ (Thumbnails)
+
+#### `GET /api/app/v1/cameras`
+Headers: `X-API-Key: hs_mob_client_default`, `Authorization: Bearer <token>`
+
+Response `200 OK`:
+```json
+{
+  "status": "ok",
+  "cameras": [
+    {
+      "id": "cam_front_door",
+      "name": "Cổng chính",
+      "host": "rtsp://192.168.1.100:554/live",
+      "is_active": true,
+      "is_stopped": false,
+      "enable_ai": true,
+      "thumbnail_url": "/api/app/v1/cameras/cam_front_door/thumbnail",
+      "stream_name": "cam_cam_front_door_thumb"
+    },
+    {
+      "id": "cam_garage",
+      "name": "Gara xe",
+      "host": "rtsp://192.168.1.101:554/live",
+      "is_active": true,
+      "is_stopped": false,
+      "enable_ai": false,
+      "thumbnail_url": "/api/app/v1/cameras/cam_garage/thumbnail",
+      "stream_name": "cam_cam_garage_thumb"
+    }
+  ]
+}
+```
+
+#### `GET /api/app/v1/cameras/:id/thumbnail` (hoặc `/snapshot`)
+Lấy ảnh chụp frame JPEG mới nhất trích xuất trực tiếp từ luồng thường trực **640p 15FPS** của camera trong media router.
+
+- **Headers**:
+  ```http
+  X-API-Key: hs_mob_client_default
+  Authorization: Bearer <token>
+  ```
+- **Hỗ trợ Query String (dành cho Image Widget trên App)**:
+  Nếu widget hiển thị ảnh của ứng dụng (Flutter / React Native) không hỗ trợ gắn header tùy biến, ứng dụng có thể truyền trực tiếp:
+  ```http
+  GET /api/app/v1/cameras/:id/thumbnail?api_key=hs_mob_client_default&token=<user_token>
+  ```
+- **Response**: `200 OK`
+  - `Content-Type: image/jpeg`
+  - `Cache-Control: no-cache, no-store, must-revalidate`
+  - Dữ liệu nhị phân ảnh JPEG (chuẩn 640p).
+  - Nếu camera đang Dừng (`is_stopped=true`), trả về `503 Service Unavailable`.
+
+##### Ví dụ Tích hợp trên Mobile App:
+**Flutter:**
+```dart
+Image.network(
+  '${gatewayUrl}${camera.thumbnailUrl}?api_key=${apiKey}&token=${userToken}',
+  fit: BoxFit.cover,
+  errorBuilder: (context, error, stackTrace) => PlaceholderCameraCard(),
+)
+```
+
+**React Native:**
+```tsx
+<Image
+  source={{
+    uri: `${gatewayUrl}${camera.thumbnail_url}?api_key=${apiKey}&token=${userToken}`,
+    headers: { 'Cache-Control': 'no-cache' },
+  }}
+  style={styles.cameraThumbnail}
+/>
+```
+
+---
+
+### 3.4. Live Streaming & Multi-View Song song
 
 #### `POST /api/app/v1/cameras/:id/live/webrtc` (Đơn luồng)
 Headers: `X-API-Key`, `Authorization: Bearer <token>`, `Content-Type: text/plain` (hoặc JSON)

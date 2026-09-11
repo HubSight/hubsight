@@ -71,6 +71,10 @@ func New() *gin.Engine {
 			// Devices endpoints (Read is allowed for all authenticated users)
 			protected.GET("/devices", device.ListDevicesHandler)
 			protected.GET("/cameras", device.ListDevicesHandler)
+			protected.GET("/devices/:id/snapshot", device.GetDeviceSnapshotHandler)
+			protected.GET("/cameras/:id/snapshot", device.GetDeviceSnapshotHandler)
+			protected.GET("/devices/:id/thumbnail", device.GetDeviceSnapshotHandler)
+			protected.GET("/cameras/:id/thumbnail", device.GetDeviceSnapshotHandler)
 
 			// Admin-only endpoints
 			adminOnly := protected.Group("/")

@@ -26,6 +26,8 @@ type Camera struct {
 	ShowBbox        bool        `gorm:"column:show_bbox;not null;default:true" json:"show_bbox"`
 	NvrMode         string      `gorm:"column:nvr_mode;type:varchar(32);not null;default:'event'" json:"nvr_mode"`
 	RecordQuality   string      `gorm:"column:record_quality;type:varchar(32);not null;default:'standard'" json:"record_quality"`
+	ThumbnailURL    string      `gorm:"-" json:"thumbnail_url,omitempty"`
+	StreamName      string      `gorm:"-" json:"stream_name,omitempty"`
 	CreatedAt       time.Time   `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
 	UpdatedAt       time.Time   `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
 	Recordings      []Recording `gorm:"foreignKey:CameraID;references:ID" json:"-"`

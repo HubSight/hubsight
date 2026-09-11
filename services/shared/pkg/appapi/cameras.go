@@ -1,10 +1,12 @@
 package appapi
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 
 	"cctv/shared/pkg/database"
+	"cctv/shared/pkg/device"
 	"cctv/shared/pkg/live"
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/pb"
@@ -14,12 +16,33 @@ import (
 )
 
 type CameraDTO struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Host      string `json:"host"`
-	IsActive  bool   `json:"is_active"`
-	IsStopped bool   `json:"is_stopped"`
-	EnableAI  bool   `json:"enable_ai"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Host         string `json:"host"`
+	IsActive     bool   `json:"is_active"`
+	IsStopped    bool   `json:"is_stopped"`
+	EnableAI     bool   `json:"enable_ai"`
+	ThumbnailURL string `json:"thumbnail_url"`
+	StreamName   string `json:"stream_name"`
+}
+
+func toCameraDTO(cam models.Camera) CameraDTO {
+	thumbURL := ""
+	streamName := ""
+	if cam.IsActive && !cam.IsStopped {
+		thumbURL = fmt.Sprintf("/api/app/v1/cameras/%s/thumbnail", cam.ID)
+		streamName = fmt.Sprintf("cam_%s_thumb", cam.ID)
+	}
+	return CameraDTO{
+		ID:           cam.ID,
+		Name:         cam.Name,
+		Host:         cam.Host,
+		IsActive:     cam.IsActive,
+		IsStopped:    cam.IsStopped,
+		EnableAI:     cam.EnableAi,
+		ThumbnailURL: thumbURL,
+		StreamName:   streamName,
+	}
 }
 
 type BatchWebRTCItem struct {
@@ -65,14 +88,7 @@ func ListCamerasHandler(c *gin.Context) {
 
 	dtos := make([]CameraDTO, 0, len(cameras))
 	for _, cam := range cameras {
-		dtos = append(dtos, CameraDTO{
-			ID:        cam.ID,
-			Name:      cam.Name,
-			Host:      cam.Host,
-			IsActive:  cam.IsActive,
-			IsStopped: cam.IsStopped,
-			EnableAI:  cam.EnableAi,
-		})
+		dtos = append(dtos, toCameraDTO(cam))
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -93,14 +109,7 @@ func GetCameraHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, CameraDTO{
-		ID:        cam.ID,
-		Name:      cam.Name,
-		Host:      cam.Host,
-		IsActive:  cam.IsActive,
-		IsStopped: cam.IsStopped,
-		EnableAI:  cam.EnableAi,
-	})
+	c.JSON(http.StatusOK, toCameraDTO(cam))
 }
 
 // LiveWebRTCHandler proxies WebRTC SDP negotiation for 1 camera.
@@ -247,3 +256,6 @@ func BatchLiveReleaseHandler(c *gin.Context) {
 		"released": released,
 	})
 }
+
+// GetCameraSnapshotHandler retrieves a real-time thumbnail snapshot for mobile/desktop apps.
+var GetCameraSnapshotHandler = device.GetCameraSnapshotHandler

@@ -77,12 +77,10 @@ export const Home: React.FC = () => {
   const [snapshotRevision, setSnapshotRevision] = useState(0);
   const SNAPSHOT_TTL_MS = 90_000; // 90 seconds
 
-  /** Pick best stream name for snapshot: cv > nvr > null (offline cameras have no stream) */
+  /** Pick stream name for snapshot: each active camera maintains a persistent 640p 15FPS thumb stream */
   const getSnapshotStreamName = useCallback((cam: CameraType): string | null => {
     if (!cam.is_active || cam.is_stopped) return null;
-    if (cam.enable_ai) return `cam_${cam.id}_cv`;
-    if (cam.nvr_mode && cam.nvr_mode !== 'disabled') return `cam_${cam.id}_nvr`;
-    return null; // live-only cams have no persistent named stream without a viewer
+    return `cam_${cam.id}_thumb`;
   }, []);
 
   /** Fetch a snapshot JPEG blob from go2rtc via the gateway and store as data URL */
@@ -95,11 +93,18 @@ export const Home: React.FC = () => {
     if (cached && now - cached.fetchedAt < SNAPSHOT_TTL_MS) return; // still fresh
 
     try {
-      const res = await fetch(`/webrtc/api/frame.jpeg?src=${encodeURIComponent(streamName)}`, {
+      let res = await fetch(`/webrtc/api/frame.jpeg?src=${encodeURIComponent(streamName)}`, {
         credentials: 'include',
         headers: { 'X-API-Key': 'hs_web_client_core', 'X-Client-ID': 'hs_web_client_core' },
         cache: 'no-store',
       });
+      if (!res.ok) {
+        // Fallback to core backend snapshot endpoint
+        res = await fetch(`/api/cameras/${cam.id}/snapshot`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+      }
       if (!res.ok) return;
       const blob = await res.blob();
       if (!blob.type.startsWith('image/')) return;

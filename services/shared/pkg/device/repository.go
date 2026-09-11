@@ -31,9 +31,27 @@ type DeviceInput struct {
 // Backward compatibility alias
 type CameraInput = DeviceInput
 
+func populateThumbnail(cam *models.Camera) {
+	if cam == nil {
+		return
+	}
+	if cam.IsActive && !cam.IsStopped {
+		cam.ThumbnailURL = "/api/cameras/" + cam.ID + "/thumbnail"
+		cam.StreamName = "cam_" + cam.ID + "_thumb"
+	} else {
+		cam.ThumbnailURL = ""
+		cam.StreamName = ""
+	}
+}
+
 func GetAll(ctx context.Context) ([]*models.Camera, error) {
 	var devices []*models.Camera
 	err := database.DB.WithContext(ctx).Order("id ASC").Find(&devices).Error
+	if err == nil {
+		for _, dev := range devices {
+			populateThumbnail(dev)
+		}
+	}
 	return devices, err
 }
 
@@ -76,6 +94,7 @@ func Create(ctx context.Context, input DeviceInput) (*models.Camera, error) {
 	if err := database.DB.WithContext(ctx).Create(&cam).Error; err != nil {
 		return nil, err
 	}
+	populateThumbnail(&cam)
 	return &cam, nil
 }
 
@@ -136,6 +155,7 @@ func Update(ctx context.Context, id string, input DeviceInput) (*models.Camera, 
 	if err := database.DB.WithContext(ctx).First(&cam, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
+	populateThumbnail(&cam)
 	return &cam, nil
 }
 
@@ -166,6 +186,7 @@ func SetStopped(ctx context.Context, id string, stopped bool) (*models.Camera, e
 	if err := database.DB.WithContext(ctx).First(&cam, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
+	populateThumbnail(&cam)
 	return &cam, nil
 }
 

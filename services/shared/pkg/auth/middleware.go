@@ -42,6 +42,9 @@ func Middleware() gin.HandlerFunc {
 				cookie = strings.TrimPrefix(authHeader, "Bearer ")
 			}
 		}
+		if cookie == "" {
+			cookie = c.Query("token")
+		}
 
 		if cookie == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})

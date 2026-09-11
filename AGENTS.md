@@ -28,6 +28,7 @@ HubSight is a microservices-based CCTV surveillance and playback platform using 
 
 ### Connection Pool Management (`connection_pools.txt` spec)
 Connections to `go2rtc` streams are tightly managed to save resources:
+- **Connection #thumb (`cam_{id}_thumb`)**: STRICTLY maintained continuously at **640p 15FPS** for EVERY active camera (`is_active=true` and `!is_stopped`). Used by backend (`/api/cameras/:id/snapshot`) and frontend to read the freshest frame for real-time dashboard thumbnails without opening high-res viewer streams. It is ONLY terminated when the camera is stopped or deleted.
 - **Connection #0 (`cam_{id}_cv`)**: STRICTLY dedicated to Computer Vision (`vision-service`). It is ONLY created if the camera has `enable_ai=true`. If AI is disabled, the `vision-service` actively terminates the worker thread AND deletes the stream via `go2rtc` HTTP API.
 - **Connection #1 (`cam_{id}_nvr`)**: STRICTLY dedicated to the NVR recorder. Only connects if NVR is enabled.
 - **Connection #2+ (`cam_{id}_client_{n}`)**: Used for live viewing. Each connection groups up to 5 concurrent UI clients. If 5 clients are full, a new connection is spawned. Idle connections (0 clients) are closed immediately.

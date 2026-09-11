@@ -40,6 +40,8 @@ func RegisterAppRoutes(rg *gin.RouterGroup) {
 		// Cameras & Live Streaming (Single Camera)
 		protected.GET("/cameras", ListCamerasHandler)
 		protected.GET("/cameras/:id", GetCameraHandler)
+		protected.GET("/cameras/:id/thumbnail", GetCameraSnapshotHandler)
+		protected.GET("/cameras/:id/snapshot", GetCameraSnapshotHandler)
 		protected.POST("/cameras/:id/live/webrtc", LiveWebRTCHandler)
 		protected.POST("/cameras/:id/live/heartbeat", LiveHeartbeatHandler)
 		protected.POST("/cameras/:id/live/release", LiveReleaseHandler)

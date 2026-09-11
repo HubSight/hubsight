@@ -47,9 +47,17 @@ func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL s
 	}
 
 	var putURL string
-	if purpose == "cv" {
-		// CV profile: 10 FPS, no audio to save processing
-		srcFfmpeg := fmt.Sprintf("ffmpeg:%s#video=h264#framerate=10#audio=none", rtspURL)
+	if purpose == "thumb" {
+		// Thumbnail / Snapshot profile: 640p width, 15 FPS
+		srcFfmpeg := fmt.Sprintf("ffmpeg:%s#video=h264#width=640#fps=15", rtspURL)
+		putURL = fmt.Sprintf("%s/api/streams?name=%s&src=%s",
+			c.BaseURL,
+			url.QueryEscape(streamName),
+			url.QueryEscape(srcFfmpeg),
+		)
+	} else if purpose == "cv" {
+		// CV profile: 10 FPS
+		srcFfmpeg := fmt.Sprintf("ffmpeg:%s#video=h264#framerate=10", rtspURL)
 		putURL = fmt.Sprintf("%s/api/streams?name=%s&src=%s&src=%s",
 			c.BaseURL,
 			url.QueryEscape(streamName),
@@ -87,7 +95,7 @@ func (c *Go2RTCClient) RegisterStream(ctx context.Context, streamName, rtspURL s
 
 // UnregisterStream removes a stream from go2rtc, terminating its underlying RTSP socket
 func (c *Go2RTCClient) UnregisterStream(ctx context.Context, streamName string) error {
-	delURL := fmt.Sprintf("%s/api/streams?name=%s", c.BaseURL, url.QueryEscape(streamName))
+	delURL := fmt.Sprintf("%s/api/streams?src=%s&name=%s", c.BaseURL, url.QueryEscape(streamName), url.QueryEscape(streamName))
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, delURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create DELETE stream request: %w", err)

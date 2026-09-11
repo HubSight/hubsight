@@ -2,8 +2,12 @@ package device
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"time"
 
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
@@ -223,10 +227,71 @@ func StartDeviceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, dev)
 }
 
+var snapshotClient = &http.Client{Timeout: 6 * time.Second}
+
+// GetDeviceSnapshotHandler retrieves a live JPEG snapshot frame from the camera's persistent 640p 15FPS thumb stream.
+func GetDeviceSnapshotHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		return
+	}
+
+	var dev models.Camera
+	if err := database.DB.WithContext(c.Request.Context()).Where("id = ?", idStr).First(&dev).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query device: " + err.Error()})
+		return
+	}
+
+	if !dev.IsActive || dev.IsStopped {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Device is inactive or stopped"})
+		return
+	}
+
+	webrtcURL := os.Getenv("WEBRTC_SERVICE_URL")
+	if webrtcURL == "" {
+		webrtcURL = os.Getenv("GO2RTC_URL")
+		if webrtcURL == "" {
+			webrtcURL = "http://webrtc-service:1984"
+		}
+	}
+
+	thumbStream := fmt.Sprintf("cam_%s_thumb", dev.ID)
+	reqURL := fmt.Sprintf("%s/api/frame.jpeg?src=%s", webrtcURL, url.QueryEscape(thumbStream))
+
+	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, reqURL, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create frame request: " + err.Error()})
+		return
+	}
+
+	resp, err := snapshotClient.Do(req)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Media router unavailable: " + err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		c.JSON(resp.StatusCode, gin.H{"error": "Snapshot unavailable: " + string(body)})
+		return
+	}
+
+	c.Header("Content-Type", "image/jpeg")
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	_, _ = io.Copy(c.Writer, resp.Body)
+}
+
 // Backward compatibility aliases
 var (
-	ListCamerasHandler  = ListDevicesHandler
-	AddCameraHandler    = AddDeviceHandler
-	DeleteCameraHandler = DeleteDeviceHandler
-	UpdateCameraHandler = UpdateDeviceHandler
+	ListCamerasHandler       = ListDevicesHandler
+	AddCameraHandler         = AddDeviceHandler
+	DeleteCameraHandler      = DeleteDeviceHandler
+	UpdateCameraHandler      = UpdateDeviceHandler
+	GetCameraSnapshotHandler = GetDeviceSnapshotHandler
 )

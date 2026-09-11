@@ -102,7 +102,11 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	}
 
 	if !isActive {
-		// Stop / deactivate: tear down live, NVR, and CV immediately.
+		// Stop / deactivate: tear down thumb, live, NVR, and CV immediately.
+		if p.ThumbConnection != nil {
+			_ = m.go2rtc.UnregisterStream(ctx, p.ThumbConnection.StreamName)
+			p.ThumbConnection = nil
+		}
 		for name := range p.LivePool {
 			_ = m.go2rtc.UnregisterStream(ctx, name)
 		}
@@ -118,6 +122,33 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 		log.Printf("[Pool] Camera %s stopped or deactivated. All pool connections terminated immediately.", camID)
 		m.scheduleNotify()
 		return nil
+	}
+
+	// Manage Thumb Connection (Persistent 640p 15FPS stream for thumbnail / snapshot)
+	thumbStreamName := fmt.Sprintf("cam_%s_thumb", camID)
+	if p.ThumbConnection == nil || p.ThumbConnection.SourceURL != host {
+		if p.ThumbConnection != nil && p.ThumbConnection.SourceURL != host {
+			_ = m.go2rtc.UnregisterStream(ctx, p.ThumbConnection.StreamName)
+			p.ThumbConnection = nil
+		}
+		if err := m.go2rtc.RegisterStream(ctx, thumbStreamName, host, string(PurposeThumb)); err != nil {
+			log.Printf("[Pool] Warning: Failed to register persistent Thumbnail stream for cam %s: %v", camID, err)
+		} else {
+			p.ThumbConnection = &StreamConnection{
+				ID:          fmt.Sprintf("conn_%s_thumb", camID),
+				CameraID:    camID,
+				Index:       -1,
+				Purpose:     PurposeThumb,
+				StreamName:  thumbStreamName,
+				SourceURL:   host,
+				ActiveUsers: 1, // Continuously maintained
+				MaxUsers:    1,
+				CreatedAt:   time.Now(),
+				LastUsedAt:  time.Now(),
+				Status:      "active",
+			}
+			log.Printf("[Pool] Camera %s (%s): Persistent 640p 15FPS Thumbnail Stream READY -> %s", camID, name, thumbStreamName)
+		}
 	}
 
 	if enableAI {
@@ -208,6 +239,26 @@ func (m *Manager) GetCVStream(camID string) (string, error) {
 	}
 
 	return p.CVConnection.StreamName, nil
+}
+
+// GetThumbStream returns the persistent 640p 15FPS stream name for thumbnail/snapshot
+func (m *Manager) GetThumbStream(camID string) (string, error) {
+	m.poolsMu.RLock()
+	p, exists := m.pools[camID]
+	m.poolsMu.RUnlock()
+
+	if !exists {
+		return "", fmt.Errorf("camera %s not found in pool", camID)
+	}
+
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	if !p.IsActive || p.ThumbConnection == nil {
+		return "", fmt.Errorf("camera %s is inactive or thumbnail stream not available", camID)
+	}
+
+	return p.ThumbConnection.StreamName, nil
 }
 
 func liveConnCap(conn *StreamConnection) int {
@@ -368,6 +419,9 @@ func (m *Manager) DeleteCamera(ctx context.Context, camID string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	if p.ThumbConnection != nil {
+		_ = m.go2rtc.UnregisterStream(ctx, p.ThumbConnection.StreamName)
+	}
 	if p.CVConnection != nil {
 		_ = m.go2rtc.UnregisterStream(ctx, p.CVConnection.StreamName)
 	}
@@ -437,6 +491,9 @@ func (m *Manager) GetStatusSummary() *PoolStatusSummary {
 		if p.IsActive {
 			summary.ActiveCameras++
 		}
+		if p.ThumbConnection != nil {
+			summary.TotalThumbStreams++
+		}
 		if p.CVConnection != nil {
 			summary.TotalCVStreams++
 		}
@@ -456,6 +513,10 @@ func (m *Manager) GetStatusSummary() *PoolStatusSummary {
 			EnableAI:      p.EnableAI,
 			LivePool:      make(map[string]*StreamConnection, len(p.LivePool)),
 			NextLiveIndex: p.NextLiveIndex,
+		}
+		if p.ThumbConnection != nil {
+			thumb := *p.ThumbConnection
+			poolCopy.ThumbConnection = &thumb
 		}
 		if p.CVConnection != nil {
 			cv := *p.CVConnection

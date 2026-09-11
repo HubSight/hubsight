@@ -164,6 +164,22 @@ func main() {
 			})
 		})
 
+		// Get Persistent 640p 15FPS Thumbnail Stream
+		api.GET("/cameras/:id/thumb", func(c *gin.Context) {
+			camID := c.Param("id")
+			streamName, err := poolMgr.GetThumbStream(camID)
+			if err != nil {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"camera_id":   camID,
+				"stream_name": streamName,
+				"purpose":     "thumb",
+				"conn_index":  -1,
+			})
+		})
+
 		// WebRTC Signaling with Dynamic Pool Allocation (Max 5 clients per live stream)
 		api.POST("/cameras/:id/webrtc", func(c *gin.Context) {
 			camID := c.Param("id")
