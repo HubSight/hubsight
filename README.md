@@ -1,210 +1,243 @@
-# HubSight - Smart Surveillance & Playback Platform
+# HubSight
 
-A modern, high-performance, and resource-optimized CCTV surveillance and playback platform built with **Go 1.25**, **Ent ORM**, **NestJS 11 (Socket.IO Relay)**, **React (Vite + TypeScript)**, **webrtc-service (go2rtc)**, **FFmpeg (Zero-CPU Stream Copy)**, **Ultralytics YOLO**, **InsightFace**, **Firebase Cloud Messaging (FCM / Web Push)**, **PostgreSQL (pgvector)**, **Argon2id + AES-256-GCM + Ed25519 App Configuration Containers (`.hscfg`)**, and **Hardware-backed WebAuthn / Passkeys**.
+> Open-source CCTV that stays fast, private, and efficient.
 
----
+HubSight is a self-hosted CCTV/NVR platform for IP cameras. It combines low-latency WebRTC live viewing, efficient event-based recording, camera management, archive playback, and a local computer-vision pipeline into one system you run on your own hardware.
 
-## 🏛️ System Architecture: Single Unified API Gateway Entrypoint
+## Why HubSight
 
-The frontend client communicates **exclusively** with the **API Gateway (`api-gateway :8088`)**. All REST APIs, Auth flows, Relay (WebSocket) real-time events, and WebRTC signaling are transparently routed through the gateway:
+Most self-hosted NVR software forces a trade-off: either it records everything continuously (burning disk and CPU) or it locks you into a specific camera vendor. HubSight is built around a different set of defaults:
 
-![System Architecture](diagrams.png)
+- **Vendor-agnostic** — works with any RTSP/ONVIF camera, not a proprietary ecosystem.
+- **Live stays live** — WebRTC end-to-end, not polling MJPEG or HLS with multi-second lag.
+- **Recording is event-driven** — the system keeps a short rolling buffer and only persists clips around actual events, avoiding decode/re-encode of the source stream whenever possible.
+- **Detection runs locally** — no footage leaves your network for analysis.
+- **Modest hardware is enough** — designed to run on a small ARM64/x86 box, not a GPU server.
 
-Compose **service names** keep the `-service` suffix (Docker DNS). Source directories under `services/` do not (`services/pool`, `services/relay`, `services/vision`, `services/push`, …).
+## Features
 
----
-
-## 🌐 Microservices & Network Topology
-
-| Service Name | Source | Role | Public Host Port | Internal Address | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`api-gateway`** | `services/gateway` | **Single Unified API Gateway** | **`:8088`** | `http://api-gateway:8080` | **Sole Public HTTP & WebSocket Entrypoint**. Serves the **React SPA Frontend** and proxies REST APIs (`/api/*`), Auth (`/api/auth/*`), WebSocket Relay (`/relay`), and WebRTC signaling (`/webrtc/*`). |
-| **`core-service`** | `services/core` | **Core CCTV Business Logic** | *None* | `http://core-service:8080` | **Private Internal Microservice** handling devices, camera CRUD, face vector embeddings (`pgvector`), notification inbox + ingest, archive timeline, Google Service Accounts & Firebase Management API, encrypted App Configurations (`.hscfg`), OAuth2 clients, and gRPC endpoints. Publishes events; does not send FCM directly. |
-| **`auth-service`** | `services/auth` | **Auth & SSO Engine** | *None* | `http://auth-service:8081` | **Private Internal Microservice** for SSO/OIDC auth, session verification, token rotation, and WebAuthn / Passkeys via gRPC and REST. |
-| **`pool-service`** | `services/pool` | **Connection Pool Monitor** | *None* | `http://pool-service:8085` | **Private Internal Service** managing RTSP/WebRTC active stream connections with viewer packing and Connection #0/#1 policies. |
-| **`relay-service`** | `services/relay` | **Socket.IO Relay Server** | *None* | `http://relay-service:3001` | **Private Internal Service** (NestJS 11 / Socket.IO 4.8 / Node 24) for in-app real-time notifications and bounding box broadcasting, routed through Gateway `:8088/relay`. |
-| **`hawkeyes-service`** | `services/hawkeyes` | **RTSP Discovery** | *None* | `http://hawkeyes-service:8091` | **Private Internal Service** scanning LAN/VPN/Docker for verified RTSP cameras. |
-| **`vision-service`** | `services/vision` | **AI Vision Engine (YOLO + ArcFace)** | *None* | *Background Worker* | **Private Internal Service** for multi-class detection (person, smoke, fire, weapon), pose anomaly tracking, and face recognition. |
-| **`nvr-service`** | `services/recorder` | **Event-based NVR Engine** | *None* | *Background Worker* | **Private Internal Worker** providing Zero-CPU continuous rolling buffering and event video clip stitching. Consumes `nvr_recorder_queue`. |
-| **`push-service`** | `services/push` | **FCM / Web Push Worker** | *None* | *Background Worker* | **Private Internal Worker**. Consumes `push_queue` and sends offline FCM / VAPID Web Push. No public HTTP. |
-| **`bgrd-service`** | `services/bgrd` | **Background Job Worker** | *None* | *Background Worker* | **Private Internal Worker** handling periodic tasks like retention cron via `asynq` and Redis (Valkey). |
-| **`webrtc-service`** | `services/go2rtc` | **WebRTC Media Engine (go2rtc)** | **`:8555`** | `http://webrtc-service:1984` | Port `:8555` UDP/TCP transmits direct WebRTC video RTP media. All signaling APIs are routed via Gateway `:8088/webrtc`. |
-| **`mq-service`** | — | **Message Broker (RabbitMQ)** | *None* | `amqp://mq-service:5672` | **Private Internal Broker**. Fan-out: detections ➔ Relay ➔ UI, notifications ➔ NVR + Push. |
-| **`redis-service`** | — | **Valkey/Redis Cache & Queue** | *None* | `redis://redis-service:6379` | **Private Internal Cache** used by `asynq` for background job queues. |
-
-Shared Go library (Ent schemas, HTTP handlers, MQ client, FCM sender, AppConfig crypto engine, Google Firebase client): `services/shared`. Frontend SPA: `webapp/`.
+- Low-latency LIVE viewing over WebRTC
+- Vendor-agnostic RTSP / ONVIF camera support
+- Event-based recording with stream copy (no unnecessary transcoding)
+- Local AI/CV pipeline for event detection
+- Timeline and archive playback built around events
+- Runs on modest, low-resource self-hosted deployments
+- Self-hosted, passkey-capable authentication — your data stays yours
 
 ---
 
-## 🎯 Core Business Logic & Architecture
+## Screenshots
 
-### 1. Connection Pool Policy (`connection_pools.txt`)
-Connections to `go2rtc` streams are tightly managed to conserve bandwidth and CPU:
-- **Connection #0 (`cam_{id}_cv`)**: STRICTLY dedicated to Computer Vision (`vision-service`). It runs at **640p @ 10FPS** and is ONLY created if the camera has `enable_ai=true`. If AI is disabled, the worker thread and `go2rtc` stream are terminated immediately.
-- **Connection #1 (`cam_{id}_nvr`)**: STRICTLY dedicated to the NVR recorder. Only connects if NVR is enabled globally or per camera.
-- **Connection #2+ (`cam_{id}_client_{n}`)**: Used for live viewing. **Packs up to 5 concurrent UI viewers per connection**. If 5 viewers are full, a new connection is spawned. When viewer count drops to 0, idle connections are closed immediately.
+_Screenshots are not yet included in this repository. This section will be updated with the LIVE view, timeline/archive, camera management, and event detail screens as they become available._
 
----
-
-### 2. Zero-CPU Event-based NVR (ARM64 Optimized)
-Designed to run efficiently on low-power, GPU-less servers (e.g. 4-core ARM64):
-- **Principle #1: No 24/7 junk storage**: Zero continuous recording saved to persistent disk.
-- **Continuous Circular Buffer (RAM/tmpfs)**: `nvr-service` runs FFmpeg with `-c copy` (Direct stream copy, 0% CPU decoding overhead) maintaining 5 rolling 10-second segments (`-segment_wrap 5`, max 50s total buffer) in volatile temporary storage.
-- **Pre & Post Event Buffering**: When the AI detects an event, NVR captures the pre-buffer (10–20s before) and waits for post-buffer (15–20s after), then losslessly concatenates the chunks into a single `< 50s` `.mp4` clip saved to `/data/camera/` at native **720p/15FPS+**.
+| LIVE View | Timeline / Archive | Camera Management | Event Detail |
+| :---: | :---: | :---: | :---: |
+| _coming soon_ | _coming soon_ | _coming soon_ | _coming soon_ |
 
 ---
 
-### 3. AI & Computer Vision Pipeline (`vision-service`)
-Refactored into a clean, domain-driven package structure:
+## How LIVE viewing works
 
-```
-services/vision/
-├── main.py                          # Bootstrap entrypoint & gRPC background sync
-└── src/
-    ├── detection/                   # Object detection & tracking domain
-    │   ├── detector.py              # PersonDetector (YOLO + Danger detection)
-    │   ├── motion_gate.py           # MotionGate (Lightweight background subtraction <0.3ms)
-    │   └── track_identity.py        # TrackIdentity (Consensus voting & posture anomaly detection)
-    ├── recognition/                 # Face biometrics domain
-    │   ├── face_engine.py           # FaceEngine (InsightFace ArcFace vector matching)
-    │   └── face_quality_gate.py     # FaceQualityGate (Blur, pose yaw/pitch & size filter)
-    ├── streaming/                   # Video stream ingestion domain
-    │   └── stream_manager.py        # StreamManager (go2rtc Connection #0 worker threads)
-    └── messaging/                   # Event broker domain
-        └── rabbitmq_client.py       # RabbitMQClient (Event publishing)
+```mermaid
+flowchart LR
+    Cam["IP Camera"] -->|RTSP| Media["go2rtc media engine"]
+    Media -->|WebRTC| Client["Browser / Mobile / Desktop client"]
 ```
 
-- **Motion Gate**: Fast frame-differencing filter (<0.3ms) skips static frames, ensuring YOLO only runs when motion occurs.
-- **Smoke & Fire Detection**: Recognizes danger classes (`smoke`, `fire`, `weapon`) via fine-tuned YOLO model (`yolo-cctv.pt` / `yolo26n.pt`).
-- **Abnormal Behavior & Fall Detection**: Monitors bounding box aspect ratio and posture changes over a 5-second sliding window. Detects sudden collapses or lying down ($\text{Aspect Ratio} \ge 1.15$).
-- **Intelligent Notification Filtering**:
-  - 🟢 **Recognized Family Members (Normal)** ➔ Logged silently, **no push notifications & no NVR recording**.
-  - 🔴 **Strangers** ➔ Triggers `stranger_detected` alert + NVR event clip.
-  - 🚨 **Smoke / Fire / Weapon** ➔ Triggers immediate `danger` alarm + NVR event clip.
-  - ⚠️ **Family Member Fall / Collapse** ➔ Triggers high-priority `fall_detected` alarm + NVR event clip.
+Camera streams are pulled once over RTSP and re-published over WebRTC. Multiple viewers of the same camera share the underlying connection instead of each opening a new stream to the camera, keeping bandwidth and camera load predictable as viewer count grows.
 
----
+## How recording works (event-based NVR)
 
-### 4. Notifications: Inbox, Live UI, and Offline Web Push
-
-`core-service` owns ingest, dedup, the inbox DB, and FCM token registration. After saving a notification it publishes `notification.new` to three queues:
-
-```
-vision  →  core (DB)
-             ├─ relay_queue         → relay-service  → Socket.IO toast (app open)
-             ├─ nvr_recorder_queue  → nvr-service    → event clip
-             └─ push_queue          → push-service   → FCM / VAPID (app closed)
+```mermaid
+flowchart TD
+    Cam["Camera"] -->|RTSP| Pipeline["Recording pipeline"]
+    Pipeline --> Buffer["Rolling buffer (short window)"]
+    Buffer --> Detect{"Event detected?"}
+    Detect -- No --> Buffer
+    Detect -- Yes --> Clip["Pre-event + event + post-event"]
+    Clip --> Recorded["Recorded clip"]
+    Recorded --> Archive["Archive / Timeline"]
 ```
 
-The SPA registers via Firebase JS SDK + VAPID (`getToken`). `push-service` holds Firebase Admin credentials and sends data-only FCM messages; the PWA service worker renders the OS notification.
+Instead of writing every frame to long-term storage, HubSight keeps a short rolling buffer in memory. When the vision pipeline flags an event, the surrounding pre- and post-event window is stitched into a single clip and persisted. Where the source stream allows it, this uses **stream copy** (near-zero CPU — no decode/re-encode) rather than full transcoding.
+
+This is a design choice to reduce disk and CPU usage; actual savings depend on scene activity and camera settings, and are not currently backed by published benchmarks.
 
 ---
 
-### 5. App Configuration Container (`.hscfg`) & Zero-Config Enrollment
+## Architecture
 
-HubSight introduces an encrypted multi-layer container format **`.hscfg` (HubSight Configuration)** designed for zero-effort enrollment of **Mobile** (Flutter / React Native / Native) and **Desktop** (Go / Electron / Tauri) applications.
-
-#### Security Specifications
-- **Argon2id Key Derivation**: 64 MiB RAM, 4 rounds, 2 lanes, 32-byte key derived from an admin-selected **6-digit PIN**.
-- **AES-256-GCM Encryption**: Payload is encrypted with authenticated Additional Authenticated Data (`AAD: HSCFG\x01`), protecting against offline tampering.
-- **Ed25519 Digital Signature**: Each profile is digitally signed by a dedicated Ed25519 keypair before encryption to ensure end-to-end authenticity.
-- **Unified Gateway Routing**: Enforces strict routing where all REST API and WebSocket Relay traffic routes through the external domain gateway (port 80/443 or `:8088`), with WebRTC video media on port `:8555`.
-
+```mermaid
+flowchart TD
+    Browser["Browser / Mobile / Desktop"] --> Gateway["API Gateway"]
+    Gateway --> CamMgmt["Camera management"]
+    Gateway --> Auth["Authentication"]
+    Gateway --> Timeline["Archive / timeline"]
+    Gateway --> Realtime["Realtime events"]
+    Gateway --> Media["WebRTC / streaming"]
+    Media --> Go2rtc["go2rtc"]
+    CamMgmt -.-> Infra[("PostgreSQL · RabbitMQ · Valkey")]
+    Auth -.-> Infra
+    Timeline -.-> Infra
+    Realtime -.-> Vision["Local AI / vision workers"]
 ```
-decrypted_payload.zip/
-├── metadata.yml              # Profile metadata, creation timestamp, Ed25519 public key & signature
-├── urls.yml                  # Unified Gateway Base URLs (API, Relay WebSocket, WebRTC)
-├── key.yml                   # Client ID, Client Secret, and granted permissions
-├── google-services.json      # (Optional) Android Firebase FCM configuration
-├── GoogleService-Info.plist  # (Optional) iOS Firebase FCM configuration
-└── ca_cert.pem               # (Optional) Internal CA root certificate for private deployments
-```
 
-- **Instant QR Enrollment**: Admin can generate a 24-hour Presigned QR Code. Users scan the QR on mobile/desktop, enter their 6-digit PIN, and start streaming immediately.
-- 📖 Full Technical Specification & Client Integration Guide: See [`docs/APP_CONFIG_SPECIFICATION.md`](docs/APP_CONFIG_SPECIFICATION.md).
+Everything a client talks to goes through a single **API Gateway** — one integration surface for camera management, auth, archive/timeline, realtime events, and WebRTC signaling. Behind the gateway, responsibilities are split into independent backend services, backed by PostgreSQL, RabbitMQ, and Valkey (Redis-compatible) for state, messaging, and job queues; the media layer (go2rtc + FFmpeg) and the local vision workers run as separate processes from the request-handling services.
 
----
+<details>
+<summary>Service-level reference (for contributors)</summary>
 
-### 6. Google Service Account & Firebase Management API Integration
-
-Power users and administrators can manage Google Service Accounts directly from the web interface (`/google-service-accounts`):
-- **Direct Firebase Console JSON Import**: Upload standard Service Account keys downloaded from Firebase Console.
-- **Secure Key Masking**: RSA private keys are stored securely using AES-256 and masked in the UI to prevent credential exposure.
-- **Automated App Preflight**: Integrates with Google Firebase Management API (`https://firebase.googleapis.com/v1beta1/...`) to automatically discover registered Android package names and iOS bundle IDs.
-- **Automated Configuration Extraction**: When generating `.hscfg` profiles, the system automatically pulls `google-services.json` and `GoogleService-Info.plist` without requiring manual file handling.
-
----
-
-### 7. Client Management & OAuth2 Security
-
-Dynamic Client Application registration (`/clients`) allows granular access control:
-- **Unique Client Credentials**: Generates `client_id` and hashed `client_secret`.
-- **Granular Scopes**: Assign capabilities such as `cameras:view`, `playback:view`, and `notifications:receive`.
-- **Audit & Revocation**: Instant revocation of compromised clients or outdated applications.
-
----
-
-### 8. WebAuthn & Hardware-Backed Passkeys
-
-Supports passwordless and hardware-backed multi-factor authentication (MFA):
-- **Passkeys (FIDO2 / WebAuthn)**: Register biometrics (FaceID, TouchID, Windows Hello) or physical security keys (YubiKey).
-- **Fallback 2FA**: TOTP authenticator app support with secure recovery codes.
-
----
-
-## 📚 Technical Documentation & Guides
-
-| Document | Description |
+| Service | Responsibility |
 | :--- | :--- |
-| [`docs/APP_CONFIG_SPECIFICATION.md`](docs/APP_CONFIG_SPECIFICATION.md) | **Technical Specification & Client Integration Guide** for `.hscfg` encrypted containers (Flutter, React Native, Go/Desktop). |
-| [`docs/FACE_RECOGNITION_INSIGHTFACE_PLAN_REVISED.md`](docs/FACE_RECOGNITION_INSIGHTFACE_PLAN_REVISED.md) | InsightFace ArcFace biometric face recognition architecture and pipeline. |
-| [`AGENTS.md`](AGENTS.md) | System architecture rules, connection pool policies, coding standards, and deployment constraints for AI agents. |
+| API Gateway | Public entrypoint — REST, auth, WebSocket relay, WebRTC signaling |
+| Core service | Camera CRUD, notification inbox, archive timeline, app configuration |
+| Auth service | SSO/OIDC, session/token handling, WebAuthn/Passkeys |
+| Connection pool monitor | Manages active RTSP/WebRTC stream connections and viewer sharing |
+| Relay service | Realtime notifications and live event broadcasting over Socket.IO |
+| Camera discovery | Scans the local network for RTSP/ONVIF cameras |
+| Vision service | Detection and recognition pipeline (see [AI / Vision](#ai--vision)) |
+| Recorder (NVR) service | Rolling buffer management and event clip stitching |
+| Push service | Offline push notifications (FCM / Web Push) |
+| Background jobs | Scheduled/maintenance tasks (e.g. retention) |
+| Media engine (go2rtc) | RTSP ingestion and WebRTC re-publishing |
+
+This table reflects internal service boundaries and may change as the project evolves — treat the diagram above as the stable contract.
+
+</details>
 
 ---
 
-## 🚀 Getting Started
+## Technology stack
 
-### 1. Single-Command Dependency Installation (Optional for Local Dev)
+### Backend
+- Go
+- Ent (ORM)
+- PostgreSQL + pgvector
 
-Install dependencies across Go, Node.js (`pnpm`), and Python (`.venv`) with a single command:
+### Realtime / messaging
+- RabbitMQ
+- Valkey (Redis-compatible)
+- Socket.IO
 
-```powershell
-# On Windows PowerShell
-.\scripts\install_deps.ps1
-```
+### Media
+- go2rtc
+- FFmpeg
+- WebRTC
 
-```bash
-# On Linux / macOS
-./scripts/install_deps.sh
-```
+### Frontend
+- React
+- Vite
+- TypeScript
+
+### AI / Vision
+- YOLO (Ultralytics)
+- InsightFace
+
+### Auth & notifications
+- WebAuthn / Passkeys
+- Firebase Cloud Messaging / Web Push
 
 ---
 
-### 2. Deploy with Docker Compose
+## AI / Vision
 
-There is **only one deployment command** for the entire platform:
+Detection runs locally, close to the camera stream, and feeds directly into the recording and notification pipeline described above:
+
+- Person and object detection, including danger classes (smoke, fire, weapon)
+- Fall/collapse detection from posture over a short time window
+- Face recognition to distinguish known individuals from strangers, used to reduce notification noise (not exposed as a general surveillance feature)
+
+AI is a capability of the recording and alerting pipeline, not a separate product — detections are what decide *when* an event clip is recorded and *which* notifications get sent.
+
+---
+
+## Device enrollment
+
+Mobile and desktop clients are enrolled through an encrypted configuration container rather than manual endpoint/credential entry: an admin generates a short-lived, presigned QR code; scanning it and entering a PIN decrypts the client's connection details, credentials, and (optionally) push configuration in one step. Full format details are in [`docs/APP_CONFIG_SPECIFICATION.md`](docs/APP_CONFIG_SPECIFICATION.md).
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+| Requirement | Notes |
+| :--- | :--- |
+| Docker & Docker Compose | Primary supported deployment path |
+| Go, Node.js (`pnpm`), Python | Only needed for local, non-Docker development |
+| RTSP/ONVIF camera(s) | For live viewing and recording to work end to end |
+
+### Run with Docker Compose
 
 ```bash
+git clone <repository-url>
+cd hubsight
 docker compose up -d --build
 ```
 
-Access points:
-- **Unified API Gateway & Web App**: `http://localhost:8088` (Serves the Frontend UI and proxies all REST APIs, Auth, WebSocket `/relay` & WebRTC signaling `/webrtc/*`)
-- **WebRTC Stream Media**: `http://localhost:8555` (UDP/TCP RTP media transport)
+- Web app & API: `http://localhost:8088`
+- WebRTC media (UDP/TCP): `:8555`
 
----
+### Local dependency setup (optional, for development outside Docker)
 
-### 3. Seeding Accounts & RBAC Setup
+```bash
+# Windows PowerShell
+.\scripts\install_deps.ps1
+
+# Linux / macOS
+./scripts/install_deps.sh
+```
+
+### Seed accounts
 
 ```bash
 cd services/seed
 go run .
 ```
 
-Generates `users_credentials.csv` with credentials for configured accounts.
+This writes `users_credentials.csv` with initial login credentials — treat it as a secret and remove it once you've logged in.
+
+> Verify these commands and ports against `docker-compose.yml` and the scripts in this repository before relying on them — this README should be updated if either changes.
 
 ---
 
-## 📄 License
+## Status
 
-This project is open-source and available under the [MIT License](LICENSE).
+HubSight is under active development. Core CCTV streaming, recording, archive, and service infrastructure are being built toward a stable self-hosted release. Expect some areas to be incomplete or to change between versions; it is not yet positioned as a production-hardened release.
+
+---
+
+## Roadmap
+
+- Broader camera compatibility and multi-camera scaling
+- Richer archive management (retention policies, export)
+- Audio alerts / speaker integration
+- Smart-home and IoT integration
+- Expanded event-detection coverage
+- A more complete mobile experience
+- Simpler deployment for non-technical users
+
+---
+
+## Documentation
+
+| Document | Description |
+| :--- | :--- |
+| [`docs/APP_CONFIG_SPECIFICATION.md`](docs/APP_CONFIG_SPECIFICATION.md) | Encrypted device-enrollment container format and client integration guide |
+| [`docs/FACE_RECOGNITION_INSIGHTFACE_PLAN_REVISED.md`](docs/FACE_RECOGNITION_INSIGHTFACE_PLAN_REVISED.md) | Face recognition architecture and pipeline |
+| [`docs/HIGH_ANGLE_VISION_STRATEGY.md`](docs/HIGH_ANGLE_VISION_STRATEGY.md) | Detection strategy for high-mounted camera angles |
+| [`AGENTS.md`](AGENTS.md) | Architecture rules and constraints for contributors (human or AI) |
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome. Please read [`AGENTS.md`](AGENTS.md) first — it documents the architectural boundaries (e.g. what belongs in the gateway vs. a backend service) that contributions are expected to respect. For non-trivial changes, open an issue to discuss the approach before submitting a PR.
+
+## Issues & Discussions
+
+Use GitHub Issues for bugs and feature requests, and Discussions (where enabled) for questions.
+
+## License
+
+Licensed under the [MIT License](LICENSE).
