@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { CameraItem } from '@hubsight/sdk';
+import type { CameraItem, CameraEvent } from '@hubsight/sdk';
 import { api } from '../api/client';
 import { MultiViewToolbar, type MultiViewLayout } from '../components/multiview/MultiViewToolbar';
 import { MultiViewSidebar } from '../components/multiview/MultiViewSidebar';
@@ -75,10 +75,55 @@ export const MultiView: React.FC = () => {
     fetchCameras();
   }, [fetchCameras]);
 
-  // Real-time camera lifecycle updates
-  useOnCameraStarted(fetchCameras);
-  useOnCameraStopped(fetchCameras);
-  useOnCameraUpdated(fetchCameras);
+  // ── Real-time camera lifecycle updates (Instant UI reactivity) ───────────
+  const handleCameraStopped = useCallback(
+    (event: CameraEvent) => {
+      if (!event?.id) return;
+      setCameras((prev) =>
+        prev.map((c) => (c.id === event.id ? { ...c, is_stopped: true } : c)),
+      );
+      fetchCameras();
+    },
+    [fetchCameras],
+  );
+
+  const handleCameraStarted = useCallback(
+    (event: CameraEvent) => {
+      if (!event?.id) return;
+      setCameras((prev) =>
+        prev.map((c) =>
+          c.id === event.id ? { ...c, is_stopped: false, is_active: true } : c,
+        ),
+      );
+      fetchCameras();
+    },
+    [fetchCameras],
+  );
+
+  const handleCameraUpdated = useCallback(
+    (event: CameraEvent) => {
+      if (!event?.id) return;
+      setCameras((prev) =>
+        prev.map((c) =>
+          c.id === event.id
+            ? {
+                ...c,
+                ...(event.name ? { name: event.name } : {}),
+                ...(typeof event.is_stopped === 'boolean'
+                  ? { is_stopped: event.is_stopped }
+                  : {}),
+              }
+            : c,
+        ),
+      );
+      fetchCameras();
+    },
+    [fetchCameras],
+  );
+
+  useOnCameraStarted(handleCameraStarted);
+  useOnCameraStopped(handleCameraStopped);
+  useOnCameraUpdated(handleCameraUpdated);
 
   // ── Persistence ───────────────────────────────────────────────────────────
   useEffect(() => {

@@ -107,7 +107,7 @@ export const DraggableCameraItem: React.FC<DraggableCameraItemProps> = ({
         ) : (
           <span
             className="text-slate-400 dark:text-slate-500 p-1"
-            title={t('multiview.allCamerasOffline')}
+            title={t('multiview.deviceStopped')}
           >
             <AlertCircle size={14} />
           </span>

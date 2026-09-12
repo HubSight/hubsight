@@ -95,7 +95,7 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
     try {
       for (const c of picked) {
         await api.cameras.create({
-          name: `Camera ${c.ip}`,
+          name: `Thiết bị ${c.ip}`,
           host: c.rtsp_url,
           brand: c.brand || 'generic',
           rtsp_port: c.port || 554,

@@ -48,7 +48,7 @@ export const MultiViewSidebar: React.FC<MultiViewSidebarProps> = ({
         <div className="mt-4 flex flex-col items-center gap-2 text-slate-400 dark:text-slate-500">
           <Camera size={18} />
           <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 rotate-90 my-6">
-            CAMERAS
+            THIẾT BỊ
           </span>
         </div>
       </div>

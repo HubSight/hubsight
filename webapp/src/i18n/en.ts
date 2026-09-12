@@ -1071,6 +1071,10 @@ const en: Record<TranslationKey, string> = {
   'multiview.switchToPlayback': 'Playback & Archive',
   'multiview.switchToMultiView': 'Multi-View Mode',
   'multiview.activeStreamsCount': 'Active: {active}/{total}',
+  'multiview.deviceStopped': 'Device Paused',
+  'multiview.deviceStoppedDesc': 'This device is currently stopped. Stream will automatically resume once started.',
+  'multiview.deviceStoppedBadge': 'PAUSED',
+  'multiview.noSignal': 'NO SIGNAL',
 
   // === App Configurations & Kill-Switch ===
   'appConfigs.killSwitchTitle': 'API Gateway',

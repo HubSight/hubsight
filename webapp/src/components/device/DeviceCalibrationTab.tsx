@@ -3,6 +3,7 @@ import { useLiveStream } from '@hubsight/sdk/react';
 import { AlertCircle, CheckCircle2, Crosshair, Loader2 } from '@/components/icons';
 import { api } from '../../api/client';
 import { useTranslation } from '../../i18n';
+import { ProBlackScreen } from '../common/ProBlackScreen';
 
 export interface DeviceCalibrationTabProps {
   cameraId: string;
@@ -186,12 +187,21 @@ export const DeviceCalibrationTab: React.FC<DeviceCalibrationTabProps> = ({
             onClick={handleClick}
             className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden cursor-crosshair select-none"
           >
-            <video ref={videoRef} className="w-full h-full object-contain" muted playsInline autoPlay />
+            <video ref={videoRef} className={`w-full h-full object-contain ${status === 'live' ? '' : 'hidden'}`} muted playsInline autoPlay />
             <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
             {status !== 'live' && (
-              <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-xs gap-2">
-                <Loader2 size={16} />
-                {t('device.calibrationWaitingForStream')}
+              <div className="absolute inset-0 z-10">
+                {status === 'connecting' ? (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs gap-2 bg-slate-950/80 backdrop-blur-xs">
+                    <Loader2 size={16} className="animate-spin text-orange-500" />
+                    {t('device.calibrationWaitingForStream')}
+                  </div>
+                ) : (
+                  <ProBlackScreen
+                    title={t('device.calibrationWaitingForStream')}
+                    subtitle={cameraId}
+                  />
+                )}
               </div>
             )}
           </div>

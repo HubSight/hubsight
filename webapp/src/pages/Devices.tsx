@@ -189,7 +189,7 @@ const Devices = () => {
     setEditingDeviceId(null);
     setFormData({
       ...initialFormData,
-      name: `Camera ${c.ip}`,
+      name: `Thiết bị ${c.ip}`,
       brand: c.brand || 'generic',
       host: c.rtsp_url,
       builderIp: c.ip,

@@ -9,7 +9,6 @@ import {
   Camera,
   Check,
   Download,
-  VideoOff
 } from '@/components/icons';
 import dayjs from 'dayjs';
 import type { Recording } from '../../types/recording';
@@ -18,6 +17,7 @@ import { LivePlayer } from './LivePlayer';
 import { FullscreenEnterIcon, FullscreenExitIcon } from '../common/FullscreenIcons';
 import { useTranslation } from '../../i18n';
 import { useOrientation } from '../../hooks/useOrientation';
+import { ProBlackScreen } from '../common/ProBlackScreen';
 
 interface VideoPlayerProps {
   mode: 'live' | 'archive';
@@ -448,23 +448,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <LivePlayer cameraId={cameraId} enableAi={enableAi} showBbox={showBbox} onLiveStatusChange={onLiveStatusChange} />
         </div>
       ) : mode === 'live' && liveOffline ? (
-        <div className="flex flex-col items-center justify-center text-center px-6 py-8 gap-4 pointer-events-none">
-          <div className="w-[4.25rem] h-[4.25rem] rounded-2xl bg-white/[0.06] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] flex items-center justify-center">
-            <VideoOff className="text-slate-300" size={30} strokeWidth={1.6} />
-          </div>
-          <div className="max-w-sm">
-            <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-slate-500 mb-2">
-              {t('playback.stoppedBadge')}
-            </p>
-            <h2 className="text-white text-lg sm:text-xl font-semibold tracking-tight">
-              {cameraName
-                ? t('playback.liveOfflineNamedTitle', { name: cameraName })
-                : t('playback.liveOfflineTitle')}
-            </h2>
-            <p className="text-slate-400 text-sm leading-relaxed mt-2">
-              {t('playback.liveOfflineSubtitle')}
-            </p>
-          </div>
+        <div className="w-full h-full">
+          <ProBlackScreen
+            title={cameraName || cameraId || undefined}
+            message={t('playback.liveOfflineSubtitle')}
+            badgeText={t('playback.stoppedBadge')}
+          />
         </div>
       ) : mode === 'archive' && activeRecording ? (
         <video

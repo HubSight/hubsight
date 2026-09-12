@@ -37,6 +37,7 @@ import { useTranslation } from '../i18n';
 import { useTimezone } from '../context/TimezoneContext';
 import { PageHeader } from '../components/common/PageHeader';
 import { PullToRefresh } from '../components/common/PullToRefresh';
+import { ProBlackScreen } from '../components/common/ProBlackScreen';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -797,7 +798,13 @@ export const Home: React.FC = () => {
                   >
                     {/* ── Thumbnail Area ── */}
                     <div className="relative w-full aspect-video bg-zinc-950 overflow-hidden rounded-t-2xl">
-                      {hasSnapshot ? (
+                      {!isLive ? (
+                        <ProBlackScreen
+                          variant="compact"
+                          title={cam.name}
+                          subtitle={cam.host}
+                        />
+                      ) : hasSnapshot ? (
                         <img
                           src={snapshot!.dataUrl}
                           alt={cam.name}
@@ -806,44 +813,44 @@ export const Home: React.FC = () => {
                         />
                       ) : (
                         /* No-signal placeholder */
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-[#07090e]">
                           <div className="w-9 h-9 rounded-full bg-zinc-800/80 flex items-center justify-center">
                             <Camera size={18} className="text-zinc-500" />
                           </div>
-                          <span className="text-[10px] font-mono text-zinc-600 tracking-wider uppercase">
-                            {isLive ? 'No stream' : 'Offline'}
+                          <span className="text-[10px] font-mono text-zinc-500 tracking-wider uppercase">
+                            No stream
                           </span>
                         </div>
                       )}
 
-                      {/* Status badge overlay (top-left) */}
-                      <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider backdrop-blur-sm ${
-                          isLive
-                            ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60'
-                            : 'bg-zinc-900/80 text-zinc-400 border border-zinc-700/60'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-500'}`} />
-                          {isLive ? 'LIVE' : 'OFFLINE'}
-                        </span>
-                      </div>
-
-                      {/* AI / NVR badges (top-right) */}
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        {cam.enable_ai && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-950/80 text-violet-300 border border-violet-800/60 backdrop-blur-sm">
-                            AI
+                      {/* Status badge overlay (top-left) - only when live */}
+                      {isLive && (
+                        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider backdrop-blur-sm bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            LIVE
                           </span>
-                        )}
-                        {cam.nvr_mode && cam.nvr_mode !== 'disabled' && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800/60 backdrop-blur-sm">
-                            NVR
-                          </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
 
-                      {/* Snapshot age hint (bottom-right, only when snapshot exists) */}
-                      {hasSnapshot && (
+                      {/* AI / NVR badges (top-right) - only when live */}
+                      {isLive && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          {cam.enable_ai && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-950/80 text-violet-300 border border-violet-800/60 backdrop-blur-sm">
+                              AI
+                            </span>
+                          )}
+                          {cam.nvr_mode && cam.nvr_mode !== 'disabled' && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800/60 backdrop-blur-sm">
+                              NVR
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Snapshot age hint (bottom-right, only when snapshot exists and live) */}
+                      {isLive && hasSnapshot && (
                         <div className="absolute bottom-1.5 right-2">
                           <span className="text-[9px] font-mono text-white/50 bg-black/40 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
                             {snapshotAgeS < 60 ? `${snapshotAgeS}s ago` : `${Math.round(snapshotAgeS / 60)}m ago`}

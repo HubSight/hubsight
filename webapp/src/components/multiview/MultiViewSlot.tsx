@@ -9,12 +9,12 @@ import {
   GripVertical,
   Loader2,
   AlertCircle,
-  VideoOff,
   Scaling,
 } from '@/components/icons';
 import { useLiveStream } from '@hubsight/sdk/react';
 import type { CameraItem } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';
+import { ProBlackScreen } from '../common/ProBlackScreen';
 
 export interface MultiViewSlotProps {
   slotIndex: number;
@@ -179,8 +179,13 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
         autoPlay
         playsInline
         muted={!isAudioActive}
-        className={`w-full h-full pointer-events-none transition-all ${localFit === 'cover' ? 'object-cover' : 'object-contain'
-          }`}
+        className={`w-full h-full pointer-events-none transition-all ${
+          isCameraActive
+            ? localFit === 'cover'
+              ? 'object-cover'
+              : 'object-contain'
+            : 'hidden'
+        }`}
       />
 
       {/* Top Header Overlay: Slot info & Controls */}
@@ -204,6 +209,9 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
             {isCameraActive && status === 'live' && (
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
             )}
+            {(!isCameraActive || camera?.is_stopped) && (
+              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+            )}
             <span
               className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[200px]"
               title={camera?.name || cameraId}
@@ -216,15 +224,16 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
         {/* Right: Quick Action Controls */}
         <div className="flex items-center gap-1 shrink-0">
           {/* Audio Solo Toggle */}
-          {hasAudio && (
+          {hasAudio && isCameraActive && (
             <button
               type="button"
               onClick={() => onToggleAudio(slotIndex)}
               title={isAudioActive ? t('multiview.muted') : t('multiview.unmuteSolo')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isAudioActive
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                isAudioActive
                   ? 'bg-orange-600 text-white shadow-xs'
                   : 'text-white/70 hover:text-white hover:bg-white/15'
-                }`}
+              }`}
             >
               {isAudioActive ? <Volume2 size={14} /> : <VolumeX size={14} />}
             </button>
@@ -270,13 +279,13 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
         </div>
       )}
 
-      {/* State Overlay: Camera Stopped */}
+      {/* State Overlay: Camera Stopped / Disabled (Pro CCTV Black Screen) */}
       {(!isCameraActive || camera?.is_stopped) && (
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-slate-400 p-4 text-center z-10">
-          <VideoOff className="text-slate-500" size={28} />
-          <span className="text-xs font-semibold text-slate-300">
-            {t('multiview.allCamerasOffline')}
-          </span>
+        <div className="absolute inset-0 z-10">
+          <ProBlackScreen
+            title={camera?.name || cameraId}
+            subtitle={camera?.host}
+          />
         </div>
       )}
 
@@ -290,7 +299,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
       )}
 
       {/* Audio solo banner in bottom-left */}
-      {isAudioActive && (
+      {isCameraActive && isAudioActive && (
         <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-600/90 text-white text-[10px] font-bold shadow-md backdrop-blur-xs pointer-events-none">
           <Volume2 size={12} className="animate-pulse" />
           <span>AUDIO LIVE</span>
