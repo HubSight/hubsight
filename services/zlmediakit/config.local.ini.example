@@ -13,9 +13,17 @@
 
 # LOCAL DEV config (gitignored as config.local.ini, copy from this .example) —
 # mounted over config.ini by docker-compose.override.yml. Browser and
-# webrtc-service are on the same Mac (Docker port-published), so only
-# 127.0.0.1 needs to be advertised — no NAT/public-IP candidates to reason
-# about. Everything else is identical to the production config below.
+# webrtc-service are on the same Mac (Docker port-published), so a single
+# host-facing address is enough — no NAT/public-IP candidates to reason about.
+# IMPORTANT: use the Mac's real LAN IP here (e.g. `ipconfig getifaddr en0`),
+# NOT 127.0.0.1. Firefox's ICE agent silently discards loopback (127.0.0.0/8)
+# remote candidates by default (`media.peerconnection.ice.loopback` is false
+# unless the user flips it in about:config) — Chrome has no such filter, which
+# is why 127.0.0.1 "worked" there and Firefox failed with "ICE failed, add a
+# TURN server" despite a valid 200 OK SDP answer. A private LAN IP isn't
+# loopback, so both browsers accept it as a normal host candidate, and it
+# still routes back to this same machine's Docker-published port. Everything
+# else is identical to the production config below.
 # ── HubSight PRODUCTION customizations (mounted at /opt/media/conf/config.ini) ──
 # Everything below the upstream template is stock ZLMediaKit defaults except:
 #   [api] secret          — internal-only token; API port is never published to
@@ -44,8 +52,9 @@
 #                            Single-NAL-Unit-Packet RTP at all (see the
 #                            upstream comment on this key, a few lines below).
 # Local dev uses config.local.ini instead (mounted analogously to production
-# via the gitignored docker-compose.override.yml): only externIP differs
-# (127.0.0.1, no NAT to traverse) — everything else here still applies.
+# via the gitignored docker-compose.override.yml): only externIP differs (the
+# Mac's LAN IP, not 127.0.0.1 — see Firefox loopback-candidate note above) —
+# everything else here still applies.
 
 [api]
 # 是否调试http api,启用调试后，会打印每次http请求的内容和回复
@@ -651,7 +660,11 @@ timeoutSec=15
 # 同时支持环境变量，以$开头，如"$EXTERN_IP"; 请参考：https://github.com/ZLMediaKit/ZLMediaKit/pull/1786
 # IP address(es) visible to RTC clients (typically public IPs). Separate multiple IPs with commas (',').
 # Leave empty to auto-acquire network card IPs. Also supports env vars starting with `$`, e.g., `"$EXTERN_IP"`; please refer to: https://github.com/ZLMediaKit/ZLMediaKit/pull/1786
-externIP=127.0.0.1
+externIP=YOUR_LAN_IP
+# ^ Replace YOUR_LAN_IP with this Mac's actual LAN address, e.g.:
+#     macOS:  ipconfig getifaddr en0
+#   NOT 127.0.0.1 — Firefox drops loopback ICE candidates by default (see the
+#   header comment at the top of this file for why).
 # 当指定了interfaces,ICE服务器会使用指定网卡bind socket
 # 以解决公网IP使用弹性公网IP配置实现(部署机器无法bind该公网ip的问题)
 # 支持环境变量，以$开头，如"$PRIVATE_IP"
