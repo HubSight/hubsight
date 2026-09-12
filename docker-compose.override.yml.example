@@ -8,11 +8,14 @@
 #     same command from a clean checkout and must NOT pick this up.
 #
 # WHAT / WHY
-#   WebRTC media between a browser on the host and go2rtc inside a container does
-#   not survive Docker/OrbStack port-forwarding on a laptop — the connection sets
-#   up but Chrome decodes 0 frames (black video, high NACK/PLI). Running
-#   webrtc-service with the host network stack fixes it: go2rtc then binds and
-#   advertises real host addresses the browser can reach directly.
+#   WebRTC media between a browser on the host and the media server inside a
+#   container does not survive Docker/OrbStack port-forwarding on a laptop on
+#   some setups — the connection sets up but Chrome decodes 0 frames (black
+#   video, high NACK/PLI). Running webrtc-service with the host network stack
+#   fixes it: ZLMediaKit then binds and advertises real host addresses the
+#   browser can reach directly. (The regular docker-compose.override.yml in
+#   this repo already fixes the more common cause — wrong ICE candidates — via
+#   port-publishing alone; reach for this file only if that's not enough.)
 #   The other services lose the `webrtc-service` DNS name, so they're pointed at
 #   host.docker.internal instead.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -21,25 +24,25 @@ services:
     network_mode: host
     ports: !reset []
     volumes:
-      - ./services/go2rtc/go2rtc.local.yaml:/config/go2rtc.yaml:ro   # loopback-only candidates
+      - ./services/zlmediakit/config.local.ini:/opt/media/conf/config.ini:ro   # loopback-only candidates
 
   api-gateway:
     environment:
-      WEBRTC_SERVICE_URL: "http://host.docker.internal:1984"
+      WEBRTC_SERVICE_URL: "http://host.docker.internal:80"
 
   core-service:
     environment:
-      WEBRTC_SERVICE_URL: "http://host.docker.internal:1984"
+      WEBRTC_SERVICE_URL: "http://host.docker.internal:80"
 
   pool-service:
     environment:
-      WEBRTC_SERVICE_URL: "http://host.docker.internal:1984"
+      WEBRTC_SERVICE_URL: "http://host.docker.internal:80"
 
   vision-service:
     environment:
-      GO2RTC_RTSP_BASE: "rtsp://host.docker.internal:8554"
-      WEBRTC_API_URL: "http://host.docker.internal:1984"
+      MEDIA_RTSP_BASE: "rtsp://host.docker.internal:554/live"
+      WEBRTC_API_URL: "http://host.docker.internal:80"
 
   nvr-service:
     environment:
-      GO2RTC_RTSP_BASE: "rtsp://host.docker.internal:8554"
+      MEDIA_RTSP_BASE: "rtsp://host.docker.internal:554/live"

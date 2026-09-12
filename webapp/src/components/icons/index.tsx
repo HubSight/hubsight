@@ -95,6 +95,7 @@ import {
   faShield,
   faShieldHalved,
   faSliders,
+  faCrosshairs,
   faMobileScreen,
   faWandMagicSparkles,
   faTable,
@@ -198,6 +199,7 @@ export const Shield = createFaIcon(faShield);
 export const ShieldAlert = createFaIcon(faShieldHalved);
 export const ShieldCheck = createFaIcon(faShieldHalved);
 export const Sliders = createFaIcon(faSliders);
+export const Crosshair = createFaIcon(faCrosshairs);
 export const Smartphone = createFaIcon(faMobileScreen);
 export const Sparkles = createFaIcon(faWandMagicSparkles);
 export const Square = createFaIcon(faSquare);

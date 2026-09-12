@@ -70,8 +70,8 @@ func main() {
 		m2mSecret = "cctv-internal-m2m-secret"
 	}
 
-	go2rtcClient := webrtc.NewGo2RTCClient()
-	poolMgr := pool.NewManager(go2rtcClient)
+	zlmClient := webrtc.NewZLMClient()
+	poolMgr := pool.NewManager(zlmClient)
 
 	if err := mq.Init(); err != nil {
 		log.Printf("[Pool Service] RabbitMQ publisher unavailable: %v", err)
@@ -90,15 +90,32 @@ func main() {
 	subscriber := events.NewSubscriber(poolMgr)
 	subscriber.StartListening(ctx)
 
-	// Initial Sync from Core Service (with retry)
+	// Initial Sync from Core Service — retries indefinitely (capped backoff)
+	// rather than giving up after a handful of attempts. core-service's own
+	// startup (GORM AutoMigrate + RBAC seeding) can take well over the
+	// previous fixed ~20s retry budget when the whole stack boots together,
+	// which silently left the pool's camera map empty forever with no further
+	// retry: every live view then fell back to slow, unpooled direct media-server
+	// signaling (cold RTSP pulls, no heartbeat/lease tracking) instead of the
+	// warm pooled path — the visible symptom was laggy/stuttering live view.
 	go func() {
-		for i := 0; i < 5; i++ {
-			time.Sleep(time.Duration(i*2) * time.Second)
-			if err := syncCamerasFromCore(ctx, poolMgr, coreGrpcURL); err == nil {
+		attempt := 0
+		for {
+			err := syncCamerasFromCore(ctx, poolMgr, coreGrpcURL)
+			if err == nil {
 				events.PublishStatusSnapshot(poolMgr.GetStatusSummary())
-				break
-			} else {
-				log.Printf("[Pool Init] Retrying camera sync from Core Service (%d/5): %v", i+1, err)
+				return
+			}
+			attempt++
+			delay := time.Duration(attempt*2) * time.Second
+			if delay > 15*time.Second {
+				delay = 15 * time.Second
+			}
+			log.Printf("[Pool Init] Camera sync from Core Service failed (attempt %d, retrying in %s): %v", attempt, delay, err)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(delay):
 			}
 		}
 	}()
@@ -111,8 +128,8 @@ func main() {
 		}
 		s := grpc.NewServer()
 		pb.RegisterPoolServiceServer(s, &grpcPoolServer{
-			poolMgr:      poolMgr,
-			go2rtcClient: go2rtcClient,
+			poolMgr:   poolMgr,
+			zlmClient: zlmClient,
 		})
 		log.Printf("[Pool Service] gRPC listening on :50052")
 		if err := s.Serve(lis); err != nil {
@@ -202,8 +219,8 @@ func main() {
 				return
 			}
 
-			// 2. Forward WebRTC offer to go2rtc for the assigned stream
-			answerSDP, statusCode, err := go2rtcClient.ForwardWebRTCOffer(
+			// 2. Forward WebRTC offer to ZLMediaKit for the assigned stream
+			answerSDP, statusCode, err := zlmClient.ForwardWebRTCOffer(
 				c.Request.Context(),
 				result.StreamName,
 				offerSDP,
@@ -292,8 +309,8 @@ func main() {
 // gRPC Implementation
 type grpcPoolServer struct {
 	pb.UnimplementedPoolServiceServer
-	poolMgr      *pool.Manager
-	go2rtcClient *webrtc.Go2RTCClient
+	poolMgr   *pool.Manager
+	zlmClient *webrtc.ZLMClient
 }
 
 func (s *grpcPoolServer) SignalWebRTC(ctx context.Context, req *pb.SignalWebRTCRequest) (*pb.SignalWebRTCResponse, error) {
@@ -306,7 +323,7 @@ func (s *grpcPoolServer) SignalWebRTC(ctx context.Context, req *pb.SignalWebRTCR
 		return nil, err
 	}
 
-	answerSDP, statusCode, err := s.go2rtcClient.ForwardWebRTCOffer(
+	answerSDP, statusCode, err := s.zlmClient.ForwardWebRTCOffer(
 		ctx,
 		result.StreamName,
 		[]byte(req.SdpOffer),
@@ -315,7 +332,7 @@ func (s *grpcPoolServer) SignalWebRTC(ctx context.Context, req *pb.SignalWebRTCR
 
 	if err != nil {
 		s.poolMgr.ReleaseLiveStream(req.CameraId, result.StreamName)
-		return nil, fmt.Errorf("go2rtc error %d: %v", statusCode, err)
+		return nil, fmt.Errorf("ZLMediaKit signaling error %d: %v", statusCode, err)
 	}
 
 	return &pb.SignalWebRTCResponse{

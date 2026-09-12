@@ -11,7 +11,7 @@ import (
 )
 
 type Manager struct {
-	go2rtc       *webrtc.Go2RTCClient
+	zlm          *webrtc.ZLMClient
 	pools        map[string]*CameraPool
 	poolsMu      sync.RWMutex
 	IsNVREnabled bool
@@ -21,9 +21,9 @@ type Manager struct {
 	notifyPending bool
 }
 
-func NewManager(go2rtcClient *webrtc.Go2RTCClient) *Manager {
+func NewManager(zlmClient *webrtc.ZLMClient) *Manager {
 	return &Manager{
-		go2rtc:       go2rtcClient,
+		zlm:          zlmClient,
 		pools:        make(map[string]*CameraPool),
 		IsNVREnabled: true, // Default to true until event syncs it
 	}
@@ -55,6 +55,15 @@ func (m *Manager) scheduleNotify() {
 			m.onChange(m.GetStatusSummary())
 		}
 	}()
+}
+
+// unregister is a small helper so every call site doesn't have to repeat the
+// (streamName, proxyKey) pair plumbing.
+func (m *Manager) unregister(ctx context.Context, conn *StreamConnection) {
+	if conn == nil {
+		return
+	}
+	_ = m.zlm.UnregisterStream(ctx, conn.StreamName, conn.ProxyKey)
 }
 
 // UpsertCamera registers or updates a camera in the connection pool
@@ -95,7 +104,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	if !isActive || !enableAI {
 		// If camera is deactivated OR AI is disabled, terminate CV stream
 		if p.CVConnection != nil {
-			_ = m.go2rtc.UnregisterStream(ctx, p.CVConnection.StreamName)
+			m.unregister(ctx, p.CVConnection)
 			p.CVConnection = nil
 			log.Printf("[Pool] Camera %s AI deactivated or inactive. CV Connection #0 terminated.", camID)
 		}
@@ -104,19 +113,19 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	if !isActive {
 		// Stop / deactivate: tear down thumb, live, NVR, and CV immediately.
 		if p.ThumbConnection != nil {
-			_ = m.go2rtc.UnregisterStream(ctx, p.ThumbConnection.StreamName)
+			m.unregister(ctx, p.ThumbConnection)
 			p.ThumbConnection = nil
 		}
-		for name := range p.LivePool {
-			_ = m.go2rtc.UnregisterStream(ctx, name)
+		for _, conn := range p.LivePool {
+			m.unregister(ctx, conn)
 		}
 		p.LivePool = make(map[string]*StreamConnection)
 		if p.NVRConnection != nil {
-			_ = m.go2rtc.UnregisterStream(ctx, p.NVRConnection.StreamName)
+			m.unregister(ctx, p.NVRConnection)
 			p.NVRConnection = nil
 		}
 		if p.CVConnection != nil {
-			_ = m.go2rtc.UnregisterStream(ctx, p.CVConnection.StreamName)
+			m.unregister(ctx, p.CVConnection)
 			p.CVConnection = nil
 		}
 		log.Printf("[Pool] Camera %s stopped or deactivated. All pool connections terminated immediately.", camID)
@@ -128,10 +137,10 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	thumbStreamName := fmt.Sprintf("cam_%s_thumb", camID)
 	if p.ThumbConnection == nil || p.ThumbConnection.SourceURL != host {
 		if p.ThumbConnection != nil && p.ThumbConnection.SourceURL != host {
-			_ = m.go2rtc.UnregisterStream(ctx, p.ThumbConnection.StreamName)
+			m.unregister(ctx, p.ThumbConnection)
 			p.ThumbConnection = nil
 		}
-		if err := m.go2rtc.RegisterStream(ctx, thumbStreamName, host, string(PurposeThumb)); err != nil {
+		if key, err := m.zlm.RegisterStream(ctx, thumbStreamName, host, string(PurposeThumb)); err != nil {
 			log.Printf("[Pool] Warning: Failed to register persistent Thumbnail stream for cam %s: %v", camID, err)
 		} else {
 			p.ThumbConnection = &StreamConnection{
@@ -140,6 +149,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 				Index:       -1,
 				Purpose:     PurposeThumb,
 				StreamName:  thumbStreamName,
+				ProxyKey:    key,
 				SourceURL:   host,
 				ActiveUsers: 1, // Continuously maintained
 				MaxUsers:    1,
@@ -154,7 +164,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	if enableAI {
 		// Ensure Connection #0 (CV Dedicated) is registered and active
 		cvStreamName := fmt.Sprintf("cam_%s_cv", camID)
-		if err := m.go2rtc.RegisterStream(ctx, cvStreamName, host, string(PurposeCV)); err != nil {
+		if key, err := m.zlm.RegisterStream(ctx, cvStreamName, host, string(PurposeCV)); err != nil {
 			log.Printf("[Pool] Warning: Failed to register Connection #0 (CV) for cam %s: %v", camID, err)
 		} else {
 			p.CVConnection = &StreamConnection{
@@ -163,6 +173,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 				Index:       0,
 				Purpose:     PurposeCV,
 				StreamName:  cvStreamName,
+				ProxyKey:    key,
 				SourceURL:   host,
 				ActiveUsers: 1, // Always held by CV Engine
 				MaxUsers:    1,
@@ -184,7 +195,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 
 	if shouldConnectNVR {
 		nvrStreamName := fmt.Sprintf("cam_%s_nvr", camID)
-		if err := m.go2rtc.RegisterStream(ctx, nvrStreamName, host, string(PurposeNVR)); err != nil {
+		if key, err := m.zlm.RegisterStream(ctx, nvrStreamName, host, string(PurposeNVR)); err != nil {
 			log.Printf("[Pool] Warning: Failed to register Connection #1 (NVR) for cam %s: %v", camID, err)
 		} else {
 			p.NVRConnection = &StreamConnection{
@@ -193,6 +204,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 				Index:       1,
 				Purpose:     PurposeNVR,
 				StreamName:  nvrStreamName,
+				ProxyKey:    key,
 				SourceURL:   host,
 				ActiveUsers: 1, // Always held by NVR logic context
 				MaxUsers:    1,
@@ -205,7 +217,7 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	} else {
 		// NVR disabled for this camera or AI required for event mode
 		if p.NVRConnection != nil {
-			_ = m.go2rtc.UnregisterStream(ctx, p.NVRConnection.StreamName)
+			m.unregister(ctx, p.NVRConnection)
 			p.NVRConnection = nil
 			log.Printf("[Pool] Camera %s NVR Connection #1 terminated (mode: %s, AI: %v).", camID, mode, enableAI)
 		}
@@ -214,7 +226,11 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 	// If host changed, refresh all active live streams
 	for streamName, conn := range p.LivePool {
 		conn.SourceURL = host
-		_ = m.go2rtc.RegisterStream(ctx, streamName, host, string(PurposeLive))
+		if key, err := m.zlm.RegisterStream(ctx, streamName, host, string(PurposeLive)); err != nil {
+			log.Printf("[Pool] Warning: Failed to refresh live stream %s for cam %s: %v", streamName, camID, err)
+		} else {
+			conn.ProxyKey = key
+		}
 	}
 
 	m.scheduleNotify()
@@ -285,7 +301,7 @@ func pickReusableLiveConn(p *CameraPool) *StreamConnection {
 
 // AcquireLiveStream assigns a viewer to a shared live RTSP pull (#2+).
 // Clients reuse an existing live connection until it has LiveMaxClientsPerConn
-// viewers; only then is a new go2rtc/RTSP producer opened.
+// viewers; only then is a new ZLMediaKit/RTSP producer opened.
 func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*AcquireResult, error) {
 	m.poolsMu.RLock()
 	p, exists := m.pools[camID]
@@ -324,7 +340,8 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 	newIndex := p.NextLiveIndex // first live is 2 (0=CV, 1=NVR)
 	newStreamName := fmt.Sprintf("cam_%s_live_%d", camID, newIndex)
 
-	if err := m.go2rtc.RegisterStream(ctx, newStreamName, p.Host, string(PurposeLive)); err != nil {
+	key, err := m.zlm.RegisterStream(ctx, newStreamName, p.Host, string(PurposeLive))
+	if err != nil {
 		p.NextLiveIndex-- // Rollback
 		return nil, fmt.Errorf("failed to register new live stream in media router: %w", err)
 	}
@@ -335,6 +352,7 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		Index:       newIndex,
 		Purpose:     PurposeLive,
 		StreamName:  newStreamName,
+		ProxyKey:    key,
 		SourceURL:   p.Host,
 		ActiveUsers: 1,
 		MaxUsers:    LiveMaxClientsPerConn,
@@ -376,8 +394,8 @@ func (m *Manager) ReleaseLiveStream(camID, streamName string) {
 		conn.LastUsedAt = time.Now()
 		if conn.ActiveUsers == 0 {
 			conn.Status = "idle"
-			// Nếu connection không có client nào (idle) -> đóng connection
-			_ = m.go2rtc.UnregisterStream(context.Background(), streamName)
+			// No clients left on this connection -> close it.
+			m.unregister(context.Background(), conn)
 			delete(p.LivePool, streamName)
 			log.Printf("[Pool] IDLE Stream closed and removed: %s", streamName)
 		} else {
@@ -420,13 +438,18 @@ func (m *Manager) DeleteCamera(ctx context.Context, camID string) {
 	defer p.mu.Unlock()
 
 	if p.ThumbConnection != nil {
-		_ = m.go2rtc.UnregisterStream(ctx, p.ThumbConnection.StreamName)
+		m.unregister(ctx, p.ThumbConnection)
 	}
 	if p.CVConnection != nil {
-		_ = m.go2rtc.UnregisterStream(ctx, p.CVConnection.StreamName)
+		m.unregister(ctx, p.CVConnection)
 	}
-	for streamName := range p.LivePool {
-		_ = m.go2rtc.UnregisterStream(ctx, streamName)
+	if p.NVRConnection != nil {
+		// Previously not unregistered here (pre-existing gap ported from the
+		// earlier code) — fixed while touching this path.
+		m.unregister(ctx, p.NVRConnection)
+	}
+	for _, conn := range p.LivePool {
+		m.unregister(ctx, conn)
 	}
 	log.Printf("[Pool] Camera %s completely removed from connection pool.", camID)
 	m.scheduleNotify()
@@ -447,7 +470,7 @@ func (m *Manager) UpdateNVRStatus(ctx context.Context, enabled bool) {
 		if p.IsActive {
 			if enabled && p.NVRConnection == nil {
 				nvrStreamName := fmt.Sprintf("cam_%s_nvr", camID)
-				if err := m.go2rtc.RegisterStream(ctx, nvrStreamName, p.Host, string(PurposeNVR)); err != nil {
+				if key, err := m.zlm.RegisterStream(ctx, nvrStreamName, p.Host, string(PurposeNVR)); err != nil {
 					log.Printf("[Pool] Warning: Failed to register Connection #1 (NVR) for cam %s: %v", camID, err)
 				} else {
 					p.NVRConnection = &StreamConnection{
@@ -456,6 +479,7 @@ func (m *Manager) UpdateNVRStatus(ctx context.Context, enabled bool) {
 						Index:       1,
 						Purpose:     PurposeNVR,
 						StreamName:  nvrStreamName,
+						ProxyKey:    key,
 						SourceURL:   p.Host,
 						ActiveUsers: 1,
 						MaxUsers:    1,
@@ -466,7 +490,7 @@ func (m *Manager) UpdateNVRStatus(ctx context.Context, enabled bool) {
 					log.Printf("[Pool] Camera %s Connection #1 (NVR) dynamically STARTED -> %s", camID, nvrStreamName)
 				}
 			} else if !enabled && p.NVRConnection != nil {
-				_ = m.go2rtc.UnregisterStream(ctx, p.NVRConnection.StreamName)
+				m.unregister(ctx, p.NVRConnection)
 				p.NVRConnection = nil
 				log.Printf("[Pool] Camera %s Connection #1 dynamically TERMINATED due to global setting.", camID)
 			}

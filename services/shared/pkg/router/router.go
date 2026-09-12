@@ -48,6 +48,9 @@ func New() *gin.Engine {
 			internal.GET("/face-embeddings", member.ListAllEmbeddingsInternalHandler)
 			internal.POST("/notifications/ingest", notification.IngestVisionEventHandler)
 			internal.POST("/recognition-logs/ingest", recognitionlog.IngestHandler)
+			// vision-service calls this when its landmark-shift check (§2.4) detects
+			// a fixed camera's homography calibration no longer matches the scene.
+			internal.POST("/cameras/:id/homography-invalidate", device.InvalidateHomographyHandler)
 		}
 
 		// Public Web Push / FCM config (VAPID public key + Firebase web config).
@@ -101,6 +104,7 @@ func New() *gin.Engine {
 
 				adminOnly.POST("/cameras", device.AddDeviceHandler)
 				adminOnly.PUT("/cameras/:id", device.UpdateDeviceHandler)
+				adminOnly.PUT("/cameras/:id/homography", device.SetHomographyHandler)
 				adminOnly.DELETE("/cameras/:id", device.DeleteDeviceHandler)
 				adminOnly.POST("/cameras/:id/stop", device.StopDeviceHandler)
 				adminOnly.POST("/cameras/:id/start", device.StartDeviceHandler)

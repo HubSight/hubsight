@@ -47,7 +47,7 @@ func (m *Manager) reapIdleConnections(ctx context.Context, idleTimeout time.Dura
 			}
 			log.Printf("[Pool GC] Reaping live stream %s for cam %s (idle %v, clients %d)",
 				streamName, p.CameraID, idleFor.Round(time.Second), conn.ActiveUsers)
-			_ = m.go2rtc.UnregisterStream(ctx, streamName)
+			m.unregister(ctx, conn)
 			delete(p.LivePool, streamName)
 			reaped = true
 		}

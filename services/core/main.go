@@ -100,11 +100,14 @@ func (s *grpcCoreServer) GetCameras(ctx context.Context, req *pb.GetCamerasReque
 			continue
 		}
 		pbCams = append(pbCams, &pb.CameraData{
-			Id:       c.ID,
-			Name:     c.Name,
-			Host:     c.Host,
-			IsActive: streaming,
-			EnableAi: c.EnableAi,
+			Id:               c.ID,
+			Name:             c.Name,
+			Host:             c.Host,
+			IsActive:         streaming,
+			EnableAi:         c.EnableAi,
+			IsFixed:          c.IsFixed,
+			HomographyPoints: c.HomographyPoints,
+			HomographyValid:  c.HomographyValid,
 		})
 	}
 	return &pb.GetCamerasResponse{Cameras: pbCams}, nil

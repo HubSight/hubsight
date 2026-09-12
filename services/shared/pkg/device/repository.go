@@ -2,6 +2,8 @@ package device
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"cctv/shared/pkg/database"
@@ -26,6 +28,15 @@ type DeviceInput struct {
 	ShowBbox        *bool   `json:"show_bbox"`
 	NvrMode         *string `json:"nvr_mode"`
 	RecordQuality   *string `json:"record_quality"`
+	IsFixed         *bool   `json:"is_fixed"`
+}
+
+// HomographyPoint is one of the 4 normalized (0..1) image-space points an admin
+// clicks to calibrate a fixed camera's ground plane (§2.4). Vision-service maps
+// these to a unit floor square via cv2.getPerspectiveTransform.
+type HomographyPoint struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
 }
 
 // Backward compatibility alias
@@ -142,6 +153,9 @@ func Update(ctx context.Context, id string, input DeviceInput) (*models.Camera, 
 	if input.RecordQuality != nil && *input.RecordQuality != "" {
 		updates["record_quality"] = *input.RecordQuality
 	}
+	if input.IsFixed != nil {
+		updates["is_fixed"] = *input.IsFixed
+	}
 
 	res := database.DB.WithContext(ctx).Model(&models.Camera{ID: id}).Updates(updates)
 	if res.Error != nil {
@@ -190,6 +204,65 @@ func SetStopped(ctx context.Context, id string, stopped bool) (*models.Camera, e
 	return &cam, nil
 }
 
+// SetHomography persists the 4 image-space calibration points for a fixed
+// camera (§2.4). Vision-service computes the actual homography matrix — this
+// just stores the raw points and marks them valid/fresh.
+func SetHomography(ctx context.Context, id string, points []HomographyPoint) (*models.Camera, error) {
+	if len(points) != 4 {
+		return nil, fmt.Errorf("homography calibration requires exactly 4 points, got %d", len(points))
+	}
+	encoded, err := json.Marshal(points)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	res := database.DB.WithContext(ctx).Model(&models.Camera{ID: id}).Updates(map[string]any{
+		// Calibrating implies opting in — saves a confusing two-step commit where
+		// the admin picks points but forgets to separately flip is_fixed via the
+		// main "Update Device" button.
+		"is_fixed":              true,
+		"homography_points":     string(encoded),
+		"homography_valid":      true,
+		"homography_updated_at": &now,
+		"updated_at":            now,
+	})
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var cam models.Camera
+	if err := database.DB.WithContext(ctx).First(&cam, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	populateThumbnail(&cam)
+	return &cam, nil
+}
+
+// InvalidateHomography flips homography_valid=false — called by vision-service
+// when its landmark-shift check detects the camera was bumped/repositioned.
+func InvalidateHomography(ctx context.Context, id string) (*models.Camera, error) {
+	res := database.DB.WithContext(ctx).Model(&models.Camera{ID: id}).Updates(map[string]any{
+		"homography_valid": false,
+		"updated_at":       time.Now(),
+	})
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var cam models.Camera
+	if err := database.DB.WithContext(ctx).First(&cam, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	populateThumbnail(&cam)
+	return &cam, nil
+}
+
 // IsStreaming reports whether the camera may hold pool / live / CV / NVR connections.
 func IsStreaming(dev *models.Camera) bool {
 	return dev != nil && dev.IsActive && !dev.IsStopped
@@ -201,23 +274,27 @@ func CameraEventPayload(dev *models.Camera) map[string]interface{} {
 		return map[string]interface{}{}
 	}
 	return map[string]interface{}{
-		"id":               dev.ID,
-		"name":             dev.Name,
-		"host":             dev.Host,
-		"brand":            dev.Brand,
-		"rtsp_port":        dev.RtspPort,
-		"rtsp_transport":   dev.RtspTransport,
-		"segment_duration": dev.SegmentDuration,
-		"video_codec":      dev.VideoCodec,
-		"audio_mode":       dev.AudioMode,
-		"extra_args":       dev.ExtraArgs,
-		"is_active":        dev.IsActive,
-		"is_stopped":       dev.IsStopped,
-		"enable_ai":        dev.EnableAi,
-		"show_bbox":        dev.ShowBbox,
-		"nvr_mode":         dev.NvrMode,
-		"record_quality":   dev.RecordQuality,
-		"created_at":       dev.CreatedAt,
-		"updated_at":       dev.UpdatedAt,
+		"id":                    dev.ID,
+		"name":                  dev.Name,
+		"host":                  dev.Host,
+		"brand":                 dev.Brand,
+		"rtsp_port":             dev.RtspPort,
+		"rtsp_transport":        dev.RtspTransport,
+		"segment_duration":      dev.SegmentDuration,
+		"video_codec":           dev.VideoCodec,
+		"audio_mode":            dev.AudioMode,
+		"extra_args":            dev.ExtraArgs,
+		"is_active":             dev.IsActive,
+		"is_stopped":            dev.IsStopped,
+		"enable_ai":             dev.EnableAi,
+		"show_bbox":             dev.ShowBbox,
+		"nvr_mode":              dev.NvrMode,
+		"record_quality":        dev.RecordQuality,
+		"is_fixed":              dev.IsFixed,
+		"homography_points":     dev.HomographyPoints,
+		"homography_valid":      dev.HomographyValid,
+		"homography_updated_at": dev.HomographyUpdatedAt,
+		"created_at":            dev.CreatedAt,
+		"updated_at":            dev.UpdatedAt,
 	}
 }

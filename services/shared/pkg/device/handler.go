@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"cctv/shared/pkg/database"
@@ -156,6 +157,67 @@ func UpdateDeviceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, dev)
 }
 
+// SetHomographyHandler persists a fixed camera's 4-point ground-plane
+// calibration (§2.4). Admin-only, mirrors UpdateDeviceHandler's shape.
+func SetHomographyHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		return
+	}
+
+	var req struct {
+		Points []HomographyPoint `json:"points" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		return
+	}
+
+	dev, err := SetHomography(c.Request.Context(), idStr, req.Points)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	mq.PublishCameraEvent("camera.updated", CameraEventPayload(dev))
+	c.JSON(http.StatusOK, dev)
+}
+
+// InvalidateHomographyHandler — internal, called by vision-service when its
+// landmark-shift check (§2.4) detects the camera was bumped/repositioned.
+func InvalidateHomographyHandler(c *gin.Context) {
+	secret := c.GetHeader("X-Service-Key")
+	expected := os.Getenv("M2M_SECRET")
+	if expected != "" && secret != expected {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized internal access"})
+		return
+	}
+
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		return
+	}
+
+	dev, err := InvalidateHomography(c.Request.Context(), idStr)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to invalidate homography"})
+		return
+	}
+
+	mq.PublishCameraEvent("camera.updated", CameraEventPayload(dev))
+	c.JSON(http.StatusOK, gin.H{"message": "Homography invalidated"})
+}
+
 func pickAlternativeCamera(c *gin.Context, stoppedID string) (id, name string) {
 	var others []models.Camera
 	err := database.DB.WithContext(c.Request.Context()).
@@ -254,14 +316,26 @@ func GetDeviceSnapshotHandler(c *gin.Context) {
 
 	webrtcURL := os.Getenv("WEBRTC_SERVICE_URL")
 	if webrtcURL == "" {
-		webrtcURL = os.Getenv("GO2RTC_URL")
-		if webrtcURL == "" {
-			webrtcURL = "http://webrtc-service:1984"
-		}
+		webrtcURL = "http://webrtc-service:80"
+	}
+	secret := os.Getenv("ZLM_SECRET")
+	if secret == "" {
+		secret = "hubsight-zlm-internal-secret"
 	}
 
-	thumbStream := fmt.Sprintf("cam_%s_thumb", dev.ID)
-	reqURL := fmt.Sprintf("%s/api/frame.jpeg?src=%s", webrtcURL, url.QueryEscape(thumbStream))
+	// getSnap targets the raw camera RTSP URL directly, not ZLMediaKit's own
+	// re-serve of cam_{id}_thumb: verified during migration testing that
+	// ffmpeg's snapshot grab reliably fails to find H264 codec parameters
+	// against ZLMediaKit's RTSP re-serve specifically (even with generous
+	// -analyzeduration/-probesize), while the same grab against the camera's
+	// own RTSP stream works every time. See services/zlmediakit/config.ini's
+	// header comment for the fuller explanation.
+	srcDirect := dev.Host
+	if i := strings.Index(srcDirect, "#"); i >= 0 {
+		srcDirect = srcDirect[:i]
+	}
+	reqURL := fmt.Sprintf("%s/index/api/getSnap?secret=%s&url=%s&timeout_sec=4&expire_sec=2",
+		webrtcURL, url.QueryEscape(secret), url.QueryEscape(srcDirect))
 
 	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, reqURL, nil)
 	if err != nil {

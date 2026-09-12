@@ -8,26 +8,26 @@ logger = logging.getLogger(__name__)
 
 class StreamManager:
     """Manages 24/7 background AI processing stream worker threads for cameras."""
-    def __init__(self, detector, go2rtc_rtsp_base, webrtc_api_url, process_fps=0):
+    def __init__(self, detector, media_rtsp_base, webrtc_api_url, process_fps=0):
         self.detector = detector
-        self.go2rtc_rtsp_base = go2rtc_rtsp_base
+        self.media_rtsp_base = media_rtsp_base
         self.webrtc_api_url = webrtc_api_url
         self.process_fps = process_fps
         self.active_streams = {}  # cam_id -> {'thread': t, 'stop_event': e, 'host': url, 'name': name}
 
-    def ensure_go2rtc_stream(self, cam_id, rtsp_url):
+    def ensure_media_stream(self, cam_id, rtsp_url):
         # Connection #0 (cam_{id}_cv) is owned by pool-service (640p / 10FPS / no audio).
         # Vision must not PUT/overwrite that profile.
         return
 
-    def remove_go2rtc_stream(self, cam_id):
+    def remove_media_stream(self, cam_id):
         # Pool-service unregisters Connection #0 when AI is disabled. Do not DELETE here.
         return
 
     def _stream_worker(self, cam_id, cam_name, rtsp_url, stop_event):
-        self.ensure_go2rtc_stream(cam_id, rtsp_url)
-        go2rtc_cv_url = f"{self.go2rtc_rtsp_base}/cam_{cam_id}_cv"
-        logger.info(f"[{cam_id} - {cam_name}] Starting background AI processing thread (Connection #0: {go2rtc_cv_url})")
+        self.ensure_media_stream(cam_id, rtsp_url)
+        media_cv_url = f"{self.media_rtsp_base}/cam_{cam_id}_cv"
+        logger.info(f"[{cam_id} - {cam_name}] Starting background AI processing thread (Connection #0: {media_cv_url})")
         
         frame_interval = 1.0 / self.process_fps if self.process_fps > 0 else 0
         os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
@@ -35,7 +35,7 @@ class StreamManager:
         while not stop_event.is_set():
             cap = None
             for attempt in range(4):
-                cap = cv2.VideoCapture(go2rtc_cv_url)
+                cap = cv2.VideoCapture(media_cv_url)
                 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
                 if cap.isOpened():
                     break
@@ -44,7 +44,7 @@ class StreamManager:
                 time.sleep(1.0)
 
             if cap is None or not cap.isOpened():
-                logger.warning(f"[{cam_id}] go2rtc stream not ready, trying direct RTSP source...")
+                logger.warning(f"[{cam_id}] media re-serve not ready, trying direct RTSP source...")
                 cap = cv2.VideoCapture(rtsp_url)
                 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
                 
@@ -122,5 +122,5 @@ class StreamManager:
                 logger.info(f"[{cam_id}] Camera removed or AI disabled. Stopping thread.")
                 self.active_streams[cam_id]['stop_event'].set()
                 self.active_streams[cam_id]['thread'].join(timeout=5)
-                self.remove_go2rtc_stream(cam_id)
+                self.remove_media_stream(cam_id)
                 del self.active_streams[cam_id]

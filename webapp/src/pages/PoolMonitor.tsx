@@ -79,7 +79,6 @@ export const PoolMonitor = () => {
         <div className="w-full space-y-6">
 
         {/* Quick Metrics Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4">
           {/* 1. Total Cameras */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
@@ -97,7 +96,6 @@ export const PoolMonitor = () => {
             </div>
           </div>
 
-          {/* 2. CV Background Streams */}
           {/* 2. Thumbnail Persistent Streams (#thumb) */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-sky-200/70 dark:border-sky-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-sky-50/20 dark:from-slate-900 dark:to-sky-950/20">
             <div className="flex items-center justify-between">
@@ -130,7 +128,6 @@ export const PoolMonitor = () => {
             </div>
           </div>
 
-          {/* 3. Live Scaled Streams */}
           {/* 4. Live Scaled Streams */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-blue-200/70 dark:border-blue-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-blue-50/20 dark:from-slate-900 dark:to-blue-950/20">
             <div className="flex items-center justify-between">
@@ -147,7 +144,6 @@ export const PoolMonitor = () => {
             </div>
           </div>
 
-          {/* 4. Active Viewers */}
           {/* 5. Active Viewers */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-indigo-200/70 dark:border-indigo-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/20">
             <div className="flex items-center justify-between">
@@ -164,8 +160,6 @@ export const PoolMonitor = () => {
             </div>
           </div>
 
-          {/* 5. Auto GC Info */}
-          <div className="col-span-2 lg:col-span-1 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
           {/* 6. Auto GC Info */}
           <div className="col-span-2 sm:col-span-1 xl:col-span-1 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -415,7 +409,6 @@ export const PoolMonitor = () => {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -440,7 +433,6 @@ export const PoolMonitor = () => {
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                 <span className="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-[11px] font-bold">
-                  2
                   3
                 </span>
                 {t('pool.policy2Title')}
@@ -451,7 +443,6 @@ export const PoolMonitor = () => {
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                 <span className="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-[11px] font-bold">
-                  3
                   4
                 </span>
                 {t('pool.policy3Title')}

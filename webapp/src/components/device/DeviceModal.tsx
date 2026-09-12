@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Globe, Sliders, HardDrive, X } from '@/components/icons';
+import { Layers, Globe, Sliders, HardDrive, Crosshair, X } from '@/components/icons';
 import type { DeviceFormData } from '../../types/device';
+import type { DeviceType } from '@hubsight/sdk';
 import { DeviceGeneralTab } from './DeviceGeneralTab';
 import { DeviceNvrTab } from './DeviceNvrTab';
 import { DeviceRtspTab } from './DeviceRtspTab';
 import { DeviceFfmpegTab } from './DeviceFfmpegTab';
+import { DeviceCalibrationTab } from './DeviceCalibrationTab';
 import { useTranslation } from '../../i18n';
 
 export interface DeviceModalProps {
   isEditing: boolean;
   isStreaming?: boolean;
+  cameraId?: string | null;
+  device?: DeviceType;
   formData: DeviceFormData;
   error: string;
   isSubmitting: boolean;
@@ -17,21 +21,25 @@ export interface DeviceModalProps {
   onChange: (patch: Partial<DeviceFormData>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onAddFfmpegTag: (tag: string) => void;
+  onCalibrationSaved?: () => void;
 }
 
 export const DeviceModal: React.FC<DeviceModalProps> = ({
   isEditing,
   isStreaming = false,
+  cameraId,
+  device,
   formData,
   error,
   isSubmitting,
   onClose,
   onChange,
   onSubmit,
-  onAddFfmpegTag
+  onAddFfmpegTag,
+  onCalibrationSaved
 }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'general' | 'nvr' | 'rtsp' | 'ffmpeg'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'nvr' | 'rtsp' | 'ffmpeg' | 'calibration'>('general');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,6 +122,19 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
                 <Sliders size={14} />
                 {t('devices.tabFfmpeg')}
               </button>
+              {isEditing && isStreaming && cameraId && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('calibration')}
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'calibration'
+                    ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                    }`}
+                >
+                  <Crosshair size={14} />
+                  {t('devices.tabCalibration')}
+                </button>
+              )}
             </div>
 
             {/* Desktop Close Button */}
@@ -153,6 +174,18 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               formData={formData}
               onChange={onChange}
               onAddFfmpegTag={onAddFfmpegTag}
+            />
+          )}
+
+          {activeTab === 'calibration' && cameraId && (
+            <DeviceCalibrationTab
+              cameraId={cameraId}
+              isFixed={formData.is_fixed}
+              onChangeIsFixed={(v) => onChange({ is_fixed: v })}
+              hasExistingCalibration={!!device?.homography_points}
+              homographyValid={device?.homography_valid}
+              homographyUpdatedAt={device?.homography_updated_at}
+              onSaved={onCalibrationSaved}
             />
           )}
 

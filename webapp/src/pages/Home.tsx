@@ -75,7 +75,14 @@ export const Home: React.FC = () => {
   interface SnapshotEntry { dataUrl: string; fetchedAt: number; }
   const snapshotCacheRef = useRef<Map<string, SnapshotEntry>>(new Map());
   const [snapshotRevision, setSnapshotRevision] = useState(0);
-  const SNAPSHOT_TTL_MS = 90_000; // 90 seconds
+  const SNAPSHOT_TTL_MS = 90_000; // how long a *successful* snapshot stays fresh
+  // The media server's ffmpeg-based MJPEG snapshot generator is intermittently flaky
+  // (transient "Broken pipe" transcode failures) — a camera whose snapshot
+  // never succeeded would otherwise sit on "No stream" for a full 90s TTL
+  // cycle before the next attempt. The TTL check inside fetchSnapshot already
+  // throttles cameras with a fresh successful snapshot, so polling faster
+  // here only affects cameras that don't have one yet (or went stale).
+  const SNAPSHOT_RETRY_POLL_MS = 8_000;
 
   /** Pick stream name for snapshot: each active camera maintains a persistent 640p 15FPS thumb stream */
   const getSnapshotStreamName = useCallback((cam: CameraType): string | null => {
@@ -83,7 +90,7 @@ export const Home: React.FC = () => {
     return `cam_${cam.id}_thumb`;
   }, []);
 
-  /** Fetch a snapshot JPEG blob from go2rtc via the gateway and store as data URL */
+  /** Fetch a snapshot JPEG blob from the media server via the gateway and store as data URL */
   const fetchSnapshot = useCallback(async (cam: CameraType): Promise<void> => {
     const streamName = getSnapshotStreamName(cam);
     if (!streamName) return;
@@ -235,13 +242,17 @@ export const Home: React.FC = () => {
     return sorted.slice(0, 4);
   }, [cameras]);
 
-  // Periodic Snapshot Refresh (every 90 seconds for top 4 dashboard cameras)
+  // Periodic Snapshot Refresh for the top 4 dashboard cameras. Ticks every
+  // SNAPSHOT_RETRY_POLL_MS, but fetchSnapshot's own SNAPSHOT_TTL_MS check
+  // skips cameras that already have a fresh snapshot — so this only actually
+  // hits the media server for cameras still stuck without one (fast recovery from a
+  // transient snapshot failure instead of waiting a full 90s).
   useEffect(() => {
     if (displayedCameras.length === 0) return;
     refreshSnapshots(displayedCameras);
     const interval = setInterval(() => {
       refreshSnapshots(displayedCameras);
-    }, 90_000);
+    }, SNAPSHOT_RETRY_POLL_MS);
     return () => clearInterval(interval);
   }, [displayedCameras, refreshSnapshots]);
 

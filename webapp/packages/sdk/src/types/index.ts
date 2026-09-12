@@ -244,6 +244,11 @@ export interface ChangePasswordRequest {
 export type NvrMode = 'disabled' | 'event' | 'full' | 'aor';
 export type RecordQuality = 'standard' | 'hd';
 
+export interface HomographyPoint {
+  x: number;
+  y: number;
+}
+
 export interface DeviceType {
   id: string;
   name: string;
@@ -261,6 +266,12 @@ export interface DeviceType {
   show_bbox: boolean;
   nvr_mode: NvrMode;
   record_quality: RecordQuality;
+  // Opt-in ground-plane calibration for fixed (non-PTZ) cameras — see
+  // docs/HIGH_ANGLE_VISION_STRATEGY.md §2.4.
+  is_fixed?: boolean;
+  homography_points?: string;
+  homography_valid?: boolean;
+  homography_updated_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -295,6 +306,7 @@ export interface CameraInput {
   show_bbox?: boolean;
   nvr_mode?: NvrMode;
   record_quality?: RecordQuality;
+  is_fixed?: boolean;
   [key: string]: unknown;
 }
 
@@ -454,7 +466,6 @@ export interface StreamConnection {
   id: string;
   camera_id: string;
   index: number;
-  purpose: 'cv' | 'nvr' | 'live';
   purpose: 'thumb' | 'cv' | 'nvr' | 'live';
   stream_name: string;
   source_url: string;

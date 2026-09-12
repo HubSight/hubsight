@@ -1,11 +1,11 @@
 package live
 
 import (
-	"bytes"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/pb"
 	"cctv/shared/pkg/pool"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,7 +22,7 @@ func init() {
 	Tracker.StartCleanup()
 }
 
-// WebRTCHandler acts as a signaling proxy for go2rtc.
+// WebRTCHandler acts as a signaling proxy for ZLMediaKit.
 func WebRTCHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
@@ -67,72 +67,90 @@ func WebRTCHandler(c *gin.Context) {
 		c.Data(http.StatusOK, c.Request.Header.Get("Content-Type"), []byte(resp.SdpAnswer))
 		return
 	}
-	fmt.Printf("[Live Proxy] pool-service unavailable (%v), falling back to direct go2rtc signaling\n", err)
+	fmt.Printf("[Live Proxy] pool-service unavailable (%v), falling back to direct ZLMediaKit signaling\n", err)
 
-	// Fallback directly to go2rtc if pool-service is unreachable
-	camName := fmt.Sprintf("cam_%s", camID)
+	// Fallback directly to ZLMediaKit if pool-service is unreachable. Named
+	// distinctly from the pool's own `cam_{id}_live_{N}` streams (not just
+	// `cam_{id}`, a legacy name pool never reconstructed/cleaned up)
+	// so this unmanaged registration can't collide with a pool-owned one.
+	camName := fmt.Sprintf("cam_%s_live_fallback", camID)
 
 	webrtcURL := os.Getenv("WEBRTC_SERVICE_URL")
 	if webrtcURL == "" {
-		webrtcURL = os.Getenv("GO2RTC_URL")
-		if webrtcURL == "" {
-			webrtcURL = "http://webrtc-service:1984"
-		}
+		webrtcURL = "http://webrtc-service:80"
+	}
+	secret := os.Getenv("ZLM_SECRET")
+	if secret == "" {
+		secret = "hubsight-zlm-internal-secret"
 	}
 
-	// Register stream directly in webrtc-service. RTSP over TCP: reliable from
-	// inside a container (UDP RTP does not route back through the NAT).
 	srcDirect := cam.Host
-	if !strings.Contains(srcDirect, "#") {
-		srcDirect = fmt.Sprintf("%s#backchannel=0#transport=tcp", srcDirect)
-	} else if !strings.Contains(srcDirect, "transport=") {
-		srcDirect = fmt.Sprintf("%s#transport=tcp", srcDirect)
+	if i := strings.Index(srcDirect, "#"); i >= 0 {
+		srcDirect = srcDirect[:i] // strip any legacy `#key=val` suffix — ZLMediaKit expects a plain RTSP URL
 	}
 
-	putURL := fmt.Sprintf("%s/api/streams?name=%s&src=%s",
-		webrtcURL,
-		url.QueryEscape(camName),
-		url.QueryEscape(srcDirect),
-	)
-	putReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPut, putURL, nil)
+	// Register stream directly in webrtc-service (best-effort; addStreamProxy
+	// is idempotent by app+stream, safe to call even if already registered).
+	proxyForm := url.Values{
+		"secret":      {secret},
+		"vhost":       {"__defaultVhost__"},
+		"app":         {"live"},
+		"stream":      {camName},
+		"url":         {srcDirect},
+		"retry_count": {"-1"},
+	}
+	putReq, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost,
+		fmt.Sprintf("%s/index/api/addStreamProxy", webrtcURL), strings.NewReader(proxyForm.Encode()))
 	if err == nil {
+		putReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		client := &http.Client{Timeout: 5 * time.Second}
 		if putResp, err := client.Do(putReq); err == nil {
 			putResp.Body.Close()
 		}
 	}
 
-	// Forward SDP Offer to webrtc-service
-	signalingURL := fmt.Sprintf("%s/api/webrtc?src=%s", webrtcURL, url.QueryEscape(camName))
-	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, signalingURL, bytes.NewReader(body))
+	// Forward SDP Offer to webrtc-service — response is JSON-wrapped
+	// ({code,id,sdp,type}), unlike the primary pool-mediated path which
+	// already unwraps this inside ZLMClient.ForwardWebRTCOffer.
+	signalingURL := fmt.Sprintf("%s/index/api/webrtc?app=live&stream=%s&type=play", webrtcURL, url.QueryEscape(camName))
+	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, signalingURL, strings.NewReader(string(body)))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create proxy request"})
 		return
 	}
-
-	req.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
+	req.Header.Set("Content-Type", "text/plain;charset=utf-8")
 
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	httpResp, err := httpClient.Do(req)
 	if err != nil {
-		fmt.Printf("go2rtc error reaching server: %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reach go2rtc server: " + err.Error()})
+		fmt.Printf("ZLMediaKit error reaching server: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reach ZLMediaKit server: " + err.Error()})
 		return
 	}
 	defer httpResp.Body.Close()
 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read go2rtc answer"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read ZLMediaKit answer"})
 		return
 	}
 
 	if httpResp.StatusCode >= 300 {
-		c.JSON(httpResp.StatusCode, gin.H{"error": fmt.Sprintf("go2rtc error: %s", string(respBody))})
+		c.JSON(httpResp.StatusCode, gin.H{"error": fmt.Sprintf("ZLMediaKit error: %s", string(respBody))})
 		return
 	}
 
-	c.Data(httpResp.StatusCode, httpResp.Header.Get("Content-Type"), respBody)
+	var parsed struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		SDP  string `json:"sdp"`
+	}
+	if err := json.Unmarshal(respBody, &parsed); err != nil || parsed.Code != 0 || parsed.SDP == "" {
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("ZLMediaKit signaling failed: %s", parsed.Msg)})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/sdp", []byte(parsed.SDP))
 }
 
 // LiveStatusHandler returns real-time streaming health of a camera

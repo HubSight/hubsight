@@ -14,6 +14,10 @@ message CameraData {
   string host = 3;
   bool is_active = 4;
   bool enable_ai = 5;
+  // Opt-in ground-plane calibration (HIGH_ANGLE_VISION_STRATEGY.md §2.4).
+  bool is_fixed = 6;
+  string homography_points = 7; // JSON array of 4 {x,y} normalized image points
+  bool homography_valid = 8;
 }
 
 message GetCamerasResponse {

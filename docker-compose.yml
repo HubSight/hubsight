@@ -12,7 +12,7 @@ services:
       AUTH_SERVICE_URL: "http://auth-service:8081"
       CORE_SERVICE_URL: "http://core-service:8080"
       RELAY_SERVICE_URL: "http://relay-service:3001"
-      WEBRTC_SERVICE_URL: "http://webrtc-service:1984"
+      WEBRTC_SERVICE_URL: "http://webrtc-service:80"
     depends_on:
       - auth-service
       - core-service
@@ -31,7 +31,8 @@ services:
       AUTH_SERVICE_URL: "http://auth-service:8081"
       POOL_SERVICE_URL: "http://pool-service:8085"
       POOL_GRPC_URL: "pool-service:50052"
-      WEBRTC_SERVICE_URL: "http://webrtc-service:1984"
+      WEBRTC_SERVICE_URL: "http://webrtc-service:80"
+      ZLM_SECRET: "hubsight-zlm-internal-secret"
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       M2M_SECRET: "cctv-internal-m2m-secret"
       S3_ENDPOINT: "dl.learncurv.space"
@@ -76,7 +77,8 @@ services:
       PORT: "8085"
       CORE_SERVICE_URL: "http://core-service:8080"
       CORE_GRPC_URL: "core-service:50053"
-      WEBRTC_SERVICE_URL: "http://webrtc-service:1984"
+      WEBRTC_SERVICE_URL: "http://webrtc-service:80"
+      ZLM_SECRET: "hubsight-zlm-internal-secret"
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
       M2M_SECRET: "cctv-internal-m2m-secret"
     depends_on:
@@ -125,6 +127,7 @@ services:
     environment:
       DATABASE_URL: "${DATABASE_URL}"
       RABBITMQ_URL: "amqp://guest:guest@mq-service:5672/"
+      MEDIA_RTSP_BASE: "rtsp://webrtc-service:554/live"
       S3_ENDPOINT: "dl.learncurv.space"
       S3_BUCKET: "cctv"
       S3_ACCESS_KEY: "admin"
@@ -132,6 +135,7 @@ services:
       S3_USE_SSL: "true"
     depends_on:
       - mq-service
+      - webrtc-service
 
   # 📬 Offline FCM / Web Push worker (Private, consumes push_queue)
   push-service:
@@ -180,9 +184,10 @@ services:
       CORE_SERVICE_URL: "http://core-service:8080"
       CORE_GRPC_URL: "core-service:50053"
       M2M_SECRET: "cctv-internal-m2m-secret"
-      # Read from go2rtc's internal RTSP server (same buffer as WebRTC stream)
-      # so that bounding box timestamps align with the video shown in the browser.
-      GO2RTC_RTSP_BASE: "rtsp://webrtc-service:8554"
+      # Read from ZLMediaKit's internal RTSP re-serve (same buffer as WebRTC
+      # stream) so that bounding box timestamps align with the video shown in
+      # the browser.
+      MEDIA_RTSP_BASE: "rtsp://webrtc-service:554/live"
       PROCESS_FPS: "10"
       ENROLL_HTTP_PORT: "8090"
     depends_on:
@@ -190,17 +195,21 @@ services:
       - webrtc-service
       - core-service
 
-  # 📹 WebRTC Media Server (Media RTP port 8555; Signaling routed via API Gateway :8088/webrtc)
+  # 📹 WebRTC Media Server — ZLMediaKit (RTSP↔WebRTC engine).
+  # Media RTP port 8000; HTTP API/signaling routed via API Gateway :8088/webrtc.
   webrtc-service:
-    image: alexxit/go2rtc:latest
+    image: zlmediakit/zlmediakit:master
     restart: unless-stopped
     ports:
-      - "8555:8555/tcp" # WebRTC TCP media
-      - "8555:8555/udp" # WebRTC UDP media
-      # RTSP port 8554 is NOT exposed to host; only accessible within Docker network
-      # Vision-service uses it internally to read the same buffered stream as WebRTC.
+      - "8000:8000/tcp" # WebRTC TCP media (STUN/DTLS/SRTP fallback)
+      - "8000:8000/udp" # WebRTC UDP media
+      # RTSP (554), RTMP (1935, used only for addFFmpegSource's internal
+      # push-back — see services/zlmediakit/config.ini) and the HTTP API (80)
+      # are NOT exposed to the host; only reachable within the Docker network.
+      # vision-service and nvr-service read the RTSP re-serve internally to
+      # share the same buffered stream WebRTC viewers see.
     volumes:
-      - ./services/go2rtc:/config
+      - ./services/zlmediakit/config.ini:/opt/media/conf/config.ini
 
   # 🐇 RabbitMQ Message Broker for internal events
   mq-service:

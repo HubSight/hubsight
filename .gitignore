@@ -61,4 +61,4 @@ npm_cache
 
 # Local Docker Compose override (dev only, never deployed)
 /docker-compose.override.yml
-/services/go2rtc/go2rtc.local.yaml
+/services/zlmediakit/config.local.ini

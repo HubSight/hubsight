@@ -23,6 +23,7 @@ export interface DeviceFormData {
   show_bbox: boolean;
   nvr_mode: 'disabled' | 'event' | 'full' | 'aor';
   record_quality: 'standard' | 'hd';
+  is_fixed: boolean;
 }
 
 // Backward compatibility alias

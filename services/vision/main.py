@@ -20,8 +20,8 @@ load_dotenv()
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
 CORE_GRPC_URL = os.getenv("CORE_GRPC_URL", "core-service:50053")
 PROCESS_FPS = int(os.getenv("PROCESS_FPS", "0"))
-GO2RTC_RTSP_BASE = os.getenv("GO2RTC_RTSP_BASE", "rtsp://webrtc-service:8554")
-WEBRTC_API_URL = os.getenv("WEBRTC_API_URL", "http://webrtc-service:1984")
+MEDIA_RTSP_BASE = os.getenv("MEDIA_RTSP_BASE", "rtsp://webrtc-service:554/live")
+WEBRTC_API_URL = os.getenv("WEBRTC_API_URL", "http://webrtc-service:80")
 ENROLL_HTTP_PORT = int(os.getenv("ENROLL_HTTP_PORT", "8090"))
 
 def get_ai_cameras():
@@ -39,12 +39,30 @@ def get_ai_cameras():
                 'name': c.name,
                 'host': c.host,
                 'is_active': c.is_active,
-                'enable_ai': c.enable_ai
+                'enable_ai': c.enable_ai,
+                # §2.4 — opt-in ground-plane calibration (fixed cameras only).
+                'is_fixed': c.is_fixed,
+                'homography_points': c.homography_points,
+                'homography_valid': c.homography_valid,
             })
         return cams
     except Exception as e:
         logger.warning(f"Error fetching AI cameras from core-service gRPC: {e}")
     return None
+
+def sync_camera_calibration(detector, cams):
+    """§2.4 — push each camera's is_fixed/homography state into the detector's
+    per-camera runtime state (only vision-service can decode frames to compute H)."""
+    if not cams:
+        return
+    for cam in cams:
+        try:
+            detector.set_camera_calibration(
+                cam['id'], cam.get('is_fixed', False),
+                cam.get('homography_points', ''), cam.get('homography_valid', True),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to sync calibration for camera {cam.get('id')}: {e}")
 
 def sync_face_embeddings(face_engine):
     """Fetch all member face vectors from core-service to keep in-memory vector store updated."""
@@ -83,7 +101,7 @@ def main():
     # 3. Initialize Stream Manager
     stream_mgr = StreamManager(
         detector=detector,
-        go2rtc_rtsp_base=GO2RTC_RTSP_BASE,
+        media_rtsp_base=MEDIA_RTSP_BASE,
         webrtc_api_url=WEBRTC_API_URL,
         process_fps=PROCESS_FPS
     )
@@ -91,6 +109,7 @@ def main():
     # Initial vector sync and camera sync
     sync_face_embeddings(face_engine)
     initial_cams = get_ai_cameras()
+    sync_camera_calibration(detector, initial_cams)
     stream_mgr.reconcile(initial_cams)
     
     # 4. Start Event-Driven MQ Consumer for instant updates (<10ms response)
@@ -99,6 +118,7 @@ def main():
         if pattern.startswith("camera."):
             logger.info("[MQ] Camera configuration changed, reconciling stream workers immediately...")
             cams = get_ai_cameras()
+            sync_camera_calibration(detector, cams)
             stream_mgr.reconcile(cams)
         elif pattern.startswith("member.") or pattern.startswith("face."):
             logger.info("[MQ] Member or face vectors updated, reloading vector database immediately...")
@@ -114,6 +134,7 @@ def main():
         sync_face_embeddings(face_engine)
         detector.refresh_locked_identities()
         cams = get_ai_cameras()
+        sync_camera_calibration(detector, cams)
         stream_mgr.reconcile(cams)
 
 if __name__ == "__main__":

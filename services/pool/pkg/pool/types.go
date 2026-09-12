@@ -23,7 +23,8 @@ type StreamConnection struct {
 	CameraID    string        `json:"camera_id"`
 	Index       int           `json:"index"`        // -1: Thumb, 0: CV, 1: NVR, >=2: shared live
 	Purpose     StreamPurpose `json:"purpose"`      // "thumb" | "cv" | "nvr" | "live"
-	StreamName  string        `json:"stream_name"`  // Stream name registered in go2rtc
+	StreamName  string        `json:"stream_name"`  // Stream name registered in ZLMediaKit
+	ProxyKey    string        `json:"-"`            // ZLMediaKit's opaque key for this registration — required to unregister
 	SourceURL   string        `json:"source_url"`   // Camera RTSP URL
 	ActiveUsers int           `json:"active_users"` // Current connected viewers (0..5)
 	MaxUsers    int           `json:"max_users"`    // 5 for live, 1 for CV/NVR/Thumb

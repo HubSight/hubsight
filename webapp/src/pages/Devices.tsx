@@ -35,7 +35,8 @@ const initialFormData: DeviceFormData = {
   enable_ai: false,
   show_bbox: true,
   nvr_mode: 'event',
-  record_quality: 'standard'
+  record_quality: 'standard',
+  is_fixed: false
 };
 
 const Devices = () => {
@@ -172,7 +173,8 @@ const Devices = () => {
         enable_ai: dev.enable_ai || false,
         show_bbox: dev.show_bbox !== false,
         nvr_mode: dev.nvr_mode || 'event',
-        record_quality: dev.record_quality || 'standard'
+        record_quality: dev.record_quality || 'standard',
+        is_fixed: dev.is_fixed || false
       });
     } else {
       setEditingDeviceId(null);
@@ -238,7 +240,8 @@ const Devices = () => {
       enable_ai: formData.enable_ai,
       show_bbox: formData.show_bbox !== false,
       nvr_mode: formData.nvr_mode || 'event',
-      record_quality: formData.record_quality || 'standard'
+      record_quality: formData.record_quality || 'standard',
+      is_fixed: formData.is_fixed || false
     };
 
     try {
@@ -566,6 +569,8 @@ const Devices = () => {
             const dev = devices.find(d => d.id === editingDeviceId);
             return dev ? (dev.is_active && !dev.is_stopped) : false;
           })() : false}
+          cameraId={editingDeviceId}
+          device={editingDeviceId ? devices.find((d) => d.id === editingDeviceId) : undefined}
           formData={formData}
           error={error}
           isSubmitting={isSubmitting}
@@ -573,6 +578,7 @@ const Devices = () => {
           onChange={handleFormChange}
           onSubmit={handleSaveDevice}
           onAddFfmpegTag={handleAddFfmpegTag}
+          onCalibrationSaved={fetchDevices}
         />
       )}
 

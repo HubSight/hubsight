@@ -38,7 +38,14 @@ export interface CreateLiveStreamOptions {
   jitterBufferMs?: number;
   /** Interval in ms for pool heartbeat keepalive (default: 15000) */
   heartbeatMs?: number;
-  /** Max ms to wait for ICE gathering before sending offer (default: 400) */
+  /**
+   * Max ms to wait for ICE gathering before sending the offer (default: 4000).
+   * Firefox's ICE agent gathers materially slower than Chromium's behind NAT
+   * (async mDNS host-candidate registration, different STUN retry pacing), so
+   * this needs real headroom — the wait still resolves early via
+   * `icegatheringstatechange` on fast networks/browsers, so raising it does
+   * not add latency to sessions that already gather quickly.
+   */
   iceGatherTimeoutMs?: number;
   /** Interval in ms to poll stream statistics (default: 1000; 0 to disable) */
   statsIntervalMs?: number;

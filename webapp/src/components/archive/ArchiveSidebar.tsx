@@ -39,6 +39,12 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Stopped cameras have no live feed and (usually) nothing new to browse —
+  // don't clutter the picker with them. The full `cameras` list is still used
+  // for the closed-button label so a deep-linked/auto-selected stopped camera
+  // still displays its name correctly even though it's not offered as a choice.
+  const selectableCameras = cameras.filter((c) => !c.is_stopped);
+
   // Close calendar or dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -68,13 +74,13 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
 
         <div className="relative" ref={dropdownRef}>
           <button
-            className={`input-field bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 min-w-[180px] py-1.5 px-3 flex justify-between items-center rounded-lg ${cameras.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer'
+            className={`input-field bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 min-w-[180px] py-1.5 px-3 flex justify-between items-center rounded-lg ${selectableCameras.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer'
               }`}
-            onClick={() => cameras.length > 0 && setIsDropdownOpen(!isDropdownOpen)}
-            disabled={cameras.length === 0}
+            onClick={() => selectableCameras.length > 0 && setIsDropdownOpen(!isDropdownOpen)}
+            disabled={selectableCameras.length === 0}
           >
             <span className="truncate text-sm pr-2 text-slate-700 dark:text-slate-200">
-              {cameras.length === 0
+              {selectableCameras.length === 0
                 ? t('playback.noDevices')
                 : cameras.find((c) => c.id === selectedCam)?.name || t('playback.selectDevice')}
             </span>
@@ -82,9 +88,9 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
           </button>
 
           {/* Dropdown Menu */}
-          {isDropdownOpen && cameras.length > 0 && (
+          {isDropdownOpen && selectableCameras.length > 0 && (
             <div className="absolute top-full mt-1.5 left-0 z-50 w-full min-w-[200px] glass-panel py-1.5 bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-              {cameras.map((c) => (
+              {selectableCameras.map((c) => (
                 <div
                   key={c.id}
                   className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 flex items-center justify-between transition-colors ${c.id === selectedCam ? 'text-orange-600 dark:text-orange-400 font-medium bg-orange-50/50 dark:bg-orange-950/30' : 'text-slate-700 dark:text-slate-200'
@@ -94,19 +100,12 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
                     setIsDropdownOpen(false);
                   }}
                 >
-                  <span className={`truncate ${c.is_stopped ? 'text-slate-400' : ''}`}>{c.name}</span>
-                  <span className="flex items-center gap-1 shrink-0 ml-2">
-                    {c.is_stopped && (
-                      <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-semibold">
-                        {t('playback.stoppedBadge')}
-                      </span>
-                    )}
-                    {c.enable_ai && (
-                      <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 shadow-sm font-semibold tracking-wider">
-                        AI
-                      </span>
-                    )}
-                  </span>
+                  <span className="truncate">{c.name}</span>
+                  {c.enable_ai && (
+                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 shadow-sm font-semibold tracking-wider shrink-0 ml-2">
+                      AI
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

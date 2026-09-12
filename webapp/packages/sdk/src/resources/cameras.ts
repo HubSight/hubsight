@@ -1,5 +1,5 @@
 import type { InternalHttpClient } from '../internal/http/types';
-import type { CameraInput, CameraType, RecognitionLogItem } from '../types';
+import type { CameraInput, CameraType, HomographyPoint, RecognitionLogItem } from '../types';
 import { resolveHttpClient, type HttpLike } from './context';
 
 export interface CamerasResource {
@@ -13,6 +13,7 @@ export interface CamerasResource {
   restart(id: string, delayMs?: number): Promise<void>;
   recognitionLogs(id: string, limit?: number): Promise<RecognitionLogItem[]>;
   clearRecognitionLogs(id: string): Promise<void>;
+  updateHomography(id: string, points: HomographyPoint[]): Promise<CameraType>;
 }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,6 +79,15 @@ export async function clearCameraRecognitionLogs(client: HttpLike, id: string): 
   await http.delete(`/cameras/${id}/recognition-logs`);
 }
 
+export async function updateCameraHomography(
+  client: HttpLike,
+  id: string,
+  points: HomographyPoint[],
+): Promise<CameraType> {
+  const http = resolveHttpClient(client);
+  return http.put<CameraType>(`/cameras/${id}/homography`, { points });
+}
+
 // ── Resource Factory ─────────────────────────────────────────────────────────
 
 export function createCamerasResource(http: InternalHttpClient): CamerasResource {
@@ -92,5 +102,6 @@ export function createCamerasResource(http: InternalHttpClient): CamerasResource
     restart: (id, delayMs) => restartCamera(http, id, delayMs),
     recognitionLogs: (id, limit) => getCameraRecognitionLogs(http, id, limit),
     clearRecognitionLogs: (id) => clearCameraRecognitionLogs(http, id),
+    updateHomography: (id, points) => updateCameraHomography(http, id, points),
   };
 }

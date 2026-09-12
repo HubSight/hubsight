@@ -13,6 +13,22 @@ const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
 ];
 
+// Non-trickle signaling: candidates gathered after the offer is sent are never
+// delivered (single one-shot SDP exchange, see negotiate()). Firefox's ICE
+// agent is disproportionately slower than Chromium's to produce its
+// server-reflexive candidate behind NAT, so a short gather budget silently
+// drops exactly the candidate needed to punch through to a public media-server host
+// — this shows up as a Firefox-only black screen / failed connection.
+const DEFAULT_ICE_GATHER_TIMEOUT_MS = 4000;
+
+// A transient 'disconnected' state (brief packet loss, network hiccup) often
+// self-recovers without renegotiation — only treat it as terminal after this
+// grace period with no recovery.
+const DISCONNECT_GRACE_MS = 3000;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_MAX_DELAY_MS = 8000;
+
 export interface WebRtcEngineOptions extends CreateLiveStreamOptions {
   http: InternalHttpClient;
 }
@@ -35,6 +51,9 @@ export class InternalWebRtcEngine {
   private statsPoller: StatsPoller | null = null;
   private active = true;
   private audioTrackPresent = false;
+  private reconnectAttempts = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private disconnectGraceTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly stateListeners = new Set<(state: LiveStreamState) => void>();
   private readonly statsListeners = new Set<(stats: LiveStreamStats) => void>();
@@ -46,7 +65,7 @@ export class InternalWebRtcEngine {
     this.http = options.http;
     this.jitterBufferMs = options.jitterBufferMs ?? 800;
     this.heartbeatMs = options.heartbeatMs ?? 15_000;
-    this.iceGatherTimeoutMs = options.iceGatherTimeoutMs ?? 1000;
+    this.iceGatherTimeoutMs = options.iceGatherTimeoutMs ?? DEFAULT_ICE_GATHER_TIMEOUT_MS;
     this.statsIntervalMs = options.statsIntervalMs ?? 1000;
 
     this.mediaStream = new MediaStream();
@@ -128,8 +147,23 @@ export class InternalWebRtcEngine {
       });
 
       this.pc.onconnectionstatechange = () => {
-        if (this.pc?.connectionState === 'failed') {
-          this.fail(new HubSightMediaError('WebRTC peer connection failed'));
+        const state = this.pc?.connectionState;
+        if (state === 'connected') {
+          this.reconnectAttempts = 0;
+          this.clearDisconnectGraceTimer();
+        } else if (state === 'failed') {
+          this.clearDisconnectGraceTimer();
+          this.scheduleReconnect();
+        } else if (state === 'disconnected') {
+          // Give it a grace window to self-recover before tearing down.
+          if (!this.disconnectGraceTimer) {
+            this.disconnectGraceTimer = setTimeout(() => {
+              this.disconnectGraceTimer = null;
+              if (this.pc?.connectionState === 'disconnected') {
+                this.scheduleReconnect();
+              }
+            }, DISCONNECT_GRACE_MS);
+          }
         }
       };
 
@@ -137,7 +171,11 @@ export class InternalWebRtcEngine {
       await this.negotiate();
       this.startHeartbeat();
     } catch (err) {
-      this.fail(err);
+      if (this.active && this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        this.scheduleReconnect();
+      } else {
+        this.fail(err);
+      }
     }
   }
 
@@ -165,6 +203,67 @@ export class InternalWebRtcEngine {
         /* ignore */
       }
     }
+  }
+
+  private clearDisconnectGraceTimer(): void {
+    if (this.disconnectGraceTimer) {
+      clearTimeout(this.disconnectGraceTimer);
+      this.disconnectGraceTimer = null;
+    }
+  }
+
+  /**
+   * Auto-recover from a dropped connection instead of dead-ending in 'error'
+   * (previously the only path on Firefox, whose ICE agent is more prone to
+   * transient disconnects on marginal NAT paths). Retries with exponential
+   * backoff, then surfaces a terminal error once attempts are exhausted.
+   */
+  private scheduleReconnect(): void {
+    if (!this.active || this.reconnectTimer) return;
+    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      this.fail(new HubSightMediaError('WebRTC reconnect attempts exhausted'));
+      return;
+    }
+    this.reconnectAttempts += 1;
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * 2 ** (this.reconnectAttempts - 1),
+      RECONNECT_MAX_DELAY_MS,
+    );
+    this.setState('connecting');
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      void this.restart();
+    }, delay);
+  }
+
+  private teardownPeerConnection(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    if (this.statsPoller) {
+      this.statsPoller.stop();
+      this.statsPoller = null;
+    }
+    if (this.pc) {
+      try {
+        this.pc.close();
+      } catch {
+        /* ignore */
+      }
+      this.pc = null;
+    }
+    this.mediaStream.getTracks().forEach((track) => track.stop());
+    this.mediaStream = new MediaStream();
+    if (this.videoElement) this.videoElement.srcObject = null;
+    this.audioTrackPresent = false;
+  }
+
+  private async restart(): Promise<void> {
+    if (!this.active) return;
+    this.teardownPeerConnection();
+    this.releasePoolLease();
+    await this.start();
   }
 
   private setupTracks(): void {
@@ -328,6 +427,11 @@ export class InternalWebRtcEngine {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.clearDisconnectGraceTimer();
     if (this.statsPoller) {
       this.statsPoller.stop();
       this.statsPoller = null;

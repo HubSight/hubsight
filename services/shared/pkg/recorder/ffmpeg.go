@@ -119,15 +119,16 @@ func StartContinuousBuffer(ctx context.Context, cameraID string) error {
 	bufferDir := fmt.Sprintf("/tmp/nvr_buffer/cam_%s", cameraID)
 	os.MkdirAll(bufferDir, 0755)
 
-	rtspBase := os.Getenv("GO2RTC_RTSP_BASE")
+	rtspBase := os.Getenv("MEDIA_RTSP_BASE")
 	if rtspBase == "" {
-		rtspBase = "rtsp://webrtc-service:8554"
+		rtspBase = "rtsp://webrtc-service:554/live"
 	}
-	go2rtcUrl := fmt.Sprintf("%s/cam_%s_nvr", rtspBase, cameraID)
+	mediaUrl := fmt.Sprintf("%s/cam_%s_nvr", rtspBase, cameraID)
 
 	args := []string{
+		"-rtsp_transport", "tcp",
 		"-timeout", "5000000",
-		"-i", go2rtcUrl,
+		"-i", mediaUrl,
 		"-c", "copy", // Zero CPU
 		"-f", "segment",
 		"-segment_time", "10",

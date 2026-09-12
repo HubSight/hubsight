@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
 	"sync"
@@ -269,28 +270,40 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 		})
 	}
 
-	// 4. Active Live Streams (Query go2rtc for streams with active consumers, or fallback to live.Tracker)
+	// 4. Active Live Streams (Query ZLMediaKit for streams with active readers, or fallback to live.Tracker)
 	activeLiveCount := 0
 	webrtcURL := os.Getenv("WEBRTC_SERVICE_URL")
 	if webrtcURL == "" {
-		webrtcURL = os.Getenv("GO2RTC_URL")
-		if webrtcURL == "" {
-			webrtcURL = "http://webrtc-service:1984"
-		}
+		webrtcURL = "http://webrtc-service:80"
+	}
+	zlmSecret := os.Getenv("ZLM_SECRET")
+	if zlmSecret == "" {
+		zlmSecret = "hubsight-zlm-internal-secret"
 	}
 
 	httpClient := &http.Client{Timeout: 800 * time.Millisecond}
-	if resp, err := httpClient.Get(webrtcURL + "/api/streams"); err == nil {
+	if resp, err := httpClient.Get(webrtcURL + "/index/api/getMediaList?secret=" + url.QueryEscape(zlmSecret)); err == nil {
 		defer resp.Body.Close()
-		var streamsMap map[string]struct {
-			Consumers []any `json:"consumers"`
+		var listResp struct {
+			Code int `json:"code"`
+			Data []struct {
+				App              string `json:"app"`
+				Stream           string `json:"stream"`
+				ReaderCount      int    `json:"readerCount"`
+				TotalReaderCount int    `json:"totalReaderCount"`
+			} `json:"data"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&streamsMap); err == nil {
-			for _, stream := range streamsMap {
-				if len(stream.Consumers) > 0 {
-					activeLiveCount++
+		if err := json.NewDecoder(resp.Body).Decode(&listResp); err == nil && listResp.Code == 0 {
+			// ZLMediaKit lists one entry per output SCHEMA (ts/rtsp/rtmp/fmp4...)
+			// for the same stream — dedupe by app/stream so a stream with
+			// readers on more than one schema isn't double-counted.
+			activeStreams := make(map[string]bool)
+			for _, stream := range listResp.Data {
+				if stream.TotalReaderCount > 0 || stream.ReaderCount > 0 {
+					activeStreams[stream.App+"/"+stream.Stream] = true
 				}
 			}
+			activeLiveCount = len(activeStreams)
 		}
 	} else {
 		activeLiveCount = len(live.Tracker.ActiveCameraIDs())
