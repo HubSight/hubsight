@@ -55,21 +55,25 @@ export async function getOrCollectDeviceInfo(
       clientType = 'mobile_ios';
       const m = ua.match(/iPhone OS ([\d_]+)/);
       if (m) osVersion = m[1].replace(/_/g, '.');
+      if (m && m[1]) osVersion = m[1].replace(/_/g, '.');
     } else if (uaLower.includes('ipad')) {
       platform = 'iPadOS';
       clientType = 'mobile_ios';
       const m = ua.match(/CPU OS ([\d_]+)/);
       if (m) osVersion = m[1].replace(/_/g, '.');
+      if (m && m[1]) osVersion = m[1].replace(/_/g, '.');
     } else if (uaLower.includes('android')) {
       platform = 'Android';
       clientType = 'mobile_android';
       const m = ua.match(/Android ([\d.]+)/);
       if (m) osVersion = m[1];
+      if (m && m[1]) osVersion = m[1];
     } else if (uaLower.includes('macintosh') || uaLower.includes('mac os x')) {
       platform = 'macOS';
       clientType = 'web';
       const m = ua.match(/Mac OS X ([\d_]+)/);
       if (m) osVersion = m[1].replace(/_/g, '.');
+      if (m && m[1]) osVersion = m[1].replace(/_/g, '.');
     } else if (uaLower.includes('linux')) {
       platform = 'Linux';
       clientType = 'web';
@@ -87,18 +91,22 @@ export async function getOrCollectDeviceInfo(
       browserName = 'Edge';
       const m = ua.match(/Edg\/([\d.]+)/);
       if (m) browserVersion = m[1].split('.')[0];
+      if (m && m[1]) browserVersion = m[1].split('.')[0] || '';
     } else if (uaLower.includes('chrome/') && !uaLower.includes('edg/')) {
       browserName = 'Chrome';
       const m = ua.match(/Chrome\/([\d.]+)/);
       if (m) browserVersion = m[1].split('.')[0];
+      if (m && m[1]) browserVersion = m[1].split('.')[0] || '';
     } else if (uaLower.includes('safari/') && !uaLower.includes('chrome/')) {
       browserName = 'Safari';
       const m = ua.match(/Version\/([\d.]+)/);
       if (m) browserVersion = m[1].split('.')[0];
+      if (m && m[1]) browserVersion = m[1].split('.')[0] || '';
     } else if (uaLower.includes('firefox/')) {
       browserName = 'Firefox';
       const m = ua.match(/Firefox\/([\d.]+)/);
       if (m) browserVersion = m[1].split('.')[0];
+      if (m && m[1]) browserVersion = m[1].split('.')[0] || '';
     } else if (uaLower.includes('opera/') || uaLower.includes('opr/')) {
       browserName = 'Opera';
     } else {

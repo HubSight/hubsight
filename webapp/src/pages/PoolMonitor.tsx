@@ -8,6 +8,7 @@ import {
   Sparkles,
   Info,
   Radio,
+  Image,
 } from '@/components/icons';
 import { api } from '../api/client';
 import type { PoolStatusSummary } from '../types/pool';
@@ -79,6 +80,7 @@ export const PoolMonitor = () => {
 
         {/* Quick Metrics Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4">
           {/* 1. Total Cameras */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -96,6 +98,23 @@ export const PoolMonitor = () => {
           </div>
 
           {/* 2. CV Background Streams */}
+          {/* 2. Thumbnail Persistent Streams (#thumb) */}
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-sky-200/70 dark:border-sky-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-sky-50/20 dark:from-slate-900 dark:to-sky-950/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-sky-700 dark:text-sky-400">{t('pool.thumbStreams')}</span>
+              <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 flex items-center justify-center font-bold">
+                <Image size={16} />
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-sky-900 dark:text-sky-100">{data?.total_thumb_streams ?? 0}</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 uppercase">
+                640p 15FPS
+              </span>
+            </div>
+          </div>
+
+          {/* 3. CV Background Streams */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-emerald-200/70 dark:border-emerald-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-emerald-50/20 dark:from-slate-900 dark:to-emerald-950/20">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{t('pool.cvStreams')}</span>
@@ -112,6 +131,7 @@ export const PoolMonitor = () => {
           </div>
 
           {/* 3. Live Scaled Streams */}
+          {/* 4. Live Scaled Streams */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-blue-200/70 dark:border-blue-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-blue-50/20 dark:from-slate-900 dark:to-blue-950/20">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">{t('pool.liveStreams')}</span>
@@ -128,6 +148,7 @@ export const PoolMonitor = () => {
           </div>
 
           {/* 4. Active Viewers */}
+          {/* 5. Active Viewers */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-indigo-200/70 dark:border-indigo-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/20">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">{t('pool.activeViewers')}</span>
@@ -145,6 +166,8 @@ export const PoolMonitor = () => {
 
           {/* 5. Auto GC Info */}
           <div className="col-span-2 lg:col-span-1 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          {/* 6. Auto GC Info */}
+          <div className="col-span-2 sm:col-span-1 xl:col-span-1 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t('pool.autoCleanup')}</span>
               <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center">
@@ -207,6 +230,39 @@ export const PoolMonitor = () => {
                           {cam.host}
                         </p>
                       </div>
+                    </div>
+
+                    {/* Connection #thumb (Thumbnail Dedicated - 640p 15FPS) */}
+                    <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-sky-50/30 dark:bg-sky-950/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-sky-900 dark:text-sky-200 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                          {t('pool.thumbSectionTitle')}
+                        </span>
+                        <span className="text-[10px] font-bold bg-sky-600 text-white px-2 py-0.5 rounded">
+                          Stream #thumb
+                        </span>
+                      </div>
+
+                      {cam.thumb_connection ? (
+                        <div className="p-3 rounded-2xl bg-white dark:bg-slate-800/90 border border-sky-200/80 dark:border-sky-800/60 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                          <div className="min-w-0">
+                            <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 truncate block">
+                              {cam.thumb_connection.stream_name}
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
+                              {t('pool.thumbDedicatedHint')}
+                            </span>
+                          </div>
+                          <span className="shrink-0 text-[10px] font-bold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2 py-1 rounded-lg border border-sky-200 dark:border-sky-800 self-start sm:self-center">
+                            {t('pool.thumbRunningBadge')}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="p-3 rounded-2xl bg-white/60 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-500 text-center">
+                          {t('pool.thumbIdle')}
+                        </div>
+                      )}
                     </div>
 
                     {/* Connection #0 (CV Dedicated) */}
@@ -360,10 +416,21 @@ export const PoolMonitor = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                 <span className="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-[11px] font-bold">
                   1
+                </span>
+                {t('pool.policyThumbTitle')}
+              </div>
+              <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">{t('pool.policyThumb')}</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                <span className="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-[11px] font-bold">
+                  2
                 </span>
                 {t('pool.policy1Title')}
               </div>
@@ -374,6 +441,7 @@ export const PoolMonitor = () => {
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                 <span className="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-[11px] font-bold">
                   2
+                  3
                 </span>
                 {t('pool.policy2Title')}
               </div>
@@ -384,6 +452,7 @@ export const PoolMonitor = () => {
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                 <span className="w-5 h-5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-[11px] font-bold">
                   3
+                  4
                 </span>
                 {t('pool.policy3Title')}
               </div>

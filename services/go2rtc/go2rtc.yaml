@@ -41,8 +41,6 @@ streams:
     - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
   cam_XbXVEFntLOe5bNHVUtm3R:
     - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
-  cam_1879HuMucA6NnJT5n1p0q_live_2:
-    - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
   cam_oZ4MQQucLz8xB9ohKcnby_live_2:
     - rtsp://138.2.87.35:8554/bunny#backchannel=0#transport=tcp
   cam_rXxWiTEcPaO-6apLYkiFZ_live_2:

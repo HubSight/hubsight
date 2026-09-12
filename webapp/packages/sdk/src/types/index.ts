@@ -455,6 +455,7 @@ export interface StreamConnection {
   camera_id: string;
   index: number;
   purpose: 'cv' | 'nvr' | 'live';
+  purpose: 'thumb' | 'cv' | 'nvr' | 'live';
   stream_name: string;
   source_url: string;
   active_users: number;
@@ -470,6 +471,7 @@ export interface CameraPool {
   host: string;
   is_active: boolean;
   enable_ai: boolean;
+  thumb_connection?: StreamConnection | null;
   cv_connection: StreamConnection | null;
   nvr_connection?: StreamConnection | null;
   live_pool: Record<string, StreamConnection>;
@@ -479,6 +481,7 @@ export interface CameraPool {
 export interface PoolStatusSummary {
   total_cameras: number;
   active_cameras: number;
+  total_thumb_streams?: number;
   total_cv_streams: number;
   total_nvr_streams?: number;
   total_live_streams: number;
