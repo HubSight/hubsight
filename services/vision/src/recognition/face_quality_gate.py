@@ -4,7 +4,12 @@ import math
 
 class FaceQualityGate:
     """Quality Gate to ensure only clear, properly sized, unblurred faces are embedded/matched."""
-    def __init__(self, min_size=32, min_blur=40.0, max_yaw=50.0, max_pitch=50.0):
+    # max_pitch=30: published overhead/CCTV face-recognition studies show accuracy
+    # falling off sharply past ~30 deg pitch (near-frontal ArcFace training data has
+    # little pitch variation), so this runs recognition on every camera regardless of
+    # mount angle but rejects pitched-down frames before they can produce an
+    # unreliable match rather than silently degrading confidence.
+    def __init__(self, min_size=32, min_blur=40.0, max_yaw=50.0, max_pitch=30.0):
         self.min_size = min_size
         self.min_blur = min_blur
         self.max_yaw = max_yaw

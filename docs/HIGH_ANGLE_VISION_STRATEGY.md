@@ -3,8 +3,8 @@
 > **Document Type:** Technical Architecture & Algorithm Design
 > **Target Audience:** AI/CV Engineers, Systems Architects (including Claude review)
 > **Repository:** HubSight CCTV Platform (`services/vision`)
-> **Status:** Grounded Engineering Specification (v3.2)
-> **Changelog:** v3.2 — Added §2.5 (Face Recognition Scope Boundary for High-Angle Streams).
+> **Status:** Grounded Engineering Specification (v3.3)
+> **Changelog:** v3.3 — Corrected §2.5: face recognition was never a hypothetical future module gated by `angle_profile` — it already runs unconditionally on every camera; tightened its existing per-face pose gate (`max_pitch` 50°→30°) instead of adding a camera-level exclusion. v3.2 — Added §2.5 (Face Recognition Scope Boundary for High-Angle Streams).
 
 ---
 
@@ -93,21 +93,21 @@ To respect the constraint that cameras are arbitrary RTSP and may be PTZ:
   3. $\mathbf{H}$ is stored in the `cameras` database record.
   4. **Shift Invalidation:** To prevent invalid homography if the camera is bumped or panned, a feature/template-matching check monitors 3–4 static architectural patches (door frames, floor seams). If static structural landmarks shift by $> 5\%$, $\mathbf{H}$ is automatically invalidated and the system falls back to normalized image space.
 
-### 2.5 Face Recognition Scope Boundary (High-Angle Streams)
+### 2.5 Face Recognition on High-Angle Streams: Opportunistic, Not Excluded
 
-> **Ràng buộc bổ sung cho §1.1:** Nếu hệ thống bổ sung module nhận diện khuôn mặt (face ID, ví dụ dựa trên InsightFace/ArcFace) trong tương lai, module này **không được kích hoạt trên luồng camera có `angle_profile = "high"`** (xác định bởi §2.3). Face ID chỉ được coi là đáng tin cậy trên luồng `angle_profile = "standard"` (pitch $15^\circ\text{--}35^\circ$), đúng như phạm vi đã giới hạn ở §1.1.
+> **Correction (v3.3):** This section previously described face ID as a *hypothetical future module* to be gated off entirely on `angle_profile = "high"` streams via a camera-level early-exit. That premise was wrong on both counts: the recognition pipeline (`services/vision/src/recognition/face_engine.py`, `face_quality_gate.py`, `enroll.py`) **already exists and already runs unconditionally on every camera**, `angle_profile` regardless — it was never gated by camera classification, only by the existing per-face `FaceQualityGate`. There is no `face_id.py` and none is needed.
 
-**Cơ sở kỹ thuật:**
+**Cơ sở kỹ thuật (vẫn đúng, giữ nguyên từ v3.2):**
 - Các model InsightFace/ArcFace được huấn luyện chủ yếu trên tập dữ liệu web-scraped (MS1MV2, Glint360K...), biến thiên chủ yếu theo góc **yaw** (quay trái/phải); biến thiên theo **pitch** (nhìn từ trên xuống) trong tập huấn luyện rất hạn chế so với yaw.
-- Ở pitch vượt ngưỡng khoảng $30^\circ$, hiệu năng sinh trắc học của các hệ thống nhận diện khuôn mặt hiện tại suy giảm đáng kể; ở pitch $45^\circ\text{--}75^\circ$ như camera CCTV trần cao trong hệ thống này, phần trán/đỉnh đầu che khuất mắt-mũi-miệng, khiến bước 5-point landmark alignment (tiền đề bắt buộc trước khi trích embedding) thất bại trước khi model kịp hoạt động.
+- Published overhead/aerial face-recognition benchmarks quantify the cliff, not just a gradual falloff: VGGFace-class accuracy has been measured dropping from ~99% on frontal ground-level imagery to ~17% on true overhead imagery of cooperative subjects. Accuracy degradation is steep specifically past **~30° pitch**, not ~45-75° — the earlier draft understated how early the cliff starts.
+- Ở pitch $45^\circ\text{--}75^\circ$ như camera CCTV trần cao trong hệ thống này, phần trán/đỉnh đầu che khuất mắt-mũi-miệng, khiến bước 5-point landmark alignment (tiền đề bắt buộc trước khi trích embedding) thất bại trước khi model kịp hoạt động.
 - Khoảng cách xa và độ phân giải thấp (640p, cùng ràng buộc compute ở §1.2) cộng dồn với domain gap về pose -- hai trục suy giảm này nhân lên chứ không cộng tuyến tính, tương tự vấn đề "Small Target Degradation" đã nêu ở §6.1 cho pose keypoints.
 
-**Gating Rule nếu buộc phải thử nghiệm trên luồng góc cao (không khuyến nghị dùng làm baseline):**
-1. Ước lượng pose khuôn mặt (yaw/pitch) từ 5-point landmark do face detector (SCRFD/RetinaFace) trả về; loại bỏ ứng viên nếu pitch ước lượng $> 25^\circ\text{--}30^\circ$.
-2. Áp ngưỡng kích thước khuôn mặt tối thiểu (interocular distance hoặc bbox width), tương tự cơ chế `resolution_tier: "low_res"` ở §6.1; dưới ngưỡng, đánh dấu `face_quality: "unusable"` và không chạy recognition.
-3. Không dispatch cảnh báo định danh (identity match alert) dựa trên embedding có `face_quality: "unusable"` -- chỉ log "detected, unidentified" để tránh false-match.
+**Why per-face gating beats a camera-level toggle:** a fixed `angle_profile = "high"` classification describes the *camera's mount angle*, not any individual person's *effective* pitch at a given instant — someone near the edge of a wide-angle ceiling camera's FOV, or who happens to look up toward the lens, can momentarily present a far better angle than the camera's nominal tilt suggests. Gating per-face, per-frame (which the pipeline already does) captures those opportunistic good-angle moments on high-angle cameras instead of discarding the stream outright, at the cost of lower overall coverage than a properly-positioned dedicated camera would give (§2.5 "Recommendation" below).
 
-- **Target File/Function (dự kiến, nếu module được thêm):** `services/vision/src/recognition/face_id.py` -- logic gating nên tái sử dụng `angle_profile` từ `Detector` (§2.3) làm điều kiện early-exit, tránh lãng phí compute budget đã cam kết ở §1.2.
+**Applied fix (v3.3):** the existing gate's `max_pitch` was `50°` by default (`services/vision/src/recognition/face_quality_gate.py`) — looser than the ~30° threshold the research above actually supports, so it was accepting pitched-down frames from the range where matches are known-unreliable rather than merely lower-confidence. Tightened to `max_pitch=30.0` (same file, `FaceQualityGate.__init__`); `max_yaw` left at `50°` since ArcFace's training distribution already covers yaw reasonably well (see citation above). This runs identically on every camera — no `angle_profile` branch was added or is needed, since the per-face pose estimate already scopes the check correctly. Covered by `services/vision/tests/test_face_quality_gate.py`.
+
+**Recommendation (unchanged):** per-face gating increases *coverage* of opportunistic good-angle moments; it does not turn a 45-75° ceiling camera into a reliable face-ID sensor. For guaranteed member/stranger identification at a specific chokepoint (entrance, checkout), a dedicated camera mounted near-frontally (pitch ~15-30°) at that chokepoint remains the reliable path, consistent with how commercial face-ID CCTV deployments are typically architected — the ceiling/overview camera stays useful for person/fall/fire detection (§1-6 below) but should not be the sole face-ID source.
 
 ---
 
@@ -416,4 +416,4 @@ The roadmap is strictly ordered by **implementation cost vs. production impact**
 ### Explicitly Excluded / Deprecated
 - **Flicker-FFT (8–12 Hz):** Permanently removed due to Nyquist sampling violation at 10 FPS.
 - **Secondary Head-Detection Model:** Replaced by existing COCO pose cranial keypoints 0–4 to preserve CPU compute headroom.
-- **Face ID (InsightFace/ArcFace) trên luồng high-angle:** Không triển khai làm baseline do domain gap về pitch + độ phân giải; xem §2.5 cho cơ sở kỹ thuật và gating rule nếu thử nghiệm.
+- **Face ID (InsightFace/ArcFace) làm sensor nhận diện đáng tin cậy cho một chokepoint cụ thể trên luồng high-angle:** Không khuyến nghị — domain gap về pitch + độ phân giải khiến coverage thấp và không đảm bảo. Recognition VẪN chạy trên luồng high-angle (không hề bị tắt), chỉ là per-face gating chỉ bắt được các khoảnh khắc góc tốt cơ hội, không phải mọi lượt xuất hiện; xem §2.5.
