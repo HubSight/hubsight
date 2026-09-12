@@ -84,34 +84,21 @@ export const Home: React.FC = () => {
   // here only affects cameras that don't have one yet (or went stale).
   const SNAPSHOT_RETRY_POLL_MS = 8_000;
 
-  /** Pick stream name for snapshot: each active camera maintains a persistent 640p 15FPS thumb stream */
-  const getSnapshotStreamName = useCallback((cam: CameraType): string | null => {
-    if (!cam.is_active || cam.is_stopped) return null;
-    return `cam_${cam.id}_thumb`;
-  }, []);
-
-  /** Fetch a snapshot JPEG blob from the media server via the gateway and store as data URL */
+  /** Fetch a snapshot JPEG blob via the backend (which alone holds the camera's
+   * raw RTSP URL + media-server secret) and store as a data URL. Only active,
+   * non-stopped cameras maintain a persistent thumbnail stream to snapshot. */
   const fetchSnapshot = useCallback(async (cam: CameraType): Promise<void> => {
-    const streamName = getSnapshotStreamName(cam);
-    if (!streamName) return;
+    if (!cam.is_active || cam.is_stopped) return;
 
     const now = Date.now();
     const cached = snapshotCacheRef.current.get(cam.id);
     if (cached && now - cached.fetchedAt < SNAPSHOT_TTL_MS) return; // still fresh
 
     try {
-      let res = await fetch(`/webrtc/api/frame.jpeg?src=${encodeURIComponent(streamName)}`, {
+      const res = await fetch(`/api/cameras/${cam.id}/snapshot`, {
         credentials: 'include',
-        headers: { 'X-API-Key': 'hs_web_client_core', 'X-Client-ID': 'hs_web_client_core' },
         cache: 'no-store',
       });
-      if (!res.ok) {
-        // Fallback to core backend snapshot endpoint
-        res = await fetch(`/api/cameras/${cam.id}/snapshot`, {
-          credentials: 'include',
-          cache: 'no-store',
-        });
-      }
       if (!res.ok) return;
       const blob = await res.blob();
       if (!blob.type.startsWith('image/')) return;
@@ -128,7 +115,7 @@ export const Home: React.FC = () => {
     } catch {
       // Silently ignore — camera may simply not have an active stream yet
     }
-  }, [getSnapshotStreamName, SNAPSHOT_TTL_MS]);
+  }, [SNAPSHOT_TTL_MS]);
 
   /** Kick off snapshot fetches for all live cameras (staggered to avoid burst) */
   const refreshSnapshots = useCallback((cams: CameraType[]) => {

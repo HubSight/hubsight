@@ -196,13 +196,17 @@ services:
       - core-service
 
   # 📹 WebRTC Media Server — ZLMediaKit (RTSP↔WebRTC engine).
-  # Media RTP port 8000; HTTP API/signaling routed via API Gateway :8088/webrtc.
+  # Media RTP port 8555 (ZLMediaKit's default is 8000, but that collided with
+  # another process already bound to it on the deploy host — reused go2rtc's
+  # old, known-free 8555 instead; keep docker-compose.yml, config*.ini's
+  # [rtc] port/tcpPort, and docker-compose.override.yml* in sync if changed
+  # again). HTTP API/signaling routed via API Gateway :8088/webrtc.
   webrtc-service:
     image: zlmediakit/zlmediakit:master
     restart: unless-stopped
     ports:
-      - "8000:8000/tcp" # WebRTC TCP media (STUN/DTLS/SRTP fallback)
-      - "8000:8000/udp" # WebRTC UDP media
+      - "8555:8555/tcp" # WebRTC TCP media (STUN/DTLS/SRTP fallback)
+      - "8555:8555/udp" # WebRTC UDP media
       # RTSP (554), RTMP (1935, used only for addFFmpegSource's internal
       # push-back — see services/zlmediakit/config.ini) and the HTTP API (80)
       # are NOT exposed to the host; only reachable within the Docker network.

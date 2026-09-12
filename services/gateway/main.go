@@ -74,7 +74,7 @@ func main() {
 
 	webrtcServiceURL := os.Getenv("WEBRTC_SERVICE_URL")
 	if webrtcServiceURL == "" {
-		webrtcServiceURL = "http://webrtc-service:1984"
+		webrtcServiceURL = "http://webrtc-service:80"
 	}
 
 	authProxy, authTarget := createReverseProxy(authServiceURL)
@@ -168,8 +168,21 @@ func main() {
 	}
 	gatewayHttpClient := &http.Client{Timeout: 5 * time.Second}
 
-	// 2. WebRTC Signaling / WHEP / Stream Proxy (/webrtc and /webrtc/* -> webrtc-service:1984/*)
+	// 2. WebRTC Signaling / Stream Proxy (/webrtc/* -> webrtc-service:80/*)
 	forwardWebRTC := func(c *gin.Context) {
+		// Only the JSON API namespace may reach ZLMediaKit through this public
+		// gateway. Its bundled demo/test pages (webrtc/index.html, webassist,
+		// swagger UI, etc.) and static JS client have no legitimate use here —
+		// nothing in this codebase's own frontend/backend calls them (every
+		// internal service reaches webrtc-service directly on the Docker
+		// network; scripts/webrtc-check.sh talks to it directly too, never
+		// through this gateway) — and must never be reachable in
+		// staging/production, regardless of auth, so this check runs first.
+		if !strings.HasPrefix(c.Request.URL.Path, "/webrtc/index/api/") {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
 		// Bypass if valid M2M internal service key is present
 		serviceKey := c.GetHeader("X-Service-Key")
 		if serviceKey == "" {
