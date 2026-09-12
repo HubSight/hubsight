@@ -465,6 +465,12 @@ const vi = {
   'sessions.reasonExpired': 'Phiên hết hạn tự nhiên',
   'sessions.ended': 'Đã kết thúc',
   'sessions.sessionTerminatedAlert': 'Phiên đăng nhập của bạn đã bị thu hồi từ thiết bị khác hoặc quản trị viên.',
+  'sessions.locationMap': 'Vị trí đăng nhập',
+  'sessions.openMap': 'Mở trên OpenStreetMap',
+  'sessions.lanLocation': 'Mạng nội bộ (LAN)',
+  'sessions.approxLocation': 'Vị trí ước tính',
+  'sessions.noCoordinates': 'Toạ độ GPS không khả dụng',
+  'sessions.viewLocation': 'Xem vị trí',
   'preferences.sessions.revokedAlert': 'Phiên đăng nhập của bạn đã bị thu hồi hoặc đăng xuất từ xa.',
 
   // === NVR Monitor ===

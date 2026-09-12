@@ -22,12 +22,18 @@ type UpdateProfileRequest struct {
 }
 
 type SessionItemDTO struct {
-	ID        string    `json:"id"`
-	ClientID  string    `json:"client_id"`
-	IsPWA     bool      `json:"is_pwa"`
-	IsCurrent bool      `json:"is_current"`
-	ExpiresAt time.Time `json:"expires_at"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           string    `json:"id"`
+	ClientID     string    `json:"client_id"`
+	IsPWA        bool      `json:"is_pwa"`
+	IsCurrent    bool      `json:"is_current"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	CreatedAt    time.Time `json:"created_at"`
+	GeoCity      string    `json:"geo_city,omitempty"`
+	GeoCountry   string    `json:"geo_country,omitempty"`
+	GeoRegion    string    `json:"geo_region,omitempty"`
+	GeoLatitude  *float64  `json:"geo_latitude,omitempty"`
+	GeoLongitude *float64  `json:"geo_longitude,omitempty"`
+	GeoAccuracy  *float64  `json:"geo_accuracy,omitempty"`
 }
 
 // GetProfileHandler returns the full personal profile of the authenticated user.
@@ -160,12 +166,18 @@ func ListSessionsHandler(c *gin.Context) {
 			isCurrent = true
 		}
 		dtos = append(dtos, SessionItemDTO{
-			ID:        s.ID,
-			ClientID:  s.ClientID,
-			IsPWA:     s.IsPwa,
-			IsCurrent: isCurrent,
-			ExpiresAt: s.ExpiresAt,
-			CreatedAt: s.CreatedAt,
+			ID:           s.ID,
+			ClientID:     s.ClientID,
+			IsPWA:        s.IsPwa,
+			IsCurrent:    isCurrent,
+			ExpiresAt:    s.ExpiresAt,
+			CreatedAt:    s.CreatedAt,
+			GeoCity:      s.GeoCity,
+			GeoCountry:   s.GeoCountry,
+			GeoRegion:    s.GeoRegion,
+			GeoLatitude:  s.GeoLatitude,
+			GeoLongitude: s.GeoLongitude,
+			GeoAccuracy:  s.GeoAccuracy,
 		})
 	}
 

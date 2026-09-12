@@ -26,6 +26,10 @@ type Session struct {
 	ClientType        string     `gorm:"column:client_type;type:varchar(32)" json:"client_type,omitempty"`
 	GeoCity           string     `gorm:"column:geo_city;type:varchar(64)" json:"geo_city,omitempty"`
 	GeoCountry        string     `gorm:"column:geo_country;type:varchar(64)" json:"geo_country,omitempty"`
+	GeoRegion         string     `gorm:"column:geo_region;type:varchar(64)" json:"geo_region,omitempty"`
+	GeoLatitude       *float64   `gorm:"column:geo_latitude;type:decimal(10,6)" json:"geo_latitude,omitempty"`
+	GeoLongitude      *float64   `gorm:"column:geo_longitude;type:decimal(10,6)" json:"geo_longitude,omitempty"`
+	GeoAccuracy       *float64   `gorm:"column:geo_accuracy" json:"geo_accuracy,omitempty"`
 	IsNewDevice       bool       `gorm:"column:is_new_device;not null;default:false" json:"is_new_device"`
 	RevokedAt         *time.Time `gorm:"column:revoked_at;index:idx_sessions_revoked_at;index:idx_sessions_active,priority:3" json:"revoked_at,omitempty"`
 	RevokeReason      string     `gorm:"column:revoke_reason;type:varchar(32)" json:"revoke_reason,omitempty"`

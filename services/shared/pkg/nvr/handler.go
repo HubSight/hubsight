@@ -153,10 +153,15 @@ func GetNvrStatusSnapshot(ctx context.Context) (*NvrStatusResponse, error) {
 	if quotaBytes > 0 {
 		usedPercent = (float64(totalUsedBytes) / float64(quotaBytes)) * 100
 	}
+	freeBytes := quotaBytes - totalUsedBytes
+	if freeBytes < 0 {
+		freeBytes = 0
+	}
 
 	storeStats := StorageStats{
 		UsedBytes:           totalUsedBytes,
 		QuotaBytes:          quotaBytes,
+		FreeBytes:           freeBytes,
 		UsedPercentage:      usedPercent,
 		TotalSegmentsCount:  int(totalRecordingsCount),
 		OldestSegmentAt:     oldestSegmentAt,

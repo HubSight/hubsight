@@ -311,8 +311,14 @@ export const Home: React.FC = () => {
   }, [nvrStatus]);
 
   const storageFreeGb = useMemo(() => {
-    if (!nvrStatus?.storage?.free_bytes) return '0.0';
-    return (nvrStatus.storage.free_bytes / (1024 * 1024 * 1024)).toFixed(1);
+    if (!nvrStatus?.storage) return '0.0';
+    const quota = nvrStatus.storage.quota_bytes || 0;
+    const used = nvrStatus.storage.used_bytes || 0;
+    const freeBytes =
+      nvrStatus.storage.free_bytes && nvrStatus.storage.free_bytes > 0
+        ? nvrStatus.storage.free_bytes
+        : Math.max(0, quota - used);
+    return (freeBytes / (1024 * 1024 * 1024)).toFixed(1);
   }, [nvrStatus]);
 
   const storageUsedPercent = useMemo(() => {
@@ -656,7 +662,7 @@ export const Home: React.FC = () => {
               <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
                 <div
                   className="bg-indigo-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.max(15, activeViewers * 20))}%` }}
+                  style={{ width: `${activeViewers === 0 ? 0 : Math.min(100, Math.max(15, activeViewers * 20))}%` }}
                 />
               </div>
 
@@ -702,7 +708,7 @@ export const Home: React.FC = () => {
                   className={`h-full rounded-full transition-all duration-500 ${
                     strangerAlertsCount > 0 ? 'bg-red-500' : 'bg-emerald-500'
                   }`}
-                  style={{ width: `${Math.min(100, Math.max(20, notifications.length * 10))}%` }}
+                  style={{ width: `${notifications.length === 0 ? 0 : Math.min(100, Math.max(20, notifications.length * 10))}%` }}
                 />
               </div>
 

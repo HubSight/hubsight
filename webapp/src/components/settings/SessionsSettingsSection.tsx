@@ -13,11 +13,13 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  MapPin,
 } from '@/components/icons';
 import { api } from '../../api/client';
 import { isApiError, getErrorMessage } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';
 import type { SessionItem } from '@hubsight/sdk';
+import { StaticMap } from '../common/StaticMap';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -221,15 +223,15 @@ export const SessionsSettingsSection: React.FC = () => {
             {activeSessions.map((s) => (
               <div
                 key={s.id}
-                className={`p-4 rounded-md border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                className={`p-4 rounded-xl border transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
                   s.is_current
                     ? 'bg-orange-50/40 dark:bg-orange-950/20 border-orange-300 dark:border-orange-500/40 shadow-2xs'
                     : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
-                <div className="flex items-start gap-3.5 min-w-0">
+                <div className="flex items-start gap-3.5 min-w-0 flex-1">
                   <div
-                    className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                       s.is_current
                         ? 'bg-orange-600 text-white shadow-2xs'
                         : 'bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
@@ -255,7 +257,7 @@ export const SessionsSettingsSection: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap font-mono">
+                    <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap font-mono">
                       <span>IP: {s.ip_address || '127.0.0.1'}</span>
                       <span>•</span>
                       <span>
@@ -263,6 +265,14 @@ export const SessionsSettingsSection: React.FC = () => {
                           ? `${s.geo_city}, ${s.geo_country}`
                           : s.geo_city || 'Mạng nội bộ (LAN)'}
                       </span>
+                      {s.geo_latitude && s.geo_longitude && (
+                        <>
+                          <span>•</span>
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                            [{s.geo_latitude.toFixed(4)}, {s.geo_longitude.toFixed(4)}]
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex-wrap">
@@ -282,10 +292,23 @@ export const SessionsSettingsSection: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Static Map Widget */}
+                <div className="w-full lg:w-48 xl:w-56 h-28 shrink-0">
+                  <StaticMap
+                    latitude={s.geo_latitude}
+                    longitude={s.geo_longitude}
+                    accuracy={s.geo_accuracy}
+                    city={s.geo_city}
+                    country={s.geo_country}
+                    region={s.geo_region}
+                    className="w-full h-full"
+                  />
+                </div>
+
                 {/* Revoke Action */}
-                <div className="shrink-0 flex items-center self-end md:self-center">
+                <div className="shrink-0 flex items-center self-end lg:self-center">
                   {s.is_current ? (
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded">
+                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md">
                       {t('sessions.active')}
                     </span>
                   ) : (
@@ -293,7 +316,7 @@ export const SessionsSettingsSection: React.FC = () => {
                       type="button"
                       onClick={() => setTargetSession(s)}
                       disabled={actionLoading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold text-red-600 hover:text-white dark:text-red-400 hover:bg-red-600 dark:hover:bg-red-600 border border-red-200 dark:border-red-800/60 hover:border-transparent transition-all cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-red-600 hover:text-white dark:text-red-400 hover:bg-red-600 dark:hover:bg-red-600 border border-red-200 dark:border-red-800/60 hover:border-transparent transition-all cursor-pointer"
                     >
                       <LogOut size={13} />
                       <span>{t('sessions.revokeBtn')}</span>
@@ -360,7 +383,20 @@ export const SessionsSettingsSection: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
-                          {s.ip_address} • {s.geo_city || 'LAN'}
+                          <div className="flex items-center gap-1.5">
+                            <span>{s.ip_address} • {s.geo_city || 'LAN'}</span>
+                            {s.geo_latitude && s.geo_longitude && (
+                              <a
+                                href={`https://www.openstreetmap.org/?mlat=${s.geo_latitude}&mlon=${s.geo_longitude}#map=14/${s.geo_latitude}/${s.geo_longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={t('sessions.openMap')}
+                                className="text-orange-600 hover:text-orange-700 dark:text-orange-400 inline-flex items-center ml-0.5"
+                              >
+                                <MapPin size={12} />
+                              </a>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
                           {dayjs(s.created_at).format('DD/MM/YYYY HH:mm')}

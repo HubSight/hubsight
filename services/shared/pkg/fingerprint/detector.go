@@ -3,40 +3,54 @@ package fingerprint
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 // DeviceInfo holds parsed client and device metadata recorded into sessions and audit logs.
 type DeviceInfo struct {
-	Fingerprint string `json:"fingerprint"`
-	DeviceLabel string `json:"device_label"`
-	ClientType  string `json:"client_type"`
-	IPAddress   string `json:"ip_address"`
-	UserAgent   string `json:"user_agent"`
-	GeoCity     string `json:"geo_city"`
-	GeoCountry  string `json:"geo_country"`
+	Fingerprint  string   `json:"fingerprint"`
+	DeviceLabel  string   `json:"device_label"`
+	ClientType   string   `json:"client_type"`
+	IPAddress    string   `json:"ip_address"`
+	UserAgent    string   `json:"user_agent"`
+	GeoCity      string   `json:"geo_city"`
+	GeoCountry   string   `json:"geo_country"`
+	GeoRegion    string   `json:"geo_region"`
+	GeoLatitude  *float64 `json:"geo_latitude"`
+	GeoLongitude *float64 `json:"geo_longitude"`
+	GeoAccuracy  *float64 `json:"geo_accuracy"`
 }
 
 // ClientDeviceInfo represents detailed client and device information explicitly provided by Web or Native Apps during login.
 type ClientDeviceInfo struct {
-	Fingerprint      string `json:"fingerprint,omitempty"`
-	DeviceLabel      string `json:"device_label,omitempty"`
-	ClientType       string `json:"client_type,omitempty"`       // web, desktop_windows, desktop_mac, desktop_linux, desktop_app, mobile_ios, mobile_android, third_party
-	Platform         string `json:"platform,omitempty"`          // e.g. "Windows", "macOS", "iOS", "Android", "Linux"
-	OSVersion        string `json:"os_version,omitempty"`        // e.g. "11", "14.4", "17.5.1"
-	BrowserName      string `json:"browser_name,omitempty"`      // e.g. "Chrome", "Firefox", "Safari", "Edge"
-	BrowserVersion   string `json:"browser_version,omitempty"`   // e.g. "128.0"
-	AppVersion       string `json:"app_version,omitempty"`       // e.g. "1.0.0"
-	Model            string `json:"model,omitempty"`             // e.g. "iPhone 15 Pro", "SM-S928B", "Dell XPS 15"
-	Manufacturer     string `json:"manufacturer,omitempty"`      // e.g. "Apple", "Samsung", "Dell"
-	ScreenResolution string `json:"screen_resolution,omitempty"` // e.g. "1920x1080"
-	Language         string `json:"language,omitempty"`          // e.g. "vi-VN", "en-US"
-	Timezone         string `json:"timezone,omitempty"`          // e.g. "Asia/Ho_Chi_Minh"
+	Fingerprint      string   `json:"fingerprint,omitempty"`
+	DeviceLabel      string   `json:"device_label,omitempty"`
+	ClientType       string   `json:"client_type,omitempty"`       // web, desktop_windows, desktop_mac, desktop_linux, desktop_app, mobile_ios, mobile_android, third_party
+	Platform         string   `json:"platform,omitempty"`          // e.g. "Windows", "macOS", "iOS", "Android", "Linux"
+	OSVersion        string   `json:"os_version,omitempty"`        // e.g. "11", "14.4", "17.5.1"
+	BrowserName      string   `json:"browser_name,omitempty"`      // e.g. "Chrome", "Firefox", "Safari", "Edge"
+	BrowserVersion   string   `json:"browser_version,omitempty"`   // e.g. "128.0"
+	AppVersion       string   `json:"app_version,omitempty"`       // e.g. "1.0.0"
+	Model            string   `json:"model,omitempty"`             // e.g. "iPhone 15 Pro", "SM-S928B", "Dell XPS 15"
+	Manufacturer     string   `json:"manufacturer,omitempty"`      // e.g. "Apple", "Samsung", "Dell"
+	ScreenResolution string   `json:"screen_resolution,omitempty"` // e.g. "1920x1080"
+	Language         string   `json:"language,omitempty"`          // e.g. "vi-VN", "en-US"
+	Timezone         string   `json:"timezone,omitempty"`          // e.g. "Asia/Ho_Chi_Minh"
+	Latitude         *float64 `json:"latitude,omitempty"`
+	Longitude        *float64 `json:"longitude,omitempty"`
+	Accuracy         *float64 `json:"accuracy,omitempty"`
+	GeoCity          string   `json:"geo_city,omitempty"`
+	GeoCountry       string   `json:"geo_country,omitempty"`
+	GeoRegion        string   `json:"geo_region,omitempty"`
 }
 
 // Detect extracts device metadata from HTTP headers and client connection (legacy helper).
@@ -118,17 +132,80 @@ func DetectWithClientInfo(r *http.Request, clientInfo *ClientDeviceInfo) DeviceI
 		deviceLabel = deviceLabel[:128]
 	}
 
-	// 5. Resolve Geo / LAN
-	city, country := ResolveGeo(ip)
+	// 5. Resolve Geolocation
+	var lat, lng, accuracy *float64
+	var city, country, region string
+
+	// 5.1. Priority 1: Explicit coordinates from client (GPS / Native OS / Web Geolocation API)
+	if clientInfo != nil && clientInfo.Latitude != nil && clientInfo.Longitude != nil {
+		lat = clientInfo.Latitude
+		lng = clientInfo.Longitude
+		accuracy = clientInfo.Accuracy
+		city = strings.TrimSpace(clientInfo.GeoCity)
+		country = strings.TrimSpace(clientInfo.GeoCountry)
+		region = strings.TrimSpace(clientInfo.GeoRegion)
+	}
+
+	// 5.2. Priority 2: Edge / CDN Geo Headers (e.g. Cloudflare CF-IPCountry, CF-IPCity, CF-IPLatitude, CF-IPLongitude)
+	if r != nil {
+		if lat == nil || lng == nil {
+			if cfLat := strings.TrimSpace(r.Header.Get("CF-IPLatitude")); cfLat != "" {
+				if parsed, err := strconv.ParseFloat(cfLat, 64); err == nil {
+					lat = &parsed
+				}
+			}
+			if cfLon := strings.TrimSpace(r.Header.Get("CF-IPLongitude")); cfLon != "" {
+				if parsed, err := strconv.ParseFloat(cfLon, 64); err == nil {
+					lng = &parsed
+				}
+			}
+		}
+		if country == "" {
+			if cfCountry := strings.TrimSpace(r.Header.Get("CF-IPCountry")); cfCountry != "" {
+				country = cfCountry
+			}
+		}
+		if city == "" {
+			if cfCity := strings.TrimSpace(r.Header.Get("CF-IPCity")); cfCity != "" {
+				if unescaped, err := url.QueryUnescape(cfCity); err == nil {
+					city = unescaped
+				} else {
+					city = cfCity
+				}
+			}
+		}
+	}
+
+	// 5.3. Priority 3: Fallback based on IP
+	if city == "" || country == "" || lat == nil {
+		fallbackCity, fallbackCountry, fallbackRegion, fallbackLat, fallbackLng := ResolveDetailedGeo(ip)
+		if city == "" {
+			city = fallbackCity
+		}
+		if country == "" {
+			country = fallbackCountry
+		}
+		if region == "" {
+			region = fallbackRegion
+		}
+		if lat == nil {
+			lat = fallbackLat
+			lng = fallbackLng
+		}
+	}
 
 	return DeviceInfo{
-		Fingerprint: fingerprint,
-		DeviceLabel: deviceLabel,
-		ClientType:  clientType,
-		IPAddress:   ip,
-		UserAgent:   ua,
-		GeoCity:     city,
-		GeoCountry:  country,
+		Fingerprint:  fingerprint,
+		DeviceLabel:  deviceLabel,
+		ClientType:   clientType,
+		IPAddress:    ip,
+		UserAgent:    ua,
+		GeoCity:      city,
+		GeoCountry:   country,
+		GeoRegion:    region,
+		GeoLatitude:  lat,
+		GeoLongitude: lng,
+		GeoAccuracy:  accuracy,
 	}
 }
 
@@ -398,12 +475,66 @@ func IsPrivateIP(ipStr string) bool {
 	return false
 }
 
-// ResolveGeo determines country and city name based on IP.
-func ResolveGeo(ipStr string) (city, country string) {
+var (
+	geoCacheMu sync.RWMutex
+	geoCache   = make(map[string]cachedGeo)
+)
+
+type cachedGeo struct {
+	city, country, region string
+	lat, lng              *float64
+	cachedAt              time.Time
+}
+
+// ResolveDetailedGeo determines country, city, region and coordinates based on IP.
+func ResolveDetailedGeo(ipStr string) (city, country, region string, lat, lng *float64) {
 	if ipStr == "" || ipStr == "127.0.0.1" || ipStr == "::1" || IsPrivateIP(ipStr) {
-		return "Mạng nội bộ", "LAN"
+		return "Mạng nội bộ", "LAN", "Local", nil, nil
 	}
 
-	// For public IP without an external database, return standard indicator
-	return "Internet", "Việt Nam"
+	geoCacheMu.RLock()
+	if c, ok := geoCache[ipStr]; ok && time.Since(c.cachedAt) < 24*time.Hour {
+		geoCacheMu.RUnlock()
+		return c.city, c.country, c.region, c.lat, c.lng
+	}
+	geoCacheMu.RUnlock()
+
+	// Fast HTTP query with short 600ms timeout
+	client := &http.Client{Timeout: 600 * time.Millisecond}
+	resp, err := client.Get(fmt.Sprintf("http://ip-api.com/json/%s?fields=status,country,regionName,city,lat,lon", ipStr))
+	if err == nil {
+		defer resp.Body.Close()
+		var res struct {
+			Status     string  `json:"status"`
+			Country    string  `json:"country"`
+			RegionName string  `json:"regionName"`
+			City       string  `json:"city"`
+			Lat        float64 `json:"lat"`
+			Lon        float64 `json:"lon"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&res); err == nil && res.Status == "success" {
+			cLat := res.Lat
+			cLng := res.Lon
+			geoCacheMu.Lock()
+			geoCache[ipStr] = cachedGeo{
+				city:     res.City,
+				country:  res.Country,
+				region:   res.RegionName,
+				lat:      &cLat,
+				lng:      &cLng,
+				cachedAt: time.Now(),
+			}
+			geoCacheMu.Unlock()
+			return res.City, res.Country, res.RegionName, &cLat, &cLng
+		}
+	}
+
+	// Fallback when offline or rate-limited
+	return "Internet", "Việt Nam", "", nil, nil
+}
+
+// ResolveGeo determines country and city name based on IP.
+func ResolveGeo(ipStr string) (city, country string) {
+	c, count, _, _, _ := ResolveDetailedGeo(ipStr)
+	return c, count
 }

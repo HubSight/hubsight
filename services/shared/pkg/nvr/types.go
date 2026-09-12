@@ -19,6 +19,7 @@ type SystemStats struct {
 type StorageStats struct {
 	UsedBytes           int64                   `json:"used_bytes"`
 	QuotaBytes          int64                   `json:"quota_bytes"`
+	FreeBytes           int64                   `json:"free_bytes"`
 	UsedPercentage      float64                 `json:"used_percentage"`
 	TotalSegmentsCount  int                     `json:"total_segments_count"`
 	OldestSegmentAt     *time.Time              `json:"oldest_segment_at,omitempty"`

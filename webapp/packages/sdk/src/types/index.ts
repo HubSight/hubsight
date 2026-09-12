@@ -86,6 +86,10 @@ export interface SessionItem {
   client_type: 'web' | 'desktop_windows' | 'desktop_mac' | 'desktop_linux' | 'mobile_ios' | 'mobile_android' | 'third_party' | string;
   geo_city: string;
   geo_country: string;
+  geo_region?: string;
+  geo_latitude?: number;
+  geo_longitude?: number;
+  geo_accuracy?: number;
   is_new_device: boolean;
   is_pwa: boolean;
   is_active: boolean;
@@ -167,6 +171,12 @@ export interface ClientDeviceInfo {
   screen_resolution?: string;
   language?: string;
   timezone?: string;
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+  geo_city?: string;
+  geo_country?: string;
+  geo_region?: string;
 }
 
 export interface LoginRequest {

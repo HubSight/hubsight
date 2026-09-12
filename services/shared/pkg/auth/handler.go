@@ -640,6 +640,10 @@ type SessionItemResponse struct {
 	ClientType        string     `json:"client_type"`
 	GeoCity           string     `json:"geo_city"`
 	GeoCountry        string     `json:"geo_country"`
+	GeoRegion         string     `json:"geo_region,omitempty"`
+	GeoLatitude       *float64   `json:"geo_latitude,omitempty"`
+	GeoLongitude      *float64   `json:"geo_longitude,omitempty"`
+	GeoAccuracy       *float64   `json:"geo_accuracy,omitempty"`
 	IsNewDevice       bool       `json:"is_new_device"`
 	IsPWA             bool       `json:"is_pwa"`
 	IsActive          bool       `json:"is_active"`
@@ -680,6 +684,10 @@ func ListSessionsHandler(c *gin.Context) {
 			ClientType:        s.ClientType,
 			GeoCity:           s.GeoCity,
 			GeoCountry:        s.GeoCountry,
+			GeoRegion:         s.GeoRegion,
+			GeoLatitude:       s.GeoLatitude,
+			GeoLongitude:      s.GeoLongitude,
+			GeoAccuracy:       s.GeoAccuracy,
 			IsNewDevice:       s.IsNewDevice,
 			IsPWA:             s.IsPwa,
 			IsActive:          s.IsActive(),

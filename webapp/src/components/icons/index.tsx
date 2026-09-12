@@ -116,6 +116,9 @@ import {
   faQrcode,
   faFileShield,
   faDesktop,
+  faLocationDot,
+  faArrowUpRightFromSquare,
+  faWifi,
 } from '@fortawesome/free-solid-svg-icons';
 
 
@@ -237,3 +240,6 @@ export const Image = createFaIcon(faImage);
 export const Images = createFaIcon(faImages);
 export const WindowMaximize = createFaIcon(faWindowMaximize);
 export const WindowMinimize = createFaIcon(faWindowMinimize);
+export const MapPin = createFaIcon(faLocationDot);
+export const ExternalLink = createFaIcon(faArrowUpRightFromSquare);
+export const Wifi = createFaIcon(faWifi);

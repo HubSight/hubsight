@@ -467,6 +467,12 @@ const en: Record<TranslationKey, string> = {
   'sessions.reasonExpired': 'Session expired',
   'sessions.ended': 'Ended',
   'sessions.sessionTerminatedAlert': 'Your session has been revoked from another device or by an administrator.',
+  'sessions.locationMap': 'Login Location',
+  'sessions.openMap': 'Open in OpenStreetMap',
+  'sessions.lanLocation': 'Local Network (LAN)',
+  'sessions.approxLocation': 'Approximate Location',
+  'sessions.noCoordinates': 'No GPS coordinates available',
+  'sessions.viewLocation': 'View Location',
   'preferences.sessions.revokedAlert': 'Your session has been revoked or logged out remotely.',
 
   // === NVR Monitor ===

@@ -178,6 +178,10 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool, devInf
 		ClientType:        devInfo.ClientType,
 		GeoCity:           devInfo.GeoCity,
 		GeoCountry:        devInfo.GeoCountry,
+		GeoRegion:         devInfo.GeoRegion,
+		GeoLatitude:       devInfo.GeoLatitude,
+		GeoLongitude:      devInfo.GeoLongitude,
+		GeoAccuracy:       devInfo.GeoAccuracy,
 		IsNewDevice:       isNewDevice,
 	}
 	if len(clientID) > 0 && clientID[0] != "" {
