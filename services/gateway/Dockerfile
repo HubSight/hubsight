@@ -4,7 +4,7 @@
 FROM node:24-alpine AS frontend-builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@11.11.0
 
 # Cache pnpm install layer (workspace manifests only)
 COPY webapp/package.json webapp/pnpm-lock.yaml* webapp/pnpm-workspace.yaml* webapp/.npmrc* ./

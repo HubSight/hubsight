@@ -3,11 +3,11 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Enable pnpm via corepack & install protoc for gRPC proto compilation
+# Install pnpm & protoc for gRPC proto compilation
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV CI=true
-RUN corepack enable && corepack prepare pnpm@latest --activate && \
+RUN npm install -g pnpm@11.11.0 && \
     apk add --no-cache protoc
 
 COPY services/relay/package.json services/relay/pnpm-lock.yaml* services/relay/pnpm-workspace.yaml* services/relay/.npmrc* ./
@@ -32,7 +32,7 @@ WORKDIR /app
 
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@11.11.0
 
 COPY services/relay/package.json services/relay/pnpm-lock.yaml* services/relay/pnpm-workspace.yaml* services/relay/.npmrc* ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \

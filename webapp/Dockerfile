@@ -2,7 +2,7 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@11.11.0
 
 # Layer caching for pnpm dependencies
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* .npmrc* ./
