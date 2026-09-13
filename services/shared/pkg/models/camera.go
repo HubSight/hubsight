@@ -34,6 +34,13 @@ type Camera struct {
 	HomographyPoints    string      `gorm:"column:homography_points;type:text;not null;default:''" json:"homography_points,omitempty"`
 	HomographyValid     bool        `gorm:"column:homography_valid;not null;default:true" json:"homography_valid"`
 	HomographyUpdatedAt *time.Time  `gorm:"column:homography_updated_at" json:"homography_updated_at,omitempty"`
+	// ONVIF Profile S Support (Zero-config RTSP stream resolution & PTZ control)
+	OnvifEnabled      bool   `gorm:"column:onvif_enabled;not null;default:false" json:"onvif_enabled"`
+	OnvifPort         int    `gorm:"column:onvif_port;not null;default:80" json:"onvif_port"`
+	OnvifUsername     string `gorm:"column:onvif_username;type:varchar(128);not null;default:''" json:"onvif_username,omitempty"`
+	OnvifPassword     string `gorm:"column:onvif_password;type:varchar(255);not null;default:''" json:"onvif_password,omitempty"`
+	OnvifPtzSupported bool   `gorm:"column:onvif_ptz_supported;not null;default:false" json:"onvif_ptz_supported"`
+	OnvifProfileToken string `gorm:"column:onvif_profile_token;type:varchar(64);not null;default:''" json:"onvif_profile_token,omitempty"`
 	ThumbnailURL        string      `gorm:"-" json:"thumbnail_url,omitempty"`
 	StreamName          string      `gorm:"-" json:"stream_name,omitempty"`
 	CreatedAt           time.Time   `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
@@ -74,6 +81,9 @@ func (c *Camera) BeforeCreate(tx *gorm.DB) error {
 	}
 	if c.RecordQuality == "" {
 		c.RecordQuality = "standard"
+	}
+	if c.OnvifPort == 0 {
+		c.OnvifPort = 80
 	}
 	return nil
 }

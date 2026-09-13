@@ -18,6 +18,10 @@ export {
   restartCamera,
   getCameraRecognitionLogs,
   clearCameraRecognitionLogs,
+  cameraPTZ,
+  getCameraPresets,
+  manageCameraPreset,
+  probeONVIF,
   type CamerasResource,
 } from './cameras';
 

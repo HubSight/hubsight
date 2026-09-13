@@ -10,11 +10,13 @@ import {
   Loader2,
   AlertCircle,
   Scaling,
+  Compass,
 } from '@/components/icons';
 import { useLiveStream } from '@hubsight/sdk/react';
 import type { CameraItem } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';
 import { ProBlackScreen } from '../common/ProBlackScreen';
+import { PTZControlPad } from './PTZControlPad';
 
 export interface MultiViewSlotProps {
   slotIndex: number;
@@ -46,6 +48,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
   const { t } = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
   const [localFit, setLocalFit] = useState<'contain' | 'cover'>(fitMode);
+  const [showPTZ, setShowPTZ] = useState(false);
 
   // Keep localFit synced with global fitMode if updated
   useEffect(() => {
@@ -239,6 +242,22 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
             </button>
           )}
 
+          {/* PTZ Controller Toggle */}
+          {isCameraActive && (camera?.onvif_ptz_supported || camera?.onvif_enabled) && (
+            <button
+              type="button"
+              onClick={() => setShowPTZ((prev) => !prev)}
+              title="PTZ Controls (Pan/Tilt/Zoom)"
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                showPTZ
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-white/70 hover:text-white hover:bg-white/15'
+              }`}
+            >
+              <Compass size={14} />
+            </button>
+          )}
+
           {/* Aspect Fit/Fill Toggle */}
           <button
             type="button"
@@ -303,6 +322,17 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
         <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-600/90 text-white text-[10px] font-bold shadow-md backdrop-blur-xs pointer-events-none">
           <Volume2 size={12} className="animate-pulse" />
           <span>AUDIO LIVE</span>
+        </div>
+      )}
+
+      {/* Floating PTZ HUD Pad */}
+      {showPTZ && isCameraActive && cameraId && (
+        <div className="absolute top-12 right-2.5 z-30 shadow-2xl max-w-[calc(100%-20px)] animate-in fade-in zoom-in-95 duration-150">
+          <PTZControlPad
+            cameraId={cameraId}
+            cameraName={camera?.name}
+            onClose={() => setShowPTZ(false)}
+          />
         </div>
       )}
     </div>

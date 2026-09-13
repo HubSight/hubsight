@@ -29,6 +29,12 @@ type DeviceInput struct {
 	NvrMode         *string `json:"nvr_mode"`
 	RecordQuality   *string `json:"record_quality"`
 	IsFixed         *bool   `json:"is_fixed"`
+	OnvifEnabled      *bool   `json:"onvif_enabled"`
+	OnvifPort         int     `json:"onvif_port"`
+	OnvifUsername     string  `json:"onvif_username"`
+	OnvifPassword     string  `json:"onvif_password"`
+	OnvifPtzSupported *bool   `json:"onvif_ptz_supported"`
+	OnvifProfileToken string  `json:"onvif_profile_token"`
 }
 
 // HomographyPoint is one of the 4 normalized (0..1) image-space points an admin
@@ -101,6 +107,24 @@ func Create(ctx context.Context, input DeviceInput) (*models.Camera, error) {
 	if input.RecordQuality != nil && *input.RecordQuality != "" {
 		cam.RecordQuality = *input.RecordQuality
 	}
+	if input.OnvifEnabled != nil {
+		cam.OnvifEnabled = *input.OnvifEnabled
+	}
+	if input.OnvifPort > 0 {
+		cam.OnvifPort = input.OnvifPort
+	}
+	if input.OnvifUsername != "" {
+		cam.OnvifUsername = input.OnvifUsername
+	}
+	if input.OnvifPassword != "" {
+		cam.OnvifPassword = input.OnvifPassword
+	}
+	if input.OnvifPtzSupported != nil {
+		cam.OnvifPtzSupported = *input.OnvifPtzSupported
+	}
+	if input.OnvifProfileToken != "" {
+		cam.OnvifProfileToken = input.OnvifProfileToken
+	}
 
 	if err := database.DB.WithContext(ctx).Create(&cam).Error; err != nil {
 		return nil, err
@@ -155,6 +179,24 @@ func Update(ctx context.Context, id string, input DeviceInput) (*models.Camera, 
 	}
 	if input.IsFixed != nil {
 		updates["is_fixed"] = *input.IsFixed
+	}
+	if input.OnvifEnabled != nil {
+		updates["onvif_enabled"] = *input.OnvifEnabled
+	}
+	if input.OnvifPort > 0 {
+		updates["onvif_port"] = input.OnvifPort
+	}
+	if input.OnvifUsername != "" {
+		updates["onvif_username"] = input.OnvifUsername
+	}
+	if input.OnvifPassword != "" {
+		updates["onvif_password"] = input.OnvifPassword
+	}
+	if input.OnvifPtzSupported != nil {
+		updates["onvif_ptz_supported"] = *input.OnvifPtzSupported
+	}
+	if input.OnvifProfileToken != "" {
+		updates["onvif_profile_token"] = input.OnvifProfileToken
 	}
 
 	res := database.DB.WithContext(ctx).Model(&models.Camera{ID: id}).Updates(updates)

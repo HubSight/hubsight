@@ -36,7 +36,13 @@ const initialFormData: DeviceFormData = {
   show_bbox: true,
   nvr_mode: 'event',
   record_quality: 'standard',
-  is_fixed: false
+  is_fixed: false,
+  onvif_enabled: false,
+  onvif_port: 80,
+  onvif_username: '',
+  onvif_password: '',
+  onvif_ptz_supported: false,
+  onvif_profile_token: ''
 };
 
 const Devices = () => {
@@ -174,7 +180,13 @@ const Devices = () => {
         show_bbox: dev.show_bbox !== false,
         nvr_mode: dev.nvr_mode || 'event',
         record_quality: dev.record_quality || 'standard',
-        is_fixed: dev.is_fixed || false
+        is_fixed: dev.is_fixed || false,
+        onvif_enabled: dev.onvif_enabled ?? false,
+        onvif_port: dev.onvif_port || 80,
+        onvif_username: dev.onvif_username || '',
+        onvif_password: dev.onvif_password || '',
+        onvif_ptz_supported: dev.onvif_ptz_supported ?? false,
+        onvif_profile_token: dev.onvif_profile_token || '',
       });
     } else {
       setEditingDeviceId(null);
@@ -241,7 +253,13 @@ const Devices = () => {
       show_bbox: formData.show_bbox !== false,
       nvr_mode: formData.nvr_mode || 'event',
       record_quality: formData.record_quality || 'standard',
-      is_fixed: formData.is_fixed || false
+      is_fixed: formData.is_fixed || false,
+      onvif_enabled: Boolean(formData.onvif_enabled),
+      onvif_port: Number(formData.onvif_port) || 80,
+      onvif_username: formData.onvif_username || '',
+      onvif_password: formData.onvif_password || '',
+      onvif_ptz_supported: Boolean(formData.onvif_ptz_supported),
+      onvif_profile_token: formData.onvif_profile_token || '',
     };
 
     try {

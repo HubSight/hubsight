@@ -282,6 +282,13 @@ export interface DeviceType {
   homography_points?: string;
   homography_valid?: boolean;
   homography_updated_at?: string;
+  // ONVIF Profile S Support (Zero-config RTSP stream resolution & PTZ control)
+  onvif_enabled?: boolean;
+  onvif_port?: number;
+  onvif_username?: string;
+  onvif_password?: string;
+  onvif_ptz_supported?: boolean;
+  onvif_profile_token?: string;
   created_at: string;
   updated_at: string;
 }
@@ -299,6 +306,10 @@ export interface CameraItem {
   show_bbox?: boolean;
   nvr_mode?: NvrMode;
   record_quality?: RecordQuality;
+  onvif_enabled?: boolean;
+  onvif_port?: number;
+  onvif_ptz_supported?: boolean;
+  onvif_profile_token?: string;
 }
 
 export interface CameraInput {
@@ -317,7 +328,66 @@ export interface CameraInput {
   nvr_mode?: NvrMode;
   record_quality?: RecordQuality;
   is_fixed?: boolean;
+  onvif_enabled?: boolean;
+  onvif_port?: number;
+  onvif_username?: string;
+  onvif_password?: string;
+  onvif_ptz_supported?: boolean;
+  onvif_profile_token?: string;
   [key: string]: unknown;
+}
+
+export interface PTZActionInput {
+  action: 'move' | 'relative' | 'stop';
+  pan?: number;  // -1.0 to 1.0
+  tilt?: number; // -1.0 to 1.0
+  zoom?: number; // -1.0 to 1.0
+}
+
+export interface PresetItem {
+  token: string;
+  name: string;
+}
+
+export interface ManagePresetInput {
+  action: 'goto' | 'set' | 'remove';
+  preset_token?: string;
+  preset_name?: string;
+}
+
+export interface ProbeONVIFInput {
+  camera_id?: string;
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+}
+
+export interface ONVIFProbeResult {
+  success: boolean;
+  host: string;
+  port: number;
+  device_info: {
+    manufacturer: string;
+    model: string;
+    firmware_version: string;
+    serial_number: string;
+    hardware_id: string;
+  };
+  has_ptz: boolean;
+  profiles: Array<{
+    token: string;
+    name: string;
+    video_codec: string;
+    width: number;
+    height: number;
+    fps: number;
+    stream_uri?: string;
+  }>;
+  main_stream_uri: string;
+  sub_stream_uri: string;
+  main_profile_token?: string;
+  error_message?: string;
 }
 
 export interface ScanCandidate {

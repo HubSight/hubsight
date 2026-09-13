@@ -250,3 +250,17 @@ export function createHubSightClient(options: HubSightClientOptions = {}): HubSi
     },
   };
 }
+
+/**
+ * Creates a specialized HubSight Client configured specifically for Mobile and Desktop Applications.
+ *
+ * Preconfigures the REST base path to `/api/app/v1` and applies the default mobile client API Key (`hs_mob_client_default`).
+ */
+export function createAppClient(options: HubSightClientOptions = {}): HubSightClient {
+  return createHubSightClient({
+    baseUrl: options.baseUrl || '/api/app/v1',
+    apiKey: options.apiKey || 'hs_mob_client_default',
+    ...options,
+  });
+}
+

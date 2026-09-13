@@ -17,14 +17,16 @@ import (
 )
 
 type CameraDTO struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Host         string `json:"host"`
-	IsActive     bool   `json:"is_active"`
-	IsStopped    bool   `json:"is_stopped"`
-	EnableAI     bool   `json:"enable_ai"`
-	ThumbnailURL string `json:"thumbnail_url"`
-	StreamName   string `json:"stream_name"`
+	ID                string `json:"id"`
+	Name              string `json:"name"`
+	Host              string `json:"host"`
+	IsActive          bool   `json:"is_active"`
+	IsStopped         bool   `json:"is_stopped"`
+	EnableAI          bool   `json:"enable_ai"`
+	ThumbnailURL      string `json:"thumbnail_url"`
+	StreamName        string `json:"stream_name"`
+	OnvifEnabled      bool   `json:"onvif_enabled"`
+	OnvifPtzSupported bool   `json:"onvif_ptz_supported"`
 }
 
 func toCameraDTO(cam models.Camera) CameraDTO {
@@ -35,14 +37,16 @@ func toCameraDTO(cam models.Camera) CameraDTO {
 		streamName = fmt.Sprintf("cam_%s_thumb", cam.ID)
 	}
 	return CameraDTO{
-		ID:           cam.ID,
-		Name:         cam.Name,
-		Host:         cam.Host,
-		IsActive:     cam.IsActive,
-		IsStopped:    cam.IsStopped,
-		EnableAI:     cam.EnableAi,
-		ThumbnailURL: thumbURL,
-		StreamName:   streamName,
+		ID:                cam.ID,
+		Name:              cam.Name,
+		Host:              cam.Host,
+		IsActive:          cam.IsActive,
+		IsStopped:         cam.IsStopped,
+		EnableAI:          cam.EnableAi,
+		ThumbnailURL:      thumbURL,
+		StreamName:        streamName,
+		OnvifEnabled:      cam.OnvifEnabled,
+		OnvifPtzSupported: cam.OnvifPtzSupported,
 	}
 }
 

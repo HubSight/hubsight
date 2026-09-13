@@ -13,6 +13,7 @@
 // ── Client Factories & Config ────────────────────────────────────────────────
 export {
   createHubSightClient,
+  createAppClient,
   createBaseClient,
   type HubSightClient,
   type BaseClient,
@@ -137,6 +138,11 @@ export type {
   DeviceType,
   NvrMode,
   RecordQuality,
+  PTZActionInput,
+  PresetItem,
+  ManagePresetInput,
+  ProbeONVIFInput,
+  ONVIFProbeResult,
   ScanCandidate,
   ScanJob,
   MemberItem,

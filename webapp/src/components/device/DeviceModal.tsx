@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Globe, Sliders, HardDrive, Crosshair, X } from '@/components/icons';
+import { Layers, Globe, Sliders, HardDrive, Crosshair, X, Compass } from '@/components/icons';
 import type { DeviceFormData } from '../../types/device';
 import type { DeviceType } from '@hubsight/sdk';
 import { DeviceGeneralTab } from './DeviceGeneralTab';
 import { DeviceNvrTab } from './DeviceNvrTab';
 import { DeviceRtspTab } from './DeviceRtspTab';
+import { DeviceOnvifTab } from './DeviceOnvifTab';
 import { DeviceFfmpegTab } from './DeviceFfmpegTab';
 import { DeviceCalibrationTab } from './DeviceCalibrationTab';
 import { useTranslation } from '../../i18n';
@@ -39,7 +40,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   onCalibrationSaved
 }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'general' | 'nvr' | 'rtsp' | 'ffmpeg' | 'calibration'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'nvr' | 'rtsp' | 'onvif' | 'ffmpeg' | 'calibration'>('general');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -113,6 +114,17 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               </button>
               <button
                 type="button"
+                onClick={() => setActiveTab('onvif')}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'onvif'
+                  ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                  }`}
+              >
+                <Compass size={14} />
+                {t('devices.tabOnvif')}
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab('ffmpeg')}
                 className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'ffmpeg'
                   ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-sm'
@@ -167,6 +179,10 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
 
           {activeTab === 'rtsp' && (
             <DeviceRtspTab formData={formData} onChange={onChange} isStreaming={isStreaming} />
+          )}
+
+          {activeTab === 'onvif' && (
+            <DeviceOnvifTab formData={formData} onChange={onChange} isStreaming={isStreaming} />
           )}
 
           {activeTab === 'ffmpeg' && (

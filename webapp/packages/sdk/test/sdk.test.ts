@@ -411,3 +411,21 @@ test('Client API Key and Token propagation in HTTP and Socket.io clients', async
   socketClient.close();
   baseClient.destroy();
 });
+
+test('createAppClient initializes with mobile API base and default mobile API key', async () => {
+  const { createAppClient } = await import('../src/index');
+  const appClient = createAppClient({
+    autoConnectRealtime: false,
+    sessionStorage: new MemorySessionAdapter(false),
+  });
+
+  assert.equal(appClient.baseUrl, '/api/app/v1');
+  assert.ok(appClient.cameras);
+  assert.equal(typeof appClient.cameras.ptz, 'function');
+  assert.equal(typeof appClient.cameras.getPresets, 'function');
+  assert.equal(typeof appClient.cameras.managePreset, 'function');
+  assert.equal(typeof appClient.cameras.probeOnvif, 'function');
+
+  appClient.destroy();
+});
+

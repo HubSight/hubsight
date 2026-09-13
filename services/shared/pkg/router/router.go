@@ -79,6 +79,15 @@ func New() *gin.Engine {
 			protected.GET("/devices/:id/thumbnail", device.GetDeviceSnapshotHandler)
 			protected.GET("/cameras/:id/thumbnail", device.GetDeviceSnapshotHandler)
 
+			// ONVIF & PTZ endpoints
+			protected.POST("/onvif/probe", device.ProbeONVIFHandler)
+			protected.POST("/cameras/:id/ptz", device.CameraPTZHandler)
+			protected.POST("/devices/:id/ptz", device.CameraPTZHandler)
+			protected.GET("/cameras/:id/presets", device.GetCameraPresetsHandler)
+			protected.GET("/devices/:id/presets", device.GetCameraPresetsHandler)
+			protected.POST("/cameras/:id/presets", device.ManageCameraPresetsHandler)
+			protected.POST("/devices/:id/presets", device.ManageCameraPresetsHandler)
+
 			// Admin-only endpoints
 			adminOnly := protected.Group("/")
 			adminOnly.Use(auth.RequireRole("admin"))

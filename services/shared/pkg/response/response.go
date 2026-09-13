@@ -50,6 +50,10 @@ const (
 	ErrDeviceDeleteFailed = "DEVICE_DELETE_FAILED"
 	ErrStreamNotFound     = "STREAM_NOT_FOUND"
 	ErrPoolUnavailable   = "POOL_UNAVAILABLE"
+	ErrOnvifProbeFailed    = "ONVIF_PROBE_FAILED"
+	ErrOnvifNotEnabled     = "ONVIF_NOT_ENABLED"
+	ErrOnvifPtzNotSupported = "ONVIF_PTZ_NOT_SUPPORTED"
+	ErrOnvifActionFailed   = "ONVIF_ACTION_FAILED"
 
 	// Members & Faces
 	ErrMemberNotFound     = "MEMBER_NOT_FOUND"

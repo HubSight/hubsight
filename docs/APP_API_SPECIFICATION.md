@@ -185,7 +185,9 @@ Response `200 OK`:
       "is_stopped": false,
       "enable_ai": true,
       "thumbnail_url": "/api/app/v1/cameras/cam_front_door/thumbnail",
-      "stream_name": "cam_cam_front_door_thumb"
+      "stream_name": "cam_cam_front_door_thumb",
+      "onvif_enabled": true,
+      "onvif_ptz_supported": true
     },
     {
       "id": "cam_garage",
@@ -195,7 +197,9 @@ Response `200 OK`:
       "is_stopped": false,
       "enable_ai": false,
       "thumbnail_url": "/api/app/v1/cameras/cam_garage/thumbnail",
-      "stream_name": "cam_cam_garage_thumb"
+      "stream_name": "cam_cam_garage_thumb",
+      "onvif_enabled": false,
+      "onvif_ptz_supported": false
     }
   ]
 }
@@ -300,7 +304,125 @@ Response: `{"status": "ok"}`
 
 ---
 
-### 3.4. Video Lưu trữ & NVR Playback
+### 3.5. Điều khiển PTZ & Quản lý Presets (ONVIF Profile S)
+
+Dành cho các camera có `onvif_ptz_supported: true` (hoặc `onvif_enabled: true`).
+
+#### `POST /api/app/v1/cameras/:id/ptz`
+Gửi lệnh quay quét, zoom, hoặc dừng di chuyển tới camera qua giao thức ONVIF Profile S.
+
+- **Headers**:
+  ```http
+  X-API-Key: hs_mob_client_default
+  Authorization: Bearer <token>
+  Content-Type: application/json
+  ```
+- **Request Body**:
+  ```json
+  {
+    "action": "continuous",
+    "pan": 0.5,
+    "tilt": 0.0,
+    "zoom": 0.0,
+    "timeout": 5
+  }
+  ```
+  - `action`:
+    - `"continuous"` hoặc `"move"`: Quay quét liên tục theo vector tốc độ (`pan`, `tilt`, `zoom` từ `-1.0` đến `+1.0`). Camera sẽ tiếp tục di chuyển cho đến khi gửi lệnh `stop` hoặc hết `timeout`.
+    - `"stop"`: Dừng ngay lập tức mọi chuyển động quay quét và zoom.
+    - `"relative"`: Dịch chuyển một bước tương đối.
+    - `"zoom_in"`: Phóng to hình ảnh (`zoom: 0.5`).
+    - `"zoom_out"`: Thu nhỏ hình ảnh (`zoom: -0.5`).
+- **Response `200 OK`**:
+  ```json
+  {
+    "status": "ok"
+  }
+  ```
+
+#### `GET /api/app/v1/cameras/:id/presets`
+Lấy danh sách các điểm giám sát định sẵn (Preset positions) lưu trên phần cứng camera.
+
+- **Headers**: `X-API-Key: hs_mob_client_default`, `Authorization: Bearer <token>`
+- **Response `200 OK`**:
+  ```json
+  {
+    "status": "ok",
+    "presets": [
+      { "token": "1", "name": "Cổng chính" },
+      { "token": "2", "name": "Bãi đỗ xe" }
+    ]
+  }
+  ```
+
+#### `POST /api/app/v1/cameras/:id/presets`
+Thực hiện thao tác với điểm giám sát (Preset).
+
+- **Request Body**:
+  - Di chuyển tới Preset:
+    ```json
+    { "action": "goto", "preset_token": "1" }
+    ```
+  - Lưu vị trí hiện tại thành Preset mới:
+    ```json
+    { "action": "save", "preset_name": "Góc sân sau" }
+    ```
+  - Xóa Preset:
+    ```json
+    { "action": "delete", "preset_token": "1" }
+    ```
+- **Response `200 OK`**:
+  ```json
+  {
+    "status": "ok",
+    "preset_token": "1",
+    "name": "Góc sân sau"
+  }
+  ```
+
+#### `POST /api/app/v1/onvif/probe`
+Dò tìm tự động thông số thiết bị ONVIF Profile S (dành cho màn hình cài đặt/thêm thiết bị trên ứng dụng di động).
+
+- **Request Body**:
+  ```json
+  {
+    "host": "192.168.1.100",
+    "port": 80,
+    "username": "admin",
+    "password": "password123"
+  }
+  ```
+- **Response `200 OK`**:
+  ```json
+  {
+    "status": "ok",
+    "success": true,
+    "device_info": {
+      "manufacturer": "Dahua",
+      "model": "DH-IPC-HFW",
+      "firmware_version": "2.800.0000000.10.R",
+      "serial_number": "7E043B7PANXXXXX"
+    },
+    "has_ptz": true,
+    "profiles": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "video_codec": "H264",
+        "width": 1920,
+        "height": 1080,
+        "fps": 30,
+        "stream_uri": "rtsp://admin:password123@192.168.1.100:554/cam/realmonitor?channel=1&subtype=0"
+      }
+    ],
+    "main_stream_uri": "rtsp://admin:password123@192.168.1.100:554/cam/realmonitor?channel=1&subtype=0",
+    "main_profile_token": "Profile_1"
+  }
+  ```
+
+---
+
+### 3.6. Video Lưu trữ & NVR Playback
 
 #### `GET /api/app/v1/cameras/:id/archive/calendar?month=2026-09`
 Response `200 OK`:

@@ -84,6 +84,8 @@ import {
   faPause,
   faPlay,
   faPlus,
+  faMinus,
+  faCompass,
   faSatelliteDish,
   faTowerBroadcast,
   faRotate,
@@ -187,6 +189,8 @@ export const Pause = createFaIcon(faPause);
 export const Pencil = createFaIcon(faPenToSquare);
 export const Play = createFaIcon(faPlay);
 export const Plus = createFaIcon(faPlus);
+export const Minus = createFaIcon(faMinus);
+export const Compass = createFaIcon(faCompass);
 export const Power = createFaIcon(faPowerOff);
 export const PowerOff = createFaIcon(faPowerOff);
 export const Radar = createFaIcon(faSatelliteDish);

@@ -742,6 +742,324 @@ export function setupMobileApiClient(
 
 ---
 
+### 5.5. Flutter / Dart SDK: Camera PTZ D-Pad Controller Widget & Presets
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+
+class HubSightPtzPad extends StatelessWidget {
+  final String gatewayUrl;
+  final String cameraId;
+  final Dio dio;
+
+  const HubSightPtzPad({
+    Key? key,
+    required this.gatewayUrl,
+    required this.cameraId,
+    required this.dio,
+  }) : super(key: key);
+
+  Future<void> _sendPtzAction({
+    required String action,
+    double pan = 0.0,
+    double tilt = 0.0,
+    double zoom = 0.0,
+  }) async {
+    try {
+      await dio.post(
+        '$gatewayUrl/api/app/v1/cameras/$cameraId/ptz',
+        data: {
+          'action': action,
+          'pan': pan,
+          'tilt': tilt,
+          'zoom': zoom,
+          'timeout': 5,
+        },
+      );
+    } catch (e) {
+      debugPrint('PTZ command error: $e');
+    }
+  }
+
+  Widget _buildDirectionBtn({
+    required IconData icon,
+    required double pan,
+    required double tilt,
+  }) {
+    return GestureDetector(
+      onTapDown: (_) => _sendPtzAction(action: 'continuous', pan: pan, tilt: tilt),
+      onTapUp: (_) => _sendPtzAction(action: 'stop'),
+      onTapCancel: () => _sendPtzAction(action: 'stop'),
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Icon(icon, color: Colors.white, size: 24),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // D-Pad Grid (8 directions + Stop Center)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDirectionBtn(icon: Icons.north_west, pan: -0.5, tilt: 0.5),
+              const SizedBox(width: 8),
+              _buildDirectionBtn(icon: Icons.keyboard_arrow_up, pan: 0.0, tilt: 0.7),
+              const SizedBox(width: 8),
+              _buildDirectionBtn(icon: Icons.north_east, pan: 0.5, tilt: 0.5),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDirectionBtn(icon: Icons.keyboard_arrow_left, pan: -0.7, tilt: 0.0),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _sendPtzAction(action: 'stop'),
+                child: Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.stop, color: Colors.redAccent, size: 20),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildDirectionBtn(icon: Icons.keyboard_arrow_right, pan: 0.7, tilt: 0.0),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDirectionBtn(icon: Icons.south_west, pan: -0.5, tilt: -0.5),
+              const SizedBox(width: 8),
+              _buildDirectionBtn(icon: Icons.keyboard_arrow_down, pan: 0.0, tilt: -0.7),
+              const SizedBox(width: 8),
+              _buildDirectionBtn(icon: Icons.south_east, pan: 0.5, tilt: -0.5),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Zoom In / Out
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTapDown: (_) => _sendPtzAction(action: 'zoom_in', zoom: 0.5),
+                onTapUp: (_) => _sendPtzAction(action: 'stop'),
+                onTapCancel: () => _sendPtzAction(action: 'stop'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.zoom_in, color: Colors.white, size: 16),
+                      SizedBox(width: 4),
+                      Text('Zoom +', style: TextStyle(color: Colors.white, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTapDown: (_) => _sendPtzAction(action: 'zoom_out', zoom: -0.5),
+                onTapUp: (_) => _sendPtzAction(action: 'stop'),
+                onTapCancel: () => _sendPtzAction(action: 'stop'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.zoom_out, color: Colors.white, size: 16),
+                      SizedBox(width: 4),
+                      Text('Zoom -', style: TextStyle(color: Colors.white, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+---
+
+### 5.6. React Native / TypeScript SDK: Touch-sensitive PTZ HUD & Presets Modal
+
+```tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import type { AxiosInstance } from 'axios';
+
+interface PTZPadProps {
+  cameraId: string;
+  client: AxiosInstance; // HubSight Mobile Client instance
+  onClose?: () => void;
+}
+
+export const HubSightPTZPad: React.FC<PTZPadProps> = ({ cameraId, client, onClose }) => {
+  const [presets, setPresets] = useState<Array<{ token: string; name: string }>>([]);
+
+  const sendPtz = async (action: string, pan = 0, tilt = 0, zoom = 0) => {
+    try {
+      await client.post(`/api/app/v1/cameras/${cameraId}/ptz`, {
+        action,
+        pan,
+        tilt,
+        zoom,
+        timeout: 5,
+      });
+    } catch (e) {
+      console.warn('PTZ action failed', e);
+    }
+  };
+
+  const fetchPresets = async () => {
+    try {
+      const res = await client.get(`/api/app/v1/cameras/${cameraId}/presets`);
+      setPresets(res.data?.presets || []);
+    } catch (e) {
+      console.warn('Get presets failed', e);
+    }
+  };
+
+  const gotoPreset = async (presetToken: string) => {
+    await client.post(`/api/app/v1/cameras/${cameraId}/presets`, {
+      action: 'goto',
+      preset_token: presetToken,
+    });
+  };
+
+  useEffect(() => {
+    fetchPresets();
+  }, [cameraId]);
+
+  return (
+    <View style={styles.hudOverlay}>
+      <View style={styles.header}>
+        <Text style={styles.title}>PTZ Controller</Text>
+        {onClose && (
+          <TouchableOpacity onPress={onClose}>
+            <Text style={styles.closeBtn}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* 4-way D-Pad */}
+      <View style={styles.dpad}>
+        <TouchableOpacity
+          onPressIn={() => sendPtz('continuous', 0, 0.7)}
+          onPressOut={() => sendPtz('stop')}
+          style={styles.btn}
+        >
+          <Text style={styles.btnText}>▲</Text>
+        </TouchableOpacity>
+
+        <View style={styles.midRow}>
+          <TouchableOpacity
+            onPressIn={() => sendPtz('continuous', -0.7, 0)}
+            onPressOut={() => sendPtz('stop')}
+            style={styles.btn}
+          >
+            <Text style={styles.btnText}>◀</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => sendPtz('stop')} style={styles.stopBtn}>
+            <Text style={styles.stopText}>■</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPressIn={() => sendPtz('continuous', 0.7, 0)}
+            onPressOut={() => sendPtz('stop')}
+            style={styles.btn}
+          >
+            <Text style={styles.btnText}>▶</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          onPressIn={() => sendPtz('continuous', 0, -0.7)}
+          onPressOut={() => sendPtz('stop')}
+          style={styles.btn}
+        >
+          <Text style={styles.btnText}>▼</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Zoom Controls & Presets */}
+      <View style={styles.zoomRow}>
+        <TouchableOpacity
+          onPressIn={() => sendPtz('zoom_in', 0, 0, 0.5)}
+          onPressOut={() => sendPtz('stop')}
+          style={styles.zoomBtn}
+        >
+          <Text style={styles.zoomText}>Zoom +</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPressIn={() => sendPtz('zoom_out', 0, 0, -0.5)}
+          onPressOut={() => sendPtz('stop')}
+          style={styles.zoomBtn}
+        >
+          <Text style={styles.zoomText}>Zoom -</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  hudOverlay: {
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    borderRadius: 16,
+    padding: 12,
+    alignItems: 'center',
+  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 8 },
+  title: { color: '#f8fafc', fontWeight: 'bold', fontSize: 13 },
+  closeBtn: { color: '#94a3b8', fontSize: 16 },
+  dpad: { alignItems: 'center', marginVertical: 8 },
+  midRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 6, gap: 10 },
+  btn: { width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  btnText: { color: '#fff', fontSize: 18 },
+  stopBtn: { width: 44, height: 44, backgroundColor: 'rgba(239, 68, 68, 0.25)', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  stopText: { color: '#ef4444', fontSize: 16 },
+  zoomRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  zoomBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8 },
+  zoomText: { color: '#f1f5f9', fontSize: 11, fontWeight: '600' },
+});
+```
+
+---
+
 ## 6. Bảng Kiểm Tra Chất Lượng (Production Readiness Checklist)
 
 Trước khi đóng gói phát hành ứng dụng hoặc phát hành SDK cho đối tác, hãy rà soát kỹ bảng kiểm tra sau:

@@ -2,6 +2,7 @@ package appapi
 
 import (
 	"cctv/shared/pkg/auth"
+	"cctv/shared/pkg/device"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,6 +46,12 @@ func RegisterAppRoutes(rg *gin.RouterGroup) {
 		protected.POST("/cameras/:id/live/webrtc", LiveWebRTCHandler)
 		protected.POST("/cameras/:id/live/heartbeat", LiveHeartbeatHandler)
 		protected.POST("/cameras/:id/live/release", LiveReleaseHandler)
+
+		// ONVIF & PTZ Controls (Profile S)
+		protected.POST("/cameras/:id/ptz", device.CameraPTZHandler)
+		protected.GET("/cameras/:id/presets", device.GetCameraPresetsHandler)
+		protected.POST("/cameras/:id/presets", device.ManageCameraPresetsHandler)
+		protected.POST("/onvif/probe", device.ProbeONVIFHandler)
 
 		// Cameras Live Multi-View (Batch Operations)
 		protected.POST("/cameras/live/batch-webrtc", BatchLiveWebRTCHandler)

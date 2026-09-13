@@ -24,6 +24,12 @@ export interface DeviceFormData {
   nvr_mode: 'disabled' | 'event' | 'full' | 'aor';
   record_quality: 'standard' | 'hd';
   is_fixed: boolean;
+  onvif_enabled?: boolean;
+  onvif_port?: number;
+  onvif_username?: string;
+  onvif_password?: string;
+  onvif_ptz_supported?: boolean;
+  onvif_profile_token?: string;
 }
 
 // Backward compatibility alias
