@@ -14,6 +14,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/nanoid"
 	"cctv/shared/pkg/push"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2/google"
@@ -91,13 +92,13 @@ func testGoogleOAuth2Connection(ctx context.Context, rawJSON string) (string, er
 // ListGoogleServiceAccounts handles GET /api/google-service-accounts
 func ListGoogleServiceAccounts(c *gin.Context) {
 	if database.DB == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database is not connected"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
 	var list []models.GoogleServiceAccount
 	if err := database.DB.Order("is_active DESC, created_at DESC").Find(&list).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể truy vấn danh sách service accounts"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 		return
 	}
 
@@ -113,17 +114,17 @@ func ListGoogleServiceAccounts(c *gin.Context) {
 func GetGoogleServiceAccount(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var sa models.GoogleServiceAccount
 	if err := database.DB.First(&sa, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy service account"})
+			response.Error(c, http.StatusNotFound, response.ErrServiceAccountNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi truy vấn cơ sở dữ liệu"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -151,20 +152,20 @@ func ImportGoogleServiceAccount(c *gin.Context) {
 	if strings.Contains(contentType, "multipart/form-data") {
 		fileHeader, err := c.FormFile("file")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Vui lòng chọn file JSON để tải lên"})
+			response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 			return
 		}
 
 		file, err := fileHeader.Open()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Không thể đọc file đã tải lên"})
+			response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 			return
 		}
 		defer file.Close()
 
 		fileBytes, err := io.ReadAll(file)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Không thể đọc nội dung file"})
+			response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 			return
 		}
 		rawJSON = string(fileBytes)
@@ -175,7 +176,7 @@ func ImportGoogleServiceAccount(c *gin.Context) {
 	} else {
 		var req ImportGoogleServiceAccountRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Dữ liệu yêu cầu không hợp lệ"})
+			response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 			return
 		}
 		rawJSON = req.RawJSON
@@ -187,7 +188,7 @@ func ImportGoogleServiceAccount(c *gin.Context) {
 
 	parsed, err := ParseAndValidateServiceAccountJSON(rawJSON)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -277,7 +278,7 @@ func ImportGoogleServiceAccount(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lưu service account vào cơ sở dữ liệu: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -286,10 +287,9 @@ func ImportGoogleServiceAccount(c *gin.Context) {
 
 	resp := gin.H{
 		"account": record.ToDTO(),
-		"message": "Nhập Google Service Account thành công",
 	}
 	if testErr != nil {
-		resp["warning"] = "Cảnh báo xác thực: " + testErr.Error()
+		resp["test_error"] = testErr.Error()
 	} else {
 		resp["test_result"] = testMsg
 	}
@@ -301,17 +301,17 @@ func ImportGoogleServiceAccount(c *gin.Context) {
 func ActivateGoogleServiceAccount(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var sa models.GoogleServiceAccount
 	if err := database.DB.First(&sa, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy service account"})
+			response.Error(c, http.StatusNotFound, response.ErrServiceAccountNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi truy vấn cơ sở dữ liệu"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -323,7 +323,7 @@ func ActivateGoogleServiceAccount(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể kích hoạt service account"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -337,21 +337,21 @@ func ActivateGoogleServiceAccount(c *gin.Context) {
 func TestGoogleServiceAccount(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var sa models.GoogleServiceAccount
 	if err := database.DB.First(&sa, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy service account"})
+			response.Error(c, http.StatusNotFound, response.ErrServiceAccountNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi truy vấn cơ sở dữ liệu"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
-	msg, err := testGoogleOAuth2Connection(c.Request.Context(), sa.RawJSON)
+	_, err := testGoogleOAuth2Connection(c.Request.Context(), sa.RawJSON)
 	now := time.Now()
 	sa.LastTestedAt = &now
 
@@ -364,11 +364,7 @@ func TestGoogleServiceAccount(c *gin.Context) {
 			"last_error":     err.Error(),
 		}).Error
 
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-			"status":  "error",
-		})
+		response.Error(c, http.StatusBadRequest, "SERVICE_ACCOUNT_TEST_FAILED")
 		return
 	}
 
@@ -380,10 +376,8 @@ func TestGoogleServiceAccount(c *gin.Context) {
 		"last_error":     "",
 	}).Error
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": msg,
-		"status":  "active",
+	response.OK(c, gin.H{
+		"test_status": "active",
 	})
 }
 
@@ -391,24 +385,24 @@ func TestGoogleServiceAccount(c *gin.Context) {
 func DeleteGoogleServiceAccount(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var sa models.GoogleServiceAccount
 	if err := database.DB.First(&sa, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy service account"})
+			response.Error(c, http.StatusNotFound, response.ErrServiceAccountNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi truy vấn cơ sở dữ liệu"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
 	wasActive := sa.IsActive
 
 	if err := database.DB.Delete(&sa).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể xóa service account"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -422,5 +416,5 @@ func DeleteGoogleServiceAccount(c *gin.Context) {
 
 	_ = push.ReloadFCMClient(c.Request.Context())
 
-	c.JSON(http.StatusOK, gin.H{"message": "Đã xóa service account thành công"})
+	response.OK(c)
 }

@@ -167,8 +167,25 @@ export function getErrorMessage(err: unknown, fallback = 'Operation failed'): st
 
 export const apiErrorMessage = getErrorMessage;
 
+/** Extracts the standard machine-readable error code from any unknown error. */
+export function getErrorCode(err: unknown): string | undefined {
+  if (err instanceof HubSightError && err.code) {
+    return err.code;
+  }
+  if (typeof err === 'object' && err !== null) {
+    const obj = err as Record<string, unknown>;
+    if (typeof obj['code'] === 'string' && obj['code']) {
+      return obj['code'];
+    }
+    if (typeof obj['error'] === 'string' && obj['error']) {
+      return obj['error'];
+    }
+  }
+  return undefined;
+}
+
 export function toApiError(err: unknown, fallback?: string): HubSightApiError {
   if (isApiError(err)) return err;
-  return new HubSightApiError(getErrorMessage(err, fallback), { cause: err });
+  return new HubSightApiError(getErrorMessage(err, fallback), { cause: err, code: getErrorCode(err) });
 }
 

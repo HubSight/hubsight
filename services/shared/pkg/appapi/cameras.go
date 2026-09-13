@@ -11,6 +11,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/pb"
 	"cctv/shared/pkg/pool"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -80,10 +81,7 @@ func ListCamerasHandler(c *gin.Context) {
 		Find(&cameras).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Could not be retrieved list of devices: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -103,10 +101,7 @@ func GetCameraHandler(c *gin.Context) {
 	id := c.Param("id")
 	var cam models.Camera
 	if err := database.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&cam).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":  "error",
-			"message": "Unable to find device.",
-		})
+		response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 		return
 	}
 
@@ -132,11 +127,7 @@ func LiveReleaseHandler(c *gin.Context) {
 func BatchLiveWebRTCHandler(c *gin.Context) {
 	var req BatchWebRTCRequest
 	if err := c.ShouldBindJSON(&req); err != nil || len(req.Streams) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"code":    "INVALID_INPUT",
-			"message": "Invalid list of devices",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -195,11 +186,7 @@ func BatchLiveWebRTCHandler(c *gin.Context) {
 func BatchLiveHeartbeatHandler(c *gin.Context) {
 	var req BatchHeartbeatRequest
 	if err := c.ShouldBindJSON(&req); err != nil || len(req.Leases) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"code":    "INVALID_INPUT",
-			"message": "Invalid list of leases.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -229,10 +216,7 @@ func BatchLiveHeartbeatHandler(c *gin.Context) {
 func BatchLiveReleaseHandler(c *gin.Context) {
 	var req BatchHeartbeatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Invalid list of leases.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 

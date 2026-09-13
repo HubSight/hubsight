@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,7 +48,7 @@ func Middleware() gin.HandlerFunc {
 		}
 
 		if cookie == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			response.AbortError(c, http.StatusUnauthorized, response.ErrUnauthorized)
 			return
 		}
 
@@ -63,10 +64,7 @@ func Middleware() gin.HandlerFunc {
 			}
 			if err := json.NewDecoder(resp.Body).Decode(&valResp); err == nil && valResp.Valid && valResp.User != nil {
 				if valResp.User.MustChangePassword && !isAllowedWhilePasswordChangeRequired(c.Request.URL.Path) {
-					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-						"error": "Password change required",
-						"code":  "MUST_CHANGE_PASSWORD",
-					})
+					response.AbortError(c, http.StatusForbidden, response.ErrMustChangePassword)
 					return
 				}
 				c.Set("user", valResp.User)
@@ -82,15 +80,12 @@ func Middleware() gin.HandlerFunc {
 		// Fallback to local query if auth-service is unreachable during startup
 		sess, user, err := GetSessionAndUser(c.Request.Context(), cookie)
 		if err != nil || !user.IsActive {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			response.AbortError(c, http.StatusUnauthorized, response.ErrUnauthorized)
 			return
 		}
 
 		if user.MustChangePassword && !isAllowedWhilePasswordChangeRequired(c.Request.URL.Path) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": "Password change required",
-				"code":  "MUST_CHANGE_PASSWORD",
-			})
+			response.AbortError(c, http.StatusForbidden, response.ErrMustChangePassword)
 			return
 		}
 
@@ -108,13 +103,13 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userObj, exists := c.Get("user")
 		if !exists {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			response.AbortError(c, http.StatusUnauthorized, response.ErrUnauthorized)
 			return
 		}
 
 		u, ok := userObj.(*models.User)
 		if !ok || u == nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			response.AbortError(c, http.StatusUnauthorized, response.ErrUnauthorized)
 			return
 		}
 
@@ -126,7 +121,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 			}
 		}
 
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: Insufficient permissions"})
+		response.AbortError(c, http.StatusForbidden, response.ErrForbidden)
 	}
 }
 
@@ -136,13 +131,13 @@ func RequirePermission(perms ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userObj, exists := c.Get("user")
 		if !exists {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			response.AbortError(c, http.StatusUnauthorized, response.ErrUnauthorized)
 			return
 		}
 
 		u, ok := userObj.(*models.User)
 		if !ok || u == nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			response.AbortError(c, http.StatusUnauthorized, response.ErrUnauthorized)
 			return
 		}
 
@@ -173,6 +168,6 @@ func RequirePermission(perms ...string) gin.HandlerFunc {
 			}
 		}
 
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: Insufficient permissions"})
+		response.AbortError(c, http.StatusForbidden, response.ErrForbidden)
 	}
 }

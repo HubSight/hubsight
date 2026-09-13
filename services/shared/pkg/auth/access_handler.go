@@ -8,6 +8,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/nanoid"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -160,18 +161,18 @@ func DeleteRoleHandler(c *gin.Context) {
 	var userCount int64
 	_ = database.DB.WithContext(ctx).Model(&models.User{}).Where("role_id = ?", id).Count(&userCount).Error
 	if userCount > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete role while it is still assigned to users"})
+		response.Error(c, http.StatusBadRequest, response.ErrConflict)
 		return
 	}
 
 	// Clear associations then delete role
 	_ = database.DB.WithContext(ctx).Model(&role).Association("Permissions").Clear()
 	if err := database.DB.WithContext(ctx).Delete(&role).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete role"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Role deleted successfully"})
+	response.OK(c)
 }
 
 // ─── USERS ───────────────────────────────────────────────────────────────────
@@ -411,12 +412,10 @@ func ResetUserPasswordHandler(c *gin.Context) {
 	// Invalidate user's existing sessions
 	_ = RevokeAllUserSessions(ctx, user.ID, "admin_revoke")
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Password reset successfully"})
+	response.OK(c)
 }
 
 // DeleteUserHandler informs callers that user deletion has been permanently disabled.
 func DeleteUserHandler(c *gin.Context) {
-	c.JSON(http.StatusBadRequest, gin.H{
-		"error": "Tính năng xóa người dùng đã bị vô hiệu hóa. Vui lòng sử dụng tính năng khóa tài khoản.",
-	})
+	response.Error(c, http.StatusBadRequest, "USER_DELETION_DISABLED")
 }

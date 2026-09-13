@@ -8,6 +8,7 @@ import (
 
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -66,10 +67,9 @@ func AppKillSwitchMiddleware() gin.HandlerFunc {
 			c.Header("Retry-After", "300")
 			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
 				"status":      "error",
-				"code":        "APP_API_DISABLED",
+				"code":        response.ErrAppApiDisabled,
+				"error":       response.ErrAppApiDisabled,
 				"maintenance": true,
-				"message":     "Hệ thống đang tạm dừng kết nối ứng dụng. Vui lòng sử dụng phiên bản web hoặc thử lại sau.",
-				"message_en":  "App connection is temporarily paused. Please use the web portal or try again later.",
 			})
 			return
 		}
@@ -93,12 +93,7 @@ func RequireAppApiKeyMiddleware() gin.HandlerFunc {
 
 		apiKey = strings.TrimSpace(apiKey)
 		if apiKey == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"status":     "error",
-				"code":       "APP_KEY_REQUIRED",
-				"message":    "API Key của ứng dụng là bắt buộc. Vui lòng cấu hình qua tệp .hscfg.",
-				"message_en": "Application API key is required. Please enroll using your .hscfg profile.",
-			})
+			response.AbortError(c, http.StatusUnauthorized, response.ErrAppKeyRequired)
 			return
 		}
 
@@ -108,12 +103,7 @@ func RequireAppApiKeyMiddleware() gin.HandlerFunc {
 			First(&client).Error
 
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"status":     "error",
-				"code":       "INVALID_APP_KEY",
-				"message":    "API Key không hợp lệ hoặc đã bị khóa.",
-				"message_en": "Application API key is invalid or has been revoked.",
-			})
+			response.AbortError(c, http.StatusForbidden, response.ErrInvalidAppKey)
 			return
 		}
 

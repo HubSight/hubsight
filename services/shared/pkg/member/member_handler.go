@@ -21,6 +21,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/nanoid"
+	"cctv/shared/pkg/response"
 	"cctv/shared/pkg/storage"
 
 	"github.com/gin-gonic/gin"
@@ -514,7 +515,7 @@ func DeleteMemberHandler(c *gin.Context) {
 
 	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "delete", "member_id": id})
 
-	c.JSON(http.StatusOK, gin.H{"message": "Member deleted successfully"})
+	response.OK(c)
 }
 
 // UploadFaceImage uploads an image file to S3 and returns the presigned URL
@@ -927,7 +928,7 @@ func DeleteMemberFaceHandler(c *gin.Context) {
 
 	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "delete_face", "member_id": memberID, "face_id": faceID})
 
-	c.JSON(http.StatusOK, gin.H{"message": "Face sample deleted successfully"})
+	response.OK(c)
 }
 
 // EmbeddingSyncDTO represents vector dataset for vision-service
@@ -1124,8 +1125,7 @@ func BatchDeleteMemberFacesHandler(c *gin.Context) {
 	// Notify vision-service to reload embeddings for this member
 	mq.PublishMemberEvent("member.face.updated", gin.H{"action": "batch_delete_faces", "member_id": memberID})
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Face samples deleted successfully",
-		"count":   len(input.FaceIDs),
+	response.OK(c, gin.H{
+		"count": len(input.FaceIDs),
 	})
 }

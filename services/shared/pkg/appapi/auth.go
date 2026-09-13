@@ -8,6 +8,7 @@ import (
 
 	"cctv/shared/pkg/auth"
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,12 +40,7 @@ type AppChangePasswordRequest struct {
 func AppLoginHandler(c *gin.Context) {
 	var req AppLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":     "error",
-			"code":       "INVALID_INPUT",
-			"message":    "Tên đăng nhập và mật khẩu là bắt buộc.",
-			"message_en": "Username and password are required.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -61,17 +57,10 @@ func AppLoginHandler(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"status":         "2fa_required",
 				"pre_auth_token": token,
-				"message":        "Yêu cầu mã xác thực 2 bước (2FA).",
-				"message_en":     "Two-factor authentication code is required.",
 			})
 			return
 		}
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"status":     "error",
-			"code":       "INVALID_CREDENTIALS",
-			"message":    "Tên đăng nhập hoặc mật khẩu không chính xác.",
-			"message_en": "Invalid username or password.",
-		})
+		response.Error(c, http.StatusUnauthorized, response.ErrInvalidCredentials)
 		return
 	}
 
@@ -95,23 +84,13 @@ func AppLoginHandler(c *gin.Context) {
 func AppVerify2FAHandler(c *gin.Context) {
 	var req AppVerify2FARequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":     "error",
-			"code":       "INVALID_INPUT",
-			"message":    "Mã xác thực không hợp lệ.",
-			"message_en": "Authentication code is required.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	session, token, refreshToken, err := auth.Verify2FALogin(c.Request.Context(), req.PreAuthToken, req.Code, req.RecoveryCode, true)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"status":     "error",
-			"code":       "INVALID_2FA_CODE",
-			"message":    "Mã xác thực 2 bước hoặc mã khôi phục không chính xác hoặc đã hết hạn.",
-			"message_en": "Invalid or expired two-factor authentication code.",
-		})
+		response.Error(c, http.StatusUnauthorized, response.ErrTwoFactorInvalid)
 		return
 	}
 
@@ -135,23 +114,13 @@ func AppVerify2FAHandler(c *gin.Context) {
 func AppRefreshTokenHandler(c *gin.Context) {
 	var req AppRefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.RefreshToken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":     "error",
-			"code":       "REFRESH_TOKEN_REQUIRED",
-			"message":    "Refresh token là bắt buộc.",
-			"message_en": "Refresh token is required.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrRefreshTokenRequired)
 		return
 	}
 
 	session, newToken, newRefreshToken, err := auth.RefreshPWASession(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"status":     "error",
-			"code":       "INVALID_REFRESH_TOKEN",
-			"message":    "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
-			"message_en": "Invalid or expired refresh token. Please sign in again.",
-		})
+		response.Error(c, http.StatusUnauthorized, response.ErrInvalidRefreshToken)
 		return
 	}
 
@@ -173,12 +142,7 @@ func AppRefreshTokenHandler(c *gin.Context) {
 func AppChangePasswordHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"status":     "error",
-			"code":       "UNAUTHORIZED",
-			"message":    "Yêu cầu xác thực tài khoản.",
-			"message_en": "Authentication required.",
-		})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -186,40 +150,21 @@ func AppChangePasswordHandler(c *gin.Context) {
 
 	var req AppChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":     "error",
-			"code":       "INVALID_INPUT",
-			"message":    "Mật khẩu hiện tại và mật khẩu mới là bắt buộc.",
-			"message_en": "Current password and new password are required.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	if len(req.NewPassword) < 8 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":     "error",
-			"code":       "WEAK_PASSWORD",
-			"message":    "Mật khẩu mới phải có tối thiểu 8 ký tự.",
-			"message_en": "New password must be at least 8 characters.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput, map[string]any{"field": "new_password", "rule": "min_length_8"})
 		return
 	}
 
 	if err := auth.ChangePassword(c.Request.Context(), u, req.CurrentPassword, req.NewPassword); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":     "error",
-			"code":       "CHANGE_PASSWORD_FAILED",
-			"message":    err.Error(),
-			"message_en": "Failed to update password: " + err.Error(),
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrIncorrectPassword)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":     "ok",
-		"message":    "Đổi mật khẩu thành công.",
-		"message_en": "Password changed successfully.",
-	})
+	response.OK(c)
 }
 
 // AppLogoutHandler revokes the active session token.
@@ -239,9 +184,5 @@ func AppLogoutHandler(c *gin.Context) {
 	// Also clear session cookie if present
 	c.SetCookie("session", "", -1, "/", "", false, true)
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":     "ok",
-		"message":    "Đăng xuất thành công.",
-		"message_en": "Signed out successfully.",
-	})
+	response.OK(c)
 }

@@ -47,10 +47,15 @@ function mapAxiosError(error: unknown): HubSightError {
     const data = error.response?.data;
 
     let message = 'Request failed';
+    let code: string | undefined = undefined;
     if (data && typeof data === 'object') {
       const d = data as Record<string, unknown>;
+      if (typeof d['code'] === 'string' && d['code']) {
+        code = d['code'];
+      }
       if (typeof d['error'] === 'string' && d['error']) {
         message = d['error'];
+        if (!code) code = d['error'];
       } else if (typeof d['message'] === 'string' && d['message']) {
         message = d['message'];
       }
@@ -75,22 +80,23 @@ function mapAxiosError(error: unknown): HubSightError {
 
     switch (status) {
       case 401:
-        return new AuthenticationError(message, { cause: error, data });
+        return new AuthenticationError(message, { cause: error, data, code });
       case 403:
-        return new ForbiddenError(message, { cause: error, data });
+        return new ForbiddenError(message, { cause: error, data, code });
       case 404:
-        return new NotFoundError(message, { cause: error, data });
+        return new NotFoundError(message, { cause: error, data, code });
       case 409:
-        return new ConflictError(message, { cause: error, data });
+        return new ConflictError(message, { cause: error, data, code });
       case 400:
       case 422:
         return new ValidationError(message, {
           cause: error,
           data,
+          code,
           details: typeof data === 'object' && data !== null ? (data as Record<string, string>) : undefined,
         });
       default:
-        return new HubSightApiError(message, { status, data, cause: error });
+        return new HubSightApiError(message, { status, data, cause: error, code });
     }
   }
 

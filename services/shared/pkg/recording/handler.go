@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/response"
 	"cctv/shared/pkg/storage"
 
 	"github.com/gin-gonic/gin"
@@ -21,13 +22,13 @@ func TimelineHandler(c *gin.Context) {
 
 	from, err := time.Parse(time.RFC3339, fromStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'from' date"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	to, err := time.Parse(time.RFC3339, toStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'to' date"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -35,7 +36,7 @@ func TimelineHandler(c *gin.Context) {
 
 	recordings, err := GetTimeline(c.Request.Context(), from, to, cameraID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -49,13 +50,13 @@ func TimelineHandler(c *gin.Context) {
 func StreamHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	rec, err := GetByID(c.Request.Context(), idStr)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Recording not found"})
+		response.Error(c, http.StatusNotFound, response.ErrRecordingNotFound)
 		return
 	}
 
@@ -73,7 +74,7 @@ func StreamHandler(c *gin.Context) {
 	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, rec.FilePath, expiry, reqParams)
 	if err != nil {
 		log.Printf("Failed to generate presigned URL: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stream"})
+		response.Error(c, http.StatusInternalServerError, response.ErrStorageError)
 		return
 	}
 
@@ -83,7 +84,7 @@ func StreamHandler(c *gin.Context) {
 func AvailableDaysHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -93,13 +94,13 @@ func AvailableDaysHandler(c *gin.Context) {
 	month, _ := strconv.Atoi(monthStr)
 
 	if year == 0 || month == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Year and month are required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	days, err := GetAvailableDays(c.Request.Context(), idStr, year, month)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -109,18 +110,18 @@ func AvailableDaysHandler(c *gin.Context) {
 func ThumbnailHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	rec, err := GetByID(c.Request.Context(), idStr)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Recording not found"})
+		response.Error(c, http.StatusNotFound, response.ErrRecordingNotFound)
 		return
 	}
 
 	if rec.ThumbnailPath == nil || *rec.ThumbnailPath == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Thumbnail not found"})
+		response.Error(c, http.StatusNotFound, response.ErrNotFound)
 		return
 	}
 
@@ -128,7 +129,7 @@ func ThumbnailHandler(c *gin.Context) {
 	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, *rec.ThumbnailPath, expiry, nil)
 	if err != nil {
 		log.Printf("Failed to generate thumbnail presigned URL: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get thumbnail"})
+		response.Error(c, http.StatusInternalServerError, response.ErrStorageError)
 		return
 	}
 

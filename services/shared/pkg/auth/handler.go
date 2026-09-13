@@ -10,6 +10,7 @@ import (
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/fingerprint"
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +18,7 @@ import (
 func LoginHandler(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -30,7 +31,7 @@ func LoginHandler(c *gin.Context) {
 	if apiKey != "" {
 		client, err := ValidateClientApiKey(apiKey)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or inactive client API key"})
+			response.Error(c, http.StatusUnauthorized, response.ErrInvalidClientKey)
 			return
 		}
 		clientID = client.ClientID
@@ -50,10 +51,10 @@ func LoginHandler(c *gin.Context) {
 		}
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "Quá nhiều lần") {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": errMsg})
+			response.Error(c, http.StatusTooManyRequests, response.ErrTooManyRequests)
 			return
 		}
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		response.Error(c, http.StatusUnauthorized, response.ErrInvalidCredentials)
 		return
 	}
 
@@ -74,13 +75,13 @@ func LoginHandler(c *gin.Context) {
 func RefreshHandler(c *gin.Context) {
 	var req RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.RefreshToken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token required"})
+		response.Error(c, http.StatusBadRequest, response.ErrRefreshTokenRequired)
 		return
 	}
 
 	session, newToken, newRefreshToken, err := RefreshPWASession(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		response.Error(c, http.StatusUnauthorized, response.ErrInvalidRefreshToken)
 		return
 	}
 
@@ -98,13 +99,13 @@ func LogoutHandler(c *gin.Context) {
 	}
 
 	c.SetCookie("session", "", -1, "/", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	response.OK(c)
 }
 
 func MeHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -114,7 +115,7 @@ func MeHandler(c *gin.Context) {
 func ChangePasswordHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -122,34 +123,34 @@ func ChangePasswordHandler(c *gin.Context) {
 
 	var req ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	if err := ChangePassword(c.Request.Context(), u, req.OldPassword, req.NewPassword); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrIncorrectPassword)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "Password updated successfully"})
+	response.OK(c)
 }
 
 func VerifyPasswordHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u, ok := userObj.(*models.User)
 	if !ok || u == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	var req VerifyPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrPasswordRequired)
 		return
 	}
 
@@ -167,17 +168,17 @@ func VerifyPasswordHandler(c *gin.Context) {
 
 	match, err := verifyPassword(req.Password, u.PasswordHash)
 	if err != nil || !match {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
+		response.Error(c, http.StatusUnauthorized, response.ErrIncorrectPassword)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	response.OK(c)
 }
 
 func UpdateLocaleHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -185,24 +186,24 @@ func UpdateLocaleHandler(c *gin.Context) {
 
 	var req UpdateLocaleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	if req.Locale != "vi" && req.Locale != "en" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid locale. Must be 'vi' or 'en'"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidLocale)
 		return
 	}
 
 	ctx := c.Request.Context()
 	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("locale", models.Locale(req.Locale)).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update locale"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	var updated models.User
 	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -212,7 +213,7 @@ func UpdateLocaleHandler(c *gin.Context) {
 func UpdateTimezoneHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -220,19 +221,19 @@ func UpdateTimezoneHandler(c *gin.Context) {
 
 	var req UpdateTimezoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Timezone == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Timezone is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrTimezoneRequired)
 		return
 	}
 
 	ctx := c.Request.Context()
 	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("timezone", req.Timezone).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update timezone in database"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	var updated models.User
 	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -243,7 +244,7 @@ func UpdateTimezoneHandler(c *gin.Context) {
 func UpdateThemeHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -251,24 +252,24 @@ func UpdateThemeHandler(c *gin.Context) {
 
 	var req UpdateThemeRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Theme == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Theme is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	if req.Theme != string(models.ThemeSystem) && req.Theme != string(models.ThemeLight) && req.Theme != string(models.ThemeDark) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid theme. Allowed values: system, light, dark"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidTheme)
 		return
 	}
 
 	ctx := c.Request.Context()
 	if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Update("theme", req.Theme).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update theme in database"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	var updated models.User
 	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -278,7 +279,7 @@ func UpdateThemeHandler(c *gin.Context) {
 func UpdatePreferencesHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -286,7 +287,7 @@ func UpdatePreferencesHandler(c *gin.Context) {
 
 	var req UpdatePreferencesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -307,14 +308,14 @@ func UpdatePreferencesHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 	if len(updates) > 0 {
 		if err := database.DB.WithContext(ctx).Model(&models.User{ID: u.ID}).Updates(updates).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences in database"})
+			response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 			return
 		}
 	}
 
 	var updated models.User
 	if err := database.DB.WithContext(ctx).First(&updated, "id = ?", u.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -327,7 +328,7 @@ func UpdatePreferencesHandler(c *gin.Context) {
 func Verify2FAHandler(c *gin.Context) {
 	var req Verify2FARequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.PreAuthToken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Pre-auth token and code are required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -335,10 +336,10 @@ func Verify2FAHandler(c *gin.Context) {
 	session, token, refreshToken, err := Verify2FALogin(c.Request.Context(), req.PreAuthToken, req.Code, req.RecoveryCode, req.IsPWA, &devInfo)
 	if err != nil {
 		if errors.Is(err, ErrInvalidPreAuth) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Two-factor session expired. Please log in again."})
+			response.Error(c, http.StatusUnauthorized, response.ErrTwoFactorExpired)
 			return
 		}
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authentication code"})
+		response.Error(c, http.StatusUnauthorized, response.ErrTwoFactorInvalid)
 		return
 	}
 
@@ -360,14 +361,14 @@ func Verify2FAHandler(c *gin.Context) {
 func Setup2FAHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	res, err := Setup2FA(c.Request.Context(), u)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -378,30 +379,30 @@ func Setup2FAHandler(c *gin.Context) {
 func Enable2FAHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	var req Enable2FARequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Verification code is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	if err := Enable2FA(c.Request.Context(), u, req.Code); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrTwoFactorInvalid)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Two-factor authentication enabled successfully"})
+	response.OK(c)
 }
 
 // Disable2FAHandler turns 2FA off with password/code confirmation.
 func Disable2FAHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -410,31 +411,31 @@ func Disable2FAHandler(c *gin.Context) {
 	_ = c.ShouldBindJSON(&req)
 
 	if err := Disable2FA(c.Request.Context(), u, req.Password, req.Code); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Two-factor authentication disabled"})
+	response.OK(c)
 }
 
 // RegenerateRecoveryCodesHandler generates a new set of backup recovery codes.
 func RegenerateRecoveryCodesHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	var req RegenerateRecoveryCodesRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Password confirmation is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrPasswordRequired)
 		return
 	}
 
 	codes, err := RegenerateRecoveryCodes(c.Request.Context(), u, req.Password)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrIncorrectPassword)
 		return
 	}
 
@@ -450,7 +451,7 @@ func RegenerateRecoveryCodesHandler(c *gin.Context) {
 func PasskeyRegisterOptionsHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -458,7 +459,7 @@ func PasskeyRegisterOptionsHandler(c *gin.Context) {
 	origin := c.Request.Header.Get("Origin")
 	options, challengeID, err := BeginPasskeyRegistration(c.Request.Context(), u, origin)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -466,12 +467,12 @@ func PasskeyRegisterOptionsHandler(c *gin.Context) {
 	// Merge challenge_id into the same top-level object to avoid double-nesting.
 	raw, err := json.Marshal(options)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode options"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 	var merged map[string]any
 	if err := json.Unmarshal(raw, &merged); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decode options"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 	merged["challenge_id"] = challengeID
@@ -482,21 +483,21 @@ func PasskeyRegisterOptionsHandler(c *gin.Context) {
 func PasskeyRegisterVerifyHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	var req PasskeyRegisterVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.ChallengeID == "" || req.Credential == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Challenge ID and credential response are required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	origin := c.Request.Header.Get("Origin")
 	passkey, err := FinishPasskeyRegistration(c.Request.Context(), u, req.ChallengeID, req.Name, req.Credential, origin)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrPasskeyFailed)
 		return
 	}
 
@@ -544,7 +545,7 @@ func PasskeyLoginOptionsHandler(c *gin.Context) {
 func PasskeyLoginVerifyHandler(c *gin.Context) {
 	var req PasskeyLoginVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.ChallengeID == "" || req.Credential == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Challenge ID and credential response are required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -552,7 +553,7 @@ func PasskeyLoginVerifyHandler(c *gin.Context) {
 	devInfo := fingerprint.DetectWithClientInfo(c.Request, req.DeviceInfo)
 	session, token, refreshToken, err := FinishPasskeyLogin(c.Request.Context(), req.ChallengeID, req.Credential, req.IsPWA, origin, &devInfo)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusUnauthorized, response.ErrPasskeyFailed)
 		return
 	}
 
@@ -574,14 +575,14 @@ func PasskeyLoginVerifyHandler(c *gin.Context) {
 func ListPasskeysHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	passkeys, err := ListPasskeys(c.Request.Context(), u.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -592,42 +593,42 @@ func ListPasskeysHandler(c *gin.Context) {
 func RenamePasskeyHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	var req RenamePasskeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Passkey name is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	passkeyID := c.Param("id")
 	if err := RenamePasskey(c.Request.Context(), u.ID, passkeyID, req.Name); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrNotFound)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	response.OK(c)
 }
 
 // DeletePasskeyHandler removes a passkey.
 func DeletePasskeyHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	passkeyID := c.Param("id")
 	if err := DeletePasskey(c.Request.Context(), u.ID, passkeyID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrNotFound)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	response.OK(c)
 }
 
 // SessionItemResponse models the public audit representation of a login session.
@@ -724,13 +725,13 @@ func ListSessionsHandler(c *gin.Context) {
 func RevokeSessionHandler(c *gin.Context) {
 	sessionID := c.Param("id")
 	if sessionID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 	user := userObj.(*models.User)
@@ -739,39 +740,34 @@ func RevokeSessionHandler(c *gin.Context) {
 	currID, _ := currentSessionID.(string)
 
 	if currID != "" && sessionID == currID {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Không thể thu hồi phiên hiện tại từ màn hình này. Vui lòng sử dụng chức năng Đăng xuất.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrCannotRevokeCurrent)
 		return
 	}
 
 	var sess models.Session
 	if err := database.DB.WithContext(c.Request.Context()).Where("id = ?", sessionID).First(&sess).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		response.Error(c, http.StatusNotFound, response.ErrSessionNotFound)
 		return
 	}
 
 	if sess.UserID != user.ID && user.Role != models.RoleAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
+		response.Error(c, http.StatusForbidden, response.ErrForbidden)
 		return
 	}
 
 	if err := RevokeSession(c.Request.Context(), sessionID, "user_logout"); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke session"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "ok",
-		"message": "Session revoked successfully",
-	})
+	response.OK(c)
 }
 
 // RevokeAllOtherSessionsHandler revokes all active sessions for this user except the current one.
 func RevokeAllOtherSessionsHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 	user := userObj.(*models.User)
@@ -780,13 +776,10 @@ func RevokeAllOtherSessionsHandler(c *gin.Context) {
 	currID, _ := currentSessionID.(string)
 
 	if err := RevokeAllOtherSessions(c.Request.Context(), user.ID, currID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke other sessions"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "ok",
-		"message": "All other sessions revoked successfully",
-	})
+	response.OK(c)
 }
 

@@ -5,6 +5,7 @@ import (
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/pb"
 	"cctv/shared/pkg/pool"
+	"cctv/shared/pkg/response"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,26 +27,26 @@ func init() {
 func WebRTCHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 	camID := idStr
 
 	var cam models.Camera
 	if err := database.DB.WithContext(c.Request.Context()).First(&cam, "id = ?", camID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Camera not found"})
+		response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 		return
 	}
 
 	if !cam.IsActive || cam.IsStopped {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Camera is currently stopped"})
+		response.Error(c, http.StatusBadRequest, "DEVICE_STOPPED")
 		return
 	}
 
 	// Read SDP Offer from request body
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read SDP offer"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -115,7 +116,7 @@ func WebRTCHandler(c *gin.Context) {
 	signalingURL := fmt.Sprintf("%s/index/api/webrtc?app=live&stream=%s&type=play", webrtcURL, url.QueryEscape(camName))
 	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, signalingURL, strings.NewReader(string(body)))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create proxy request"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 		return
 	}
 	req.Header.Set("Content-Type", "text/plain;charset=utf-8")
@@ -124,19 +125,19 @@ func WebRTCHandler(c *gin.Context) {
 	httpResp, err := httpClient.Do(req)
 	if err != nil {
 		fmt.Printf("ZLMediaKit error reaching server: %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reach ZLMediaKit server: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrServiceUnavailable)
 		return
 	}
 	defer httpResp.Body.Close()
 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read ZLMediaKit answer"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 		return
 	}
 
 	if httpResp.StatusCode >= 300 {
-		c.JSON(httpResp.StatusCode, gin.H{"error": fmt.Sprintf("ZLMediaKit error: %s", string(respBody))})
+		response.Error(c, httpResp.StatusCode, response.ErrInternalError)
 		return
 	}
 
@@ -146,7 +147,7 @@ func WebRTCHandler(c *gin.Context) {
 		SDP  string `json:"sdp"`
 	}
 	if err := json.Unmarshal(respBody, &parsed); err != nil || parsed.Code != 0 || parsed.SDP == "" {
-		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("ZLMediaKit signaling failed: %s", parsed.Msg)})
+		response.Error(c, http.StatusBadGateway, response.ErrInternalError)
 		return
 	}
 
@@ -157,14 +158,14 @@ func WebRTCHandler(c *gin.Context) {
 func LiveStatusHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 	camID := idStr
 
 	var cam models.Camera
 	if err := database.DB.WithContext(c.Request.Context()).First(&cam, "id = ?", camID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Camera not found"})
+		response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 		return
 	}
 
@@ -176,20 +177,17 @@ func LiveStatusHandler(c *gin.Context) {
 }
 
 // AIHeartbeatHandler registers or refreshes a live viewer session.
-// Kept as a no-op-safe counter for NVR monitor fallback. Vision-service,
-// recognition logs, and Web Push are independent of this heartbeat and
-// run 24/7 for every camera with enable_ai=true.
 func AIHeartbeatHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 	camID := idStr
 
 	viewerID := c.Query("viewer_id")
 	if viewerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "viewer_id is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -202,18 +200,17 @@ func AIHeartbeatHandler(c *gin.Context) {
 }
 
 // AIStopHandler explicitly unregisters a viewer, freeing CV resources immediately
-// instead of waiting for the heartbeat TTL to expire.
 func AIStopHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid camera ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 	camID := idStr
 
 	viewerID := c.Query("viewer_id")
 	if viewerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "viewer_id is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -230,7 +227,7 @@ func PoolReleaseHandler(c *gin.Context) {
 	camID := c.Param("id")
 	streamName := c.Query("stream_name")
 	if camID == "" || streamName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "camera id and stream_name are required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -240,7 +237,7 @@ func PoolReleaseHandler(c *gin.Context) {
 		StreamName: streamName,
 	})
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to release pool stream: " + err.Error()})
+		response.Error(c, http.StatusBadGateway, response.ErrPoolUnavailable)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "released", "stream_name": streamName})
@@ -251,7 +248,7 @@ func PoolHeartbeatHandler(c *gin.Context) {
 	camID := c.Param("id")
 	streamName := c.Query("stream_name")
 	if camID == "" || streamName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "camera id and stream_name are required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -261,7 +258,7 @@ func PoolHeartbeatHandler(c *gin.Context) {
 		StreamName: streamName,
 	})
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to heartbeat pool stream: " + err.Error()})
+		response.Error(c, http.StatusBadGateway, response.ErrPoolUnavailable)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "alive", "stream_name": streamName})

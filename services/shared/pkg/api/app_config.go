@@ -18,6 +18,7 @@ import (
 	"cctv/shared/pkg/google"
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/nanoid"
+	"cctv/shared/pkg/response"
 	"cctv/shared/pkg/storage"
 
 	"github.com/gin-gonic/gin"
@@ -51,13 +52,13 @@ type GenerateMobileConfigRequest = GenerateAppConfigRequest
 // ListAppConfigs handles GET /api/app-configs (and legacy /api/mobile-configs)
 func ListAppConfigs(c *gin.Context) {
 	if database.DB == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cơ sở dữ liệu chưa sẵn sàng"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
 	var list []models.AppConfig
 	if err := database.DB.Preload("Client").Preload("GoogleServiceAccount").Order("created_at DESC").Find(&list).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể truy vấn danh sách cấu hình"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 		return
 	}
 
@@ -68,17 +69,17 @@ func ListAppConfigs(c *gin.Context) {
 func GetAppConfig(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var cfg models.AppConfig
 	if err := database.DB.Preload("Client").Preload("GoogleServiceAccount").First(&cfg, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy cấu hình ứng dụng"})
+			response.Error(c, http.StatusNotFound, response.ErrConfigNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi truy vấn cơ sở dữ liệu"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
@@ -89,18 +90,18 @@ func GetAppConfig(c *gin.Context) {
 func GenerateAppConfig(c *gin.Context) {
 	var req GenerateAppConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Dữ liệu yêu cầu không hợp lệ: " + err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	req.PIN = strings.TrimSpace(req.PIN)
 	if len(req.PIN) != 6 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Mã PIN bắt buộc phải đúng 6 chữ số"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidPinLength)
 		return
 	}
 	for _, ch := range req.PIN {
 		if ch < '0' || ch > '9' {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Mã PIN chỉ được chứa các chữ số từ 0 đến 9"})
+			response.Error(c, http.StatusBadRequest, response.ErrInvalidPinFormat)
 			return
 		}
 	}
@@ -130,7 +131,7 @@ func GenerateAppConfig(c *gin.Context) {
 		newClientID := auth.GenerateClientId(platform)
 		newAPIKey, err := auth.GenerateClientApiKey(platform)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể sinh API Key: " + err.Error()})
+			response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 			return
 		}
 
@@ -145,12 +146,12 @@ func GenerateAppConfig(c *gin.Context) {
 			RateLimitRPS: 60,
 		}
 		if err := database.DB.Create(&client).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể tự động tạo Client API Key: " + err.Error()})
+			response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 			return
 		}
 	} else {
 		if err := database.DB.First(&client, "client_id = ?", req.ClientID).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Không tìm thấy client ứng dụng đã chọn"})
+			response.Error(c, http.StatusBadRequest, response.ErrClientNotFound)
 			return
 		}
 	}
@@ -273,7 +274,7 @@ func GenerateAppConfig(c *gin.Context) {
 
 	hscfgBytes, checksum, err := appconfig.PackAndEncrypt(packOpts)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể đóng gói container .hscfg: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrConfigPackFailed)
 		return
 	}
 
@@ -290,11 +291,11 @@ func GenerateAppConfig(c *gin.Context) {
 			},
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi lưu file .hscfg lên hệ thống lưu trữ: " + err.Error()})
+			response.Error(c, http.StatusInternalServerError, response.ErrStorageError)
 			return
 		}
 	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Dịch vụ lưu trữ hệ thống chưa sẵn sàng"})
+		response.Error(c, http.StatusInternalServerError, response.ErrStorageUnavailable)
 		return
 	}
 
@@ -321,14 +322,13 @@ func GenerateAppConfig(c *gin.Context) {
 	}
 
 	if err := database.DB.Create(&appCfg).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lưu cấu hình vào cơ sở dữ liệu: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"success": true,
-		"message": "Đã tạo và mã hóa file cấu hình .hscfg thành công",
-		"config":  appCfg,
+		"status": "ok",
+		"config": appCfg,
 	})
 }
 
@@ -336,25 +336,25 @@ func GenerateAppConfig(c *gin.Context) {
 func DownloadAppConfig(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var cfg models.AppConfig
 	if err := database.DB.First(&cfg, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy cấu hình ứng dụng"})
+		response.Error(c, http.StatusNotFound, response.ErrConfigNotFound)
 		return
 	}
 
 	if storage.S3Client == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Dịch vụ lưu trữ hệ thống chưa sẵn sàng"})
+		response.Error(c, http.StatusInternalServerError, response.ErrStorageUnavailable)
 		return
 	}
 
 	ctx := c.Request.Context()
 	obj, err := storage.S3Client.GetObject(ctx, storage.S3Bucket, cfg.ObjectKey, minio.GetObjectOptions{})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể đọc file từ hệ thống lưu trữ: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrStorageError)
 		return
 	}
 	defer obj.Close()
@@ -375,13 +375,13 @@ func DownloadAppConfig(c *gin.Context) {
 func GetAppConfigQR(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var cfg models.AppConfig
 	if err := database.DB.First(&cfg, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy cấu hình ứng dụng"})
+		response.Error(c, http.StatusNotFound, response.ErrConfigNotFound)
 		return
 	}
 
@@ -389,7 +389,7 @@ func GetAppConfigQR(c *gin.Context) {
 	ctx := c.Request.Context()
 	presignedURL, err := storage.PresignedGetObjectURL(ctx, cfg.ObjectKey, 24*time.Hour)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể tạo presigned URL: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrStorageError)
 		return
 	}
 
@@ -405,13 +405,13 @@ func GetAppConfigQR(c *gin.Context) {
 	}
 	qrBytes, err := json.Marshal(qrPayload)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi mã hóa dữ liệu QR: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 		return
 	}
 
 	pngBytes, err := qrcode.Encode(string(qrBytes), qrcode.Medium, 320)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể tạo mã QR PNG: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalError)
 		return
 	}
 
@@ -429,13 +429,13 @@ func GetAppConfigQR(c *gin.Context) {
 func DeleteAppConfig(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var cfg models.AppConfig
 	if err := database.DB.First(&cfg, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy cấu hình ứng dụng"})
+		response.Error(c, http.StatusNotFound, response.ErrConfigNotFound)
 		return
 	}
 
@@ -445,11 +445,11 @@ func DeleteAppConfig(c *gin.Context) {
 	}
 
 	if err := database.DB.Delete(&cfg).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể xóa bản ghi cấu hình"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Đã xóa cấu hình ứng dụng thành công"})
+	response.OK(c)
 }
 
 // Aliases for backwards compatibility with any remaining mobile naming
@@ -466,13 +466,13 @@ var (
 func PreflightFirebaseApps(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	var sa models.GoogleServiceAccount
 	if err := database.DB.First(&sa, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy service account"})
+		response.Error(c, http.StatusNotFound, response.ErrServiceAccountNotFound)
 		return
 	}
 
@@ -481,16 +481,11 @@ func PreflightFirebaseApps(c *gin.Context) {
 
 	result, err := google.InspectFirebaseProject(ctx, sa.RawJSON)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success":    false,
-			"error":      err.Error(),
-			"project_id": sa.ProjectID,
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrFirebaseInspectFailed)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":      true,
 		"project_id":   result.ProjectID,
 		"android_apps": result.AndroidApps,
 		"ios_apps":     result.IosApps,

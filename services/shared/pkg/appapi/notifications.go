@@ -9,6 +9,7 @@ import (
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/notification"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -53,20 +54,13 @@ func getAppUserID(c *gin.Context) string {
 func RegisterPushTokenHandler(c *gin.Context) {
 	var req RegisterPushTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"code":    "INVALID_INPUT",
-			"message": "FCM Token là bắt buộc.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrPushTokenRequired)
 		return
 	}
 
 	token := strings.TrimSpace(req.FCMToken)
 	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "FCM Token không được để trống.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrPushTokenRequired)
 		return
 	}
 
@@ -101,7 +95,6 @@ func RegisterPushTokenHandler(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "ok",
-			"message":   "Đăng ký token thành công.",
 			"device_id": sub.ID,
 		})
 		return
@@ -115,16 +108,12 @@ func RegisterPushTokenHandler(c *gin.Context) {
 		UserID:    userID,
 	}
 	if err := database.DB.WithContext(c.Request.Context()).Create(&newSub).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Lỗi lưu đăng ký FCM token: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "ok",
-		"message":   "Đăng ký token thành công.",
 		"device_id": newSub.ID,
 	})
 }
@@ -133,10 +122,7 @@ func RegisterPushTokenHandler(c *gin.Context) {
 func UnregisterPushTokenHandler(c *gin.Context) {
 	var req UnregisterPushTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "FCM Token là bắt buộc.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrPushTokenRequired)
 		return
 	}
 
@@ -147,10 +133,7 @@ func UnregisterPushTokenHandler(c *gin.Context) {
 		Where("endpoint = ?", endpoint).
 		Delete(&models.PushSubscription{}).Error
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "ok",
-		"message": "Hủy đăng ký token thành công.",
-	})
+	response.OK(c)
 }
 
 // GetUnreadCountHandler is an ultra-fast query for app icon notification badge counter.
@@ -211,10 +194,7 @@ func ListNotificationsHandler(c *gin.Context) {
 		Find(&items).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Lỗi lấy danh sách thông báo: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -252,15 +232,15 @@ func MarkNotificationReadHandler(c *gin.Context) {
 		Update("is_read", true)
 
 	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": res.Error.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "Thông báo không tồn tại."})
+		response.Error(c, http.StatusNotFound, response.ErrNotificationNotFound)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Đã đánh dấu đọc."})
+	response.OK(c)
 }
 
 // MarkAllNotificationsReadHandler marks all notifications as read.
@@ -270,7 +250,7 @@ func MarkAllNotificationsReadHandler(c *gin.Context) {
 		Where("is_read = ?", false).
 		Update("is_read", true).Error
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Đã đánh dấu đọc tất cả thông báo."})
+	response.OK(c)
 }
 
 // DeleteNotificationHandler removes a notification record.
@@ -281,13 +261,13 @@ func DeleteNotificationHandler(c *gin.Context) {
 		Delete(&models.Notification{})
 
 	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": res.Error.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "Thông báo không tồn tại."})
+		response.Error(c, http.StatusNotFound, response.ErrNotificationNotFound)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Xóa thông báo thành công."})
+	response.OK(c)
 }

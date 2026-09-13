@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/recording"
+	"cctv/shared/pkg/response"
 	"cctv/shared/pkg/storage"
 
 	"github.com/gin-gonic/gin"
@@ -34,19 +35,13 @@ func GetArchiveCalendarHandler(c *gin.Context) {
 	month, _ := strconv.Atoi(monthStr)
 
 	if year == 0 || month == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Năm (year) và tháng (month) là bắt buộc.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	days, err := recording.GetAvailableDays(c.Request.Context(), cameraID, year, month)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Lỗi truy vấn lịch bản ghi: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -67,28 +62,19 @@ func GetArchiveTimelineHandler(c *gin.Context) {
 
 	from, err := time.Parse(time.RFC3339, fromStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Định dạng thời gian 'from' không hợp lệ (RFC3339).",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	to, err := time.Parse(time.RFC3339, toStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Định dạng thời gian 'to' không hợp lệ (RFC3339).",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	records, err := recording.GetTimeline(c.Request.Context(), from, to, cameraID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Lỗi tải dữ liệu timeline: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -122,10 +108,7 @@ func GetArchivePlayStreamHandler(c *gin.Context) {
 	recordingID := c.Param("recording_id")
 	rec, err := recording.GetByID(c.Request.Context(), recordingID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":  "error",
-			"message": "Bản ghi không tồn tại.",
-		})
+		response.Error(c, http.StatusNotFound, response.ErrRecordingNotFound)
 		return
 	}
 
@@ -142,10 +125,7 @@ func GetArchivePlayStreamHandler(c *gin.Context) {
 
 	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, rec.FilePath, expiry, reqParams)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Không thể sinh URL phát video: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -173,20 +153,14 @@ func GetArchiveThumbnailHandler(c *gin.Context) {
 	recordingID := c.Param("recording_id")
 	rec, err := recording.GetByID(c.Request.Context(), recordingID)
 	if err != nil || rec.ThumbnailPath == nil || *rec.ThumbnailPath == "" {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":  "error",
-			"message": "Thumbnail không tồn tại.",
-		})
+		response.Error(c, http.StatusNotFound, response.ErrNotFound)
 		return
 	}
 
 	expiry := 2 * time.Hour
 	presignedURL, err := storage.S3Client.PresignedGetObject(c.Request.Context(), storage.S3Bucket, *rec.ThumbnailPath, expiry, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Không thể sinh URL thumbnail: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 

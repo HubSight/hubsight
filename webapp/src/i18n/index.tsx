@@ -7,6 +7,7 @@ import vi from './vi';
 import en from './en';
 import type { TranslationKey } from './vi';
 
+export type { TranslationKey };
 export type Locale = 'vi' | 'en';
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { vi, en };

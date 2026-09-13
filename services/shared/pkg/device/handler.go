@@ -13,6 +13,7 @@ import (
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/mq"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -21,7 +22,7 @@ import (
 func ListDevicesHandler(c *gin.Context) {
 	devices, err := GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch devices"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -37,7 +38,7 @@ func ListAICamerasHandler(c *gin.Context) {
 	secret := c.GetHeader("X-Service-Key")
 	expected := os.Getenv("M2M_SECRET")
 	if expected != "" && secret != expected {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized internal access"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -49,7 +50,7 @@ func ListAICamerasHandler(c *gin.Context) {
 		Find(&devices).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch AI cameras: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -65,7 +66,7 @@ func ListPoolCamerasHandler(c *gin.Context) {
 	secret := c.GetHeader("X-Service-Key")
 	expected := os.Getenv("M2M_SECRET")
 	if expected != "" && secret != expected {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized internal access"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -76,7 +77,7 @@ func ListPoolCamerasHandler(c *gin.Context) {
 		Find(&devices).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cameras for pool: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -91,13 +92,13 @@ func AddDeviceHandler(c *gin.Context) {
 	var req DeviceInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	dev, err := Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create device"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDeviceCreateFailed)
 		return
 	}
 
@@ -109,46 +110,46 @@ func AddDeviceHandler(c *gin.Context) {
 func DeleteDeviceHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 
 	if err := Delete(c.Request.Context(), idStr); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete device"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDeviceDeleteFailed)
 		return
 	}
 
 	// Notify Connection Pool and Relay of deleted device
 	mq.PublishCameraEvent("camera.deleted", gin.H{"id": idStr})
 
-	c.JSON(http.StatusOK, gin.H{"message": "Device deleted successfully"})
+	response.OK(c)
 }
 
 func UpdateDeviceHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 
 	var req DeviceInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	dev, err := Update(c.Request.Context(), idStr, req)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDeviceUpdateFailed)
 		return
 	}
 
@@ -162,7 +163,7 @@ func UpdateDeviceHandler(c *gin.Context) {
 func SetHomographyHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 
@@ -170,17 +171,17 @@ func SetHomographyHandler(c *gin.Context) {
 		Points []HomographyPoint `json:"points" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
 	dev, err := SetHomography(c.Request.Context(), idStr, req.Points)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -194,28 +195,28 @@ func InvalidateHomographyHandler(c *gin.Context) {
 	secret := c.GetHeader("X-Service-Key")
 	expected := os.Getenv("M2M_SECRET")
 	if expected != "" && secret != expected {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized internal access"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 
 	dev, err := InvalidateHomography(c.Request.Context(), idStr)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to invalidate homography"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	mq.PublishCameraEvent("camera.updated", CameraEventPayload(dev))
-	c.JSON(http.StatusOK, gin.H{"message": "Homography invalidated"})
+	response.OK(c)
 }
 
 func pickAlternativeCamera(c *gin.Context, stoppedID string) (id, name string) {
@@ -233,17 +234,17 @@ func pickAlternativeCamera(c *gin.Context, stoppedID string) (id, name string) {
 func StopDeviceHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 
 	dev, err := SetStopped(c.Request.Context(), idStr, true)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stop device"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDeviceUpdateFailed)
 		return
 	}
 
@@ -268,17 +269,17 @@ func StopDeviceHandler(c *gin.Context) {
 func StartDeviceHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 
 	dev, err := SetStopped(c.Request.Context(), idStr, false)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start device"})
+		response.Error(c, http.StatusInternalServerError, response.ErrDeviceUpdateFailed)
 		return
 	}
 
@@ -295,22 +296,22 @@ var snapshotClient = &http.Client{Timeout: 6 * time.Second}
 func GetDeviceSnapshotHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid device ID"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidDeviceID)
 		return
 	}
 
 	var dev models.Camera
 	if err := database.DB.WithContext(c.Request.Context()).Where("id = ?", idStr).First(&dev).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Device not found"})
+			response.Error(c, http.StatusNotFound, response.ErrDeviceNotFound)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query device: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	if !dev.IsActive || dev.IsStopped {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Device is inactive or stopped"})
+		response.Error(c, http.StatusServiceUnavailable, response.ErrPoolUnavailable)
 		return
 	}
 
@@ -339,20 +340,19 @@ func GetDeviceSnapshotHandler(c *gin.Context) {
 
 	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, reqURL, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create frame request: " + err.Error()})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	resp, err := snapshotClient.Do(req)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Media router unavailable: " + err.Error()})
+		response.Error(c, http.StatusBadGateway, response.ErrPoolUnavailable)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		c.JSON(resp.StatusCode, gin.H{"error": "Snapshot unavailable: " + string(body)})
+		response.Error(c, resp.StatusCode, response.ErrPoolUnavailable)
 		return
 	}
 

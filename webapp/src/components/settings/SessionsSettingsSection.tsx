@@ -16,10 +16,10 @@ import {
   MapPin,
 } from '@/components/icons';
 import { api } from '../../api/client';
-import { isApiError, getErrorMessage } from '@hubsight/sdk';
 import { useTranslation } from '../../i18n';
 import type { SessionItem } from '@hubsight/sdk';
 import { StaticMap } from '../common/StaticMap';
+import { getLocalizedErrorMessage } from '../../lib/errors';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -29,15 +29,13 @@ export const SessionsSettingsSection: React.FC = () => {
   const { t } = useTranslation();
 
   const [sessions, setSessions] = useState<SessionItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPastSessions, setShowPastSessions] = useState(false);
-
-  // Modal confirmation states
   const [targetSession, setTargetSession] = useState<SessionItem | null>(null);
   const [showRevokeAllModal, setShowRevokeAllModal] = useState(false);
+  const [showPastSessions, setShowPastSessions] = useState(false);
 
   useEffect(() => {
     loadSessions();
@@ -50,11 +48,7 @@ export const SessionsSettingsSection: React.FC = () => {
       const list = await api.auth.listSessions();
       setSessions(list || []);
     } catch (err) {
-      if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Không thể tải danh sách phiên đăng nhập.'));
-      } else {
-        setError('Không thể kết nối máy chủ để lấy danh sách phiên.');
-      }
+      setError(getLocalizedErrorMessage(err, t, t('errors.UNKNOWN')));
     } finally {
       setLoading(false);
     }
@@ -73,11 +67,7 @@ export const SessionsSettingsSection: React.FC = () => {
       await loadSessions();
       setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
-      if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Lỗi khi thu hồi phiên đăng nhập.'));
-      } else {
-        setError(err?.message || 'Lỗi khi thu hồi phiên đăng nhập.');
-      }
+      setError(getLocalizedErrorMessage(err, t, t('errors.UNKNOWN')));
     } finally {
       setActionLoading(false);
     }
@@ -96,11 +86,7 @@ export const SessionsSettingsSection: React.FC = () => {
       await loadSessions();
       setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
-      if (isApiError(err)) {
-        setError(getErrorMessage(err, 'Lỗi khi thu hồi các phiên khác.'));
-      } else {
-        setError(err?.message || 'Lỗi khi thu hồi các phiên khác.');
-      }
+      setError(getLocalizedErrorMessage(err, t, t('errors.UNKNOWN')));
     } finally {
       setActionLoading(false);
     }

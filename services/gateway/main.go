@@ -213,8 +213,9 @@ func main() {
 
 		if apiKey == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Missing client API key or client ID",
-				"code":  "CLIENT_KEY_REQUIRED",
+				"status": "error",
+				"code":   "CLIENT_KEY_REQUIRED",
+				"error":  "CLIENT_KEY_REQUIRED",
 			})
 			return
 		}
@@ -226,8 +227,9 @@ func main() {
 				keyResp.Body.Close()
 			}
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": "Invalid or deactivated client API key",
-				"code":  "INVALID_CLIENT_KEY",
+				"status": "error",
+				"code":   "INVALID_CLIENT_KEY",
+				"error":  "INVALID_CLIENT_KEY",
 			})
 			return
 		}
@@ -248,8 +250,9 @@ func main() {
 
 		if token == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Authentication required. Missing auth token",
-				"code":  "AUTH_REQUIRED",
+				"status": "error",
+				"code":   "AUTH_REQUIRED",
+				"error":  "AUTH_REQUIRED",
 			})
 			return
 		}
@@ -261,8 +264,9 @@ func main() {
 				tokResp.Body.Close()
 			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Unauthorized: Session invalid or expired",
-				"code":  "INVALID_TOKEN",
+				"status": "error",
+				"code":   "INVALID_TOKEN",
+				"error":  "INVALID_TOKEN",
 			})
 			return
 		}
@@ -273,8 +277,9 @@ func main() {
 		if err := json.NewDecoder(tokResp.Body).Decode(&valResp); err != nil || !valResp.Valid {
 			tokResp.Body.Close()
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Unauthorized: Session invalid or expired",
-				"code":  "INVALID_TOKEN",
+				"status": "error",
+				"code":   "INVALID_TOKEN",
+				"error":  "INVALID_TOKEN",
 			})
 			return
 		}
@@ -318,7 +323,11 @@ func main() {
 
 		// If the request is for an API route that wasn't matched, return 404 JSON
 		if strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/relay") || strings.HasPrefix(path, "/webrtc") || strings.HasPrefix(path, "/docs") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "route not found in gateway"})
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"code":   "ROUTE_NOT_FOUND",
+				"error":  "ROUTE_NOT_FOUND",
+			})
 			return
 		}
 
@@ -353,14 +362,23 @@ func main() {
 			strings.HasSuffix(path, ".woff") ||
 			strings.HasSuffix(path, ".json") ||
 			strings.HasSuffix(path, ".webmanifest") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "asset not found"})
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"code":   "ASSET_NOT_FOUND",
+				"error":  "ASSET_NOT_FOUND",
+			})
 			return
 		}
 
 		// Fallback to index.html for SPA routing (React/Vite)
 		index := filepath.Join(publicDir, "index.html")
 		if _, err := os.Stat(index); err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "frontend not found", "public_dir": publicDir})
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":     "error",
+				"code":       "FRONTEND_NOT_FOUND",
+				"error":      "FRONTEND_NOT_FOUND",
+				"public_dir": publicDir,
+			})
 			return
 		}
 		// Never cache SPA entrypoint so new bundle hashes are loaded immediately

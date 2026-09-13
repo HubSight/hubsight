@@ -9,6 +9,7 @@ import (
 	"cctv/shared/pkg/auth"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,7 +41,7 @@ type SessionItemDTO struct {
 func GetProfileHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -57,14 +58,14 @@ func GetProfileHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, u)
+	response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 }
 
-// UpdateProfileHandler updates profile details (name, preferences, locale, timezone, theme).
+// UpdateProfileHandler allows the user to update their full name, locale, timezone, theme, or push preferences.
 func UpdateProfileHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -72,11 +73,7 @@ func UpdateProfileHandler(c *gin.Context) {
 
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"code":    "INVALID_INPUT",
-			"message": "Dữ liệu cập nhật không hợp lệ.",
-		})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -103,10 +100,7 @@ func UpdateProfileHandler(c *gin.Context) {
 	if err := database.DB.WithContext(c.Request.Context()).
 		Model(&models.User{ID: u.ID}).
 		Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Lỗi lưu thông tin hồ sơ: " + err.Error(),
-		})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -118,9 +112,8 @@ func UpdateProfileHandler(c *gin.Context) {
 	auth.LoadUserPermissions(c.Request.Context(), &fresh)
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "ok",
-		"message": "Cập nhật hồ sơ thành công.",
-		"user":    fresh,
+		"status": "ok",
+		"user":   fresh,
 	})
 }
 
@@ -128,7 +121,7 @@ func UpdateProfileHandler(c *gin.Context) {
 func ListSessionsHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
@@ -155,7 +148,7 @@ func ListSessionsHandler(c *gin.Context) {
 		Find(&sessions).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch sessions"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
@@ -165,6 +158,7 @@ func ListSessionsHandler(c *gin.Context) {
 		if len(currentTokenHash) > 0 && string(s.TokenHash) == string(currentTokenHash) {
 			isCurrent = true
 		}
+
 		dtos = append(dtos, SessionItemDTO{
 			ID:           s.ID,
 			ClientID:     s.ClientID,
@@ -191,14 +185,14 @@ func ListSessionsHandler(c *gin.Context) {
 func RevokeSessionHandler(c *gin.Context) {
 	userObj, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, http.StatusUnauthorized, response.ErrUnauthorized)
 		return
 	}
 
 	u := userObj.(*models.User)
 	sessionID := c.Param("id")
 	if sessionID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID is required"})
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
 
@@ -207,17 +201,14 @@ func RevokeSessionHandler(c *gin.Context) {
 		Delete(&models.Session{})
 
 	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke session"})
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
 		return
 	}
 
 	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		response.Error(c, http.StatusNotFound, response.ErrSessionNotFound)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "ok",
-		"message": "Thu hồi phiên đăng nhập thành công.",
-	})
+	response.OK(c)
 }

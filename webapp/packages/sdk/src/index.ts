@@ -36,6 +36,7 @@ export {
   isHubSightError,
   isApiError,
   getErrorMessage,
+  getErrorCode,
   toApiError,
   apiErrorMessage,
   type HubSightErrorOptions,

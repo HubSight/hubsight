@@ -20,10 +20,11 @@ import {
   Monitor,
 } from '@/components/icons';
 import { api } from '../api/client';
-import { isApiError, getErrorMessage, isPasskeySupported } from '@hubsight/sdk';
+import { isPasskeySupported } from '@hubsight/sdk';
 import type { User as UserType } from '@hubsight/sdk';
 import { AppFooter } from '../components/AppFooter';
 import { useTheme } from '../context/ThemeContext';
+import { getLocalizedErrorMessage } from '../lib/errors';
 
 /** Returns the default post-login route based on the user's role and permissions. */
 function getDefaultRoute(user: UserType | null | undefined): string {
@@ -102,11 +103,7 @@ const Login = () => {
       await checkAuth();
       navigate(getDefaultRoute(api.auth.getUser()));
     } catch (err) {
-      if (isApiError(err)) {
-        setError(getErrorMessage(err, t('login.authFailed')));
-      } else {
-        setError(t('login.networkError'));
-      }
+      setError(getLocalizedErrorMessage(err, t, t('login.authFailed')));
     } finally {
       setLoading(false);
     }
@@ -127,11 +124,7 @@ const Login = () => {
       await checkAuth();
       navigate(getDefaultRoute(api.auth.getUser()));
     } catch (err) {
-      if (isApiError(err)) {
-        setError(getErrorMessage(err, t('login.invalid2faCode')));
-      } else {
-        setError(t('login.invalid2faCode'));
-      }
+      setError(getLocalizedErrorMessage(err, t, t('login.invalid2faCode')));
     } finally {
       setLoading(false);
     }
@@ -168,26 +161,26 @@ const Login = () => {
       if (serverErr === 'username_required' || serverErr === 'USERNAME_REQUIRED') {
         setError(t('login.usernameRequired'));
         usernameInputRef.current?.focus();
-      } else if (serverErr === 'user not found' || serverErr === 'user_not_found') {
+      } else if (serverErr === 'user not found' || serverErr === 'user_not_found' || serverErr === 'USER_NOT_FOUND') {
         setError(t('login.userNotFound'));
         usernameInputRef.current?.select();
       } else if (
         serverErr === 'user account is deactivated' ||
         serverErr === 'user is inactive' ||
-        serverErr === 'user_inactive'
+        serverErr === 'user_inactive' ||
+        serverErr === 'USER_INACTIVE'
       ) {
         setError(t('login.userInactive'));
-      } else if (serverErr.includes('no passkey') || serverErr === 'no_passkey') {
+      } else if (serverErr.includes('no passkey') || serverErr === 'no_passkey' || serverErr === 'NO_PASSKEY') {
         setError(t('login.noPasskeyForUser'));
       } else if (
         serverErr === 'credential does not belong to specified user' ||
-        serverErr === 'user_mismatch'
+        serverErr === 'user_mismatch' ||
+        serverErr === 'USER_MISMATCH'
       ) {
         setError(t('login.userMismatch'));
-      } else if (isApiError(err)) {
-        setError(getErrorMessage(err, t('login.passkeyFailed')));
       } else {
-        setError(err?.message || t('login.passkeyFailed'));
+        setError(getLocalizedErrorMessage(err, t, t('login.passkeyFailed')));
       }
     } finally {
       setPasskeyLoading(false);
