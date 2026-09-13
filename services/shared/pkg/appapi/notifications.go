@@ -1,6 +1,7 @@
 package appapi
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -270,4 +271,26 @@ func DeleteNotificationHandler(c *gin.Context) {
 	}
 
 	response.OK(c)
+}
+
+// BatchDeleteNotificationHandler removes multiple notification records.
+func BatchDeleteNotificationHandler(c *gin.Context) {
+	deleted, err := notification.BatchDeleteNotifications(c.Request.Context(), c.Query("ids"))
+	if errors.Is(err, notification.ErrNotificationIDsRequired) {
+		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
+		return
+	}
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, response.ErrInternalServer)
+		return
+	}
+	if deleted == 0 {
+		response.Error(c, http.StatusNotFound, response.ErrNotificationNotFound)
+		return
+	}
+
+	response.OK(c, gin.H{
+		"status":  "ok",
+		"deleted": deleted,
+	})
 }

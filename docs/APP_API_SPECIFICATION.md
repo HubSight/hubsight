@@ -80,6 +80,7 @@ Quản trị viên có toàn quyền kích hoạt công tắc khẩn cấp (Kill
 | | `GET /api/app/v1/notifications` | Có | Lấy danh sách thông báo phân trang, lọc theo danh mục |
 | | `PATCH /api/app/v1/notifications/:id/read` | Có | Đánh dấu đã đọc 1 thông báo |
 | | `POST /api/app/v1/notifications/read-all` | Có | Đánh dấu tất cả thông báo là đã đọc |
+| | `DELETE /api/app/v1/notifications/batch?ids=:id1,:id2` | Có | Xóa nhiều thông báo trong một request |
 | | `DELETE /api/app/v1/notifications/:id` | Có | Xóa 1 thông báo |
 
 ---
@@ -368,6 +369,20 @@ Response siêu nhẹ để hiển thị số badge trên icon ứng dụng:
   "unread_count": 4
 }
 ```
+
+#### `DELETE /api/app/v1/notifications/batch?ids=:id1,:id2`
+
+Tham số query `ids` là danh sách ID thông báo, phân tách bằng dấu phẩy. ID rỗng và ID trùng lặp được bỏ qua.
+
+Response `200 OK`:
+```json
+{
+  "status": "ok",
+  "deleted": 2
+}
+```
+
+Request không có ID hợp lệ trả về `400 INVALID_INPUT`; nếu không tìm thấy bất kỳ thông báo nào thì trả về `404 NOTIFICATION_NOT_FOUND`.
 
 ---
 

@@ -64,6 +64,7 @@ func RegisterAppRoutes(rg *gin.RouterGroup) {
 		protected.GET("/notifications/unread-count", GetUnreadCountHandler)
 		protected.PATCH("/notifications/:id/read", MarkNotificationReadHandler)
 		protected.POST("/notifications/read-all", MarkAllNotificationsReadHandler)
+		protected.DELETE("/notifications/batch", BatchDeleteNotificationHandler)
 		protected.DELETE("/notifications/:id", DeleteNotificationHandler)
 	}
 }

@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -146,6 +147,28 @@ func DeleteNotificationHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+// BatchDeleteHandler removes multiple notifications through the main API.
+func BatchDeleteHandler(c *gin.Context) {
+	deleted, err := BatchDeleteNotifications(c.Request.Context(), c.Query("ids"))
+	if errors.Is(err, ErrNotificationIDsRequired) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No notification IDs provided"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete notifications: " + err.Error()})
+		return
+	}
+	if deleted == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Notifications not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "ok",
+		"deleted": deleted,
+	})
 }
 
 // ClearAllNotificationsHandler deletes every in-app notification.
