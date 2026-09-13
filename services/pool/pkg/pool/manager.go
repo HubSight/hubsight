@@ -128,6 +128,11 @@ func (m *Manager) UpsertCamera(ctx context.Context, camID, name, host string, is
 			m.unregister(ctx, p.CVConnection)
 			p.CVConnection = nil
 		}
+		// Unconditionally force-close all stream variants (thumb, cv, nvr) by name in ZLMediaKit
+		// to guarantee that no orphaned ffmpeg pulls or proxy streams survive across restarts/updates.
+		_ = m.zlm.CloseStreams(ctx, fmt.Sprintf("cam_%s_thumb", camID))
+		_ = m.zlm.CloseStreams(ctx, fmt.Sprintf("cam_%s_cv", camID))
+		_ = m.zlm.CloseStreams(ctx, fmt.Sprintf("cam_%s_nvr", camID))
 		log.Printf("[Pool] Camera %s stopped or deactivated. All pool connections terminated immediately.", camID)
 		m.scheduleNotify()
 		return nil
@@ -451,6 +456,9 @@ func (m *Manager) DeleteCamera(ctx context.Context, camID string) {
 	for _, conn := range p.LivePool {
 		m.unregister(ctx, conn)
 	}
+	_ = m.zlm.CloseStreams(ctx, fmt.Sprintf("cam_%s_thumb", camID))
+	_ = m.zlm.CloseStreams(ctx, fmt.Sprintf("cam_%s_cv", camID))
+	_ = m.zlm.CloseStreams(ctx, fmt.Sprintf("cam_%s_nvr", camID))
 	log.Printf("[Pool] Camera %s completely removed from connection pool.", camID)
 	m.scheduleNotify()
 }

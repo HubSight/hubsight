@@ -166,7 +166,7 @@ func (c *ZLMClient) RegisterStream(ctx context.Context, streamName, rtspURL stri
 }
 
 // UnregisterStream removes a previously registered stream by its proxy key.
-// Falls back to a name-based close_stream if no key is available (e.g. state
+// Falls back to a name-based close_streams if no key is available (e.g. state
 // lost across a pool-service restart) — best-effort recovery path only.
 func (c *ZLMClient) UnregisterStream(ctx context.Context, streamName, proxyKey string) error {
 	if proxyKey != "" {
@@ -176,7 +176,7 @@ func (c *ZLMClient) UnregisterStream(ctx context.Context, streamName, proxyKey s
 			// of addStreamProxy (thumb/cv) — ZLMediaKit uses a separate
 			// delete endpoint for those, keyed the same way.
 			if _, err2 := c.doForm(ctx, "/index/api/delFFmpegSource", form); err2 != nil {
-				log.Printf("[ZLMediaKit] Failed to unregister %s by key (proxy: %v, ffmpeg: %v) — falling back to close_stream", streamName, err, err2)
+				log.Printf("[ZLMediaKit] Failed to unregister %s by key (proxy: %v, ffmpeg: %v) — falling back to close_streams", streamName, err, err2)
 			} else {
 				log.Printf("[ZLMediaKit] Stream unregistered (ffmpeg source): %s", streamName)
 				return nil
@@ -187,11 +187,16 @@ func (c *ZLMClient) UnregisterStream(ctx context.Context, streamName, proxyKey s
 		}
 	}
 
-	form := url.Values{"schema": {"rtsp"}, "vhost": {zlmVhost}, "app": {c.App}, "stream": {streamName}, "force": {"1"}}
-	if _, err := c.doForm(ctx, "/index/api/close_stream", form); err != nil {
-		return fmt.Errorf("failed to unregister stream from ZLMediaKit (%s): %w", streamName, err)
+	return c.CloseStreams(ctx, streamName)
+}
+
+// CloseStreams force-closes all schemas and terminates any underlying ffmpeg processes for a stream.
+func (c *ZLMClient) CloseStreams(ctx context.Context, streamName string) error {
+	form := url.Values{"vhost": {zlmVhost}, "app": {c.App}, "stream": {streamName}, "force": {"1"}}
+	if _, err := c.doForm(ctx, "/index/api/close_streams", form); err != nil {
+		return fmt.Errorf("failed to close streams from ZLMediaKit (%s): %w", streamName, err)
 	}
-	log.Printf("[ZLMediaKit] Stream force-closed (no key on record): %s", streamName)
+	log.Printf("[ZLMediaKit] Stream force-closed across all schemas: %s", streamName)
 	return nil
 }
 
