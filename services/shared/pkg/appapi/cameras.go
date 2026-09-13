@@ -75,13 +75,15 @@ type BatchHeartbeatRequest struct {
 func ListCamerasHandler(c *gin.Context) {
 	var cameras []models.Camera
 	err := database.DB.WithContext(c.Request.Context()).
+		Where("is_active = true").
+		Where("is_stopped = false").
 		Order("created_at ASC").
 		Find(&cameras).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "Không thể lấy danh sách camera: " + err.Error(),
+			"message": "Could not be retrieved list of devices: " + err.Error(),
 		})
 		return
 	}
@@ -104,7 +106,7 @@ func GetCameraHandler(c *gin.Context) {
 	if err := database.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&cam).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"status":  "error",
-			"message": "Camera không tồn tại.",
+			"message": "Unable to find device.",
 		})
 		return
 	}
@@ -134,7 +136,7 @@ func BatchLiveWebRTCHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
 			"code":    "INVALID_INPUT",
-			"message": "Danh sách streams không hợp lệ.",
+			"message": "Invalid list of devices",
 		})
 		return
 	}
@@ -197,7 +199,7 @@ func BatchLiveHeartbeatHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
 			"code":    "INVALID_INPUT",
-			"message": "Danh sách leases không hợp lệ.",
+			"message": "Invalid list of leases.",
 		})
 		return
 	}
@@ -230,7 +232,7 @@ func BatchLiveReleaseHandler(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
-			"message": "Danh sách leases không hợp lệ.",
+			"message": "Invalid list of leases.",
 		})
 		return
 	}
