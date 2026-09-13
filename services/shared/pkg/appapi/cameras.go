@@ -71,12 +71,11 @@ type BatchHeartbeatRequest struct {
 	Leases []BatchHeartbeatItem `json:"leases" binding:"required"`
 }
 
-// ListCamerasHandler lists all active surveillance cameras for the app.
+// ListCamerasHandler lists all surveillance cameras for the app.
 func ListCamerasHandler(c *gin.Context) {
 	var cameras []models.Camera
 	err := database.DB.WithContext(c.Request.Context()).
 		Where("is_active = true").
-		Where("is_stopped = false").
 		Order("created_at ASC").
 		Find(&cameras).Error
 
