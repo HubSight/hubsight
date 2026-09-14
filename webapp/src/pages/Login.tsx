@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
 import {
-  Camera,
   Lock,
   User,
   Eye,
@@ -250,13 +249,17 @@ const Login = () => {
 
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-5 sm:mb-7">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-orange-600 flex items-center justify-center text-white mb-3 sm:mb-3.5 shadow-sm">
-              {step === '2fa' ? (
+            {step === '2fa' ? (
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-orange-600 flex items-center justify-center text-white mb-3 sm:mb-3.5 shadow-sm">
                 <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7" />
-              ) : (
-                <Camera className="w-6 h-6 sm:w-7 sm:h-7" />
-              )}
-            </div>
+              </div>
+            ) : (
+              <img
+                src="/pwa-192x192.png"
+                alt="HubSight"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl mb-3 sm:mb-3.5 shadow-sm object-contain"
+              />
+            )}
             <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               {step === '2fa' ? t('login.twoFactorTitle') : t('login.title')}
             </h1>

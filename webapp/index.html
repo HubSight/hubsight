@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -88,23 +91,14 @@
         padding: 24px;
       }
 
-      /* Clean Orange Logo Squircle */
-      .splash-logo-box {
+      /* Clean App Logo */
+      .splash-logo-img {
         width: 80px;
         height: 80px;
-        border-radius: 22px;
-        background: #ea580c;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 10px 25px -5px rgba(234, 88, 12, 0.25), 0 4px 10px -4px rgba(234, 88, 12, 0.15);
+        border-radius: 20px;
         margin-bottom: 20px;
-      }
-
-      .splash-logo-icon {
-        width: 40px;
-        height: 40px;
-        color: #ffffff;
+        box-shadow: 0 10px 25px -5px rgba(234, 88, 12, 0.25), 0 4px 10px -4px rgba(234, 88, 12, 0.15);
+        object-fit: contain;
       }
 
       /* Clean App Name */
@@ -148,16 +142,11 @@
 
       /* Desktop Sizing */
       @media (min-width: 768px) {
-        .splash-logo-box {
+        .splash-logo-img {
           width: 88px;
           height: 88px;
-          border-radius: 24px;
+          border-radius: 22px;
           margin-bottom: 22px;
-        }
-
-        .splash-logo-icon {
-          width: 44px;
-          height: 44px;
         }
 
         .splash-title {
@@ -191,12 +180,7 @@
       <!-- Minimalist Clean White/Light Splash Screen (Replaced automatically as soon as React mounts) -->
       <div id="pwa-splash">
         <div class="splash-content">
-          <div class="splash-logo-box">
-            <svg class="splash-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
-              <circle cx="12" cy="13" r="3"></circle>
-            </svg>
-          </div>
+          <img src="/pwa-192x192.png" alt="HubSight" class="splash-logo-img" width="80" height="80" />
           <h1 class="splash-title">HubSight</h1>
           <p class="splash-subtitle">Smart CCTV & NVR Management</p>
           <div class="splash-loader-bar">

@@ -109,9 +109,11 @@ const MainLayout = () => {
       <header className="md:hidden shrink-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 z-30 pt-[env(safe-area-inset-top)] shadow-xs">
         <div className="h-14 flex items-center justify-between px-4">
           <NavLink to={user?.role === 'admin' ? '/' : '/playback'} className="flex items-center gap-2.5 no-underline group cursor-pointer">
-            <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
-              <Camera size={18} />
-            </div>
+            <img
+              src="/pwa-192x192.png"
+              alt="HubSight"
+              className="w-8 h-8 rounded-xl shadow-xs group-active:scale-95 transition-transform object-contain"
+            />
             <h2 className="text-base font-bold m-0 text-slate-800 dark:text-slate-100 tracking-tight">HubSight</h2>
           </NavLink>
 
@@ -172,9 +174,11 @@ const MainLayout = () => {
       `}>
         <div className="flex items-center justify-between px-4 pt-2 pb-1 md:pt-0 mb-2">
           <NavLink to={user?.role === 'admin' ? '/' : '/playback'} className="flex items-center gap-2.5 no-underline group cursor-pointer">
-            <div className="w-8 h-8 rounded-md bg-orange-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
-              <Camera size={18} />
-            </div>
+            <img
+              src="/pwa-192x192.png"
+              alt="HubSight"
+              className="w-8 h-8 rounded-lg shadow-xs group-hover:scale-105 transition-transform object-contain"
+            />
             <div>
               <h1 className="font-bold text-base leading-none text-slate-800 dark:text-slate-100 group-hover:text-orange-600 transition-colors">HubSight</h1>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">{t('nav.subtitle')}</span>
