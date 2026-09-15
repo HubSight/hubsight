@@ -128,8 +128,8 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
           return res;
         }
 
-        const token = res.refresh_token;
-        if (isPwa && token) {
+        const token = (isPwa ? res.refresh_token : (res.access_token || res.token)) || res.refresh_token || res.access_token || res.token;
+        if (token) {
           storage.setToken(token);
         } else {
           storage.clear();
@@ -308,8 +308,8 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
           Object.keys(headers).length > 0 ? { headers } : undefined,
         );
 
-        const token = res.refresh_token;
-        if (isPwa && token) {
+        const token = (isPwa ? res.refresh_token : (res.access_token || res.token)) || res.refresh_token || res.access_token || res.token;
+        if (token) {
           storage.setToken(token);
         } else {
           storage.clear();
@@ -416,8 +416,8 @@ export function createAuthManager(options: CreateAuthManagerOptions): AuthManage
           Object.keys(headers).length > 0 ? { headers } : undefined
         );
 
-        const token = res.refresh_token;
-        if (isPwa && token) {
+        const token = (isPwa ? res.refresh_token : (res.access_token || res.token)) || res.refresh_token || res.access_token || res.token;
+        if (token) {
           storage.setToken(token);
         } else {
           storage.clear();

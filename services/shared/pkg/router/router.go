@@ -88,6 +88,11 @@ func New() *gin.Engine {
 			protected.POST("/cameras/:id/presets", device.ManageCameraPresetsHandler)
 			protected.POST("/devices/:id/presets", device.ManageCameraPresetsHandler)
 
+			// Multi-View Live Streaming (Batch Operations)
+			protected.POST("/cameras/live/batch-webrtc", appapi.BatchLiveWebRTCHandler)
+			protected.POST("/cameras/live/batch-heartbeat", appapi.BatchLiveHeartbeatHandler)
+			protected.POST("/cameras/live/batch-release", appapi.BatchLiveReleaseHandler)
+
 			// Admin-only endpoints
 			adminOnly := protected.Group("/")
 			adminOnly.Use(auth.RequireRole("admin"))

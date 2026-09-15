@@ -72,6 +72,7 @@ func AppLoginHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":               "ok",
 		"token_type":           "Bearer",
+		"token":                token,
 		"access_token":         token,
 		"refresh_token":        refreshToken,
 		"expires_in":           expiresIn,
@@ -102,6 +103,7 @@ func AppVerify2FAHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":               "ok",
 		"token_type":           "Bearer",
+		"token":                token,
 		"access_token":         token,
 		"refresh_token":        refreshToken,
 		"expires_in":           expiresIn,
@@ -132,6 +134,7 @@ func AppRefreshTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":        "ok",
 		"token_type":    "Bearer",
+		"token":         newToken,
 		"access_token":  newToken,
 		"refresh_token": newRefreshToken,
 		"expires_in":    expiresIn,

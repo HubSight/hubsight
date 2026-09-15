@@ -9,6 +9,12 @@ import type {
   ManagePresetInput,
   ProbeONVIFInput,
   ONVIFProbeResult,
+  BatchWebRTCItem,
+  BatchWebRTCResultItem,
+  BatchHeartbeatItem,
+  BatchHeartbeatRequest,
+  BatchHeartbeatResponse,
+  BatchReleaseResponse,
 } from '../types';
 import { resolveHttpClient, type HttpLike } from './context';
 
@@ -28,6 +34,9 @@ export interface CamerasResource {
   getPresets(id: string): Promise<PresetItem[]>;
   managePreset(id: string, body: ManagePresetInput): Promise<{ preset_token?: string; name?: string } | void>;
   probeOnvif(body: ProbeONVIFInput): Promise<ONVIFProbeResult>;
+  batchWebRTC(streams: BatchWebRTCItem[]): Promise<BatchWebRTCResultItem[]>;
+  batchHeartbeat(req: BatchHeartbeatRequest | BatchHeartbeatItem[]): Promise<BatchHeartbeatResponse>;
+  batchRelease(req: BatchHeartbeatRequest | BatchHeartbeatItem[]): Promise<BatchReleaseResponse>;
 }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -137,6 +146,36 @@ export async function probeONVIF(
   return http.post<ONVIFProbeResult>('/onvif/probe', body);
 }
 
+export async function batchWebRTC(
+  client: HttpLike,
+  streams: BatchWebRTCItem[],
+): Promise<BatchWebRTCResultItem[]> {
+  const http = resolveHttpClient(client);
+  const res = await http.post<{ status: string; streams: BatchWebRTCResultItem[] }>(
+    '/cameras/live/batch-webrtc',
+    { streams },
+  );
+  return res?.streams || [];
+}
+
+export async function batchHeartbeat(
+  client: HttpLike,
+  req: BatchHeartbeatRequest | BatchHeartbeatItem[],
+): Promise<BatchHeartbeatResponse> {
+  const http = resolveHttpClient(client);
+  const body = Array.isArray(req) ? { leases: req } : req;
+  return http.post<BatchHeartbeatResponse>('/cameras/live/batch-heartbeat', body);
+}
+
+export async function batchRelease(
+  client: HttpLike,
+  req: BatchHeartbeatRequest | BatchHeartbeatItem[],
+): Promise<BatchReleaseResponse> {
+  const http = resolveHttpClient(client);
+  const body = Array.isArray(req) ? { leases: req } : req;
+  return http.post<BatchReleaseResponse>('/cameras/live/batch-release', body);
+}
+
 // ── Resource Factory ─────────────────────────────────────────────────────────
 
 export function createCamerasResource(http: InternalHttpClient): CamerasResource {
@@ -156,5 +195,8 @@ export function createCamerasResource(http: InternalHttpClient): CamerasResource
     getPresets: (id) => getCameraPresets(http, id),
     managePreset: (id, body) => manageCameraPreset(http, id, body),
     probeOnvif: (body) => probeONVIF(http, body),
+    batchWebRTC: (streams) => batchWebRTC(http, streams),
+    batchHeartbeat: (req) => batchHeartbeat(http, req),
+    batchRelease: (req) => batchRelease(http, req),
   };
 }

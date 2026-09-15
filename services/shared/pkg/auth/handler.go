@@ -60,12 +60,17 @@ func LoginHandler(c *gin.Context) {
 
 	c.SetCookie("session", token, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
 
-	resp := gin.H{"status": "ok"}
+	resp := gin.H{
+		"status":       "ok",
+		"token":        token,
+		"access_token": token,
+		"expires_in":   int(time.Until(session.ExpiresAt).Seconds()),
+	}
 	if session != nil && session.User != nil {
 		resp["user"] = session.User
 		resp["must_change_password"] = session.User.MustChangePassword
 	}
-	if req.IsPWA && refreshToken != "" {
+	if refreshToken != "" {
 		resp["refresh_token"] = refreshToken
 	}
 
@@ -88,7 +93,10 @@ func RefreshHandler(c *gin.Context) {
 	c.SetCookie("session", newToken, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"status":        "ok",
+		"token":         newToken,
+		"access_token":  newToken,
 		"refresh_token": newRefreshToken,
+		"expires_in":    int(time.Until(session.ExpiresAt).Seconds()),
 	})
 }
 
@@ -345,12 +353,17 @@ func Verify2FAHandler(c *gin.Context) {
 
 	c.SetCookie("session", token, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
 
-	resp := gin.H{"status": "ok"}
+	resp := gin.H{
+		"status":       "ok",
+		"token":        token,
+		"access_token": token,
+		"expires_in":   int(time.Until(session.ExpiresAt).Seconds()),
+	}
 	if session != nil && session.User != nil {
 		resp["user"] = session.User
 		resp["must_change_password"] = session.User.MustChangePassword
 	}
-	if req.IsPWA && refreshToken != "" {
+	if refreshToken != "" {
 		resp["refresh_token"] = refreshToken
 	}
 
@@ -551,7 +564,17 @@ func PasskeyLoginVerifyHandler(c *gin.Context) {
 
 	origin := c.Request.Header.Get("Origin")
 	devInfo := fingerprint.DetectWithClientInfo(c.Request, req.DeviceInfo)
-	session, token, refreshToken, err := FinishPasskeyLogin(c.Request.Context(), req.ChallengeID, req.Credential, req.IsPWA, origin, &devInfo)
+
+	isPersistent := req.IsPWA
+	if !isPersistent {
+		if _, hasClient := c.Get("api_client"); hasClient {
+			isPersistent = true
+		} else if c.GetHeader("X-API-Key") != "" {
+			isPersistent = true
+		}
+	}
+
+	session, token, refreshToken, err := FinishPasskeyLogin(c.Request.Context(), req.ChallengeID, req.Credential, isPersistent, origin, &devInfo)
 	if err != nil {
 		response.Error(c, http.StatusUnauthorized, response.ErrPasskeyFailed)
 		return
@@ -559,12 +582,18 @@ func PasskeyLoginVerifyHandler(c *gin.Context) {
 
 	c.SetCookie("session", token, int(time.Until(session.ExpiresAt).Seconds()), "/", "", false, true)
 
-	resp := gin.H{"status": "ok"}
+	resp := gin.H{
+		"status":       "ok",
+		"token_type":   "Bearer",
+		"token":        token,
+		"access_token": token,
+		"expires_in":   int(time.Until(session.ExpiresAt).Seconds()),
+	}
 	if session != nil && session.User != nil {
 		resp["user"] = session.User
 		resp["must_change_password"] = session.User.MustChangePassword
 	}
-	if req.IsPWA && refreshToken != "" {
+	if refreshToken != "" {
 		resp["refresh_token"] = refreshToken
 	}
 

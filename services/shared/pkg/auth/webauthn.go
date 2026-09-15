@@ -88,6 +88,12 @@ func EnsureDynamicOrigin(origin string) error {
 		}
 	}
 
+	// Support native mobile app origins (Android Digital Asset Links & iOS Associated Domains)
+	if strings.HasPrefix(origin, "android:apk-key-hash:") || strings.HasPrefix(origin, "ios:bundle-id:") {
+		w.Config.RPOrigins = append(w.Config.RPOrigins, origin)
+		return nil
+	}
+
 	// If the origin host or domain matches RPID, allow dynamically
 	if u.Hostname() == w.Config.RPID || strings.HasSuffix(u.Hostname(), "."+w.Config.RPID) || w.Config.RPID == "localhost" {
 		w.Config.RPOrigins = append(w.Config.RPOrigins, origin)

@@ -22,6 +22,8 @@ func RegisterAppRoutes(rg *gin.RouterGroup) {
 	appV1.POST("/auth/login", AppLoginHandler)
 	appV1.POST("/auth/2fa/verify", AppVerify2FAHandler)
 	appV1.POST("/auth/refresh", AppRefreshTokenHandler)
+	appV1.POST("/auth/passkeys/login/options", auth.PasskeyLoginOptionsHandler)
+	appV1.POST("/auth/passkeys/login/verify", auth.PasskeyLoginVerifyHandler)
 
 	// Authenticated App Routes (require valid API Key + User Bearer Token)
 	protected := appV1.Group("")
@@ -51,7 +53,6 @@ func RegisterAppRoutes(rg *gin.RouterGroup) {
 		protected.POST("/cameras/:id/ptz", device.CameraPTZHandler)
 		protected.GET("/cameras/:id/presets", device.GetCameraPresetsHandler)
 		protected.POST("/cameras/:id/presets", device.ManageCameraPresetsHandler)
-		protected.POST("/onvif/probe", device.ProbeONVIFHandler)
 
 		// Cameras Live Multi-View (Batch Operations)
 		protected.POST("/cameras/live/batch-webrtc", BatchLiveWebRTCHandler)

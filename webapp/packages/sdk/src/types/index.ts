@@ -187,6 +187,10 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   user?: User;
+  token?: string;
+  access_token?: string;
+  expires_in?: number;
+  token_type?: string;
   refresh_token?: string;
   message?: string;
   status?: string;
@@ -388,6 +392,40 @@ export interface ONVIFProbeResult {
   sub_stream_uri: string;
   main_profile_token?: string;
   error_message?: string;
+}
+
+export interface BatchWebRTCItem {
+  camera_id: string;
+  sdp_offer?: string;
+  offer?: string;
+}
+
+export interface BatchWebRTCResultItem {
+  camera_id: string;
+  sdp_answer?: string;
+  pool_stream_name?: string;
+  pool_conn_index?: string;
+  error?: string;
+}
+
+export interface BatchHeartbeatItem {
+  camera_id: string;
+  stream_name: string;
+}
+
+export interface BatchHeartbeatRequest {
+  leases?: BatchHeartbeatItem[];
+  camera_ids?: string[];
+}
+
+export interface BatchHeartbeatResponse {
+  status: string;
+  renewed: number;
+}
+
+export interface BatchReleaseResponse {
+  status: string;
+  released: number;
 }
 
 export interface ScanCandidate {

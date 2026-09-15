@@ -52,7 +52,8 @@ func toCameraDTO(cam models.Camera) CameraDTO {
 
 type BatchWebRTCItem struct {
 	CameraID string `json:"camera_id" binding:"required"`
-	SdpOffer string `json:"sdp_offer" binding:"required"`
+	SdpOffer string `json:"sdp_offer"`
+	Offer    string `json:"offer"`
 }
 
 type BatchWebRTCRequest struct {
@@ -73,7 +74,8 @@ type BatchHeartbeatItem struct {
 }
 
 type BatchHeartbeatRequest struct {
-	Leases []BatchHeartbeatItem `json:"leases" binding:"required"`
+	Leases    []BatchHeartbeatItem `json:"leases"`
+	CameraIDs []string             `json:"camera_ids"`
 }
 
 // ListCamerasHandler lists all surveillance cameras for the app.
@@ -145,7 +147,18 @@ func BatchLiveWebRTCHandler(c *gin.Context) {
 		go func(idx int, target BatchWebRTCItem) {
 			defer wg.Done()
 
+			offer := target.SdpOffer
+			if offer == "" {
+				offer = target.Offer
+			}
+
 			resItem := BatchWebRTCResultItem{CameraID: target.CameraID}
+
+			if offer == "" {
+				resItem.Error = "sdp_offer is required"
+				results[idx] = resItem
+				return
+			}
 
 			// Validate camera existence and status
 			var cam models.Camera
@@ -163,7 +176,7 @@ func BatchLiveWebRTCHandler(c *gin.Context) {
 			// Signal through pool-service via gRPC
 			resp, err := grpcPool.SignalWebRTC(c.Request.Context(), &pb.SignalWebRTCRequest{
 				CameraId:    target.CameraID,
-				SdpOffer:    target.SdpOffer,
+				SdpOffer:    offer,
 				ContentType: "application/sdp",
 			})
 
@@ -190,7 +203,7 @@ func BatchLiveWebRTCHandler(c *gin.Context) {
 // BatchLiveHeartbeatHandler refreshes leases for multiple active cameras in 1 HTTP ping.
 func BatchLiveHeartbeatHandler(c *gin.Context) {
 	var req BatchHeartbeatRequest
-	if err := c.ShouldBindJSON(&req); err != nil || len(req.Leases) == 0 {
+	if err := c.ShouldBindJSON(&req); err != nil || (len(req.Leases) == 0 && len(req.CameraIDs) == 0) {
 		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}
@@ -220,7 +233,7 @@ func BatchLiveHeartbeatHandler(c *gin.Context) {
 // BatchLiveReleaseHandler terminates multiple stream leases simultaneously when exiting Multi-View.
 func BatchLiveReleaseHandler(c *gin.Context) {
 	var req BatchHeartbeatRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil || (len(req.Leases) == 0 && len(req.CameraIDs) == 0) {
 		response.Error(c, http.StatusBadRequest, response.ErrInvalidInput)
 		return
 	}

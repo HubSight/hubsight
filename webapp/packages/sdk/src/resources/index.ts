@@ -22,6 +22,9 @@ export {
   getCameraPresets,
   manageCameraPreset,
   probeONVIF,
+  batchWebRTC,
+  batchHeartbeat,
+  batchRelease,
   type CamerasResource,
 } from './cameras';
 

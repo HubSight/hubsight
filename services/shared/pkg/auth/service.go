@@ -163,10 +163,20 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool, devInf
 	}
 
 	// 3. Create active session
+	sessID := nanoid.New()
 	token := GenerateToken()
 	expiresAt := time.Now().Add(24 * 7 * time.Hour) // 1 week
 
+	// Preload user permissions & role to embed in JWT
+	if err := database.DB.WithContext(ctx).Preload("RoleInfo.Permissions").First(&u, "id = ?", userID).Error; err == nil {
+		LoadUserPermissions(ctx, &u)
+		if jwtToken, err := GenerateJWT(&u, sessID, time.Until(expiresAt)); err == nil && jwtToken != "" {
+			token = jwtToken
+		}
+	}
+
 	sess := models.Session{
+		ID:                sessID,
 		UserID:            userID,
 		TokenHash:         hashToken(token),
 		ExpiresAt:         expiresAt,
@@ -183,6 +193,7 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool, devInf
 		GeoLongitude:      devInfo.GeoLongitude,
 		GeoAccuracy:       devInfo.GeoAccuracy,
 		IsNewDevice:       isNewDevice,
+		User:              &u,
 	}
 	if len(clientID) > 0 && clientID[0] != "" {
 		sess.ClientID = clientID[0]
@@ -200,11 +211,6 @@ func createSessionForUser(ctx context.Context, userID string, isPWA bool, devInf
 
 	now := time.Now()
 	_ = database.DB.WithContext(ctx).Model(&models.User{ID: userID}).Update("last_login_at", &now).Error
-
-	if err := database.DB.WithContext(ctx).Preload("RoleInfo.Permissions").First(&u, "id = ?", userID).Error; err == nil {
-		LoadUserPermissions(ctx, &u)
-		sess.User = &u
-	}
 
 	return &sess, token, refreshToken, nil
 }
@@ -315,10 +321,13 @@ func RefreshPWASession(ctx context.Context, refreshToken string) (*models.Sessio
 		return nil, "", "", errors.New("user inactive or not found")
 	}
 
-	// Generate new session token and rotated refresh token
-	newToken := GenerateToken()
-	newRefreshToken := GenerateToken()
+	// Generate new session token (JWT) and rotated refresh token
 	newExpiresAt := time.Now().Add(24 * 7 * time.Hour)
+	newToken := GenerateToken()
+	if jwtToken, err := GenerateJWT(u, sess.ID, time.Until(newExpiresAt)); err == nil && jwtToken != "" {
+		newToken = jwtToken
+	}
+	newRefreshToken := GenerateToken()
 	now := time.Now()
 
 	updates := map[string]any{
@@ -346,6 +355,29 @@ func GetSessionAndUser(ctx context.Context, token string) (*models.Session, *mod
 		return nil, nil, errors.New("missing token")
 	}
 
+	// 1. If token is a valid signed JWT, directly extract session_id and verify
+	if claims, err := ParseAndValidateJWT(token); err == nil && claims != nil && claims.SessionID != "" {
+		if redis.IsSessionRevoked(ctx, claims.SessionID) {
+			return nil, nil, errors.New("session revoked")
+		}
+
+		var sess models.Session
+		if err := database.DB.WithContext(ctx).
+			Preload("User").
+			Where("id = ? AND revoked_at IS NULL AND expires_at > ?", claims.SessionID, time.Now()).
+			First(&sess).Error; err == nil {
+			u := sess.User
+			if u != nil && u.IsActive {
+				now := time.Now()
+				_ = database.DB.WithContext(ctx).Model(&models.Session{ID: sess.ID}).Update("last_seen_at", &now).Error
+				sess.LastSeenAt = &now
+				LoadUserPermissions(ctx, u)
+				return &sess, u, nil
+			}
+		}
+	}
+
+	// 2. Fallback to opaque token hash lookup (backward compatible with existing sessions/cookies)
 	tokenHash := hashToken(token)
 	tokenHashHex := hex.EncodeToString(tokenHash)
 

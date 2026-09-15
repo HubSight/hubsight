@@ -243,7 +243,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
           )}
 
           {/* PTZ Controller Toggle */}
-          {isCameraActive && (camera?.onvif_ptz_supported || camera?.onvif_enabled) && (
+          {isCameraActive && camera?.onvif_ptz_supported && (
             <button
               type="button"
               onClick={() => setShowPTZ((prev) => !prev)}
