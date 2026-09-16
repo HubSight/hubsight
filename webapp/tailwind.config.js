@@ -19,6 +19,10 @@ export default {
       'full': '9999px',
     },
     extend: {
+      fontFamily: {
+        sans: ['Roboto', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono: ['Roboto', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      },
       boxShadow: {
         '2xs': '0 1px 1px rgb(15 23 42 / 0.04)',
         xs: '0 1px 2px rgb(15 23 42 / 0.06)',
