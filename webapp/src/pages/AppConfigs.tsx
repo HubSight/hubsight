@@ -35,6 +35,7 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { PageHeader } from '../components/common/PageHeader';
 import AppConfigQrModal from '../components/appconfig/AppConfigQrModal';
+import { DeletePromptModal } from '../components/common/DeletePromptModal';
 
 export const AppConfigs: React.FC = () => {
   const { t } = useTranslation();
@@ -1348,49 +1349,21 @@ export const AppConfigs: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && configToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
-            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
-              <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center shrink-0">
-                <AlertCircle size={20} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                  {t('appConfigs.deleteConfirmTitle')}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                  {configToDelete.name}
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              {t('appConfigs.deleteConfirmMsg')}
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer shrink-0 whitespace-nowrap"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-              >
-                {isDeleting && <RotateCw size={13} className="animate-spin shrink-0" />}
-                <span>{t('delete')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeletePromptModal
+        isOpen={deleteModalOpen && !!configToDelete}
+        entityLabel={t('deletePrompt.configFile')}
+        targetName={configToDelete?.name || configToDelete?.object_key}
+        title={t('appConfigs.deleteConfirmTitle')}
+        message={t('appConfigs.deleteConfirmMsg')}
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          if (!isDeleting) {
+            setDeleteModalOpen(false);
+            setConfigToDelete(null);
+          }
+        }}
+      />
     </div>
   );
 };

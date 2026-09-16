@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Locale } from '../i18n';
-import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronLeft, ChevronRight, ChevronsUpDown, Globe, Users, Bell, Layers, LayoutGrid, UserCog, FileShield, Sun, Moon, Monitor, Sliders, House, Google } from '@/components/icons';
+import { Video, LogOut, User as UserIcon, Shield, KeyRound, Camera, Menu, X, Activity, ChevronDown, ChevronLeft, ChevronRight, Globe, Users, Bell, Layers, LayoutGrid, UserCog, FileShield, Sun, Moon, Monitor, Sliders, House, Google } from '@/components/icons';
 import { AppFooter } from '../components/AppFooter';
 import { NotificationToast } from '../components/notifications/NotificationToast';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
@@ -236,7 +236,10 @@ const MainLayout = () => {
                   </span>
                 </div>
               </div>
-              <ChevronsUpDown size={13} className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0 transition-colors" />
+              <ChevronDown
+                size={13}
+                className={`text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
+              />
             </button>
 
             {/* Notification Bell Button */}

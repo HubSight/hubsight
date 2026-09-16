@@ -22,6 +22,7 @@ import {
 } from '@/components/icons';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/common/PageHeader';
+import { DeletePromptModal } from '../components/common/DeletePromptModal';
 import dayjs from 'dayjs';
 
 export const GoogleServiceAccounts: React.FC = () => {
@@ -1054,47 +1055,18 @@ export const GoogleServiceAccounts: React.FC = () => {
         </div>
       )}
 
-      {/* ── MODAL: Delete Confirmation ────────────────────────────────────── */}
-      {deleteAccount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="fixed inset-0" onClick={() => setDeleteAccount(null)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 z-10 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center">
-              <Trash2 size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">
-                {t('serviceAccounts.deleteConfirmTitle')}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {t('serviceAccounts.deleteConfirmMsg')}
-              </p>
-            </div>
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-800 dark:text-slate-100">
-              <p className="font-bold">{deleteAccount.name || deleteAccount.project_id}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[11px] truncate mt-0.5">{deleteAccount.client_email}</p>
-            </div>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteAccount(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {isDeleting && <RotateCw size={13} className="animate-spin" />}
-                <span>{t('delete')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeletePromptModal
+        isOpen={!!deleteAccount}
+        entityLabel={t('deletePrompt.googleService')}
+        targetName={deleteAccount?.name || deleteAccount?.project_id}
+        title={t('serviceAccounts.deleteConfirmTitle')}
+        message={t('serviceAccounts.deleteConfirmMsg')}
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          if (!isDeleting) setDeleteAccount(null);
+        }}
+      />
       </div>
     </div>
   );

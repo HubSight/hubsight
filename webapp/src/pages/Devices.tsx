@@ -13,6 +13,7 @@ import { Pagination } from '../components/common/Pagination';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import { PageHeader } from '../components/common/PageHeader';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { DeletePromptModal } from '../components/common/DeletePromptModal';
 
 const initialFormData: DeviceFormData = {
   name: '',
@@ -600,8 +601,10 @@ const Devices = () => {
         />
       )}
 
-      <ConfirmDialog
+      <DeletePromptModal
         isOpen={!!pendingDeleteId}
+        entityLabel={t('deletePrompt.camera')}
+        targetName={devices.find((device) => device.id === pendingDeleteId)?.name}
         title={t('devices.confirmDeleteTitle')}
         message={t('devices.confirmDelete')}
         confirmLabel={t('devices.deleteDevice')}

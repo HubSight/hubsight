@@ -6,7 +6,7 @@ import { MemberCard } from '../components/members/MemberCard';
 import { MemberModal } from '../components/members/MemberModal';
 import { MemberFaceGalleryModal } from '../components/members/MemberFaceGalleryModal';
 import { Pagination } from '../components/common/Pagination';
-import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { DeletePromptModal } from '../components/common/DeletePromptModal';
 import { useTranslation } from '../i18n';
 import { PullToRefresh } from '../components/common/PullToRefresh';
 import { PageHeader } from '../components/common/PageHeader';
@@ -304,8 +304,10 @@ const Members: React.FC = () => {
           onUpdate={fetchMembers}
         />
 
-        <ConfirmDialog
+        <DeletePromptModal
           isOpen={!!pendingDeleteId}
+          entityLabel={t('deletePrompt.member')}
+          targetName={members.find((member) => member.id === pendingDeleteId)?.name}
           title={t('members.confirmDeleteTitle')}
           message={t('members.confirmDelete')}
           confirmLabel={t('delete')}

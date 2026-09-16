@@ -21,6 +21,7 @@ import { api } from '../api/client';
 import type { ApiClient } from '@hubsight/sdk';
 import { useTranslation } from '../i18n';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { DeletePromptModal } from '../components/common/DeletePromptModal';
 import { PageHeader } from '../components/common/PageHeader';
 import { Select } from '../components/ui';
 import toast from 'react-hot-toast';
@@ -1015,12 +1016,13 @@ export const Clients: React.FC = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
+      <DeletePromptModal
         isOpen={!!clientToDelete}
+        entityLabel={t('deletePrompt.apiKey')}
+        targetName={clientToDelete?.name || clientToDelete?.client_id}
         title={t('clients.deleteConfirmTitle')}
         message={t('clients.deleteConfirmMessage')}
         confirmLabel={t('delete')}
-        variant="danger"
         isLoading={isActionLoading}
         onConfirm={executeDelete}
         onCancel={() => setClientToDelete(null)}

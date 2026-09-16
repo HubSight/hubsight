@@ -14,7 +14,7 @@ import {
 import { api } from '../api/client';
 import type { Role, Permission } from '@hubsight/sdk';
 import { useTranslation } from '../i18n';
-import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { DeletePromptModal } from '../components/common/DeletePromptModal';
 import { PageHeader } from '../components/common/PageHeader';
 import toast from 'react-hot-toast';
 
@@ -528,8 +528,10 @@ export const Roles: React.FC = () => {
       )}
 
       {/* Delete Role Confirm */}
-      <ConfirmDialog
+      <DeletePromptModal
         isOpen={!!pendingDeleteRoleId}
+        entityLabel={t('deletePrompt.role')}
+        targetName={roles.find((role) => role.id === pendingDeleteRoleId)?.name || roles.find((role) => role.id === pendingDeleteRoleId)?.code}
         title={t('common.delete')}
         message={t('access.confirmDeleteRole', {
           name: roles.find((r) => r.id === pendingDeleteRoleId)?.name || '',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Video } from '@/components/icons';
+import { Video } from '@/components/icons';
 
 interface SkeletonProps {
   className?: string;
@@ -168,10 +168,21 @@ export const AppLoadingSkeleton: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 dark:bg-slate-950 p-4 select-none">
       <div className="flex flex-col items-center text-center">
-        <div className="w-20 h-20 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-5">
-          <Camera size={40} />
-        </div>
-        <h1 className="text-2xl sm:text-[26px] font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-1.5">
+        <img
+          src="/logo-header.png"
+          alt="HubSight"
+          className="w-[280px] max-w-[calc(100vw-48px)] h-auto object-contain mb-5 dark:hidden"
+          width={760}
+          height={160}
+        />
+        <img
+          src="/pwa-192x192.png"
+          alt="HubSight"
+          className="hidden dark:block w-20 h-20 rounded-xl object-contain mb-5"
+          width={192}
+          height={192}
+        />
+        <h1 className="hidden dark:block text-2xl sm:text-[26px] font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-1.5">
           HubSight
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mb-6">
