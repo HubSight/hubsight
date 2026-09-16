@@ -14,6 +14,14 @@ Thumbs.db
 *.env.*.local
 !*.env.example
 
+# Local TLS certificate and private key (generated for media development)
+/auto.crt
+/auto.key
+
+# Local/legacy artifacts
+/diagrams.png
+/newfeat.txt
+
 # Node / Frontend
 **/node_modules/
 **/dist/
