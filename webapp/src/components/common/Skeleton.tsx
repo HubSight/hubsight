@@ -54,7 +54,7 @@ export const DeviceCardSkeleton: React.FC = () => {
 
 export const DevicesSkeleton: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 min-[960px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 animate-fade-in">
+    <div className="grid grid-cols-1 min-[960px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
       {Array.from({ length: 8 }).map((_, index) => (
         <DeviceCardSkeleton key={index} />
       ))}
@@ -64,7 +64,7 @@ export const DevicesSkeleton: React.FC = () => {
 
 export const PlaybackSkeleton: React.FC = () => {
   return (
-    <div className="flex-1 flex flex-col min-w-0 max-w-[1920px] mx-auto w-full animate-fade-in">
+    <div className="flex-1 flex flex-col min-w-0 max-w-[1920px] mx-auto w-full">
       {/* Video player placeholder */}
       <div className="w-full bg-slate-900 aspect-video flex flex-col items-center justify-center relative overflow-hidden border-b border-slate-800 lg:max-h-[75vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600 animate-pulse">
@@ -101,7 +101,7 @@ export const PlaybackSkeleton: React.FC = () => {
 
 export const NvrMonitorSkeleton: React.FC = () => {
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in">
+    <div className="space-y-6 sm:space-y-8">
       {/* 4 Stats Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
         {Array.from({ length: 4 }).map((_, index) => (
@@ -166,8 +166,8 @@ export const NvrMonitorSkeleton: React.FC = () => {
 
 export const AppLoadingSkeleton: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 dark:bg-black p-4 select-none">
-      <div className="flex flex-col items-center text-center animate-fade-in">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-screen bg-slate-50 dark:bg-slate-950 p-4 select-none">
+      <div className="flex flex-col items-center text-center">
         <div className="w-20 h-20 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-5">
           <Camera size={40} />
         </div>
@@ -175,7 +175,7 @@ export const AppLoadingSkeleton: React.FC = () => {
           HubSight
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mb-6">
-          Smart CCTV & NVR Management
+          CCTV & NVR Management
         </p>
         <div className="w-36 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
           <div className="h-full bg-orange-600 rounded-full animate-[shimmer_1.3s_infinite_linear] w-1/2" />

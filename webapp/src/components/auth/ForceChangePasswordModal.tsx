@@ -72,11 +72,11 @@ export const ForceChangePasswordModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/85">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white text-center relative">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/30 shadow-inner">
+        <div className="bg-orange-700 p-6 text-white text-center relative">
+          <div className="w-16 h-16 bg-orange-800 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-orange-500 shadow-inner">
             <KeyRound size={32} className="text-white" />
           </div>
           <h2 className="text-xl font-bold">{t('forcePassword.title')}</h2>
@@ -180,7 +180,7 @@ export const ForceChangePasswordModal: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-2.5 px-4 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-xl shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? (
                 <>

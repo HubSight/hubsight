@@ -29,6 +29,7 @@ import {
   ArrowLeft,
   Lock,
   Globe,
+  Server,
 } from '@/components/icons';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
@@ -377,8 +378,8 @@ export const AppConfigs: React.FC = () => {
         {/* App API Gateway Kill-Switch Master Control */}
         <div className={`p-3.5 sm:p-4 rounded-2xl border transition-all shadow-xs flex items-center justify-between gap-4 ${
           appApiEnabled
-            ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/30 dark:border-emerald-500/20'
-            : 'bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/30 dark:border-rose-500/20'
+            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-slate-200 dark:border-slate-800'
+            : 'bg-rose-50 dark:bg-rose-950/30 border-slate-200 dark:border-slate-800'
         }`}>
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
@@ -578,7 +579,7 @@ export const AppConfigs: React.FC = () => {
                             <span>{cfg.project_id}</span>
                           </div>
                         ) : (
-                          <span className="text-slate-400 dark:text-slate-500 text-xs">—</span>
+                          <span className="text-slate-400 dark:text-slate-500 text-xs">N/A</span>
                         )}
                       </td>
 
@@ -752,7 +753,7 @@ export const AppConfigs: React.FC = () => {
 
       {/* 4-Step Wizard Modal */}
       {isWizardOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -882,7 +883,7 @@ export const AppConfigs: React.FC = () => {
                     <option value="">{t('appConfigs.noFcmOption')}</option>
                     {serviceAccounts.map((sa) => (
                       <option key={sa.id} value={sa.id}>
-                        {sa.client_email.includes('firebase-adminsdk') ? '🔥 [Firebase Console] ' : ''}
+                        {sa.client_email.includes('firebase-adminsdk') ? '[Firebase Console] ' : ''}
                         {sa.name} ({sa.project_id}) {sa.is_active ? t('appConfigs.saActiveBadge') : ''}
                       </option>
                     ))}
@@ -949,7 +950,10 @@ export const AppConfigs: React.FC = () => {
                         {((!preflightData.android_apps || preflightData.android_apps.length === 0) ||
                           (!preflightData.ios_apps || preflightData.ios_apps.length === 0)) && (
                           <div className="text-[11px] text-slate-500 dark:text-amber-200/80 bg-amber-50/60 dark:bg-amber-950/30 p-2.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50">
-                            💡 {t('appConfigs.firebaseAppHint')}
+                            <div className="flex items-start gap-2">
+                              <Cloud size={14} className="shrink-0 text-amber-700 dark:text-amber-300" />
+                              <span>{t('appConfigs.firebaseAppHint')}</span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -991,14 +995,14 @@ export const AppConfigs: React.FC = () => {
                         onClick={() => handleApplyGatewayPreset('prod')}
                         className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                       >
-                        🌐 Production Domain
+                        <span className="inline-flex items-center gap-1"><Globe size={11} /> Production Domain</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleApplyGatewayPreset('local')}
                         className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                       >
-                        💻 Local Dev (:8088)
+                        <span className="inline-flex items-center gap-1"><Server size={11} /> Local Dev (:8088)</span>
                       </button>
                     </div>
                   </div>
@@ -1213,7 +1217,7 @@ export const AppConfigs: React.FC = () => {
 
       {/* Detail Modal */}
       {detailModalOpen && selectedConfigForDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
@@ -1285,7 +1289,7 @@ export const AppConfigs: React.FC = () => {
 
       {/* Kill-Switch Toggle Confirmation Modal */}
       {killSwitchModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
             <div className="flex items-center gap-3.5">
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
@@ -1346,7 +1350,7 @@ export const AppConfigs: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && configToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
               <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center shrink-0">

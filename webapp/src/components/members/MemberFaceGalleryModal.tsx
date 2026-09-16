@@ -241,9 +241,9 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
         parts.push(t('gallery.enrollSkipped', { count: skipped.length, reasons: skipped.join('; ') }));
       }
       if (addedCount === 0 && skipped.length > 0) {
-        setError(parts.join(' — '));
+        setError(parts.join(': '));
       } else if (skipped.length > 0) {
-        setError(parts.join(' — '));
+        setError(parts.join(': '));
       }
     } catch (err: any) {
       console.error('Failed to upload face photos:', err);
@@ -306,7 +306,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
   const selectedFace = selectedPhotoIndex !== null ? faces[selectedPhotoIndex] : null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="bg-white dark:bg-slate-900 w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-5 pb-4 pt-[max(env(safe-area-inset-top),1rem)] pl-[max(env(safe-area-inset-left),1.25rem)] pr-[max(env(safe-area-inset-right),1.25rem)] border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/80 shrink-0">
@@ -533,7 +533,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                             }
                           }}
                           className={`w-full h-full object-cover transition-transform duration-300 ${
-                            selectionMode ? 'cursor-pointer hover:opacity-80' : 'group-hover:scale-105 cursor-pointer'
+                            selectionMode ? 'cursor-pointer' : 'group-hover:scale-105 cursor-pointer'
                           } ${isSelected ? 'scale-90 opacity-80 rounded-xl' : ''}`}
                         />
 
@@ -543,7 +543,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                             <div
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                                 isSelected
-                                  ? 'bg-orange-500 border-orange-500 text-white'
+                                  ? 'bg-orange-700 border-orange-700 text-white'
                                   : 'border-white/80 bg-black/20'
                               }`}
                             >
@@ -553,7 +553,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                         )}
 
                         {/* Top Quality Badge */}
-                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900/80 text-white font-mono text-[10px] backdrop-blur-xs flex items-center gap-1 pointer-events-none">
+                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900 text-white font-mono text-[10px] flex items-center gap-1 pointer-events-none">
                           <CheckCircle2
                             size={10}
                             className={qualityPercent >= 90 ? 'text-emerald-400' : 'text-amber-400'}
@@ -568,7 +568,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                               e.stopPropagation();
                               handleDeleteFace(f.id, f.sample_image_url);
                             }}
-                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-600/90 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-sm cursor-pointer"
+                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800 shadow-sm cursor-pointer"
                             title={t('gallery.deletePhoto')}
                           >
                             <Trash2 size={12} />
@@ -577,19 +577,19 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
 
                         {/* Avatar Star / Badge */}
                         {isAvatar ? (
-                          <div className="absolute bottom-2 left-2 right-2 py-1 px-2 rounded-xl bg-emerald-600/90 backdrop-blur-xs text-white text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm pointer-events-none">
+                          <div className="absolute bottom-2 left-2 right-2 py-1 px-2 rounded-xl bg-emerald-700 text-white text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm pointer-events-none">
                             <Star size={11} className="fill-current" />
                             <span>{t('gallery.currentAvatar')}</span>
                           </div>
                         ) : (
                           !selectionMode && (
-                            <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleSetAsAvatar(f.sample_image_url);
                                 }}
-                                className="flex-1 py-1 px-1.5 rounded-xl bg-slate-900/80 hover:bg-orange-600 backdrop-blur-xs text-white text-[10px] font-bold transition-colors truncate shadow-sm cursor-pointer text-center"
+                                className="flex-1 py-1 px-1.5 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-[10px] font-bold transition-colors truncate shadow-sm cursor-pointer text-center"
                               >
                                 {t('gallery.setAsAvatar')}
                               </button>
@@ -660,7 +660,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
 
       {/* Lightbox Modal */}
       {selectedFace && (
-        <div className="fixed inset-0 bg-black/90 z-[110] flex flex-col items-center justify-center p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-black/90 z-[110] flex flex-col items-center justify-center p-4">
           {/* Lightbox Controls */}
           <div className="absolute top-4 right-4 flex items-center gap-3 text-white z-10">
             {currentAvatarUrl !== selectedFace.sample_image_url && (
@@ -724,7 +724,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
           </div>
 
           {/* Metadata Footer */}
-          <div className="mt-4 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md text-white text-xs flex items-center gap-4">
+          <div className="mt-4 px-4 py-2 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs flex items-center gap-4">
             <div>
               <span className="text-white/60">{t('gallery.qualityScore')}:</span>{' '}
               <span className="font-bold text-emerald-400">

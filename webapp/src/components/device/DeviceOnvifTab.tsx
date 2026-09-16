@@ -94,7 +94,7 @@ export const DeviceOnvifTab: React.FC<DeviceOnvifTabProps> = ({
   return (
     <div className="space-y-5">
       {/* Header Banner */}
-      <div className="flex items-start gap-3 p-3.5 bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent border border-orange-500/20 dark:border-orange-500/30 rounded-2xl">
+      <div className="flex items-start gap-3 p-3.5 bg-orange-50 dark:bg-orange-950/30 border border-slate-200 dark:border-slate-800 rounded-2xl">
         <div className="p-2 rounded-xl bg-orange-600 text-white shrink-0 shadow-xs">
           <Compass size={20} />
         </div>

@@ -124,7 +124,7 @@ export const PTZControlPad: React.FC<PTZControlPadProps> = ({
 
   return (
     <div
-      className={`select-none bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md rounded-2xl p-3.5 text-slate-200 w-72 transition-all ${className}`}
+      className={`select-none bg-slate-900 border border-slate-700/80 shadow-2xl rounded-2xl p-3.5 text-slate-200 w-72 transition-colors ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
@@ -374,7 +374,7 @@ export const PTZControlPad: React.FC<PTZControlPadProps> = ({
             <button
               type="submit"
               disabled={savingPreset || !newPresetName.trim()}
-              className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
             >
               {savingPreset ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
             </button>
@@ -397,7 +397,7 @@ export const PTZControlPad: React.FC<PTZControlPadProps> = ({
             ))}
           </div>
         ) : (
-          <div className="text-[10px] text-slate-500 font-mono italic">
+          <div className="text-[10px] text-slate-500 font-mono">
             No saved presets
           </div>
         )}

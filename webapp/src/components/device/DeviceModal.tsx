@@ -51,7 +51,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4 md:p-6">
+    <div className="fixed inset-0 bg-slate-950/60 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
       <div className="relative bg-white dark:bg-slate-900 border-0 sm:border border-slate-200/90 dark:border-slate-800 rounded-none sm:rounded-3xl w-full max-w-none sm:max-w-3xl lg:max-w-4xl overflow-hidden shadow-none sm:shadow-2xl h-dvh sm:h-auto sm:max-h-[92dvh] flex flex-col z-10">
         {/* Modal Header */}

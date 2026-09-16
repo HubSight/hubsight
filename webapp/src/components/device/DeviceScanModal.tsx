@@ -114,7 +114,7 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[92dvh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 flex flex-col overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-800/80">
           <div className="flex items-center gap-2.5">
@@ -162,7 +162,7 @@ export const DeviceScanModal: React.FC<DeviceScanModalProps> = ({
               {t('devices.scanProgress', {
                 scanned: job?.scanned ?? 0,
                 total: job?.total ?? 0,
-                iface: job?.iface || '—',
+                iface: job?.iface || 'N/A',
               })}
             </p>
           </div>

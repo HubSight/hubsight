@@ -347,7 +347,7 @@ const Devices = () => {
         video_codec: dev.video_codec || 'copy',
         audio_mode: dev.audio_mode || 'auto',
         extra_args: dev.extra_args || '',
-        is_active: false,          // start stopped — operator can Start manually
+        is_active: false,          // start stopped; operator can Start manually
         enable_ai: dev.enable_ai || false,
         show_bbox: dev.show_bbox !== false,
         nvr_mode: dev.nvr_mode || 'event',
@@ -480,8 +480,8 @@ const Devices = () => {
             </div>
 
             {/* Quick feature highlights / Preset info on desktop */}
-            <div className="hidden sm:grid grid-cols-3 gap-4 mt-6 w-full max-w-xl text-left">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-xs">
+            <div className="hidden sm:flex flex-wrap gap-x-6 gap-y-3 mt-6 w-full max-w-xl text-left">
+              <div className="flex items-start gap-2 max-w-[170px]">
                 <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-orange-500" />
                   Preset Generators
@@ -491,7 +491,7 @@ const Devices = () => {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-xs">
+              <div className="flex items-start gap-2 max-w-[170px]">
                 <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-green-500" />
                   Zero-CPU Copy
@@ -501,10 +501,10 @@ const Devices = () => {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-xs">
+              <div className="flex items-start gap-2 max-w-[170px]">
                 <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  Smart Retention
+                  Retention rules
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                   Automatic rolling disk quota management and storage pruning.

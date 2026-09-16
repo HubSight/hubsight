@@ -102,16 +102,6 @@ export const StaticMap: React.FC<StaticMapProps> = ({
       <div
         className={`relative overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 text-center select-none ${className}`}
       >
-        {/* Subtle grid pattern background */}
-        <div
-          className="absolute inset-0 opacity-15 dark:opacity-20 pointer-events-none"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-            backgroundSize: '16px 16px',
-          }}
-        />
-
         <div className="relative z-10 flex flex-col items-center gap-1.5">
           <div className="w-8 h-8 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-2xs">
             <Wifi size={15} />
@@ -181,7 +171,7 @@ export const StaticMap: React.FC<StaticMapProps> = ({
 
       {/* Overlay: City & Country Badge (Bottom Left) */}
       <div className="absolute bottom-2 left-2 right-12 z-20 pointer-events-none">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 shadow-xs max-w-full truncate">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xs max-w-full truncate">
           <ShieldCheck size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
             {locationLabel}
@@ -200,7 +190,7 @@ export const StaticMap: React.FC<StaticMapProps> = ({
         target="_blank"
         rel="noopener noreferrer"
         title={t('sessions.openMap')}
-        className="absolute top-2 right-2 z-20 w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-800 backdrop-blur-md border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+        className="absolute top-2 right-2 z-20 w-7 h-7 rounded-md bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
       >
         <ExternalLink size={13} />
       </a>

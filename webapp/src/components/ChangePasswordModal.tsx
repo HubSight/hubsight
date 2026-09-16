@@ -80,7 +80,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in"
+      className="fixed inset-0 bg-slate-950/60 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div

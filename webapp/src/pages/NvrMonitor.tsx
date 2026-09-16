@@ -539,7 +539,7 @@ const NvrMonitor = () => {
                             </span>
                           </div>
                         ) : (
-                          <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">{t('nvr.noSegments')}</span>
+                          <span className="text-slate-400 dark:text-slate-500 text-[11px]">{t('nvr.noSegments')}</span>
                         )}
                       </div>
                       <div>
@@ -563,7 +563,7 @@ const NvrMonitor = () => {
                 <thead>
                   <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     {/* Sticky Camera Column */}
-                    <th className="py-3.5 px-5 sticky left-0 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-xs z-20 shadow-[1px_0_0_0_#e2e8f0] dark:shadow-[1px_0_0_0_#334155] whitespace-nowrap min-w-[190px] max-w-[240px]">
+                    <th className="py-3.5 px-5 sticky left-0 bg-slate-50 dark:bg-slate-800 z-20 shadow-[1px_0_0_0_#e2e8f0] dark:shadow-[1px_0_0_0_#334155] whitespace-nowrap min-w-[190px] max-w-[240px]">
                       {t('nvr.camera')}
                     </th>
                     <th className="py-3.5 px-4 whitespace-nowrap">{t('nvr.mode')}</th>
@@ -671,7 +671,7 @@ const NvrMonitor = () => {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-slate-400 dark:text-slate-500 italic whitespace-nowrap">{t('nvr.noSegments')}</span>
+                          <span className="text-slate-400 dark:text-slate-500 whitespace-nowrap">{t('nvr.noSegments')}</span>
                         )}
                       </td>
 
@@ -690,7 +690,7 @@ const NvrMonitor = () => {
 
       {/* Premium Custom Modal */}
       {modalConfig.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6">
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">{modalConfig.title}</h3>

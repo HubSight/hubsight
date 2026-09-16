@@ -23,7 +23,7 @@ export const MultiViewSelectModal: React.FC<MultiViewSelectModalProps> = ({
   if (slotIndex === null) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-10 flex flex-col max-h-[85dvh]">
         {/* Header */}
@@ -114,4 +114,3 @@ export const MultiViewSelectModal: React.FC<MultiViewSelectModalProps> = ({
     </div>
   );
 };
-

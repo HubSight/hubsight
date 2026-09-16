@@ -189,14 +189,14 @@ export const PasskeySettingsSection: React.FC = () => {
 
       {/* Notifications */}
       {success && (
-        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2 animate-fade-in">
+        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2">
           <CheckCircle2 size={14} className="shrink-0" />
           <span>{success}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl text-red-600 dark:text-red-400 text-xs flex items-center gap-2 animate-fade-in">
+        <div className="p-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
           <AlertCircle size={14} className="shrink-0" />
           <span>{error}</span>
         </div>
@@ -300,7 +300,7 @@ export const PasskeySettingsSection: React.FC = () => {
 
       {/* Add Passkey Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/60">
           <div
             className="fixed inset-0"
             onClick={() => !registering && setShowAddModal(false)}
@@ -366,7 +366,7 @@ export const PasskeySettingsSection: React.FC = () => {
 
       {/* Delete Passkey Confirmation Modal */}
       {deleteTargetId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
               <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center shrink-0">

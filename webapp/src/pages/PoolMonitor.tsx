@@ -14,6 +14,7 @@ import { api } from '../api/client';
 import type { PoolStatusSummary } from '../types/pool';
 import { useTranslation } from '../i18n';
 import { PageHeader } from '../components/common/PageHeader';
+import { StatusBadge } from '../components/ui';
 import { useOnPoolStatus } from '@hubsight/sdk/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -68,10 +69,7 @@ export const PoolMonitor = () => {
         title={t('pool.title')}
         subtitle={t('pool.subtitle')}
         badge={
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Active Pool
-          </span>
+          <StatusBadge tone="success">Active Pool</StatusBadge>
         }
       />
 
@@ -97,7 +95,7 @@ export const PoolMonitor = () => {
           </div>
 
           {/* 2. Thumbnail Persistent Streams (#thumb) */}
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-sky-200/70 dark:border-sky-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-sky-50/20 dark:from-slate-900 dark:to-sky-950/20">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-sky-700 dark:text-sky-400">{t('pool.thumbStreams')}</span>
               <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 flex items-center justify-center font-bold">
@@ -113,7 +111,7 @@ export const PoolMonitor = () => {
           </div>
 
           {/* 3. CV Background Streams */}
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-emerald-200/70 dark:border-emerald-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-emerald-50/20 dark:from-slate-900 dark:to-emerald-950/20">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{t('pool.cvStreams')}</span>
               <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
@@ -129,7 +127,7 @@ export const PoolMonitor = () => {
           </div>
 
           {/* 4. Live Scaled Streams */}
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-blue-200/70 dark:border-blue-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-blue-50/20 dark:from-slate-900 dark:to-blue-950/20">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">{t('pool.liveStreams')}</span>
               <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center justify-center">
@@ -145,7 +143,7 @@ export const PoolMonitor = () => {
           </div>
 
           {/* 5. Active Viewers */}
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-indigo-200/70 dark:border-indigo-800/70 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/20">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">{t('pool.activeViewers')}</span>
               <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center">
@@ -369,8 +367,8 @@ export const PoolMonitor = () => {
                                 <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
                                   <span>
                                     {conn.status === 'idle'
-                                      ? `⚠️ ${t('pool.connIdleReclaim')}`
-                                      : `🟢 ${t('pool.connServing')}`}
+                                      ? t('pool.connIdleReclaim')
+                                      : t('pool.connServing')}
                                   </span>
                                   <span>{t('pool.lastActive', { time: dayjs(conn.last_used_at).fromNow() })}</span>
                                 </div>

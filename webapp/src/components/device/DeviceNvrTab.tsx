@@ -106,7 +106,7 @@ export const DeviceNvrTab: React.FC<DeviceNvrTabProps> = ({ formData, onChange }
 
       {/* AI Requirement Warning if Event Mode selected without AI */}
       {currentMode === 'event' && !formData.enable_ai && (
-        <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl text-xs text-amber-800 dark:text-amber-300 animate-fadeIn">
+        <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl text-xs text-amber-800 dark:text-amber-300">
           <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="flex-1">
             <span className="font-semibold">{t('device.nvrAiNotice')}</span>
@@ -240,4 +240,3 @@ export const DeviceNvrTab: React.FC<DeviceNvrTabProps> = ({ formData, onChange }
     </div>
   );
 };
-

@@ -78,7 +78,7 @@ export const Home: React.FC = () => {
   const [snapshotRevision, setSnapshotRevision] = useState(0);
   const SNAPSHOT_TTL_MS = 90_000; // how long a *successful* snapshot stays fresh
   // The media server's ffmpeg-based MJPEG snapshot generator is intermittently flaky
-  // (transient "Broken pipe" transcode failures) — a camera whose snapshot
+  // (transient "Broken pipe" transcode failures): a camera whose snapshot
   // never succeeded would otherwise sit on "No stream" for a full 90s TTL
   // cycle before the next attempt. The TTL check inside fetchSnapshot already
   // throttles cameras with a fresh successful snapshot, so polling faster
@@ -114,7 +114,7 @@ export const Home: React.FC = () => {
       });
       setSnapshotRevision((r) => r + 1); // trigger re-render
     } catch {
-      // Silently ignore — camera may simply not have an active stream yet
+      // Silently ignore: camera may simply not have an active stream yet
     }
   }, [SNAPSHOT_TTL_MS]);
 
@@ -232,7 +232,7 @@ export const Home: React.FC = () => {
 
   // Periodic Snapshot Refresh for the top 4 dashboard cameras. Ticks every
   // SNAPSHOT_RETRY_POLL_MS, but fetchSnapshot's own SNAPSHOT_TTL_MS check
-  // skips cameras that already have a fresh snapshot — so this only actually
+  // skips cameras that already have a fresh snapshot, so this only actually
   // hits the media server for cameras still stuck without one (fast recovery from a
   // transient snapshot failure instead of waiting a full 90s).
   useEffect(() => {
@@ -544,7 +544,7 @@ export const Home: React.FC = () => {
           {/* KPI 1: Camera Fleet */}
           <div
             onClick={() => navigate('/devices')}
-            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-orange-500/50 dark:hover:border-orange-500/40 transition-all cursor-pointer flex flex-col justify-between"
+            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
@@ -590,7 +590,7 @@ export const Home: React.FC = () => {
           {/* KPI 2: Storage & NVR Retention */}
           <div
             onClick={() => navigate('/recorder')}
-            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-blue-500/50 dark:hover:border-blue-500/40 transition-all cursor-pointer flex flex-col justify-between"
+            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
@@ -637,7 +637,7 @@ export const Home: React.FC = () => {
           {/* KPI 3: Live Viewers & Stream Pool */}
           <div
             onClick={() => navigate('/pool')}
-            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-indigo-500/50 dark:hover:border-indigo-500/40 transition-all cursor-pointer flex flex-col justify-between"
+            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
@@ -682,7 +682,7 @@ export const Home: React.FC = () => {
           {/* KPI 4: AI Security Detections */}
           <div
             onClick={() => navigate('/playback')}
-            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-red-500/50 dark:hover:border-red-500/40 transition-all cursor-pointer flex flex-col justify-between"
+            className="group bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
@@ -742,7 +742,7 @@ export const Home: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/devices')}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-2xs"
               >
                 <Plus size={13} />
                 <span>{t('devices.addManual')}</span>
@@ -781,7 +781,7 @@ export const Home: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/devices')}
-                className="mt-3 px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold cursor-pointer transition-colors"
+                className="mt-3 px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold cursor-pointer transition-colors"
               >
                 {t('home.addFirstCamera')}
               </button>
@@ -832,7 +832,7 @@ export const Home: React.FC = () => {
                       {/* Status badge overlay (top-left) - only when live */}
                       {isLive && (
                         <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider backdrop-blur-sm bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-emerald-950 text-emerald-300 border border-slate-700">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                             LIVE
                           </span>
@@ -843,12 +843,12 @@ export const Home: React.FC = () => {
                       {isLive && (
                         <div className="absolute top-2 right-2 flex gap-1">
                           {cam.enable_ai && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-950/80 text-violet-300 border border-violet-800/60 backdrop-blur-sm">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-950 text-violet-200 border border-slate-700">
                               AI
                             </span>
                           )}
                           {cam.nvr_mode && cam.nvr_mode !== 'disabled' && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800/60 backdrop-blur-sm">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950 text-blue-200 border border-slate-700">
                               NVR
                             </span>
                           )}
@@ -858,7 +858,7 @@ export const Home: React.FC = () => {
                       {/* Snapshot age hint (bottom-right, only when snapshot exists and live) */}
                       {isLive && hasSnapshot && (
                         <div className="absolute bottom-1.5 right-2">
-                          <span className="text-[9px] font-mono text-white/50 bg-black/40 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                          <span className="text-[9px] font-mono text-white/70 bg-black px-1.5 py-0.5 rounded-full">
                             {snapshotAgeS < 60 ? `${snapshotAgeS}s ago` : `${Math.round(snapshotAgeS / 60)}m ago`}
                           </span>
                         </div>
@@ -1010,21 +1010,6 @@ export const Home: React.FC = () => {
                   </div>
                 ) : (
                   <svg viewBox="0 0 900 180" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
-                        <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
-                      </linearGradient>
-                      <linearGradient id="memGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                      </linearGradient>
-                      <linearGradient id="viewersGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.35" />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-
                     {/* Subtle Grid Guidelines */}
                     <line x1="0" y1="30" x2="900" y2="30" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
                     <line x1="0" y1="90" x2="900" y2="90" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
@@ -1035,11 +1020,12 @@ export const Home: React.FC = () => {
                       d={waveSvgPath.area}
                       fill={
                         activeTelemetryTab === 'cpu'
-                          ? 'url(#cpuGrad)'
+                          ? '#06b6d4'
                           : activeTelemetryTab === 'memory'
-                            ? 'url(#memGrad)'
-                            : 'url(#viewersGrad)'
+                            ? '#10b981'
+                            : '#6366f1'
                       }
+                      fillOpacity="0.16"
                       className="transition-all duration-300"
                     />
 
@@ -1237,7 +1223,7 @@ export const Home: React.FC = () => {
 
                           <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                             <div
-                              className="bg-gradient-to-r from-blue-600 to-indigo-500 h-full rounded-full transition-all duration-500"
+                              className="bg-blue-700 h-full rounded-full transition-all duration-500"
                               style={{ width: `${percent}%` }}
                             />
                           </div>

@@ -93,7 +93,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 dark:bg-black pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Floating Realtime Notification Toast */}
       <NotificationToast />
       <Toaster position="top-right" />
@@ -106,7 +106,7 @@ const MainLayout = () => {
       />
 
       {/* Mobile Header (In flex-flow on mobile: shrink-0, hidden on desktop) */}
-      <header className="md:hidden shrink-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 z-30 pt-[env(safe-area-inset-top)] shadow-xs">
+      <header className="md:hidden shrink-0 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-30 pt-[env(safe-area-inset-top)] shadow-xs">
         <div className="h-14 flex items-center justify-between px-4">
           <NavLink to={user?.role === 'admin' ? '/' : '/playback'} className="flex items-center gap-2.5 no-underline group cursor-pointer">
             <img
@@ -160,7 +160,7 @@ const MainLayout = () => {
       {/* Mobile Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"
+          className="md:hidden fixed inset-0 bg-slate-950/60 z-40"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -316,7 +316,7 @@ const MainLayout = () => {
 
           {/* User Popover Menu - Opens DOWNWARD */}
           {isUserMenuOpen && (
-            <div className="absolute top-full left-3 right-3 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-xl dark:shadow-slate-950/60 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute top-full left-3 right-3 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-xl dark:shadow-slate-950/60 p-1.5 z-50">
               <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                   {user?.full_name || user?.username}

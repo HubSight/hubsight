@@ -342,7 +342,7 @@ export const SessionsSettingsSection: React.FC = () => {
         </button>
 
         {showPastSessions && (
-          <div className="pt-2 animate-fade-in">
+          <div className="pt-2">
             {pastSessions.length === 0 ? (
               <div className="py-6 text-center text-xs text-slate-400">
                 {t('sessions.noPastSessions')}
@@ -388,7 +388,7 @@ export const SessionsSettingsSection: React.FC = () => {
                           {dayjs(s.created_at).format('DD/MM/YYYY HH:mm')}
                         </td>
                         <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
-                          {s.revoked_at ? dayjs(s.revoked_at).format('DD/MM/YYYY HH:mm') : '—'}
+                          {s.revoked_at ? dayjs(s.revoked_at).format('DD/MM/YYYY HH:mm') : 'N/A'}
                         </td>
                         <td className="py-2.5 px-3">
                           <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/60">
@@ -407,7 +407,7 @@ export const SessionsSettingsSection: React.FC = () => {
 
       {/* ── MODAL: CONFIRM REVOKE SINGLE SESSION ── */}
       {targetSession && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-red-600 dark:text-red-400">
@@ -463,7 +463,7 @@ export const SessionsSettingsSection: React.FC = () => {
 
       {/* ── MODAL: CONFIRM REVOKE ALL OTHER SESSIONS ── */}
       {showRevokeAllModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-red-600 dark:text-red-400">

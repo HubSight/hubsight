@@ -19,24 +19,40 @@ export default {
       'full': '9999px',
     },
     extend: {
+      boxShadow: {
+        '2xs': '0 1px 1px rgb(15 23 42 / 0.04)',
+        xs: '0 1px 2px rgb(15 23 42 / 0.06)',
+      },
       colors: {
+        orange: {
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#ea580c',
+          600: '#c2410c',
+          700: '#9a3412',
+          800: '#7c2d12',
+          900: '#431407',
+          950: '#2a0d03',
+        },
         slate: {
           50: '#f8fafc',
           100: '#f1f5f9',
           200: '#e2e8f0',
           300: '#cbd5e1',
           400: '#94a3b8',
-          500: '#71717a',
-          600: '#3f3f46',
-          700: '#27272a', // Crisp dark border (Zinc 800)
-          800: '#18181b', // Deep charcoal surface / inputs / hover (Zinc 900)
-          850: '#111113', // Intermediate deep black
-          900: '#09090b', // Pitch-black-charcoal container / card / modal / sidebar (Zinc 950)
-          950: '#000000', // Pure pitch-black OLED background
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          850: '#17212d',
+          900: '#111820',
+          950: '#0b0f14',
         },
       },
     },
   },
   plugins: [],
 }
-

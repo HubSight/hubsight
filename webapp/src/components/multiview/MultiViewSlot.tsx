@@ -145,7 +145,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
         <div className="flex flex-col items-center gap-2 text-center pointer-events-none">
           <div
             className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${isDragOver
-                ? 'bg-orange-500 text-white shadow-md scale-110'
+                ? 'bg-orange-700 text-white shadow-md scale-110'
                 : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-400 border border-slate-200 dark:border-slate-700 group-hover:text-orange-600 dark:group-hover:text-orange-400 group-hover:border-orange-200 dark:group-hover:border-orange-500 group-hover:scale-105 shadow-xs'
               }`}
           >
@@ -192,7 +192,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
       />
 
       {/* Top Header Overlay: Slot info & Controls */}
-      <div className="absolute top-0 inset-x-0 p-2 sm:p-2.5 bg-gradient-to-b from-black/85 via-black/40 to-transparent flex items-center justify-between gap-2 z-20 transition-opacity">
+      <div className="absolute top-0 inset-x-0 p-2 sm:p-2.5 bg-black/80 flex items-center justify-between gap-2 z-20">
         {/* Left: Drag Handle, Slot pill, Camera Name */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <div
@@ -204,7 +204,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
             <GripVertical size={14} />
           </div>
 
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-white/20 text-white/90 shrink-0 backdrop-blur-xs">
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-slate-700 text-white shrink-0">
             #{slotIndex + 1}
           </span>
 
@@ -292,7 +292,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
 
       {/* State Overlay: Connecting */}
       {isCameraActive && status === 'connecting' && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white z-10 pointer-events-none">
+        <div className="absolute inset-0 bg-black/75 flex flex-col items-center justify-center gap-2 text-white z-10 pointer-events-none">
           <Loader2 className="animate-spin text-orange-500" size={24} />
           <span className="text-xs text-slate-300 font-medium">{t('loading')}</span>
         </div>
@@ -319,7 +319,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
 
       {/* Audio solo banner in bottom-left */}
       {isCameraActive && isAudioActive && (
-        <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-600/90 text-white text-[10px] font-bold shadow-md backdrop-blur-xs pointer-events-none">
+        <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-700 text-white text-[10px] font-bold shadow-md pointer-events-none">
           <Volume2 size={12} className="animate-pulse" />
           <span>AUDIO LIVE</span>
         </div>
@@ -327,7 +327,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
 
       {/* Floating PTZ HUD Pad */}
       {showPTZ && isCameraActive && cameraId && (
-        <div className="absolute top-12 right-2.5 z-30 shadow-2xl max-w-[calc(100%-20px)] animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute top-12 right-2.5 z-30 shadow-2xl max-w-[calc(100%-20px)]">
           <PTZControlPad
             cameraId={cameraId}
             cameraName={camera?.name}
@@ -338,4 +338,3 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
     </div>
   );
 };
-

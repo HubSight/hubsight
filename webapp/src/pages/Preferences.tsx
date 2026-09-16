@@ -273,7 +273,7 @@ export const Preferences: React.FC = () => {
               TAB 1: PROFILE & ACCOUNT
              ══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'profile' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
               {/* User Identity Card */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xs space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
@@ -314,7 +314,7 @@ export const Preferences: React.FC = () => {
                     </span>
                     <div className="flex items-center justify-between gap-2">
                       <code className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 truncate">
-                        {user?.id || '—'}
+                        {user?.id || 'N/A'}
                       </code>
                       {user?.id && (
                         <button
@@ -347,7 +347,7 @@ export const Preferences: React.FC = () => {
                       {t('settings.createdAt')}
                     </span>
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {user?.created_at ? dayjs(user.created_at).format('DD/MM/YYYY HH:mm') : '—'}
+                      {user?.created_at ? dayjs(user.created_at).format('DD/MM/YYYY HH:mm') : 'N/A'}
                     </span>
                   </div>
 
@@ -498,7 +498,7 @@ export const Preferences: React.FC = () => {
               TAB 2: SECURITY & AUTHENTICATION
              ══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'security' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
               {/* Two-Factor Authentication Card */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xs space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -571,7 +571,7 @@ export const Preferences: React.FC = () => {
               TAB 3: SESSIONS & DEVICES
              ══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'sessions' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
               <SessionsSettingsSection />
             </div>
           )}
@@ -580,7 +580,7 @@ export const Preferences: React.FC = () => {
               TAB 4: PREFERENCES & DISPLAY
              ══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'preferences' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
               {/* Theme Preference Card */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xs space-y-4">
                 <div className="flex items-center gap-3">
@@ -766,7 +766,7 @@ export const Preferences: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-base">🇻🇳</span>
+                      <span className="text-xs font-mono tracking-wider">VI</span>
                       <span>{t('settings.langVi')}</span>
                     </div>
                     {locale === 'vi' && <Check size={16} className="text-orange-600" />}
@@ -782,7 +782,7 @@ export const Preferences: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-base">🇺🇸</span>
+                      <span className="text-xs font-mono tracking-wider">EN</span>
                       <span>{t('settings.langEn')}</span>
                     </div>
                     {locale === 'en' && <Check size={16} className="text-orange-600" />}
@@ -823,7 +823,7 @@ export const Preferences: React.FC = () => {
               TAB 4: PUSH NOTIFICATIONS
              ══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'notifications' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xs space-y-5">
                 <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
                   <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-2xs">

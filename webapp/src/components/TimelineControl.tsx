@@ -119,7 +119,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
       {/* 1. Header Bar: Title, Count, Filters, Live Button */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-orange-500/20 to-amber-500/10 text-orange-400 rounded-xl border border-orange-500/30 shadow-inner">
+          <div className="p-2.5 bg-orange-950 text-orange-300 rounded-xl border border-slate-700 shadow-inner">
             <Sparkles size={20} className="animate-pulse" />
           </div>
           <div>
@@ -256,7 +256,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                     className={`absolute top-1 bottom-1 w-2.5 -ml-1.25 rounded-md transition-all cursor-pointer z-10 hover:scale-125 hover:z-20 ${
                       isSelected
                         ? 'bg-white ring-2 ring-orange-500 shadow-lg scale-110 z-20'
-                        : `${meta.markerColor} opacity-85 hover:opacity-100 shadow-md`
+                        : `${meta.markerColor} shadow-md`
                     }`}
                     style={{ left: `${posPercent}%` }}
                   />
@@ -300,7 +300,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                       onClick={() => onSeek(rec, 0)}
                       className={`group relative flex flex-col justify-between rounded-xl border overflow-hidden transition-all cursor-pointer select-none active:scale-[0.98] ${
                         isSelected
-                          ? 'bg-gradient-to-b from-orange-600/20 to-slate-900 border-orange-500 shadow-xl shadow-orange-500/10 ring-2 ring-orange-500/40'
+                          ? 'bg-orange-950 border-orange-500 shadow-xl shadow-orange-500/10 ring-2 ring-orange-500/40'
                           : 'bg-slate-950/70 hover:bg-slate-900 border-slate-800 hover:border-slate-700 shadow-md'
                       }`}
                     >
@@ -319,29 +319,29 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
                         )}
 
                         {/* Fallback Icon overlay when image is not present or loading */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 -z-10 pointer-events-none">
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-950 -z-10 pointer-events-none">
                           <Icon size={24} className="text-slate-700 opacity-60 group-hover:scale-110 transition-transform" />
                         </div>
 
-                        {/* Top Gradient & Badges */}
-                        <div className="absolute inset-x-0 top-0 p-2 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm border backdrop-blur-md flex items-center gap-1 ${meta.color}`}>
+                        {/* Top status bar and badges */}
+                        <div className="absolute inset-x-0 top-0 p-2 bg-black/80 flex items-center justify-between">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm border flex items-center gap-1 ${meta.color}`}>
                             <Icon size={10} />
                             <span>{meta.label}</span>
                           </span>
-                          <span className="text-[10px] font-mono font-bold text-white bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded shadow">
+                          <span className="text-[10px] font-mono font-bold text-white bg-black px-1.5 py-0.5 rounded shadow">
                             {start.format('HH:mm:ss')}
                           </span>
                         </div>
 
                         {/* Bottom Duration Badge */}
-                        <div className="absolute bottom-1.5 right-1.5 bg-black/75 backdrop-blur-sm text-slate-200 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow">
+                        <div className="absolute bottom-1.5 right-1.5 bg-black text-slate-200 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow">
                           {duration}s
                         </div>
 
                         {/* Center Hover Play Icon */}
-                        <div className={`absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                          <div className="p-2 rounded-full bg-orange-500 text-white shadow-lg transform group-hover:scale-110 transition-transform">
+                        <div className={`absolute inset-0 flex items-center justify-center bg-black/65 ${isSelected ? 'visible' : 'invisible group-hover:visible'}`}>
+                          <div className="p-2 rounded-full bg-orange-700 text-white shadow-lg transform group-hover:scale-110 transition-transform">
                             <Play size={14} className="fill-white translate-x-0.5" />
                           </div>
                         </div>
@@ -372,4 +372,3 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
 };
 
 export default TimelineControl;
-

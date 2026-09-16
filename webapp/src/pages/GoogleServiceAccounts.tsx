@@ -18,6 +18,7 @@ import {
   FileCode,
   Shield,
   Clock,
+  Cloud,
 } from '@/components/icons';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/common/PageHeader';
@@ -322,7 +323,7 @@ export const GoogleServiceAccounts: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('serviceAccounts.activeProject')}</p>
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={activeAccount?.project_id || '—'}>
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={activeAccount?.project_id || 'N/A'}>
               {activeAccount?.project_id || t('serviceAccounts.notSetup')}
             </p>
           </div>
@@ -458,7 +459,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                               )}
                               {acc.client_email.includes('firebase-adminsdk') && (
                                 <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded inline-flex items-center gap-1 shrink-0 whitespace-nowrap" title={t('serviceAccounts.directDownloadTag')}>
-                                  🔥 Firebase Admin SDK
+                                  <><Cloud size={10} /> Firebase Admin SDK</>
                                 </span>
                               )}
                             </div>
@@ -492,7 +493,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                       {/* Key ID */}
                       <td className="py-3.5 px-5 whitespace-nowrap">
                         <span className="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 shrink-0">
-                          {acc.private_key_id ? acc.private_key_id.slice(0, 10) + '...' : '—'}
+                          {acc.private_key_id ? acc.private_key_id.slice(0, 10) + '...' : 'N/A'}
                         </span>
                       </td>
 
@@ -608,7 +609,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                     )}
                     {acc.client_email.includes('firebase-adminsdk') && (
                       <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded inline-flex items-center gap-1">
-                        🔥 Firebase Console
+                        <><Cloud size={10} /> Firebase Console</>
                       </span>
                     )}
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
@@ -672,7 +673,7 @@ export const GoogleServiceAccounts: React.FC = () => {
 
       {/* ── MODAL: Import Google Service Account ───────────────────────────── */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="fixed inset-0" onClick={() => setIsImportModalOpen(false)} />
           <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
             {/* Modal Header */}
@@ -810,14 +811,14 @@ export const GoogleServiceAccounts: React.FC = () => {
 
               {/* Real-time Validation Status Alert */}
               {jsonValidationError && (
-                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2 animate-fade-in">
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
                   <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-500 dark:text-rose-400" />
                   <span>{jsonValidationError}</span>
                 </div>
               )}
 
               {parsedPreview && !jsonValidationError && (
-                <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5 animate-fade-in">
+                <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5">
                   <div className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
                     <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400" />
                     <span>{t('serviceAccounts.jsonValid')}</span>
@@ -901,7 +902,7 @@ export const GoogleServiceAccounts: React.FC = () => {
 
       {/* ── MODAL: Detail View ─────────────────────────────────────────────── */}
       {detailAccount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="fixed inset-0" onClick={() => setDetailAccount(null)} />
           <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 shrink-0">
@@ -940,7 +941,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 block font-medium">Private Key ID</span>
                     <span className="font-mono text-slate-800 dark:text-slate-100 text-xs truncate block" title={detailAccount.private_key_id}>
-                      {detailAccount.private_key_id || '—'}
+                      {detailAccount.private_key_id || 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -972,7 +973,7 @@ export const GoogleServiceAccounts: React.FC = () => {
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">{t('serviceAccounts.privateKey')}</span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">{t('serviceAccounts.maskedKeyNote')}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">{t('serviceAccounts.maskedKeyNote')}</span>
                   </div>
                   <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 select-all">
                     -----BEGIN RSA PRIVATE KEY-----<br />
@@ -1055,7 +1056,7 @@ export const GoogleServiceAccounts: React.FC = () => {
 
       {/* ── MODAL: Delete Confirmation ────────────────────────────────────── */}
       {deleteAccount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
           <div className="fixed inset-0" onClick={() => setDeleteAccount(null)} />
           <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 z-10 space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center">

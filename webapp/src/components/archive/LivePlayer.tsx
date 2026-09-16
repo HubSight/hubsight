@@ -221,7 +221,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         className="absolute inset-0 w-full h-full pointer-events-none z-20"
       />
       {isInitializing && !error && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-3 text-white z-10">
+        <div className="absolute inset-0 bg-black/75 flex flex-col items-center justify-center gap-3 text-white z-10">
           <Loader2 className="animate-spin text-orange-500" size={36} />
           <p className="text-sm font-medium">{t('playback.connectingWebRtc')}</p>
         </div>
@@ -235,7 +235,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
       )}
       {/* Debug Trace Overlay */}
       {showTrace && (
-        <div className="absolute top-14 right-4 bg-black/70 text-white font-mono text-[11px] p-2 rounded border border-white/20 z-50 backdrop-blur-sm shadow-xl pointer-events-none select-none">
+        <div className="absolute top-14 right-4 bg-black text-white font-mono text-[11px] p-2 rounded border border-white/20 z-50 shadow-xl pointer-events-none select-none">
           <div className="text-orange-400 font-bold mb-1 uppercase tracking-wider flex items-center gap-1.5">
             <Activity size={12} /> {t('playback.traceTitle')}
           </div>
@@ -290,7 +290,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
       {/* Top-Right Control overlay */}
       <div className="absolute top-overlay-safe right-overlay-safe z-40 flex items-center gap-2">
         {enableAi && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-950/70 text-purple-200 border border-purple-500/40 backdrop-blur shadow-lg pointer-events-none select-none animate-in fade-in duration-300">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-950 text-purple-200 border border-slate-700 shadow-lg pointer-events-none select-none">
             <Sparkles size={13} className="text-purple-400 animate-spin" style={{ animationDuration: '4s' }} />
             <span>{t('device.aiIntegrated')}</span>
           </div>
@@ -302,8 +302,8 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
             e.stopPropagation();
             setShowTrace(!showTrace);
           }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur shadow-lg transition-all cursor-pointer border ${showTrace
-            ? 'bg-orange-500/80 text-white border-orange-400'
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg transition-colors cursor-pointer border ${showTrace
+            ? 'bg-orange-700 text-white border-orange-700'
             : 'bg-black/40 text-white/90 hover:bg-black/60 border-white/20 hover:border-white/40'
             }`}
           title={t('playback.toggleTrace')}
@@ -323,7 +323,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
           <button
             type="button"
             onClick={toggleMute}
-            className="text-xs px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white font-medium rounded-lg border border-white/30 backdrop-blur-md shadow-lg flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+            className="text-xs px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg border border-white/30 shadow-lg flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             title={t('playback.unmute')}
           >
             <Volume2 size={13} className="text-white" />
@@ -332,7 +332,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
         )}
 
         {/* Clean White Volume Slider Widget */}
-        <div className="group/vol flex items-center gap-2 px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 hover:border-white/40 transition-all shadow-lg">
+        <div className="group/vol flex items-center gap-2 px-2.5 py-1 rounded-xl bg-black hover:bg-slate-900 border border-white/20 hover:border-white/40 transition-colors shadow-lg">
           <button
             type="button"
             onClick={toggleMute}

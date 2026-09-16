@@ -393,7 +393,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Mode = LIVE: Pulsing LIVE badge at top left */}
       {mode === 'live' && isLive && cameraId && !liveOffline && (
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-          <div className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase shadow-md backdrop-blur-md">
+          <div className="flex items-center gap-2 bg-orange-700 text-white px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase shadow-md">
             <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
             LIVE
           </div>
@@ -403,12 +403,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Mode = ARCHIVE: Top details + Switch to Live */}
       {mode === 'archive' && activeRecording && (
         <div
-          className={`absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          className={`absolute top-0 left-0 right-0 z-20 p-4 bg-black/80 flex items-center justify-between transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
         >
           {/* Top-Left: Archive Segment Time Badge */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-slate-900/85 text-amber-300 px-3 py-1 rounded-md text-xs font-semibold tracking-wide border border-amber-500/30 shadow-md backdrop-blur-md">
+            <div className="flex items-center gap-2 bg-slate-900 text-amber-300 px-3 py-1 rounded-md text-xs font-semibold tracking-wide border border-slate-700 shadow-md">
               <span className="w-2 h-2 rounded-full bg-amber-400" />
               <span>
                 {formatAbsoluteTime(activeRecording.start_at)} – {formatAbsoluteTime(activeRecording.end_at)}
@@ -421,7 +421,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             {onGoLive && cameraId && (
               <button
                 onClick={onGoLive}
-                className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white px-3 py-1 rounded-md text-xs font-bold tracking-wide shadow-md transition-all cursor-pointer backdrop-blur-md active:scale-95"
+                className="flex items-center gap-1.5 bg-orange-700 hover:bg-orange-800 text-white px-3 py-1 rounded-md text-xs font-bold tracking-wide shadow-md transition-colors cursor-pointer active:scale-95"
               >
                 <Radio size={14} className="text-white" />
                 <span>{t('playback.switchToLive')}</span>
@@ -434,7 +434,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Center Action Pop Animation (Play/Pause indicator) */}
       {centerAnim && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <div className="p-4 bg-black/60 text-white rounded-full backdrop-blur-sm animate-ping">
+          <div className="p-4 bg-black text-white rounded-full animate-ping">
             {centerAnim === 'play' ? <Play size={36} /> : <Pause size={36} />}
           </div>
         </div>
@@ -497,7 +497,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* CASE A: LIVE MODE -> Clean minimal bottom bar (Full Solid Orange-600 bar + Fullscreen) */}
       {mode === 'live' && cameraId && !liveOffline && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-auto">
+        <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end bg-black/80 pointer-events-auto">
           {/* Full Solid Red-Orange (orange-600) Pinned Live Progress Bar */}
           <div className="w-full h-1 bg-orange-600 shadow-[0_0_8px_rgba(234,88,12,0.8)]" />
 
@@ -522,7 +522,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* CASE B: ARCHIVE MODE -> Full YouTube Player Controls */}
       {mode === 'archive' && activeRecording && (
         <div
-          className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-8 transition-opacity duration-300 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end bg-black/90 pt-8 transition-opacity duration-300 pointer-events-auto ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
         >
           {/* --- Interactive YouTube Progress Bar --- */}
@@ -618,7 +618,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
                 {/* Speed Popover Menu */}
                 {showSpeedMenu && (
-                  <div className="absolute bottom-full right-0 mb-2 w-32 bg-slate-900/95 border border-white/15 rounded-xl shadow-2xl overflow-hidden py-1 backdrop-blur-md z-40">
+                  <div className="absolute bottom-full right-0 mb-2 w-32 bg-slate-900 border border-white/15 rounded-xl shadow-2xl overflow-hidden py-1 z-40">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-white/10">
                       {t('playback.speed')}
                     </div>

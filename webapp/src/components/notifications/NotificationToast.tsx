@@ -38,7 +38,7 @@ const playNotificationChime = (category: string) => {
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.4);
     }
-  } catch (_) {
+  } catch {
     // Audio autoplay restrictions silently ignored
   }
 };
@@ -71,7 +71,7 @@ export const NotificationToast: React.FC = () => {
               navigate(url);
             }
           }}
-          className={`max-w-sm w-full p-4 rounded-2xl shadow-xl border backdrop-blur-md cursor-pointer transition-all duration-200 group relative overflow-hidden pointer-events-auto ${tObj.visible ? 'animate-in fade-in zoom-in-95' : 'animate-out fade-out zoom-out-95'
+          className={`max-w-sm w-full p-4 rounded-2xl shadow-xl border cursor-pointer transition-colors duration-200 group relative overflow-hidden pointer-events-auto ${tObj.visible ? '' : 'hidden'
             } ${isFamily
               ? 'bg-slate-900/95 text-white border-emerald-500/50'
               : isGuest

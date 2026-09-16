@@ -204,22 +204,15 @@ const Login = () => {
             filter: 'brightness(0.62) saturate(0.82) contrast(1.08)',
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/35 via-slate-900/15 to-orange-950/25" />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse at 58% 42%, transparent 28%, rgba(15, 23, 42, 0.38) 72%, rgba(15, 23, 42, 0.62) 100%)',
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-slate-900/20" />
+        <div className="absolute inset-0 bg-slate-950/55" />
+        <div className="absolute inset-0 bg-slate-950/20" />
       </div>
 
       <div className="absolute top-overlay-safe right-overlay-safe z-20 flex items-center gap-2">
         {/* Quick Theme Toggle on Login Page */}
         <button
           onClick={cycleTheme}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           title={theme === 'system' ? t('settings.themeSystem') : theme === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
         >
           {theme === 'dark' ? (
@@ -234,15 +227,15 @@ const Login = () => {
 
         <button
           onClick={handleSwitchLocale}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         >
           <Globe size={14} className="text-slate-400 dark:text-slate-500" />
-          <span>{locale === 'vi' ? '🇻🇳 Tiếng Việt' : '🇬🇧 English'}</span>
+          <span>{locale === 'vi' ? 'VI · Tiếng Việt' : 'EN · English'}</span>
         </button>
       </div>
 
       <div className="relative z-10 w-full sm:max-w-[420px] flex-1 sm:flex-none flex flex-col min-h-0 pt-[calc(env(safe-area-inset-top,0px)+3.25rem)] sm:pt-0 sm:my-auto">
-        <div className="flex-1 sm:flex-none flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/70 sm:border sm:border-slate-200/80 dark:border-slate-800 rounded-t-[1.75rem] sm:rounded-3xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 md:p-9 shadow-[0_-12px_40px_rgba(15,23,42,0.14)] sm:shadow-[0_0_0_0.5px_rgba(15,23,42,0.04),0_1px_1px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.08)]">
+        <div className="flex-1 sm:flex-none flex flex-col bg-white dark:bg-slate-900 border-t border-slate-200 sm:border sm:border-slate-200/80 dark:border-slate-800 rounded-t-[1.75rem] sm:rounded-3xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 md:p-9 shadow-[0_-12px_40px_rgba(15,23,42,0.14)] sm:shadow-[0_0_0_0.5px_rgba(15,23,42,0.04),0_1px_1px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.08)]">
           <div className="sm:hidden flex justify-center pb-3 pt-0.5" aria-hidden>
             <span className="block w-10 h-1 rounded-full bg-slate-300/90 dark:bg-slate-700" />
           </div>
@@ -270,7 +263,7 @@ const Login = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-300 text-xs sm:text-sm font-medium flex items-start gap-2 animate-fade-in">
+            <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-300 text-xs sm:text-sm font-medium flex items-start gap-2">
               <span className="text-red-500 mt-0.5">•</span>
               <span className="flex-1">{error}</span>
             </div>
@@ -389,7 +382,7 @@ const Login = () => {
             </div>
           ) : (
             /* ── STEP 2: 2FA TOTP or Backup Recovery Code ── */
-            <form onSubmit={handleVerify2FA} className="space-y-4 sm:space-y-5 flex-1 animate-fade-in">
+            <form onSubmit={handleVerify2FA} className="space-y-4 sm:space-y-5 flex-1">
               {!useRecoveryCode ? (
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 uppercase tracking-wider">

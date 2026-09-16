@@ -39,7 +39,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Stopped cameras have no live feed and (usually) nothing new to browse —
+  // Stopped cameras have no live feed and (usually) nothing new to browse:
   // don't clutter the picker with them. The full `cameras` list is still used
   // for the closed-button label so a deep-linked/auto-selected stopped camera
   // still displays its name correctly even though it's not offered as a choice.
@@ -89,7 +89,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
 
           {/* Dropdown Menu */}
           {isDropdownOpen && selectableCameras.length > 0 && (
-            <div className="absolute top-full mt-1.5 left-0 z-50 w-full min-w-[200px] glass-panel py-1.5 bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute top-full mt-1.5 left-0 z-50 w-full min-w-[200px] surface-panel py-1.5 overflow-hidden">
               {selectableCameras.map((c) => (
                 <div
                   key={c.id}
@@ -130,7 +130,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
 
         {/* Calendar Popover */}
         {showCalendar && (
-          <div className="absolute top-full mt-2 left-0 z-50 glass-panel p-2 bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-slate-800 rounded-xl">
+          <div className="absolute top-full mt-2 left-0 z-50 surface-panel p-2">
             <Calendar
               locale={locale === 'vi' ? 'vi-VN' : 'en-US'}
               onChange={(val) => {

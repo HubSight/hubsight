@@ -167,7 +167,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/60">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
@@ -199,7 +199,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
         {/* Content */}
         <div className="p-6 overflow-y-auto space-y-5 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
           {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-red-600 dark:text-red-400 text-xs flex items-center gap-2 animate-fade-in">
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
               <AlertCircle size={16} className="shrink-0" />
               <span>{error}</span>
             </div>

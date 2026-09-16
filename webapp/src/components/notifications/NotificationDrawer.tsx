@@ -203,7 +203,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in cursor-pointer"
+        className="fixed inset-0 bg-slate-950/60 cursor-pointer"
         aria-hidden="true"
       />
 
@@ -243,7 +243,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
           {/* Web Push Banner (If not yet enabled) */}
           {isPushNotificationSupported() && pushStatus !== 'granted' && (
-            <div className="m-3 p-3.5 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200/80 dark:border-orange-800/50 flex items-start gap-3 shadow-xs">
+            <div className="m-3 p-3.5 rounded-2xl bg-orange-50 dark:bg-orange-950/30 border border-slate-200 dark:border-slate-800 flex items-start gap-3 shadow-xs">
               <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0">
                 <Smartphone size={16} />
               </div>
@@ -415,7 +415,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     {/* Delete button */}
                     <button
                       onClick={(e) => handleDelete(e, n.id)}
-                      className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                      className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
                       title={t('common.delete')}
                     >
                       <Trash2 size={13} />

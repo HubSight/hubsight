@@ -19,7 +19,7 @@ type Point = { x: number; y: number };
 
 const MAX_POINTS = 4;
 
-// §2.4 — opt-in ground-plane homography calibration: an admin clicks 4 floor
+// §2.4: opt-in ground-plane homography calibration. An admin clicks 4 floor
 // points on the live feed (a rectangle in the real room), which vision-service
 // maps onto a unit floor square for bird's-eye-view tracking on fixed cameras.
 export const DeviceCalibrationTab: React.FC<DeviceCalibrationTabProps> = ({
@@ -192,7 +192,7 @@ export const DeviceCalibrationTab: React.FC<DeviceCalibrationTabProps> = ({
             {status !== 'live' && (
               <div className="absolute inset-0 z-10">
                 {status === 'connecting' ? (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs gap-2 bg-slate-950/80 backdrop-blur-xs">
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs gap-2 bg-slate-950/90">
                     <Loader2 size={16} className="animate-spin text-orange-500" />
                     {t('device.calibrationWaitingForStream')}
                   </div>

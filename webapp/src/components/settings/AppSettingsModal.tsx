@@ -84,7 +84,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
   const isRunningPwa = isPwa();
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-950/60">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="relative w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl bg-white dark:bg-slate-900 border-0 sm:border border-slate-200/90 dark:border-slate-800 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl overflow-hidden z-10 flex flex-col h-dvh sm:h-[88vh] sm:max-h-[850px]">
@@ -205,7 +205,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
           <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto space-y-6 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
             {/* ── TAB 1: SECURITY & AUTHENTICATION ── */}
             {activeTab === 'security' && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6">
                 <div>
                   <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                     {t('settings.mfaSectionTitle')}
@@ -278,7 +278,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
 
             {/* ── TAB 2: PUSH NOTIFICATIONS ── */}
             {activeTab === 'notifications' && (
-              <div className="space-y-5 animate-fade-in">
+              <div className="space-y-5">
                 <div>
                   <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                     {t('settings.pushTitle')}
@@ -357,7 +357,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ onClose }) =
 
             {/* ── TAB 3: GENERAL PREFERENCES ── */}
             {activeTab === 'general' && (
-              <div className="space-y-5 animate-fade-in">
+              <div className="space-y-5">
                 <div>
                   <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                     {t('settings.tabGeneral')}

@@ -9,7 +9,7 @@ export interface BreadcrumbItem {
 
 export interface PageHeaderProps {
   /**
-   * Lucide icon component or custom ReactNode to be displayed in the standard brand icon box.
+   * Icon component or custom ReactNode displayed in the standard page icon box.
    */
   icon?: React.ComponentType<{ size?: number; className?: string }> | React.ReactNode;
   /**
@@ -61,7 +61,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
     if (isValidElement(icon)) {
       return (
-        <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-2xs">
+        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300 flex items-center justify-center shrink-0">
           {icon}
         </div>
       );
@@ -70,7 +70,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     if (typeof icon === 'function') {
       const IconComponent = icon as React.ComponentType<{ size?: number; className?: string }>;
       return (
-        <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-2xs">
+        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300 flex items-center justify-center shrink-0">
           <IconComponent size={20} />
         </div>
       );

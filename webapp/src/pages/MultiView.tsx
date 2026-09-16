@@ -344,7 +344,7 @@ export const MultiView: React.FC = () => {
         {/* Mobile Drawer Backdrop */}
         {isMobileSidebarOpen && (
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs"
+            className="lg:hidden fixed inset-0 z-40 bg-slate-950/60"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
         )}
@@ -413,4 +413,3 @@ export const MultiView: React.FC = () => {
 };
 
 export default MultiView;
-
