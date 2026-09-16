@@ -393,7 +393,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Mode = LIVE: Pulsing LIVE badge at top left */}
       {mode === 'live' && isLive && cameraId && !liveOffline && (
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-          <div className="flex items-center gap-2 bg-orange-700 text-white px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase shadow-md">
+          <div className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase shadow-md">
             <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
             LIVE
           </div>
@@ -421,7 +421,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             {onGoLive && cameraId && (
               <button
                 onClick={onGoLive}
-                className="flex items-center gap-1.5 bg-orange-700 hover:bg-orange-800 text-white px-3 py-1 rounded-md text-xs font-bold tracking-wide shadow-md transition-colors cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white px-3 py-1 rounded-md text-xs font-bold tracking-wide shadow-md transition-colors cursor-pointer active:scale-95"
               >
                 <Radio size={14} className="text-white" />
                 <span>{t('playback.switchToLive')}</span>

@@ -374,7 +374,7 @@ export const PTZControlPad: React.FC<PTZControlPadProps> = ({
             <button
               type="submit"
               disabled={savingPreset || !newPresetName.trim()}
-              className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
             >
               {savingPreset ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
             </button>

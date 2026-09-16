@@ -543,7 +543,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                             <div
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                                 isSelected
-                                  ? 'bg-orange-700 border-orange-700 text-white'
+                                  ? 'bg-orange-500 border-orange-500 text-white'
                                   : 'border-white/80 bg-black/20'
                               }`}
                             >
@@ -589,7 +589,7 @@ export const MemberFaceGalleryModal: React.FC<MemberFaceGalleryModalProps> = ({
                                   e.stopPropagation();
                                   handleSetAsAvatar(f.sample_image_url);
                                 }}
-                                className="flex-1 py-1 px-1.5 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-[10px] font-bold transition-colors truncate shadow-sm cursor-pointer text-center"
+                                className="flex-1 py-1 px-1.5 rounded-xl bg-slate-900 hover:bg-orange-600 text-white text-[10px] font-bold transition-colors truncate shadow-sm cursor-pointer text-center"
                               >
                                 {t('gallery.setAsAvatar')}
                               </button>

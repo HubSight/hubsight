@@ -742,7 +742,7 @@ export const Home: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/devices')}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-colors cursor-pointer shadow-2xs"
               >
                 <Plus size={13} />
                 <span>{t('devices.addManual')}</span>
@@ -781,7 +781,7 @@ export const Home: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/devices')}
-                className="mt-3 px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold cursor-pointer transition-colors"
+                className="mt-3 px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold cursor-pointer transition-colors"
               >
                 {t('home.addFirstCamera')}
               </button>

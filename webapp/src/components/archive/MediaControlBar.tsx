@@ -84,7 +84,7 @@ export const MediaControlBar: React.FC<MediaControlBarProps> = ({
           >
             <button
               onClick={onPlay}
-              className="p-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-full transition-colors shadow-sm cursor-pointer"
+              className="p-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-full transition-colors shadow-sm cursor-pointer"
               title={t('playback.play')}
             >
               <Play size={20} className="fill-current ml-0.5" />

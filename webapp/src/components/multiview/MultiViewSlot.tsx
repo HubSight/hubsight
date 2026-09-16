@@ -145,7 +145,7 @@ export const MultiViewSlot: React.FC<MultiViewSlotProps> = ({
         <div className="flex flex-col items-center gap-2 text-center pointer-events-none">
           <div
             className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${isDragOver
-                ? 'bg-orange-700 text-white shadow-md scale-110'
+                ? 'bg-orange-500 text-white shadow-md scale-110'
                 : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-400 border border-slate-200 dark:border-slate-700 group-hover:text-orange-600 dark:group-hover:text-orange-400 group-hover:border-orange-200 dark:group-hover:border-orange-500 group-hover:scale-105 shadow-xs'
               }`}
           >

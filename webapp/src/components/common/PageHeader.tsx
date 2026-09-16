@@ -61,7 +61,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
     if (isValidElement(icon)) {
       return (
-        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
           {icon}
         </div>
       );
@@ -70,7 +70,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     if (typeof icon === 'function') {
       const IconComponent = icon as React.ComponentType<{ size?: number; className?: string }>;
       return (
-        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
           <IconComponent size={20} />
         </div>
       );

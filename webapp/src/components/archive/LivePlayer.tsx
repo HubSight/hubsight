@@ -303,7 +303,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({ cameraId, enableAi, show
             setShowTrace(!showTrace);
           }}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg transition-colors cursor-pointer border ${showTrace
-            ? 'bg-orange-700 text-white border-orange-700'
+            ? 'bg-orange-500/80 text-white border-orange-400'
             : 'bg-black/40 text-white/90 hover:bg-black/60 border-white/20 hover:border-white/40'
             }`}
           title={t('playback.toggleTrace')}

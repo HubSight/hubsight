@@ -341,7 +341,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
 
                         {/* Center Hover Play Icon */}
                         <div className={`absolute inset-0 flex items-center justify-center bg-black/65 ${isSelected ? 'visible' : 'invisible group-hover:visible'}`}>
-                          <div className="p-2 rounded-full bg-orange-700 text-white shadow-lg transform group-hover:scale-110 transition-transform">
+                          <div className="p-2 rounded-full bg-orange-500 text-white shadow-lg transform group-hover:scale-110 transition-transform">
                             <Play size={14} className="fill-white translate-x-0.5" />
                           </div>
                         </div>
