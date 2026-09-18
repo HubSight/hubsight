@@ -1,44 +1,44 @@
-# Kế hoạch Triển khai Tính năng Nhận diện Khuôn mặt (Family Face Recognition) dùng InsightFace & YOLO26
+# InsightFace & YOLO26 Family Face Recognition Implementation Plan
 
-> **Tài liệu Kế hoạch Kỹ thuật (Technical Implementation Plan)**
-> **Dự án**: CCTV AI Monitoring System
-> **Mục tiêu**: Nhận diện thành viên gia đình và người lạ trong luồng camera, tạo metadata/event phục vụ Event-driven NVR, với chi phí tính toán thấp và **không cần train lại model** cho từng thành viên.
-
----
-
-## 0. Điều chỉnh quan trọng so với bản trước
-
-Bản triển khai này thay đổi một số giả định để phù hợp hơn với mục tiêu sản phẩm:
-
-1. **Face Recognition không phải là một classifier cần retrain mỗi khi thêm người.** Khi user thêm “Nam”, hệ thống chỉ cần trích xuất embedding của Nam và lưu vào kho vector.
-2. **Không kết luận “Người lạ” từ một frame duy nhất.** Kết quả cần được ổn định theo track và nhiều lần quan sát.
-3. **Threshold không hard-code bằng một con số chung cho mọi camera.** `0.65` chỉ là giá trị thử nghiệm ban đầu; ngưỡng thực tế phải được benchmark bằng dữ liệu của chính hệ thống.
-4. **Bounding box không phải UX chính.** Bounding box + tên nên là lớp overlay tùy chọn/debug. UX chính là event như “Nam xuất hiện”, “Người chưa xác định xuất hiện”.
-5. **AI không nên phụ thuộc vào livestream.** WebRTC/live playback và vision pipeline phải tách biệt; AI lỗi hoặc chậm không được làm nghẽn live stream.
-6. **Event Recorder nên có pre-buffer/post-buffer.** Khi phát hiện người, clip phải bao gồm vài giây trước thời điểm phát hiện, thay vì bắt đầu đúng tại frame AI kích hoạt.
-7. **Có quality gate cho enrollment và recognition.** Không lưu embedding từ ảnh quá nhỏ, mờ, mặt bị che hoặc pose quá xấu.
+> **Technical Implementation Plan**
+> **Project**: CCTV AI Monitoring System
+> **Goal**: Recognize family members and strangers in camera streams and generate metadata/events for event-driven NVR, with low compute cost and **no per-member model retraining**.
 
 ---
 
-# 1. Tổng quan Kiến trúc
+## 0. Important changes from the previous version
 
-Hệ thống sử dụng pipeline nhiều tầng:
+This implementation changes several assumptions to better match the product goals:
+
+1. **Face recognition is not a classifier that needs retraining whenever a person is added.** When a user adds “Nam”, the system only extracts Nam's embedding and stores it in the vector store.
+2. **Do not classify a person as “Stranger” from one frame.** Results must stabilize across a track and multiple observations.
+3. **Do not hard-code one threshold for every camera.** `0.65` is only an initial test value; the production threshold must be benchmarked with system-specific data.
+4. **The bounding box is not the primary UX.** Bounding box + name should be an optional/debug overlay. The primary UX is an event such as “Nam appeared” or “Unidentified person appeared”.
+5. **AI should not depend on the livestream.** WebRTC/live playback and the vision pipeline must be separate; AI failures or latency must not block the live stream.
+6. **The Event Recorder should use pre-buffer/post-buffer.** When a person is detected, the clip should include several seconds before detection instead of starting at the trigger frame.
+7. **Use quality gates for enrollment and recognition.** Do not store embeddings from images that are too small, blurry, occluded, or have poor pose.
+
+---
+
+# 1. Architecture overview
+
+The system uses a multi-stage pipeline:
 
 ```mermaid
 flowchart TD
     A["RTSP Camera"] --> B["Sub-stream / Frame Sampler"]
     B --> C["Motion Gate / Scene Change"]
-    C -->|Có chuyển động| D["YOLO26n\nPerson Detection + Tracking"]
-    C -->|Không có chuyển động| X["Bỏ qua"]
+    C -->|Motion detected| D["YOLO26n\nPerson Detection + Tracking"]
+    C -->|No motion| X["Skip"]
 
     D --> E["Face Detection / Alignment"]
     E --> F["InsightFace ArcFace\n512D Embedding"]
     F --> G["Face Matching\nCosine Similarity"]
     G --> H["Track-level Decision"]
 
-    H -->|Known + stable| I["Nam / Thành viên"]
-    H -->|Unknown + stable| J["Người chưa xác định"]
-    H -->|Insufficient quality| K["Đang xác thực"]
+    H -->|Known + stable| I["Nam / Member"]
+    H -->|Unknown + stable| J["Unidentified person"]
+    H -->|Insufficient quality| K["Verifying"]
 
     I & J & K --> L["Event Engine"]
     L --> M["Pre-buffer + Post-buffer\nEvent Clip"]
@@ -64,30 +64,30 @@ flowchart TD
     end
 ```
 
-### Nguyên tắc
+### Principles
 
-- **YOLO26n**: xác định và track người.
-- **InsightFace**: xác định khuôn mặt và tạo embedding.
-- **Face matching**: tìm thành viên gần nhất trong embedding store.
-- **Track-level decision**: ổn định kết quả qua nhiều frame trước khi tạo event.
-- **Event Engine**: quyết định khoảnh khắc nào đáng lưu.
-- **Object Storage**: lưu clip/thumbnail.
-- **PostgreSQL**: lưu metadata và embeddings.
-- **RabbitMQ**: truyền event giữa các service.
-- **WebRTC**: phục vụ live độc lập với AI.
+- **YOLO26n**: detect and track people.
+- **InsightFace**: detect faces and create embeddings.
+- **Face matching**: find the nearest member in the embedding store.
+- **Track-level decision**: stabilize results across frames before creating an event.
+- **Event Engine**: decide which moments are worth storing.
+- **Object Storage**: store clips/thumbnails.
+- **PostgreSQL**: store metadata and embeddings.
+- **RabbitMQ**: transfer events between services.
+- **WebRTC**: serve live video independently of AI.
 
 ---
 
-# 2. Vì sao dùng InsightFace / ArcFace thay vì Fine-tune cho từng thành viên?
+# 2. Why use InsightFace/ArcFace instead of per-member fine-tuning?
 
-## 2.1 Zero Retraining
+## 2.1 Zero retraining
 
-Thêm thành viên mới không cần train lại YOLO hay ArcFace.
+Adding a member does not require retraining YOLO or ArcFace.
 
-Quy trình:
+Workflow:
 
 ```text
-Ảnh của Nam
+Nam's image
     ↓
 Face quality check
     ↓
@@ -98,7 +98,7 @@ InsightFace
 DB
 ```
 
-Khi camera gặp một khuôn mặt:
+When the camera sees a face:
 
 ```text
 Camera face
@@ -107,26 +107,26 @@ Camera face
     ↓
 Similarity search
     ↓
-Nam / thành viên khác / Unknown
+Nam / another member / Unknown
 ```
 
-## 2.2 Không nên quảng cáo độ chính xác bằng một con số cố định
+## 2.2 Do not advertise accuracy with a fixed number
 
-Các benchmark của model zoo không thể được xem là độ chính xác thực tế trên camera nhà của hệ thống. Ví dụ, model zoo của InsightFace công bố kết quả benchmark riêng cho từng model pack và dataset; `buffalo_s` và `buffalo_l` có hiệu năng khác nhau đáng kể. Do đó, hệ thống này phải benchmark bằng dữ liệu thật của camera, đặc biệt trong điều kiện thiếu sáng, nghiêng mặt, khoảng cách xa và camera góc cao.
+Model-zoo benchmarks do not represent actual accuracy on the system's home cameras. For example, InsightFace publishes separate benchmarks for each model pack and dataset; `buffalo_s` and `buffalo_l` have materially different performance. Therefore, this system must benchmark against real camera data, especially in low light, profile views, long distances, and high-angle cameras.
 
-**Không dùng các claim kiểu `99.8% accuracy` hoặc `<8ms/face` như SLA mặc định trong tài liệu.** Đây là các chỉ số cần đo trên hardware + camera + resolution thực tế.
+**Do not use claims such as `99.8% accuracy` or `<8ms/face` as default SLAs.** These metrics must be measured on the actual hardware, camera, and resolution.
 
-## 2.3 Vấn đề license
+## 2.3 Licensing
 
-Model zoo của InsightFace hiện ghi rõ các model pretrained được cung cấp cho **non-commercial research purposes only**. Nếu sản phẩm được thương mại hóa, cần kiểm tra license của model/model pack được chọn và thay bằng model đã được cấp phép phù hợp nếu cần.
+InsightFace's model zoo states that pretrained models are provided for **non-commercial research purposes only**. If the product is commercialized, check the license of the selected model/model pack and replace it with an appropriately licensed model when necessary.
 
 ---
 
-# 3. Thiết kế Face Recognition
+# 3. Face recognition design
 
-## 3.1 Khuyến nghị model
+## 3.1 Model recommendation
 
-MVP có thể bắt đầu với:
+The MVP can start with:
 
 ```text
 InsightFace
@@ -135,27 +135,27 @@ InsightFace
     └── MBF recognition
 ```
 
-`buffalo_s` là model pack nhỏ hơn `buffalo_l`, nhưng vẫn cần benchmark thực tế trên thiết bị triển khai. Kích thước model và benchmark được công bố trong model zoo của InsightFace.
+`buffalo_s` is smaller than `buffalo_l`, but it still requires real-world benchmarking on the target device. Model size and benchmarks are published in the InsightFace model zoo.
 
-Nếu accuracy không đủ cho camera thực tế:
+If accuracy is insufficient for the real camera:
 
 ```text
 buffalo_s
    ↓ benchmark
 buffalo_m / buffalo_l
    ↓ benchmark
-Chọn model phù hợp latency / accuracy
+Select a model appropriate for latency/accuracy
 ```
 
-Không nên tối ưu theo kích thước file đơn thuần.
+Do not optimize for file size alone.
 
 ---
 
-# 4. Thiết kế Database
+# 4. Database design
 
-Khuyến nghị PostgreSQL + `pgvector` thay vì lưu embedding thuần `JSON/Float Array` nếu quy mô dự kiến tăng hoặc muốn similarity search trực tiếp trong DB.
+Use PostgreSQL + `pgvector` instead of plain `JSON/Float Array` embeddings if scale is expected to grow or direct similarity search in the database is desired.
 
-## 4.1 Bảng `members`
+## 4.1 `members` table
 
 ```text
 members
@@ -169,16 +169,16 @@ created_at      TIMESTAMP
 updated_at      TIMESTAMP
 ```
 
-`role` có thể:
+`role` may be:
 
 ```text
-family    (Nhóm 1 - Gia đình -> Xanh lá #10b981)
-guest     (Nhóm 2 - Khách quen -> Xanh dương #3b82f6)
-neighbor  (Nhóm 2 - Hàng xóm -> Xanh dương #3b82f6)
-staff     (Nhóm 2 - Nhân viên/Giúp việc -> Xanh dương #3b82f6)
+family    (Group 1 - Family -> Emerald #10b981)
+guest     (Group 2 - Familiar guest -> Ocean blue #3b82f6)
+neighbor  (Group 2 - Neighbor -> Ocean blue #3b82f6)
+staff     (Group 2 - Staff/household help -> Ocean blue #3b82f6)
 ```
 
-## 4.2 Bảng `member_faces`
+## 4.2 `member_faces` table
 
 ```text
 member_faces
@@ -195,59 +195,59 @@ created_at          TIMESTAMP
 is_active           BOOLEAN
 ```
 
-### Tại sao lưu nhiều embedding?
+### Why store multiple embeddings?
 
-Không nên chỉ lưu một vector cho “Nam”.
+Do not store only one vector for “Nam”.
 
-Ví dụ:
+Example:
 
 ```text
 Nam
-├── face_01: chính diện
-├── face_02: nghiêng trái
-├── face_03: nghiêng phải
-├── face_04: ánh sáng yếu
-└── face_05: đeo kính
+├── face_01: frontal
+├── face_02: left profile
+├── face_03: right profile
+├── face_04: low light
+└── face_05: glasses
 ```
 
-Khi match:
+When matching:
 
 ```text
 query embedding
       ↓
-similarity với các face samples của Nam
+similarity against Nam's face samples
       ↓
 best / aggregated score
 ```
 
-Điều này tốt hơn việc cố ép mọi điều kiện thành một vector duy nhất.
+This is better than forcing every condition into one vector.
 
 ---
 
 # 5. Face Quality Gate
 
-Không tạo hoặc cập nhật embedding từ mọi khuôn mặt.
+Do not create or update an embedding from every face.
 
-## 5.1 Điều kiện tối thiểu
+## 5.1 Minimum conditions
 
-Có thể bắt đầu với:
+Start with:
 
 ```text
 face width >= X px
 face height >= Y px
 detector confidence >= threshold
 blur score >= threshold
-pose trong giới hạn chấp nhận được
-occlusion không quá cao
+pose within acceptable limits
+occlusion not too high
 ```
 
-Các giá trị `X`, `Y`, blur threshold và pose threshold phải được benchmark thực tế.
+The values for `X`, `Y`, blur threshold, and pose threshold must be benchmarked in practice.
 
-**Không dùng `person bbox >= 60x60` như điều kiện trực tiếp cho face recognition.**
+**Do not use `person bbox >= 60x60` as a direct face-recognition condition.**
 
-Một person box 100x150 chưa chắc mặt đủ lớn để nhận diện.
+A 100x150 person box does not guarantee that the face is large enough to recognize.
 
-Điều kiện đúng hơn là:
+The correct sequence is:
 
 ```text
 person bbox
@@ -261,13 +261,13 @@ face quality
 recognition
 ```
 
-Nếu mặt quá nhỏ/mờ:
+If the face is too small/blurry:
 
 ```text
 status = UNKNOWN_TEMPORARY
 ```
 
-không phải:
+not:
 
 ```text
 status = STRANGER
@@ -275,9 +275,9 @@ status = STRANGER
 
 ---
 
-# 6. Track-aware Recognition
+# 6. Track-aware recognition
 
-Không nhận diện khuôn mặt ở mọi frame.
+Do not recognize faces on every frame.
 
 Pipeline:
 
@@ -301,7 +301,7 @@ Match
 Update track state
 ```
 
-Một track có thể có state:
+A track may have this state:
 
 ```text
 UNKNOWN
@@ -311,7 +311,7 @@ STRANGER
 LOST
 ```
 
-Ví dụ:
+Example:
 
 ```text
 track_id = 17
@@ -322,39 +322,39 @@ Frame 110 → similarity 0.76
 Frame 115 → similarity 0.79
 ```
 
-Không nên tạo ngay event “Nam” ở frame 100.
+Do not immediately create a “Nam” event at frame 100.
 
-Có thể áp dụng:
+Apply:
 
 ```text
-N >= 2 hoặc 3 lần match tốt
+N >= 2 or 3 good matches
 +
-score ổn định
+stable score
 +
-track còn tồn tại
+track still exists
 => ACCEPT
 ```
 
-Ngược lại:
+Otherwise:
 
 ```text
-score thấp / dao động / face quality kém
+low/fluctuating score or poor face quality
 => VERIFYING
 ```
 
 ---
 
-# 7. Threshold Strategy
+# 7. Threshold strategy
 
-## 7.1 Không hard-code `0.65` làm giá trị production
+## 7.1 Do not hard-code `0.65` as a production value
 
-Tài liệu cũ dùng:
+The previous document used:
 
 ```python
 similarity_threshold = 0.65
 ```
 
-Hãy chuyển thành configuration:
+Move this to configuration:
 
 ```text
 FACE_MATCH_THRESHOLD=...
@@ -362,11 +362,11 @@ FACE_STRONG_MATCH_THRESHOLD=...
 FACE_UNKNOWN_THRESHOLD=...
 ```
 
-Sau đó benchmark.
+Then benchmark it.
 
-## 7.2 Tách các mức quyết định
+## 7.2 Separate decision levels
 
-Ví dụ:
+Example:
 
 ```text
 score >= strong_threshold
@@ -379,20 +379,20 @@ score < threshold
     → unknown candidate
 ```
 
-Điều này giúp giảm false positive.
+This reduces false positives.
 
-## 7.3 Đặc biệt quan trọng: Unknown ≠ Stranger chắc chắn
+## 7.3 Important: Unknown does not mean confirmed Stranger
 
-Một người có thể là thành viên nhưng:
+Someone may be a member but:
 
-- mặt quá xa
-- mặt nghiêng
-- bị khẩu trang
-- thiếu sáng
+- face too far away
+- profile view
+- wearing a mask
+- low light
 - motion blur
-- một phần khuôn mặt bị che
+- partially occluded face
 
-Do đó nên có ít nhất:
+Therefore, use at least:
 
 ```text
 KNOWN
@@ -400,13 +400,13 @@ UNKNOWN
 UNRESOLVED
 ```
 
-`STRANGER` chỉ nên trở thành event sau khi hệ thống có đủ bằng chứng.
+`STRANGER` should become an event only after the system has enough evidence.
 
 ---
 
-# 8. Face Matching Implementation
+# 8. Face matching implementation
 
-Tất cả embedding nên normalize trước khi lưu:
+Normalize every embedding before storage:
 
 ```python
 embedding = embedding / np.linalg.norm(embedding)
@@ -418,7 +418,7 @@ Khi match:
 score = np.dot(query_embedding, stored_embedding)
 ```
 
-Khi số lượng member còn nhỏ, linear scan hoàn toàn đủ:
+When the member count is small, a linear scan is sufficient:
 
 ```text
 10 members
@@ -428,22 +428,22 @@ Khi số lượng member còn nhỏ, linear scan hoàn toàn đủ:
 50 vectors
 ```
 
-Chưa cần vector database phức tạp.
+No complex vector database is needed yet.
 
-Khi quy mô tăng, có thể chuyển sang `pgvector` similarity search.
+As scale increases, move to `pgvector` similarity search.
 
 ---
 
-# 9. Enrollment Flow
+# 9. Enrollment flow
 
 ## 9.1 User upload
 
 ```text
-User chọn ảnh
+User selects an image
     ↓
 Face Detection
     ↓
-Có đúng 1 khuôn mặt?
+Exactly one face?
     ↓
 Quality Gate
     ↓
@@ -451,14 +451,14 @@ Embedding
     ↓
 Preview
     ↓
-User xác nhận "Đây là Nam"
+User confirms "This is Nam"
     ↓
 Save member_faces
 ```
 
-## 9.2 One-click enrollment từ live
+## 9.2 One-click enrollment from live
 
-Vẫn nên hỗ trợ:
+Continue to support:
 
 ```text
 Live
@@ -469,48 +469,48 @@ freeze best frame
  ↓
 quality check
  ↓
-"Đây là ai?"
+"Who is this?"
  ↓
 Nam
  ↓
 save embedding
 ```
 
-Không nên tự động lưu mọi frame vào hồ sơ thành viên.
+Do not automatically save every frame to a member profile.
 
 ---
 
-# 10. Dynamic Learning
+# 10. Dynamic learning
 
-Đây **không phải training model**.
+This is **not model training**.
 
-Ví dụ:
+Example:
 
 ```text
-Ngày 1:
+Day 1:
 Nam = 3 embeddings
 
-Ngày 7:
-User xác nhận thêm 2 ảnh tốt
+Day 7:
+User confirms two additional good images
 
 Nam = 5 embeddings
 ```
 
-Model vẫn giữ nguyên.
+The model remains unchanged.
 
-Chỉ có **identity database** tăng lên.
+Only the **identity database** grows.
 
-Đây là cơ chế phù hợp nhất với CCTV gia đình.
+This is the most suitable mechanism for family CCTV.
 
 ---
 
-# 11. Event-driven NVR Integration
+# 11. Event-driven NVR integration
 
-Đây là thay đổi quan trọng nhất so với NVR truyền thống.
+This is the most important change from traditional NVR.
 
-Không nên lưu video 24/7 chỉ để phục vụ AI.
+Do not store 24/7 video solely to support AI.
 
-Khuyến nghị:
+Recommendation:
 
 ```text
 RTSP
@@ -534,29 +534,29 @@ Clip
 MinIO / Object Storage
 ```
 
-Ví dụ event:
+Event example:
 
 ```text
 18:31:14
-Người xuất hiện
+Person appears
 
 18:31:18
-Nhận diện ổn định → Nam
+Stable recognition → Nam
 
 18:31:35
-Track kết thúc
+Track ends
 
 => Clip:
 18:31:09 → 18:31:45
 ```
 
-User sẽ xem được **toàn bộ khoảnh khắc**, bao gồm cả vài giây trước lúc AI phát hiện.
+The user can view the **full moment**, including several seconds before AI detection.
 
 ---
 
-# 12. Event Schema
+# 12. Event schema
 
-Có thể bổ sung bảng:
+Add a table such as:
 
 ```text
 camera_events
@@ -574,14 +574,14 @@ clip_url        TEXT NULL
 created_at      TIMESTAMP
 ```
 
-Ví dụ:
+Example:
 
 ```text
 event_type = PERSON_DETECTED
 person_id  = Nam
 ```
 
-hoặc:
+or:
 
 ```text
 event_type = UNKNOWN_PERSON
@@ -590,11 +590,11 @@ person_id  = NULL
 
 ---
 
-# 13. RabbitMQ Events
+# 13. RabbitMQ events
 
-Không nên gửi mỗi frame qua RabbitMQ.
+Do not send every frame through RabbitMQ.
 
-RabbitMQ chỉ nhận **semantic events** hoặc state changes quan trọng:
+RabbitMQ should receive only **semantic events** or important state changes:
 
 ```text
 vision.person.detected
@@ -604,7 +604,7 @@ vision.person.lost
 vision.event.created
 ```
 
-Ví dụ:
+Example:
 
 ```json
 {
@@ -618,40 +618,40 @@ Ví dụ:
 }
 ```
 
-Không gửi 10 JSON/frame chỉ để vẽ bounding box.
+Do not send 10 JSON messages per frame just to draw a bounding box.
 
-Overlay realtime nên dùng một channel riêng như WebSocket.
+Use a separate channel such as WebSocket for realtime overlays.
 
 ---
 
-# 14. Live UI / Bounding Box & Camera AI Status
+# 14. Live UI / bounding boxes and camera AI status
 
-## 14.1 Phân loại Màu sắc Bounding Box Chuẩn (4-Color Category System)
+## 14.1 Standard bounding-box color categories (4-Color Category System)
 
-Bounding box và nhãn nhận diện trên Canvas Overlay (`LivePlayer.tsx`) được chuẩn hóa theo 4 nhóm màu với độ tương phản cao:
+Bounding boxes and recognition labels on the Canvas Overlay (`LivePlayer.tsx`) use four high-contrast color categories:
 
-| Nhóm / Trạng thái | Mã màu (HEX) | Tên màu | Hiển thị Badge | Ý nghĩa & Hành vi |
+| Group / state | HEX | Color name | Badge | Meaning and behavior |
 | :--- | :--- | :--- | :--- | :--- |
-| **Nhóm 1: Gia đình (`family`)** | `#10b981` | **Xanh lá (Emerald)** | `👤 [Tên] • Gia đình` | Thành viên gia đình ruột thịt. Không kích hoạt còi/cảnh báo lạ. |
-| **Nhóm 2: Người quen (`guest`/`neighbor`)** | `#3b82f6` | **Xanh dương (Ocean Blue)** | `👤 [Tên] • Khách quen` | Bạn bè, hàng xóm quen biết, người giúp việc, shipper quen. |
-| **Đang theo dõi (`verifying`/`unresolved`)** | `#64748b` | **Xám (Slate Gray)** | `⏳ Đang xác thực...` | Mới xuất hiện (< 2 frame) hoặc mặt mờ/nghiêng/chất lượng thấp. |
-| **Người lạ (`stranger`)** | `#ef4444` | **Đỏ (Crimson Red)** | `⚠️ Người lạ` | Đã theo dõi ổn định nhưng không khớp bất kỳ nhóm nào $\to$ Lưu clip & phát cảnh báo. |
+| **Group 1: Family (`family`)** | `#10b981` | **Emerald** | `👤 [Name] • Family` | Immediate family member. Does not trigger a stranger alarm. |
+| **Group 2: Familiar (`guest`/`neighbor`)** | `#3b82f6` | **Ocean Blue** | `👤 [Name] • Familiar` | Known friends, neighbors, household staff, or familiar couriers. |
+| **Verifying (`verifying`/`unresolved`)** | `#64748b` | **Slate Gray** | `⏳ Verifying...` | Newly appeared (<2 frames) or blurry/profile/low-quality face. |
+| **Stranger (`stranger`)** | `#ef4444` | **Crimson Red** | `⚠️ Stranger` | Stable track with no group match $\to$ save a clip and raise an alert. |
 
-## 14.2 Gán nhãn [AI Integrated] & Phân quyền Bật/Tắt
+## 14.2 `[AI Integrated]` label and enable/disable permissions
 
-1. **Gán nhãn `[AI Integrated]`**:
-   - Đối với tất cả camera có `enable_ai === true`, hệ thống tự động hiển thị nhãn/badge **`[AI Integrated]`** (hoặc `✨ AI Integrated`) trong:
-     - Dropdown chọn camera tại thanh điều khiển Playback (`ArchiveSidebar.tsx`).
-     - Header / Player Overlay (`LivePlayer.tsx` / `VideoPlayer.tsx`).
-2. **Phân quyền Bật/Tắt**:
-   - **Màn hình Playback (`/playback`)**: Không có nút bật/tắt AI để tránh thao tác nhầm hoặc viewer can thiệp.
-   - **Chỉ Admin trong Cấu hình Camera (`/devices`)**: Mới có quyền bật/tắt `enable_ai` cho từng camera. Camera nào tắt AI sẽ chạy WebRTC thuần, không tiêu tốn tài nguyên vision.
+1. **Assign the `[AI Integrated]` label**:
+   - For every camera with `enable_ai === true`, automatically show the **`[AI Integrated]`** (or `✨ AI Integrated`) label/badge in:
+     - The camera-selection dropdown in the Playback toolbar (`ArchiveSidebar.tsx`).
+     - The header/player overlay (`LivePlayer.tsx`/`VideoPlayer.tsx`).
+2. **Enable/disable permissions**:
+   - **Playback screen (`/playback`)**: No AI toggle, preventing accidental changes or viewer intervention.
+   - **Only Admin in Camera Configuration (`/devices`)**: Can enable/disable `enable_ai` per camera. A camera with AI disabled runs pure WebRTC without consuming vision resources.
 
 ## 14.3 UX & Canvas Rendering
 
-- Sử dụng Client-Side Canvas 60 FPS vẽ đè lên `<video>` WebRTC gốc.
-- Không dùng score raw như `94%` làm người dùng hiểu nhầm là xác suất tuyệt đối; thay vào đó hiển thị tên và vai trò rõ ràng.
-- Hỗ trợ **One-Click Enrollment**: Click trực tiếp vào bounding box người trên live để mở nhanh modal gán khuôn mặt vào danh sách thành viên.
+- Use a client-side Canvas at 60 FPS over the native WebRTC `<video>`.
+- Do not show a raw score such as `94%`, which users may mistake for an absolute probability; show the name and role clearly instead.
+- Support **One-Click Enrollment**: click a person bounding box in the live view to open a quick face-assignment modal for the member list.
 
 ---
 
@@ -676,7 +676,7 @@ DELETE /api/members/:id/faces/:faceId
 
 ## Enrollment
 
-Có thể thêm endpoint:
+Optional endpoint:
 
 ```text
 POST /api/members/:id/enroll-from-capture
@@ -684,7 +684,7 @@ POST /api/members/:id/enroll-from-capture
 
 ## Sync
 
-Không nhất thiết cần `/api/members/sync` nếu dùng event-driven sync:
+`/api/members/sync` is not required when using event-driven synchronization:
 
 ```text
 Core Service
@@ -698,9 +698,9 @@ refresh in-memory cache
 
 ---
 
-# 16. In-memory Embedding Cache
+# 16. In-memory embedding cache
 
-Vision service nên giữ:
+Vision service should keep this in memory:
 
 ```text
 member_id
@@ -710,9 +710,9 @@ version
 updated_at
 ```
 
-trong RAM.
+in RAM.
 
-Khi DB thay đổi:
+When the database changes:
 
 ```text
 member.updated
@@ -722,13 +722,13 @@ Vision Service
 reload member
 ```
 
-Không query PostgreSQL cho mỗi camera frame.
+Do not query PostgreSQL for every camera frame.
 
 ---
 
-# 17. Livestream Isolation
+# 17. Livestream isolation
 
-Kiến trúc live nên giữ độc lập:
+Keep the live architecture independent:
 
 ```text
 Camera Main Stream
@@ -738,7 +738,7 @@ Camera Main Stream
       Browser
 ```
 
-và:
+and:
 
 ```text
 Camera Sub-stream
@@ -746,9 +746,9 @@ Camera Sub-stream
 vision-service
 ```
 
-AI không nằm trên đường truyền video live.
+AI is not on the live-video path.
 
-Điều này đảm bảo:
+This ensures:
 
 ```text
 AI crash
@@ -757,15 +757,15 @@ YOLO overloaded
 InsightFace unavailable
 ```
 
-không làm chết livestream.
+the livestream does not stop.
 
 ---
 
-# 18. Resource Strategy
+# 18. Resource strategy
 
-## Main Stream
+## Main stream
 
-Dùng cho:
+Used for:
 
 ```text
 Live viewing
@@ -773,7 +773,7 @@ Live viewing
 
 ## Sub-stream
 
-Dùng cho:
+Used for:
 
 ```text
 Motion detection
@@ -782,19 +782,19 @@ Tracking
 Face recognition
 ```
 
-Khuyến nghị bắt đầu:
+Recommended starting point:
 
 ```text
 360p / 5–10 FPS
 ```
 
-và benchmark trước khi tăng resolution/FPS.
+and benchmark before increasing resolution/FPS.
 
-Face recognition không cần chạy ở 30 FPS.
+Face recognition does not need to run at 30 FPS.
 
 ---
 
-# 19. Failure Handling
+# 19. Failure handling
 
 ## Camera disconnected
 
@@ -804,25 +804,25 @@ camera.offline
 
 ## Vision service unavailable
 
-Live vẫn chạy.
+Live continues running.
 
 ## Face recognition unavailable
 
-Person detection vẫn chạy.
+Person detection continues running.
 
 ## RabbitMQ unavailable
 
-Vision service có thể giữ local buffer / retry event.
+Vision service may keep a local buffer and retry events.
 
 ## DB unavailable
 
-Không được làm crash inference loop; dùng retry/backoff.
+Do not crash the inference loop; use retry/backoff.
 
 ## Unknown face
 
-Không tạo spam event mỗi frame.
+Do not create a spam event for every frame.
 
-Cần debounce:
+Debounce:
 
 ```text
 Unknown track 17
@@ -831,7 +831,7 @@ Unknown track 17
 → track lost
 ```
 
-thay vì:
+instead of:
 
 ```text
 300 frames
@@ -840,47 +840,47 @@ thay vì:
 
 ---
 
-# 20. Security & Privacy
+# 20. Security and privacy
 
-Embeddings là dữ liệu nhạy cảm của hệ thống.
+Embeddings are sensitive system data.
 
-Khuyến nghị:
+Recommendations:
 
-- không gửi embedding xuống browser;
-- không expose embedding qua public API;
-- encrypt storage/backups nếu khả thi;
-- giới hạn quyền truy cập member data;
-- có chức năng xoá member + toàn bộ face samples;
-- log audit cho enrollment/deletion;
-- không tự động enroll một người chỉ vì camera nhìn thấy họ.
+- do not send embeddings to the browser;
+- do not expose embeddings through the public API;
+- encrypt storage/backups when possible;
+- restrict access to member data;
+- provide a function to delete a member and all face samples;
+- audit-log enrollment/deletion;
+- do not automatically enroll a person merely because the camera sees them.
 
 ---
 
-# 21. Testing Strategy
+# 21. Testing strategy
 
-Không chỉ test bằng ảnh chân dung đẹp.
+Do not test only with ideal portrait images.
 
-Cần có dataset nội bộ:
+Use an internal dataset:
 
 ```text
 Known:
-- chính diện
-- nghiêng
-- cúi đầu
-- ánh sáng sáng
-- ánh sáng yếu
-- đeo kính
-- khoảng cách gần
-- khoảng cách xa
+- frontal
+- profile
+- looking down
+- bright light
+- low light
+- glasses
+- near distance
+- far distance
 
 Unknown:
-- người có khuôn mặt tương tự
-- người lạ bình thường
-- ảnh mờ
-- mặt bị che
+- similar-looking people
+- ordinary strangers
+- blurry images
+- occluded faces
 ```
 
-Đánh giá:
+Evaluate:
 
 ```text
 False Positive:
@@ -890,7 +890,7 @@ False Negative:
 Nam → Unknown
 
 Unknown rate:
-Không đủ chất lượng → Unresolved
+Insufficient quality → Unresolved
 
 Latency:
 RTSP → decision
@@ -906,13 +906,13 @@ average
 
 # 22. Roadmap
 
-| Giai đoạn | Nội dung |
+| Phase | Work |
 |---|---|
 | **Phase 1** | `members` + `member_faces`, API CRUD, migration |
 | **Phase 2** | InsightFace embedding + enrollment |
 | **Phase 3** | YOLO26n person detection + tracking |
 | **Phase 4** | Track-aware face recognition + quality gate |
-| **Phase 5** | Threshold calibration bằng dữ liệu camera thật |
+| **Phase 5** | Threshold calibration using real camera data |
 | **Phase 6** | Event Engine + debounce + pre/post-buffer |
 | **Phase 7** | RabbitMQ semantic events + notification |
 | **Phase 8** | Optional live overlay / debug mode |
@@ -923,39 +923,39 @@ average
 
 # 23. Acceptance Criteria
 
-Feature chỉ được xem là hoàn thành khi:
+The feature is complete only when:
 
 ### Identity
 
-- Thêm member mới không cần retrain model.
-- Có thể thêm nhiều face samples cho một member.
-- Unknown không bị kết luận chỉ từ một frame.
-- Có trạng thái `UNRESOLVED` cho khuôn mặt không đủ chất lượng.
+- Add a new member without retraining the model.
+- Add multiple face samples for a member.
+- Do not classify Unknown from one frame.
+- Provide `UNRESOLVED` for insufficient-quality faces.
 
 ### Performance
 
-- AI không block WebRTC/live pipeline.
-- Không chạy face recognition trên mọi frame.
-- Vision service hoạt động ổn định trên CPU target của hệ thống.
-- Threshold được benchmark trên camera thật.
+- AI does not block the WebRTC/live pipeline.
+- Face recognition does not run on every frame.
+- Vision service is stable on the system's target CPU.
+- Thresholds are benchmarked on real cameras.
 
 ### Event
 
-- Một người đi qua tạo một event thay vì hàng chục/hàng trăm event.
-- Event clip có pre-buffer và post-buffer.
-- Clip được lưu độc lập với live stream.
+- One person passing creates one event instead of dozens/hundreds.
+- Event clips have pre-buffer and post-buffer.
+- Clips are stored independently from the live stream.
 
 ### UX
 
-- Normal user không bắt buộc phải xem bounding box.
-- Có timeline/event thumbnail.
-- Có thể mở clip trực tiếp từ event.
+- Normal users are not required to view bounding boxes.
+- A timeline/event thumbnail is available.
+- Clips can be opened directly from events.
 
 ---
 
-# 24. Kết luận
+# 24. Conclusion
 
-Kiến trúc đề xuất cuối cùng là:
+The final proposed architecture is:
 
 ```text
                     ┌───────────────┐
@@ -1008,17 +1008,17 @@ Kiến trúc đề xuất cuối cùng là:
         Notification      API        Optional Overlay
 ```
 
-**Triết lý chính của hệ thống:**
+**Core system philosophy:**
 
-> YOLO trả lời **“có người không?”**
-> Tracking trả lời **“đó có phải cùng một người không?”**
-> InsightFace trả lời **“người đó là ai?”**
-> Event Engine trả lời **“khoảnh khắc này có đáng lưu không?”**
-> NVR chỉ cần giữ **những khoảnh khắc đáng xem**.
+> YOLO answers **“is there a person?”**
+> Tracking answers **“is it the same person?”**
+> InsightFace answers **“who is that person?”**
+> The Event Engine answers **“is this moment worth storing?”**
+> NVR only needs to retain **moments worth viewing**.
 
 ---
 
-## Tài liệu tham khảo
+## References
 
-- InsightFace Model Zoo: model packs, benchmark và licensing: https://github.com/deepinsight/insightface/tree/master/model_zoo
+- InsightFace Model Zoo: model packs, benchmarks, and licensing: https://github.com/deepinsight/insightface/tree/master/model_zoo
 - Ultralytics YOLO26 Tracking / ByteTrack: https://docs.ultralytics.com/modes/track/

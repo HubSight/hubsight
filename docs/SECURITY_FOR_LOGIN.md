@@ -1,27 +1,27 @@
-# Hướng dẫn Agent: Session Logging, Device Fingerprinting & Session Management cho HubSight CCTV Platform
+# Agent Guide: Session Logging, Device Fingerprinting & Session Management for the HubSight CCTV Platform
 
-## 1. Bối cảnh hệ thống (đọc trước khi bắt đầu)
+## 1. System context (read before starting)
 
-- HubSight là hệ thống CCTV tập trung: các viewer app (Flutter mobile/desktop, Web React) **không kết nối trực tiếp tới camera**, mà kết nối tới backend trung tâm.
-- Backend cấp video stream cho client qua **WebRTC** (low-latency), điều phối bởi Realtime SDK (WebRTC + Socket.io).
-- Auth và các business API (bao gồm session, playback segment feed...) thuộc phạm vi **Core SDK** — client không tự quản lý auth lifecycle hay tự dựng HTTP client.
-- **Yêu cầu cụ thể cho giai đoạn này**: chỉ cần trace lại **lượt đăng nhập** (không phải lượt xem camera). Chủ tài khoản có quyền xem lại lịch sử đăng nhập của chính mình (thiết bị, thời gian, vị trí) và **revoke** một lượt đăng nhập bất kỳ nếu nghi ngờ — việc revoke phải có hiệu lực **theo thời gian thực** (thiết bị bị revoke bị đá ra ngay, không phải đợi token hết hạn tự nhiên).
+- HubSight is a centralized CCTV system: viewer apps (Flutter mobile/desktop, React Web) **do not connect directly to cameras**; they connect to the central backend.
+- The backend provides video streams to clients through **WebRTC** (low latency), coordinated by the Realtime SDK (WebRTC + Socket.io).
+- Auth and business APIs (including sessions and playback segment feeds) belong to the **Core SDK**; clients do not manage the auth lifecycle or build their own HTTP client.
+- **Specific requirement for this phase**: trace **login activity** only (not camera viewing activity). Account owners can review their own login history (device, time, location) and **revoke** any suspicious login; revocation must take effect **in realtime** (the revoked device is removed immediately instead of waiting for natural token expiry).
 
-## 2. Phạm vi công việc (Scope)
+## 2. Work scope
 
-Agent triển khai 3 nhóm tính năng, độc lập nhưng liên kết với nhau:
+Implement three feature groups that are independent but related:
 
-1. **Session Logging** — ghi nhận vòng đời session đăng nhập, chủ tài khoản xem lại được lịch sử
-2. **Device Fingerprinting** — nhận diện thiết bị viewer, phát hiện thiết bị lạ
-3. **Session Management** — quản lý vòng đời token, thu hồi theo thời gian thực
+1. **Session Logging** — record the login-session lifecycle so account owners can review history
+2. **Device Fingerprinting** — identify viewer devices and detect unfamiliar devices
+3. **Session Management** — manage the token lifecycle and revoke in realtime
 
-**Ngoài phạm vi (Non-goals) của guide này**:
-- Xác thực chính (login flow, MFA/passkey), mã hoá luồng WebRTC, quản lý quyền xem theo camera/nhóm camera (ACL) — thuộc module khác.
-- **Camera access log (ai xem camera nào, lúc nào) — chưa cần ở giai đoạn này.** Guide này chỉ theo dõi ở mức phiên đăng nhập (login session), không xuống tới mức "đã xem stream/archive nào". Có thể bổ sung sau nếu yêu cầu compliance/audit trail phát sinh — thiết kế session ở mục 3 vẫn để mở khả năng mở rộng này (session_id là khoá ngoại tự nhiên nếu sau này thêm bảng access log).
+**Non-goals for this guide**:
+- Primary authentication (login flow, MFA/passkey), WebRTC stream encryption, and camera/camera-group viewing permissions (ACL) belong to other modules.
+- **Camera access logs (who viewed which camera and when) are not required at this stage.** This guide tracks login sessions only, not which stream/archive was viewed. It can be added later if compliance/audit requirements arise; the session design in section 3 leaves room for this extension (`session_id` is a natural foreign key if an access-log table is added later).
 
 ## 3. Data Model
 
-### 3.1. Bảng `login_session` (vòng đời phiên đăng nhập)
+### 3.1. `login_session` table (login-session lifecycle)
 
 ```
 login_session
@@ -29,8 +29,8 @@ login_session
 ├── user_id             FK → users
 ├── ip_address          inet
 ├── user_agent          text (raw)
-├── device_fingerprint  text (hash, xem mục 4)
-├── device_label        text (vd "Windows Desktop App", "iPhone 15 - Flutter")
+├── device_fingerprint  text (hash, see section 4)
+├── device_label        text (e.g. "Windows Desktop App", "iPhone 15 - Flutter")
 ├── client_type         enum: web | desktop_windows | desktop_mac | mobile_ios | mobile_android
 ├── geo_city / geo_country
 ├── created_at
@@ -40,46 +40,46 @@ login_session
 ├── revoke_reason       enum: user_logout | admin_revoke | anomaly_detected | expired | concurrent_limit
 ```
 
-### 3.2. Nguyên tắc immutability
+### 3.2. Immutability principles
 
-- `login_session` không có DELETE thông thường — chỉ có `revoked_at` set giá trị (soft state), record gốc giữ nguyên để chủ tài khoản xem lại lịch sử đầy đủ.
-- Agent cân nhắc dùng DB constraint hoặc trigger chặn UPDATE/DELETE trực tiếp lên các cột đã ghi (created_at, ip_address, user_id...), chỉ cho phép update các cột trạng thái (revoked_at, last_active_at).
+- `login_session` has no ordinary DELETE; only `revoked_at` is set (soft state), while the original record remains so the account owner can review the complete history.
+- Consider a DB constraint or trigger that blocks direct UPDATE/DELETE of recorded columns (created_at, ip_address, user_id, etc.) and allows updates only to state columns (revoked_at, last_active_at).
 
 ## 4. Device Fingerprinting
 
-### 4.1. Chiến lược cho từng loại client
+### 4.1. Strategy by client type
 
-| Client | Fingerprint nguồn |
+| Client | Fingerprint source |
 |---|---|
-| Web (React) | Passive: UA, Accept-Language + TLS/JA3 nếu có ở edge. Cân nhắc FingerprintJS nếu cần độ chính xác cao hơn. |
-| Flutter Desktop (Windows/Mac) | Device ID ổn định của OS (Windows: MachineGuid từ registry; macOS: IOPlatformUUID) + app instance ID lưu local — **ổn định hơn nhiều** so với browser fingerprint, ưu tiên dùng cái này thay vì tự dựng canvas-style fingerprint. |
-| Flutter Mobile | `device_info_plus` package: lấy identifierForVendor (iOS) / Android ID — kết hợp app install ID lưu local storage. |
+| Web (React) | Passive: UA, Accept-Language, and TLS/JA3 when available at the edge. Consider FingerprintJS if higher accuracy is needed. |
+| Flutter Desktop (Windows/Mac) | Stable OS device ID (Windows: MachineGuid from the registry; macOS: IOPlatformUUID) plus a locally stored app instance ID — **much more stable** than a browser fingerprint; prefer this over building a canvas-style fingerprint. |
+| Flutter Mobile | `device_info_plus` package: obtain identifierForVendor (iOS) / Android ID and combine it with an app install ID in local storage. |
 
-**Quyết định thiết kế quan trọng**: vì 2/3 client là native app (Flutter desktop + mobile) chứ không phải browser, agent **không cần** làm active browser fingerprinting (canvas/WebGL) phức tạp như web thông thường — chỉ cần lấy device identifier ổn định do OS/SDK cung cấp và hash lại trước khi gửi lên server. Việc này vừa đơn giản hơn, vừa đáng tin cậy hơn.
+**Important design decision**: because two of the three clients are native apps (Flutter desktop + mobile), not browsers, the agent **does not need** complex active browser fingerprinting (canvas/WebGL). Obtain a stable device identifier from the OS/SDK and hash it before sending it to the server. This is simpler and more reliable.
 
-### 4.2. Nơi thực hiện
+### 4.2. Where it is performed
 
-- Device fingerprint được **Core SDK** tính toán và đính kèm vào request login/refresh — client app (Flutter/React) không tự làm việc này, đúng nguyên tắc encapsulation đã thống nhất cho SDK.
-- Server lưu fingerprint hash, không lưu raw device info nhạy cảm hơn mức cần thiết.
+- The **Core SDK** computes the device fingerprint and attaches it to login/refresh requests; client apps (Flutter/React) do not do this, following the SDK encapsulation principle.
+- The server stores the fingerprint hash and does not retain more sensitive raw device information than necessary.
 
-### 4.3. Logic phát hiện thiết bị lạ
+### 4.3. Unfamiliar-device detection logic
 
 ```
-Khi Core SDK gọi API login thành công:
-1. Server nhận device_fingerprint từ request
-2. So khớp với các fingerprint đã ghi nhận cho user_id này (bảng riêng `known_devices`)
-3. Nếu KHÔNG khớp:
-   → Tạo login_session với flag is_new_device = true
-   → Trigger notification (email/push) "Có đăng nhập từ thiết bị mới"
-   → Với role admin/security-officer: cân nhắc bắt buộc xác thực lại (step-up auth) trước khi cấp quyền xem camera
-4. Nếu khớp → cấp session bình thường, update known_devices.last_seen_at
+When the Core SDK successfully calls the login API:
+1. The server receives `device_fingerprint` from the request.
+2. It compares it with fingerprints recorded for this `user_id` (the separate `known_devices` table).
+3. If it does **not** match:
+   → Create `login_session` with `is_new_device = true`.
+   → Trigger an email/push notification: "Login from a new device".
+   → For the admin/security-officer role, consider requiring step-up auth before granting camera-view permission.
+4. If it matches, issue a normal session and update `known_devices.last_seen_at`.
 ```
 
-### 4.4. Đặc tả Gửi Thông tin Thiết bị Đăng nhập (Client Device Metadata Contract)
+### 4.4. Client Device Metadata Contract
 
-Để lịch sử phiên đăng nhập (`login_session` & `known_devices`) hiển thị chi tiết, rõ ràng và phục vụ audit trail chính xác, cả Web SPA và Mobile/Desktop App (Flutter, React Native, Go) **phải cung cấp đầy đủ thông tin thiết bị** khi gọi các API xác thực (`POST /api/auth/login`, `POST /api/auth/2fa/verify`, `POST /api/auth/passkeys/login/verify`).
+For detailed, clear login history (`login_session` & `known_devices`) and accurate audit trails, the Web SPA and Mobile/Desktop Apps (Flutter, React Native, Go) **must provide complete device information** when calling authentication APIs (`POST /api/auth/login`, `POST /api/auth/2fa/verify`, `POST /api/auth/passkeys/login/verify`).
 
-#### 4.4.1. Cấu trúc `device_info` (JSON Body Payload)
+#### 4.4.1. `device_info` structure (JSON body payload)
 
 ```json
 {
@@ -101,38 +101,38 @@ Khi Core SDK gọi API login thành công:
 }
 ```
 
-| Trường | Kiểu | Mô tả | Ví dụ |
+| Field | Type | Description | Example |
 |---|---|---|---|
-| `fingerprint` | string | Chuỗi hash định danh thiết bị duy nhất, ổn định | SHA-256 hash |
-| `device_label` | string | Tên thiết bị thân thiện hiển thị cho người dùng | `Apple iPhone 15 Pro (iOS 17.5.1) • App v1.2.0` |
-| `client_type` | enum | Phân loại client (`web`, `mobile_ios`, `mobile_android`, `desktop_windows`, `desktop_mac`, `desktop_linux`, `desktop_app`, `third_party`) | `mobile_ios` |
-| `platform` | string | Tên hệ điều hành | `iOS`, `Android`, `Windows`, `macOS`, `Linux` |
-| `os_version` | string | Phiên bản hệ điều hành | `17.5.1`, `14.0`, `11` |
-| `browser_name` | string | (Dành cho Web) Tên trình duyệt | `Chrome`, `Firefox`, `Safari`, `Edge` |
-| `browser_version`| string | (Dành cho Web) Phiên bản trình duyệt | `128.0` |
-| `app_version` | string | (Dành cho Mobile/Desktop) Phiên bản ứng dụng | `1.2.0` |
-| `model` | string | Tên model phần cứng | `iPhone 15 Pro`, `SM-S928B`, `ThinkPad X1` |
-| `manufacturer` | string | Hãng sản xuất thiết bị | `Apple`, `Samsung`, `Lenovo`, `Dell` |
-| `screen_resolution` | string | Độ phân giải màn hình | `1179x2556`, `1920x1080` |
-| `language` | string | Ngôn ngữ hệ thống / client | `vi-VN`, `en-US` |
-| `timezone` | string | Múi giờ hệ thống IANA | `Asia/Ho_Chi_Minh` |
-| `latitude` | number | Vĩ độ từ GPS/native location, chỉ gửi sau khi người dùng cấp quyền | `10.7769` |
-| `longitude` | number | Kinh độ từ GPS/native location, chỉ gửi sau khi người dùng cấp quyền | `106.7009` |
-| `accuracy` | number | Sai số GPS tính bằng mét | `25` |
+| `fingerprint` | string | Stable, unique device-identity hash | SHA-256 hash |
+| `device_label` | string | User-friendly device name | `Apple iPhone 15 Pro (iOS 17.5.1) • App v1.2.0` |
+| `client_type` | enum | Client category (`web`, `mobile_ios`, `mobile_android`, `desktop_windows`, `desktop_mac`, `desktop_linux`, `desktop_app`, `third_party`) | `mobile_ios` |
+| `platform` | string | Operating-system name | `iOS`, `Android`, `Windows`, `macOS`, `Linux` |
+| `os_version` | string | Operating-system version | `17.5.1`, `14.0`, `11` |
+| `browser_name` | string | (Web only) Browser name | `Chrome`, `Firefox`, `Safari`, `Edge` |
+| `browser_version`| string | (Web only) Browser version | `128.0` |
+| `app_version` | string | (Mobile/Desktop) Application version | `1.2.0` |
+| `model` | string | Hardware model name | `iPhone 15 Pro`, `SM-S928B`, `ThinkPad X1` |
+| `manufacturer` | string | Device manufacturer | `Apple`, `Samsung`, `Lenovo`, `Dell` |
+| `screen_resolution` | string | Screen resolution | `1179x2556`, `1920x1080` |
+| `language` | string | System/client language | `vi-VN`, `en-US` |
+| `timezone` | string | IANA system timezone | `Asia/Ho_Chi_Minh` |
+| `latitude` | number | GPS/native location latitude, sent only after user permission | `10.7769` |
+| `longitude` | number | GPS/native location longitude, sent only after user permission | `106.7009` |
+| `accuracy` | number | GPS accuracy in meters | `25` |
 
-Nếu client không gửi tọa độ hoặc người dùng từ chối quyền Location, backend sẽ tự động truy vấn geolocation theo IP request để lưu vị trí tương đối. Đây là fallback best-effort và không được dùng để ngăn đăng nhập.
+If the client does not send coordinates or the user denies Location permission, the backend automatically queries IP-based geolocation to store an approximate location. This is a best-effort fallback and must not be used to block login.
 
-#### 4.4.2. HTTP Headers hỗ trợ đồng thời (Dual Headers)
+#### 4.4.2. Supported HTTP headers (dual headers)
 
-Bên cạnh JSON payload `device_info`, client có thể gắn các HTTP Header tiêu chuẩn để backend và API Gateway nhận diện ngay cả khi request không có JSON body:
-- `X-Device-Fingerprint`: Hash định danh thiết bị
-- `X-Device-Label`: Tên thiết bị thân thiện
-- `X-Client-Type`: Loại client (`mobile_ios`, `mobile_android`, `desktop_windows`, `web`, v.v.)
-- `X-Screen-Resolution`: Độ phân giải màn hình
+In addition to the `device_info` JSON payload, clients may attach standard HTTP headers so the backend and API Gateway can identify the device even when the request has no JSON body:
+- `X-Device-Fingerprint`: Device-identity hash
+- `X-Device-Label`: User-friendly device name
+- `X-Client-Type`: Client type (`mobile_ios`, `mobile_android`, `desktop_windows`, `web`, etc.)
+- `X-Screen-Resolution`: Screen resolution
 
-#### 4.4.3. Mẫu tích hợp cho Flutter Mobile / Desktop App
+#### 4.4.3. Flutter Mobile/Desktop App integration example
 
-Sử dụng package `device_info_plus` và `package_info_plus`:
+Use the `device_info_plus` and `package_info_plus` packages:
 
 ```dart
 import 'dart:io';
@@ -194,53 +194,53 @@ Future<Map<String, dynamic>> collectDeviceInfo() async {
 ```
 
 
-## 5. Session Management
+## 5. Session management
 
-### 5.1. Token
+### 5.1. Tokens
 
-- Access token (JWT) sống ngắn: 10-15 phút — vì đây là hệ thống nhạy cảm, không nên để access token sống lâu.
-- Refresh token: opaque, lưu DB (không phải JWT), cho phép revoke tức thời — bắt buộc với hệ thống CCTV vì khi phát hiện xâm nhập cần khóa ngay, JWT thuần không làm được điều này.
-- Refresh token rotation: mỗi lần refresh phát hành token mới, token cũ vô hiệu ngay. Phát hiện refresh token cũ bị dùng lại → revoke toàn bộ session chain của user + alert.
+- Short-lived access token (JWT): 10-15 minutes; this is a sensitive system, so access tokens should not live longer.
+- Refresh token: opaque, stored in the database (not a JWT), and immediately revocable. This is required for a CCTV system because an intrusion must be locked out immediately; a pure JWT cannot provide that.
+- Refresh-token rotation: issue a new token on every refresh and invalidate the old token immediately. If an old refresh token is reused, revoke the user's entire session chain and raise an alert.
 
-### 5.2. Giới hạn session đồng thời — **khác với app thông thường**
+### 5.2. Concurrent-session limits — **different from ordinary apps**
 
-Lưu ý quan trọng cho agent: **không áp dụng concurrent session limit cứng nhắc như các app tiêu dùng khác**. Một nhân viên bảo vệ hợp lệ có thể vừa xem trên desktop app tại phòng điều khiển, vừa xem trên điện thoại khi đi tuần — đây là use-case hợp lệ, không phải gian lận.
+Important for the agent: **do not apply a rigid concurrent-session limit like consumer apps**. A legitimate security guard may watch on the control-room desktop and on a phone while patrolling; this is a valid use case, not fraud.
 
-Thay vào đó:
-- Giới hạn theo **role**, cấu hình được (vd: role `viewer` tối đa 2 session đồng thời, role `security_admin` không giới hạn).
-- Ưu tiên **cảnh báo** hơn **chặn cứng** khi vượt ngưỡng bất thường (ví dụ 5+ session cùng lúc từ 5 vị trí địa lý khác nhau trong 10 phút → đây mới là dấu hiệu chia sẻ credential, cần alert cho admin).
+Instead:
+- Configure limits by **role** (for example, the `viewer` role allows at most 2 concurrent sessions, while `security_admin` has no limit).
+- Prefer **alerts** over **hard blocking** when an unusual threshold is exceeded (for example, 5+ sessions from 5 different geographic locations within 10 minutes is a credential-sharing signal that should alert an admin).
 
-### 5.3. Revoke theo thời gian thực (yêu cầu bắt buộc)
+### 5.3. Realtime revocation (required)
 
-Đây là phần quan trọng nhất theo yêu cầu: khi chủ tài khoản bấm "Revoke" trên 1 session trong danh sách lịch sử đăng nhập, session đó phải mất hiệu lực **ngay lập tức**, không chờ access token hết hạn (10-15 phút là quá chậm cho mục đích bảo mật này).
+This is the most important requirement: when an account owner clicks "Revoke" for a session in the login-history list, that session must become invalid **immediately**, without waiting for access-token expiry (10-15 minutes is too slow for this security purpose).
 
-Hai cơ chế kết hợp:
+Combine two mechanisms:
 
-1. **Kiểm tra tại API gateway/middleware mỗi request**: mỗi request kèm access token phải tra thêm trạng thái `session_id` trong Redis (cache `session:{id} → revoked | active`), không chỉ tin vào JWT signature còn hạn. Đây là cách chặn được các request HTTP tiếp theo ngay khi revoke.
-2. **Đẩy tín hiệu qua kênh Realtime có sẵn (Socket.io)**: vì HubSight đã có Realtime SDK phục vụ WebRTC/Socket.io, tận dụng luôn kênh này — khi admin/chủ tài khoản revoke, server emit event `session:revoked` tới đúng `session_id`/`socket connection` đang mở của thiết bị đó. Client (Flutter/Web) nhận event này thì tự động: ngắt kết nối WebRTC đang xem, xoá token local, điều hướng về màn hình login. Việc này xử lý được cả trường hợp thiết bị đang xem live stream — không chỉ chặn API tiếp theo mà chặn luôn stream đang chạy.
+1. **Check at the API gateway/middleware on every request**: every request with an access token must also query the `session_id` status in Redis (cache `session:{id} → revoked | active`), rather than trusting only an unexpired JWT signature. This blocks subsequent HTTP requests immediately after revocation.
+2. **Push a signal through the existing Realtime channel (Socket.io)**: HubSight already has a Realtime SDK for WebRTC/Socket.io, so reuse it. When an admin/account owner revokes a session, the server emits `session:revoked` to the device's exact open `session_id`/`socket connection`. When a Flutter/Web client receives it, it automatically disconnects the active WebRTC stream, deletes the local token, and navigates to the login screen. This also handles a device watching a live stream: it blocks the running stream, not only the next API request.
 
-Không nên chỉ dựa vào 1 trong 2 cơ chế: chỉ dùng (1) thì thiết bị đang xem WebRTC vẫn tiếp tục xem cho tới khi app đó tự gọi API tiếp theo; chỉ dùng (2) thì nếu thiết bị mất kết nối socket tạm thời sẽ không nhận được lệnh revoke.
+Do not rely on only one mechanism: with (1) alone, a device watching WebRTC continues until the app makes another API request; with (2) alone, a temporarily disconnected socket misses the revocation command.
 
-### 5.4. Idle & absolute timeout
+### 5.4. Idle and absolute timeouts
 
-- Idle timeout cho live view: ngắn hơn bình thường (vd 20 phút không tương tác trên UI viewer → yêu cầu xác thực lại) vì đây là quyền truy cập camera an ninh, không nên để phiên "treo" vô thời hạn.
-- Absolute timeout: theo policy tổ chức khách hàng cấu hình (một số nơi yêu cầu re-auth mỗi ca trực).
+- Idle timeout for live view: shorter than normal (for example, require re-authentication after 20 minutes without viewer-UI interaction) because this is access to security cameras and a session should not remain suspended indefinitely.
+- Absolute timeout: configured according to the customer organization's policy (some organizations require re-authentication every shift).
 
-## 6. Anomaly Detection (mức tối thiểu nên có ngay)
+## 6. Anomaly detection (minimum recommended now)
 
-Agent triển khai các rule sau trước, phần ML/scoring phức tạp hơn để giai đoạn sau:
+Implement these rules first; defer more complex ML/scoring to a later phase:
 
-1. **Impossible travel**: 2 login liên tiếp cách nhau về địa lý mà không thể di chuyển kịp trong khoảng thời gian đó.
-2. **Đăng nhập ngoài giờ bất thường**: nếu tài khoản có pattern giờ hoạt động cố định (vd ca trực), login lệch hẳn khung giờ đó → gắn cờ để chủ tài khoản/admin dễ nhận ra khi xem lại lịch sử.
-3. **Số lượt đăng nhập thất bại liên tiếp cao** từ cùng IP hoặc cùng account → rate limit + cảnh báo (dấu hiệu brute-force/credential stuffing), độc lập với phần camera vì chỉ dựa trên `login_session`.
+1. **Impossible travel**: two consecutive logins are geographically separated beyond what could be traveled in the elapsed time.
+2. **Unusual off-hours login**: if an account has a fixed activity-hour pattern (for example, a shift), a login far outside that window is flagged so the account owner/admin can identify it in history.
+3. **High consecutive failed-login count** from the same IP or account → rate limit + alert (a brute-force/credential-stuffing signal), independent of camera activity because it relies only on `login_session`.
 
-## 7. Acceptance Criteria cho agent khi implement xong
+## 7. Acceptance criteria for the completed implementation
 
-- [ ] Mọi login đều tạo record `login_session` với đầy đủ IP, UA, fingerprint, geo
-- [ ] Chủ tài khoản có API/UI xem được lịch sử đăng nhập của chính mình (thiết bị, thời gian, vị trí, trạng thái còn hiệu lực hay đã revoke)
-- [ ] Chủ tài khoản revoke được từng session của chính mình; admin revoke được session của user khác
-- [ ] Revoke có hiệu lực **theo thời gian thực**: request API tiếp theo bị chặn ngay (kiểm tra qua Redis) VÀ thiết bị đang mở socket bị đá ra ngay qua event `session:revoked`
-- [ ] Refresh token rotation hoạt động, phát hiện reuse thì revoke toàn chain
-- [ ] Fingerprint mismatch trigger được notification, không chặn cứng trừ khi cấu hình yêu cầu step-up auth
-- [ ] Concurrent session limit cấu hình theo role, không hardcode
-- [ ] `login_session` không thể bị UPDATE/DELETE trực tiếp các cột lịch sử qua application code
+- [ ] Every login creates a `login_session` record with IP, UA, fingerprint, and geolocation.
+- [ ] The account owner can use an API/UI to view their own login history (device, time, location, and active/revoked state).
+- [ ] The account owner can revoke individual sessions; an admin can revoke another user's session.
+- [ ] Revocation takes effect **in realtime**: the next API request is immediately blocked (checked through Redis) AND the device with an open socket is immediately removed through `session:revoked`.
+- [ ] Refresh-token rotation works; reuse revokes the entire chain.
+- [ ] A fingerprint mismatch triggers a notification and is not hard-blocked unless step-up auth is configured.
+- [ ] Concurrent-session limits are role-configurable, not hardcoded.
+- [ ] Application code cannot directly UPDATE/DELETE historical columns in `login_session`.

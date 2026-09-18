@@ -1,37 +1,37 @@
-# HubSight CCTV - Đặc tả Kỹ thuật & Hướng dẫn Tích hợp Cấu hình Ứng dụng (.hscfg)
+# HubSight CCTV - Technical Specification & Integration Guide for Application Configuration (.hscfg)
 
-Tài liệu này đóng vai trò là tài liệu đặc tả kỹ thuật (Technical Specification) và hướng dẫn tích hợp chi tiết (Client Integration Guide) dành cho các AI Agent, kỹ sư backend, kỹ sư mobile (Flutter / React Native / Native iOS & Android) và kỹ sư desktop app (Tauri / Electron / Go / C#).
-
----
-
-## 1. Tổng quan & Bài toán Thiết kế
-
-### 1.1. Bối cảnh & Mục tiêu
-Trong hệ sinh thái **HubSight Surveillance & Playback Platform**, người dùng cuối (End-Users) sử dụng ứng dụng di động (Mobile App) hoặc ứng dụng máy tính (Desktop App) để giám sát camera trực tiếp, xem lại dữ liệu NVR và nhận thông báo đẩy thời gian thực (FCM Push Notifications).
-
-Trước đây, việc thiết lập ứng dụng đòi hỏi người dùng phải nhập thủ công nhiều thông số phức tạp:
-- Địa chỉ API Gateway URL, WebRTC URL, WebSocket Relay URL.
-- Khóa định danh thiết bị (`client_id`) và mã xác thực (`client_secret`).
-- Cấu hình Firebase Cloud Messaging (`google-services.json` cho Android và `GoogleService-Info.plist` cho iOS).
-- Chứng chỉ CA nội bộ (`ca_cert.pem`) nếu hệ thống triển khai mạng riêng (On-Premise / Private CA).
-
-### 1.2. Giải pháp: Container Cấu hình Bảo mật Đa tầng (.hscfg)
-HubSight triển khai định dạng tệp container bảo mật độc quyền **`.hscfg` (HubSight Configuration)**:
-1. **Một lần thiết lập (Zero-Configuration)**: Quản trị viên (Admin) chỉ cần tạo cấu hình trên HubSight Web UI, tải về tệp `.hscfg` hoặc cấp mã QR nạp nhanh.
-2. **Bảo mật đa tầng bằng PIN 6 số**:
-   - Tệp `.hscfg` được mã hóa đối xứng **AES-256-GCM**.
-   - Khóa giải mã được dẫn xuất từ **mã PIN 6 số** do Admin chọn thông qua thuật toán băm tốn bộ nhớ kháng tấn công phần cứng GPU/ASIC: **Argon2id** (64MB RAM, 4 rounds).
-   - Tệp được ký số bằng **Ed25519** nhằm đảm bảo không thể bị chỉnh sửa hay can thiệp (Anti-Tampering).
-3. **Lưu trữ & Tải an toàn**: File được lưu trữ trên Object Storage nội bộ và chỉ có thể tải về thông qua **Presigned URL** có hiệu lực giới hạn thời gian (24 giờ cho QR Code, 15 phút cho Admin download).
-4. **Kiến trúc Gateway Hợp nhất (Unified Gateway)**: Mọi endpoint REST API, WebSocket Relay đều đi qua Nginx Reverse Proxy & API Gateway (cổng chuẩn 80/443 hoặc 8088 local). **Ngoại lệ duy nhất là WebRTC** truyền dữ liệu media RTP/ICE trực tiếp qua cổng `:8555`.
+This document is the technical specification and detailed client integration guide for AI agents, backend engineers, mobile engineers (Flutter/React Native/native iOS & Android), and desktop-app engineers (Tauri/Electron/Go/C#).
 
 ---
 
-## 2. Cấu trúc Định dạng Tệp Container `.hscfg`
+## 1. Overview and design problem
 
-### 2.1. Cấu trúc Nhị phân (Binary Layout)
+### 1.1. Context and goals
+In the **HubSight Surveillance & Playback Platform** ecosystem, end users use mobile or desktop applications to monitor live cameras, review NVR data, and receive realtime FCM push notifications.
 
-Tệp `.hscfg` được cấu tạo từ 4 phần liên tiếp:
+Previously, application setup required users to enter many complex values manually:
+- API Gateway URL, WebRTC URL, and WebSocket Relay URL.
+- Device identity key (`client_id`) and credential (`client_secret`).
+- Firebase Cloud Messaging configuration (`google-services.json` for Android and `GoogleService-Info.plist` for iOS).
+- Internal CA certificate (`ca_cert.pem`) for private-network deployments (on-premise/private CA).
+
+### 1.2. Solution: multi-layer secure configuration container (.hscfg)
+HubSight provides the proprietary **`.hscfg` (HubSight Configuration)** secure container format:
+1. **One-time setup (Zero-Configuration)**: An administrator creates the configuration in the HubSight Web UI, downloads the `.hscfg` file, or provides a quick-load QR code.
+2. **Multi-layer security with a six-digit PIN**:
+   - The `.hscfg` file is symmetrically encrypted with **AES-256-GCM**.
+   - The decryption key is derived from the **six-digit PIN** selected by the administrator using the memory-hard GPU/ASIC-resistant **Argon2id** algorithm (64MB RAM, 4 rounds).
+   - The file is digitally signed with **Ed25519** to prevent tampering.
+3. **Secure storage and download**: The file is stored in internal Object Storage and is downloadable only through a time-limited **Presigned URL** (24 hours for a QR code, 15 minutes for an admin download).
+4. **Unified Gateway architecture**: All REST API and WebSocket Relay endpoints pass through the Nginx reverse proxy and API Gateway (standard port 80/443 or local 8088). **The only exception is WebRTC**, which sends RTP/ICE media directly through `:8555`.
+
+---
+
+## 2. `.hscfg` container format
+
+### 2.1. Binary layout
+
+The `.hscfg` file consists of four consecutive parts:
 
 ```text
 +-----------------------+--------------------+---------------------+-----------------------------------------+
@@ -40,42 +40,42 @@ Tệp `.hscfg` được cấu tạo từ 4 phần liên tiếp:
 +-----------------------+--------------------+---------------------+-----------------------------------------+
 ```
 
-| Trường | Kích thước | Mô tả |
+| Field | Size | Description |
 | :--- | :--- | :--- |
-| **Magic Header** | 6 bytes | Cố định: Chuỗi ASCII `HSCFG` kèm byte phiên bản `0x01` (`[0x48, 0x53, 0x43, 0x46, 0x47, 0x01]`). |
-| **Argon2id Salt** | 16 bytes | 16 byte ngẫu nhiên mã hóa học (`crypto/rand`). Dùng làm Salt cho Argon2id. |
-| **GCM Nonce** | 12 bytes | 12 byte ngẫu nhiên chuẩn của AES-GCM (Initialization Vector). |
-| **Ciphertext + Tag** | N + 16 bytes | Dữ liệu nén ZIP đã được mã hóa bằng AES-256-GCM. 16 byte cuối cùng là Authentication Tag. |
+| **Magic Header** | 6 bytes | Fixed ASCII `HSCFG` plus version byte `0x01` (`[0x48, 0x53, 0x43, 0x46, 0x47, 0x01]`). |
+| **Argon2id Salt** | 16 bytes | 16 cryptographically random bytes (`crypto/rand`) used as the Argon2id salt. |
+| **GCM Nonce** | 12 bytes | 12 cryptographically random AES-GCM bytes (initialization vector). |
+| **Ciphertext + Tag** | N + 16 bytes | ZIP data encrypted with AES-256-GCM. The final 16 bytes are the authentication tag. |
 
-### 2.2. Dữ liệu Xác thực Bổ sung (AAD - Additional Authenticated Data)
-Khi thực hiện mã hóa và giải mã AES-256-GCM, tham số AAD bắt buộc phải truyền vào chính là **Magic Header (6 bytes)**:
+### 2.2. Additional authenticated data (AAD)
+When encrypting and decrypting with AES-256-GCM, the required AAD is the **Magic Header (6 bytes)**:
 ```text
 AAD = []byte("HSCFG\x01")
 ```
-Nếu kẻ tấn công chỉnh sửa header hoặc thay đổi phiên bản tệp, việc giải mã AES-GCM sẽ lập tức báo lỗi xác thực (`authentication failed / integrity check failure`).
+If an attacker changes the header or file version, AES-GCM decryption immediately reports an authentication error (`authentication failed / integrity check failure`).
 
-### 2.3. Tham số Thuật toán Mật mã học (Cryptographic Parameters)
+### 2.3. Cryptographic parameters
 
-| Thành phần | Thuật toán | Thông số kỹ thuật |
+| Component | Algorithm | Technical parameters |
 | :--- | :--- | :--- |
-| **Key Derivation (KDF)** | Argon2id | - Thời gian (`time / iterations`): `4`<br>- Bộ nhớ (`memory`): `64 * 1024` KiB (64 MiB)<br>- Luồng song song (`parallelism / threads`): `2`<br>- Độ dài khóa đầu ra (`keyLength`): `32 bytes` (256-bit) |
-| **Payload Encryption** | AES-256-GCM | - Khóa: 256-bit (từ Argon2id)<br>- Nonce: 12 bytes<br>- Tag: 16 bytes (128-bit MAC)<br>- AAD: `HSCFG\x01` |
-| **Digital Signature** | Ed25519 | - Cặp khóa Ed25519 (Public key 32 bytes, Private key 64 bytes) được sinh ra tự động trong mỗi phiên tạo cấu hình.<br>- Private key ký trực tiếp lên dữ liệu thô (ZIP archive payload) trước khi mã hóa.<br>- Public key và chữ ký (Signature) được nhúng trong `metadata.yml`. |
+| **Key Derivation (KDF)** | Argon2id | - Time (`time / iterations`): `4`<br>- Memory (`memory`): `64 * 1024` KiB (64 MiB)<br>- Parallelism (`parallelism / threads`): `2`<br>- Output key length (`keyLength`): `32 bytes` (256-bit) |
+| **Payload Encryption** | AES-256-GCM | - Key: 256-bit (from Argon2id)<br>- Nonce: 12 bytes<br>- Tag: 16 bytes (128-bit MAC)<br>- AAD: `HSCFG\x01` |
+| **Digital Signature** | Ed25519 | - Ed25519 key pair (32-byte public key, 64-byte private key) generated for each configuration-generation session.<br>- The private key signs the raw ZIP archive payload before encryption.<br>- The public key and signature are embedded in `metadata.yml`. |
 
 ---
 
-## 3. Nội dung bên trong Payload Giải mã (ZIP Archive)
+## 3. Decrypted payload contents (ZIP archive)
 
-Sau khi giải mã AES-256-GCM thành công, dữ liệu nhận được là một tệp lưu trữ chuẩn **ZIP Archive** chứa các tệp cấu hình sau:
+After successful AES-256-GCM decryption, the result is a standard **ZIP archive** containing these configuration files:
 
 ```text
 decrypted_payload.zip/
-├── metadata.yml              # Thông tin nguồn gốc, ngày tạo, chữ ký số Ed25519
-├── urls.yml                  # Toàn bộ Base URLs kết nối hệ thống HubSight
-├── key.yml                   # Khóa định danh Client & quyền hạn xác thực API
-├── google-services.json      # (Tùy chọn) Cấu hình Firebase FCM cho Android
-├── GoogleService-Info.plist  # (Tùy chọn) Cấu hình Firebase FCM cho iOS
-└── ca_cert.pem               # (Tùy chọn) Chứng chỉ CA gốc nếu dùng chứng chỉ riêng
+├── metadata.yml              # Origin, creation date, and Ed25519 signature
+├── urls.yml                  # All base URLs for HubSight connections
+├── key.yml                   # Client identity key and API authorization scopes
+├── google-services.json      # (Optional) Firebase FCM configuration for Android
+├── GoogleService-Info.plist  # (Optional) Firebase FCM configuration for iOS
+└── ca_cert.pem               # (Optional) Root CA certificate for private certificates
 ```
 
 ### 3.1. `metadata.yml`
@@ -83,7 +83,7 @@ decrypted_payload.zip/
 format_version: "1.0"
 config_id: "cfg_c1234567890abcdefgh"
 name: "Production HQ Mobile & Desktop"
-description: "Cấu hình chuẩn cho nhân viên an ninh tòa nhà"
+description: "Standard configuration for building security staff"
 created_by: "admin"
 created_at_utc: "2026-09-08T08:30:00Z"
 generator: "HubSight Core Packaging Engine"
@@ -93,9 +93,9 @@ signature: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd
 
 ### 3.2. `urls.yml`
 > [!IMPORTANT]
-> **Quy tắc Gateway Hợp nhất (Unified Gateway)**:
-> Mọi traffic API và WebSocket đều đi qua Gateway chính (cổng 80/443 hoặc 8088 local), tuyệt đối không nối trực tiếp cổng nội bộ của các microservice (`8080`, `3001`, `1984`).
-> Riêng WebRTC media streaming truyền RTP/ICE qua cổng `:8555`.
+> **Unified Gateway rule**:
+> All API and WebSocket traffic goes through the primary Gateway (port 80/443 or local 8088); never connect directly to internal microservice ports (`8080`, `3001`, `1984`).
+> WebRTC media streaming alone sends RTP/ICE through `:8555`.
 
 ```yaml
 gateway_url: "https://cctv.yourdomain.com"
@@ -116,60 +116,60 @@ allowed_scopes:
 ```
 
 ### 3.4. `google-services.json` & `GoogleService-Info.plist`
-- Được hệ thống tự động tải trực tiếp từ **Google Firebase Management API** (`https://firebase.googleapis.com/v1beta1/...`) dựa trên Service Account JSON mà Admin đã nạp vào hệ thống.
-- Chứa API Key, Project ID, Storage Bucket, Messaging Sender ID phục vụ khởi tạo SDK Firebase trên ứng dụng Android / iOS.
+- Automatically downloaded by the system from the **Google Firebase Management API** (`https://firebase.googleapis.com/v1beta1/...`) using the Service Account JSON uploaded by the administrator.
+- Contains the API key, Project ID, Storage Bucket, and Messaging Sender ID used to initialize the Firebase SDK on Android/iOS.
 
 ---
 
-## 4. Kiến trúc Backend & Dòng chảy Xử lý (Flows)
+## 4. Backend architecture and processing flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Admin as Quản trị viên (Web UI)
+    actor Admin as Administrator (Web UI)
     participant Core as Core Service (Go)
     participant Google as Firebase Mgmt API
     participant S3 as Storage Service
     actor Client as Mobile / Desktop App
 
-    Admin->>Core: 1. Nạp file Service Account JSON (Firebase Console)
-    Core->>Core: Mã hóa AES-256 lưu Private Key vào DB
-    Admin->>Core: 2. Mở Wizard tạo Cấu hình (/app-configs)
-    Core->>Google: Preflight kiểm tra Apps (Android & iOS)
-    Google-->>Core: Trả về danh sách PackageName & BundleID
-    Admin->>Core: 3. Nhập Domain Gateway & Mã PIN 6 số
-    Core->>Google: Tải google-services.json & GoogleService-Info.plist
-    Core->>Core: Đóng gói ZIP, ký Ed25519, Argon2id + AES-256-GCM
-    Core->>S3: Lưu trữ file .hscfg
-    Core-->>Admin: Trả về kết quả thành công + QR Code
-    Admin->>Client: 4. Gửi file .hscfg hoặc quét mã QR
-    Client->>Client: Nhập mã PIN 6 số -> Argon2id -> Giải mã AES-GCM -> Nạp URLs & FCM
+    Admin->>Core: 1. Upload Service Account JSON (Firebase Console)
+    Core->>Core: Encrypt and store the private key in the DB
+    Admin->>Core: 2. Open the configuration wizard (/app-configs)
+    Core->>Google: Preflight Android and iOS apps
+    Google-->>Core: Return PackageName and BundleID list
+    Admin->>Core: 3. Enter the Gateway domain and six-digit PIN
+    Core->>Google: Download google-services.json and GoogleService-Info.plist
+    Core->>Core: Package ZIP, sign with Ed25519, Argon2id + AES-256-GCM
+    Core->>S3: Store the .hscfg file
+    Core-->>Admin: Return success result + QR code
+    Admin->>Client: 4. Send the .hscfg file or scan the QR code
+    Client->>Client: Enter six-digit PIN -> Argon2id -> AES-GCM decrypt -> load URLs and FCM
 ```
 
-### 4.1. Cấu trúc Package Backend
-- [`services/shared/pkg/appconfig/crypto.go`](file:///d:/cctv/services/shared/pkg/appconfig/crypto.go): Hàm `DeriveKey(pin, salt)`, `EncryptContainer(...)`, `DecryptContainer(...)`.
-- [`services/shared/pkg/appconfig/packager.go`](file:///d:/cctv/services/shared/pkg/appconfig/packager.go): Hàm `BuildAppConfigPayload(...)` đóng gói tệp ZIP và ký số Ed25519.
-- [`services/shared/pkg/google/firebase_management.go`](file:///d:/cctv/services/shared/pkg/google/firebase_management.go): Tự động xin OAuth2 Bearer Token từ Service Account và gọi API Firebase Management lấy danh sách app và tệp cấu hình Android/iOS.
-- [`services/shared/pkg/api/app_config.go`](file:///d:/cctv/services/shared/pkg/api/app_config.go): REST Handlers cho `/api/app-configs/*`.
-- [`services/shared/pkg/models/app_config.go`](file:///d:/cctv/services/shared/pkg/models/app_config.go): GORM Model `AppConfig`.
+### 4.1. Backend package structure
+- [`services/shared/pkg/appconfig/crypto.go`](file:///d:/cctv/services/shared/pkg/appconfig/crypto.go): `DeriveKey(pin, salt)`, `EncryptContainer(...)`, and `DecryptContainer(...)`.
+- [`services/shared/pkg/appconfig/packager.go`](file:///d:/cctv/services/shared/pkg/appconfig/packager.go): `BuildAppConfigPayload(...)` packages the ZIP and signs it with Ed25519.
+- [`services/shared/pkg/google/firebase_management.go`](file:///d:/cctv/services/shared/pkg/google/firebase_management.go): Obtains an OAuth2 Bearer Token from the Service Account and calls Firebase Management for app lists and Android/iOS configuration files.
+- [`services/shared/pkg/api/app_config.go`](file:///d:/cctv/services/shared/pkg/api/app_config.go): REST handlers for `/api/app-configs/*`.
+- [`services/shared/pkg/models/app_config.go`](file:///d:/cctv/services/shared/pkg/models/app_config.go): `AppConfig` GORM model.
 
-### 4.2. Danh mục API Endpoints
+### 4.2. API endpoint catalog
 
-| Phương thức | Endpoint | Mô tả | Quyền RBAC |
+| Method | Endpoint | Description | RBAC permission |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/app-configs` | Danh sách các cấu hình đã tạo | `app_configs:manage` |
-| `POST` | `/api/app-configs/generate` | Tạo mới, đóng gói và mã hóa `.hscfg` | `app_configs:manage` |
-| `GET` | `/api/app-configs/:id/download` | Tải về file `.hscfg` nhị phân | `app_configs:manage` |
-| `GET` | `/api/app-configs/:id/qr` | Sinh mã QR kèm Presigned Download URL (24h) | `app_configs:manage` |
-| `DELETE` | `/api/app-configs/:id` | Xóa cấu hình và tệp lưu trữ | `app_configs:manage` |
-| `GET` | `/api/google-service-accounts/:id/preflight-apps` | Kiểm tra trạng thái Android/iOS trên Firebase | `google_service_accounts:manage` |
+| `GET` | `/api/app-configs` | List generated configurations | `app_configs:manage` |
+| `POST` | `/api/app-configs/generate` | Create, package, and encrypt `.hscfg` | `app_configs:manage` |
+| `GET` | `/api/app-configs/:id/download` | Download the binary `.hscfg` file | `app_configs:manage` |
+| `GET` | `/api/app-configs/:id/qr` | Generate a QR code with a 24-hour presigned download URL | `app_configs:manage` |
+| `DELETE` | `/api/app-configs/:id` | Delete the configuration and stored file | `app_configs:manage` |
+| `GET` | `/api/google-service-accounts/:id/preflight-apps` | Check Android/iOS status in Firebase | `google_service_accounts:manage` |
 
 ---
 
-## 5. Hướng dẫn Tích hợp trên Client (Mobile & Desktop Apps)
+## 5. Client integration guide (mobile and desktop apps)
 
-### 5.1. Dữ liệu Payload từ Mã QR (QR Code Payload)
-Khi người dùng chọn phương thức "Quét mã QR", dữ liệu đọc được từ QR Code là một chuỗi JSON:
+### 5.1. QR code payload
+When the user selects "Scan QR code", the QR code contains this JSON string:
 ```json
 {
   "v": 1,
@@ -179,26 +179,26 @@ Khi người dùng chọn phương thức "Quét mã QR", dữ liệu đọc đ�
   "sha256": "8a3f...b12c"
 }
 ```
-Ứng dụng thực hiện:
-1. Gửi HTTP GET đến `download_url` để tải toàn bộ mảng byte nhị phân của tệp `.hscfg`.
-2. Kiểm tra mã băm SHA256 của tệp tải về có trùng khớp với trường `sha256` trong mã QR không.
+The application:
+1. Sends an HTTP GET to `download_url` to download the complete binary byte array of the `.hscfg` file.
+2. Checks that the SHA256 hash of the downloaded file matches the QR code's `sha256` field.
 
 ---
 
-### 5.2. Thuật toán Giải mã Tệp `.hscfg` (Pseudo-code)
+### 5.2. `.hscfg` decryption algorithm (pseudocode)
 
 ```python
-# 1. Kiểm tra Magic Header
+# 1. Verify the Magic Header
 header = file_bytes[0:6]
 if header != b"HSCFG\x01":
-    raise Exception("Tệp không đúng định dạng .hscfg hợp lệ của HubSight!")
+    raise Exception("File is not a valid HubSight .hscfg format!")
 
-# 2. Tách các phân đoạn nhị phân
+# 2. Split the binary sections
 salt = file_bytes[6:22]        # 16 bytes
 nonce = file_bytes[22:34]      # 12 bytes
-ciphertext_and_tag = file_bytes[34:] # Phần còn lại
+ciphertext_and_tag = file_bytes[34:] # Remaining bytes
 
-# 3. Dẫn xuất khóa 256-bit từ PIN 6 số bằng Argon2id
+# 3. Derive the 256-bit key from the six-digit PIN with Argon2id
 aes_key = argon2id_kdf(
     password=pin_string.encode('utf-8'),
     salt=salt,
@@ -208,7 +208,7 @@ aes_key = argon2id_kdf(
     key_length=32
 )
 
-# 4. Giải mã AES-256-GCM với AAD
+# 4. Decrypt AES-256-GCM with AAD
 aad = b"HSCFG\x01"
 zip_payload_bytes = aes_gcm_decrypt(
     key=aes_key,
@@ -217,13 +217,13 @@ zip_payload_bytes = aes_gcm_decrypt(
     aad=aad
 )
 
-# 5. Mở và giải nén tệp ZIP trong RAM (In-Memory)
+# 5. Open and extract the ZIP archive in memory
 zip_archive = ZipFile(io.BytesIO(zip_payload_bytes))
 urls_content = zip_archive.read("urls.yml")
 key_content = zip_archive.read("key.yml")
 metadata_content = zip_archive.read("metadata.yml")
 
-# 6. Kiểm tra chữ ký Ed25519 (Tùy chọn khuyến nghị)
+# 6. Verify the Ed25519 signature (recommended option)
 verify_ed25519_signature(
     public_key=metadata.ed25519_public_key,
     signature=metadata.signature,
@@ -233,23 +233,23 @@ verify_ed25519_signature(
 
 ---
 
-### 5.3. Hướng dẫn Triển khai trên Flutter (Dart)
+### 5.3. Flutter implementation guide (Dart)
 
-Flutter là giải pháp phổ biến nhất cho ứng dụng Mobile HubSight.
+Flutter is the most common solution for the HubSight mobile application.
 
-#### Bước 1: Thêm dependencies vào `pubspec.yaml`
+#### Step 1: Add dependencies to `pubspec.yaml`
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
-  cryptography: ^2.7.0     # Hỗ trợ Argon2id, AES-GCM, Ed25519 chuẩn WebAssembly / FFI
-  archive: ^3.6.1          # Giải nén ZIP trong bộ nhớ
-  yaml: ^3.1.2             # Đọc file YAML
-  flutter_secure_storage: ^9.2.2 # Lưu trữ khóa an toàn vào iOS Keychain / Android Keystore
-  firebase_core: ^3.0.0    # Khởi tạo Firebase động
+  cryptography: ^2.7.0     # Argon2id, AES-GCM, and Ed25519 through WebAssembly/FFI
+  archive: ^3.6.1          # Extract ZIP in memory
+  yaml: ^3.1.2             # Read YAML files
+  flutter_secure_storage: ^9.2.2 # Secure key storage in iOS Keychain / Android Keystore
+  firebase_core: ^3.0.0    # Dynamic Firebase initialization
 ```
 
-#### Bước 2: Mã nguồn Giải mã (`hscfg_decoder.dart`)
+#### Step 2: Decryption source (`hscfg_decoder.dart`)
 ```dart
 import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
@@ -281,23 +281,23 @@ class HscfgDecoder {
     required Uint8List fileBytes,
     required String pin6Digits,
   }) async {
-    // 1. Kiểm tra kích thước tối thiểu và Magic Header
+    // 1. Check minimum size and Magic Header
     if (fileBytes.length < 34 + 16) {
-      throw Exception('Tệp cấu hình .hscfg bị hỏng hoặc kích thước quá nhỏ.');
+      throw Exception('The .hscfg configuration file is corrupt or too small.');
     }
 
     for (int i = 0; i < 6; i++) {
       if (fileBytes[i] != magicHeader[i]) {
-        throw Exception('Định dạng tệp không hợp lệ (Sai Magic Header).');
+        throw Exception('Invalid file format (incorrect Magic Header).');
       }
     }
 
-    // 2. Trích xuất Salt, Nonce và Ciphertext
+    // 2. Extract Salt, Nonce, and Ciphertext
     final salt = fileBytes.sublist(6, 22);
     final nonce = fileBytes.sublist(22, 34);
     final ciphertextWithTag = fileBytes.sublist(34);
 
-    // 3. Dẫn xuất khóa với Argon2id
+    // 3. Derive the key with Argon2id
     final kdf = Argon2id(
       parallelism: 2,
       memory: 65536, // 64 MB
@@ -310,10 +310,10 @@ class HscfgDecoder {
       nonce: salt,
     );
 
-    // 4. Giải mã AES-256-GCM với AAD
+    // 4. Decrypt AES-256-GCM with AAD
     final aesGcm = AesGcm.with256Bits();
     
-    // Tách 16-byte MAC Tag ở cuối dữ liệu
+    // Separate the 16-byte MAC tag at the end of the data
     final cipherLen = ciphertextWithTag.length - 16;
     final cipherText = ciphertextWithTag.sublist(0, cipherLen);
     final macTag = ciphertextWithTag.sublist(cipherLen);
@@ -330,7 +330,7 @@ class HscfgDecoder {
       aad: magicHeader,
     );
 
-    // 5. Giải nén ZIP Archive từ bộ nhớ
+    // 5. Extract the ZIP archive from memory
     final archive = ZipDecoder().decodeBytes(decryptedZipBytes);
     
     String? urlsYaml;
@@ -367,7 +367,7 @@ class HscfgDecoder {
     }
 
     if (urlsYaml == null || keyYaml == null) {
-      throw Exception('Tệp cấu hình thiếu urls.yml hoặc key.yml bắt buộc.');
+      throw Exception('The configuration file is missing required urls.yml or key.yml.');
     }
 
     return HscfgDecryptedResult(
@@ -382,8 +382,8 @@ class HscfgDecoder {
 }
 ```
 
-#### Bước 3: Khởi tạo Firebase động từ file giải mã
-Đối với Flutter, sau khi giải mã nhận được `googleServicesJson` hoặc `googleServiceInfoPlist`, bạn có thể khởi tạo Firebase mà không cần biên dịch cứng tệp JSON/plist vào asset:
+#### Step 3: Dynamically initialize Firebase from the decrypted file
+After decryption, Flutter can initialize Firebase from `googleServicesJson` or `googleServiceInfoPlist` without compiling the JSON/plist into an asset:
 
 ```dart
 import 'dart:convert';
@@ -406,16 +406,16 @@ Future<void> initFirebaseFromConfig(HscfgDecryptedResult config) async {
 
     await Firebase.initializeApp(options: options);
   } else if (Platform.isIOS && config.googleServiceInfoPlist != null) {
-    // Tương tự, parse plist trích xuất API_KEY, GOOGLE_APP_ID, GCM_SENDER_ID, PROJECT_ID
+    // Similarly, parse the plist and extract API_KEY, GOOGLE_APP_ID, GCM_SENDER_ID, PROJECT_ID
   }
 }
 ```
 
 ---
 
-### 5.4. Hướng dẫn Triển khai trên React Native / TypeScript
+### 5.4. React Native/TypeScript implementation guide
 
-Sử dụng thư viện mã hóa native `react-native-quick-crypto` và `@types/react-native-zip-archive`:
+Use the native crypto library `react-native-quick-crypto` and `@types/react-native-zip-archive`:
 
 ```typescript
 import QuickCrypto from 'react-native-quick-crypto';
@@ -424,7 +424,7 @@ import { unzip } from 'react-native-zip-archive';
 export async function decryptHscfg(fileBuffer: Buffer, pin: string) {
   const magic = fileBuffer.subarray(0, 6).toString('utf-8');
   if (magic !== 'HSCFG\x01') {
-    throw new Error('Tệp không đúng định dạng .hscfg');
+    throw new Error('File is not a valid .hscfg format');
   }
 
   const salt = fileBuffer.subarray(6, 22);
@@ -433,7 +433,7 @@ export async function decryptHscfg(fileBuffer: Buffer, pin: string) {
   const authTag = ciphertextAndTag.subarray(ciphertextAndTag.length - 16);
   const ciphertext = ciphertextAndTag.subarray(0, ciphertextAndTag.length - 16);
 
-  // Dẫn xuất khóa với Argon2id (Có thể sử dụng native module react-native-argon2)
+  // Derive the key with Argon2id (the native react-native-argon2 module may be used)
   const key = await deriveArgon2id(pin, salt, {
     iterations: 4,
     memory: 65536,
@@ -452,9 +452,9 @@ export async function decryptHscfg(fileBuffer: Buffer, pin: string) {
 
 ---
 
-### 5.5. Hướng dẫn Triển khai trên Desktop App (Go / Tauri / Electron)
+### 5.5. Desktop app implementation guide (Go/Tauri/Electron)
 
-Nếu xây dựng ứng dụng Desktop bằng Go (hoặc backend sidecar Tauri/Wails), chỉ cần sử dụng trực tiếp package chuẩn của HubSight:
+For a Go desktop application (or a Tauri/Wails backend sidecar), use the standard HubSight package directly:
 
 ```go
 package main
@@ -475,11 +475,11 @@ func main() {
 	pin := "123456"
 	payload, err := appconfig.DecryptContainer(hscfgBytes, pin)
 	if err != nil {
-		fmt.Printf("Giải mã thất bại: %v\n", err)
+		fmt.Printf("Decryption failed: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Giải mã thành công! Gateway URL: %s\n", payload.URLs.GatewayURL)
+	fmt.Printf("Decryption succeeded! Gateway URL: %s\n", payload.URLs.GatewayURL)
 	fmt.Printf("API Base URL: %s\n", payload.URLs.APIBaseURL)
 	fmt.Printf("Client ID: %s\n", payload.Key.ClientID)
 }
@@ -487,11 +487,11 @@ func main() {
 
 ---
 
-### 5.6. Gửi Thông tin Thiết bị Đăng nhập (Device Info & Fingerprint) khi Đăng nhập
+### 5.6. Send login device information (device info and fingerprint)
 
-Khi ứng dụng Mobile/Desktop đăng nhập người dùng (`POST /api/auth/login` hoặc `POST /api/auth/2fa/verify`), ứng dụng phải gửi kèm thông tin thiết bị (`device_info`) trong JSON payload và các header `X-Device-*` tương ứng để hệ thống ghi lại lịch sử phiên đăng nhập chi tiết.
+When a mobile/desktop application logs a user in (`POST /api/auth/login` or `POST /api/auth/2fa/verify`), it must include device information (`device_info`) in the JSON payload and the corresponding `X-Device-*` headers so the system can record detailed login-session history.
 
-#### Request mẫu:
+#### Example request:
 ```http
 POST /api/auth/login HTTP/1.1
 Host: gateway.hubsight.internal
@@ -523,15 +523,15 @@ X-Client-Type: mobile_ios
 }
 ```
 
-Tọa độ là tùy chọn và chỉ gửi khi người dùng đã cấp quyền Location. Nếu quyền bị từ chối hoặc thiết bị không cung cấp được GPS, backend sẽ fallback sang geolocation theo IP để lưu vị trí tương đối; login vẫn phải tiếp tục bình thường.
+Coordinates are optional and should be sent only after the user grants Location permission. If permission is denied or GPS is unavailable, the backend falls back to IP geolocation for an approximate location; login must continue normally.
 
-Xem đặc tả chi tiết các trường dữ liệu và mẫu code Flutter tại [`docs/SECURITY_FOR_LOGIN.md`](./SECURITY_FOR_LOGIN.md#44-đặc-tả-gửi-thông-tin-thiết-bị-đăng-nhập-client-device-metadata-contract).
+See the detailed field specification and Flutter example in [`docs/SECURITY_FOR_LOGIN.md`](./SECURITY_FOR_LOGIN.md#44-client-device-metadata-contract).
 
 ---
 
-## 6. Nguyên tắc An toàn & Best Practices
+## 6. Security principles and best practices
 
-1. **Không lưu trữ mã PIN**: Ứng dụng client chỉ giữ mã PIN trong bộ nhớ tạm (RAM) lúc giải mã, sau đó xóa sạch (`zeroize`) vùng nhớ.
-2. **Bảo vệ Client Credentials**: Sau khi giải nén, các giá trị `client_id` và `client_secret` phải được lưu vào vùng lưu trữ an toàn cấp hệ điều hành (**iOS Keychain**, **Android Keystore**, **Windows Credential Manager**, **macOS Keychain**).
-3. **Không ghi file nhạy cảm ra bộ nhớ ngoài (External Storage)**: Các tệp `key.yml`, `google-services.json` chỉ được giải nén trong bộ nhớ RAM hoặc sandbox riêng biệt của ứng dụng (`ApplicationSupportDirectory`).
-4. **Phòng chống tấn công brute-force PIN**: Ứng dụng client cần giới hạn số lần nhập mã PIN sai (ví dụ: khóa tạm 30 giây sau 5 lần nhập sai). Do thuật toán Argon2id tốn 64MB RAM và 4 rounds (mất khoảng 100ms - 250ms trên CPU di động), việc vét cạn offline không thể thực hiện tức thời trên thiết bị.
+1. **Do not store the PIN**: The client holds the PIN only temporarily in RAM during decryption, then zeroizes the memory.
+2. **Protect client credentials**: After extraction, store `client_id` and `client_secret` in OS-level secure storage (**iOS Keychain**, **Android Keystore**, **Windows Credential Manager**, **macOS Keychain**).
+3. **Do not write sensitive files to external storage**: Extract `key.yml` and `google-services.json` only in RAM or the application's isolated sandbox (`ApplicationSupportDirectory`).
+4. **Prevent PIN brute force**: Limit incorrect PIN attempts (for example, lock temporarily for 30 seconds after five failures). Argon2id uses 64MB RAM and four rounds (about 100–250ms on a mobile CPU), so immediate offline brute force is impractical on the device.

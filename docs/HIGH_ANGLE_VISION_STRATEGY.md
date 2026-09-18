@@ -97,11 +97,11 @@ To respect the constraint that cameras are arbitrary RTSP and may be PTZ:
 
 > **Correction (v3.3):** This section previously described face ID as a *hypothetical future module* to be gated off entirely on `angle_profile = "high"` streams via a camera-level early-exit. That premise was wrong on both counts: the recognition pipeline (`services/vision/src/recognition/face_engine.py`, `face_quality_gate.py`, `enroll.py`) **already exists and already runs unconditionally on every camera**, `angle_profile` regardless — it was never gated by camera classification, only by the existing per-face `FaceQualityGate`. There is no `face_id.py` and none is needed.
 
-**Cơ sở kỹ thuật (vẫn đúng, giữ nguyên từ v3.2):**
-- Các model InsightFace/ArcFace được huấn luyện chủ yếu trên tập dữ liệu web-scraped (MS1MV2, Glint360K...), biến thiên chủ yếu theo góc **yaw** (quay trái/phải); biến thiên theo **pitch** (nhìn từ trên xuống) trong tập huấn luyện rất hạn chế so với yaw.
+**Technical basis (still valid and retained from v3.2):**
+- InsightFace/ArcFace models are trained primarily on web-scraped datasets (MS1MV2, Glint360K, etc.), with variation mostly in **yaw** (left/right rotation); training-set variation in **pitch** (top-down view) is much more limited than yaw.
 - Published overhead/aerial face-recognition benchmarks quantify the cliff, not just a gradual falloff: VGGFace-class accuracy has been measured dropping from ~99% on frontal ground-level imagery to ~17% on true overhead imagery of cooperative subjects. Accuracy degradation is steep specifically past **~30° pitch**, not ~45-75° — the earlier draft understated how early the cliff starts.
-- Ở pitch $45^\circ\text{--}75^\circ$ như camera CCTV trần cao trong hệ thống này, phần trán/đỉnh đầu che khuất mắt-mũi-miệng, khiến bước 5-point landmark alignment (tiền đề bắt buộc trước khi trích embedding) thất bại trước khi model kịp hoạt động.
-- Khoảng cách xa và độ phân giải thấp (640p, cùng ràng buộc compute ở §1.2) cộng dồn với domain gap về pose -- hai trục suy giảm này nhân lên chứ không cộng tuyến tính, tương tự vấn đề "Small Target Degradation" đã nêu ở §6.1 cho pose keypoints.
+- At pitch $45^\circ\text{--}75^\circ$, typical of the high-ceiling CCTV cameras in this system, the forehead/crown obscures the eyes, nose, and mouth, causing the mandatory 5-point landmark alignment step before embedding extraction to fail before the model can operate.
+- Long distance and low resolution (640p, with the compute constraints in §1.2) compound the pose domain gap; these two degradation axes multiply rather than add linearly, similar to the "Small Target Degradation" described in §6.1 for pose keypoints.
 
 **Why per-face gating beats a camera-level toggle:** a fixed `angle_profile = "high"` classification describes the *camera's mount angle*, not any individual person's *effective* pitch at a given instant — someone near the edge of a wide-angle ceiling camera's FOV, or who happens to look up toward the lens, can momentarily present a far better angle than the camera's nominal tilt suggests. Gating per-face, per-frame (which the pipeline already does) captures those opportunistic good-angle moments on high-angle cameras instead of discarding the stream outright, at the cost of lower overall coverage than a properly-positioned dedicated camera would give (§2.5 "Recommendation" below).
 
@@ -111,7 +111,7 @@ To respect the constraint that cameras are arbitrary RTSP and may be PTZ:
 
 ---
 
-## 3. Fall Detection (Té Ngã) at High Angles
+## 3. Fall Detection at High Angles
 
 ### 3.1 Accurate Diagnosis of Current Codebase
 
@@ -185,7 +185,7 @@ To solve both false positives and missed falls, the architectural philosophy is:
   $$\text{Aspect Ratio: } AR = \frac{w_{\text{box}}}{h_{\text{box}}}$$
   $$\text{Keypoint Span Ratio: } \text{Ratio}_{\text{span}} = \frac{\max_{i \in K} x_i - \min_{i \in K} x_i}{\max_{i \in K} y_i - \min_{i \in K} y_i + 1e-4}$$
 - **Threshold:** $\text{IsProne} = \text{True}$ if $AR \ge 1.15$ OR $\text{Ratio}_{\text{span}} \ge 1.20$.
-- **Lưu ý về False Positive góc $70^\circ$:** Người đi bộ thẳng về phía camera ở góc $70^\circ$ cũng bị nén phối cảnh khiến $AR$ và $\text{Ratio}_{\text{span}}$ tăng cao, có thể kích hoạt Signal 0 báo "prone" giả. Vì vậy, **Signal 0 là điều kiện cần-không-đủ**; chính **Stillness Gate 3.0s** (§3.4 Signal 2) mới là chốt chặn quyết định phân biệt giữa "nằm ngã" với "đi về phía camera" (người đi bộ liên tục dịch chuyển và vận động chi, sẽ bị loại bỏ ngay lập tức ở Stillness Gate).
+- **False-positive note at $70^\circ$:** A person walking directly toward the camera at $70^\circ$ is also perspective-compressed, causing $AR$ and $\text{Ratio}_{\text{span}}$ to rise and potentially triggering a false "prone" Signal 0. Therefore, **Signal 0 is necessary but insufficient**; the **3.0s Stillness Gate** (§3.4 Signal 2) is the decisive barrier between "fallen" and "walking toward the camera" (continuous movement and limb motion are immediately rejected by the Stillness Gate).
 - **Compute Cost:** $< 0.03\text{ ms}$ per track (NumPy min/max).
 - **10 FPS Operation:** Checked at each frame; acts as the mandatory gating condition to enter `STILLNESS_VERIFYING`.
 - **Target File/Function:** `services/vision/src/detection/fall_kinematics.py:is_fallen_pose()`.
@@ -199,7 +199,7 @@ Entry from `UPRIGHT` into `DESCENDING` is an **OR condition** of 3 weak signals:
    $$AR(t) - AR(t - 2\Delta t) \ge 0.50 \quad \text{within } 200\text{ ms}$$
 3. **Slow Crumple / Collapse (Net Descent with Monotonicity Check):**
    $$[y_{\text{center}}(t) - y_{\text{center}}(t - 12\Delta t)] \ge 0.25 \quad \mathbf{AND} \quad \sum_{k=1}^{12} \mathbb{I}\left(y_{\text{center}}(t - (k-1)\Delta t) < y_{\text{center}}(t - k\Delta t)\right) \le 2$$
-   (Hạ độ cao tịnh tiến ròng $\ge 0.25$ chiều cao khung hình qua 12 frame / $1.2\text{s}$, đồng thời số frame có xu hướng đi ngược lên trên không vượt quá 2/12 frame. Điều này loại bỏ hoàn toàn hiện tượng telescoping cancellation và ngăn ngừa kích hoạt giả do người nhấp nhô lên-xuống ngẫu nhiên).
+   (Net downward translation $\ge 0.25$ of frame height across 12 frames / $1.2\text{s}$, while frames trending upward do not exceed 2/12. This eliminates telescoping cancellation and prevents false triggers from random up/down bobbing.)
 - **Compute Cost:** $< 0.02\text{ ms}$ using rolling `box_history` deque.
 - **Target File/Function:** `services/vision/src/detection/track_identity.py:update_pose_history()`.
 
@@ -231,7 +231,7 @@ During rapid falls, ByteTrack often drops track for 2–5 frames due to motion b
 
 ---
 
-## 4. Fire & Smoke Detection (Lửa & Khói) at High Angles
+## 4. Fire & Smoke Detection at High Angles
 
 ### 4.1 Rejection of Flicker-FFT at 10 FPS
 At 10 FPS ($\Delta t = 100\text{ ms}$), the Nyquist limit is $5\text{ Hz}$. A typical 8–12 Hz flame flicker produces severe frequency aliasing (e.g. 9 Hz folds into 1 Hz, mimicking slow lighting transitions). **Flicker-FFT is permanently removed.**
@@ -286,14 +286,14 @@ At 10 FPS ($\Delta t = 100\text{ ms}$), the Nyquist limit is $5\text{ Hz}$. A ty
 
 #### Path B: Smoke Verification Filters
 1. **Texture & Chroma Filter (Low-Saturation, Low Edge Density & Diffuse Blur):**
-   - **Chroma Filter:** Mean saturation in HSV space $S \le 0.20$ (khói thật có màu xám, trắng xám hoặc đen muội; loại trừ các vật thể có màu sắc rực rỡ như rèm cửa, quần áo chuyển động, banner quảng cáo).
-   - **Low Edge Density (Laplacian Variance):** Khói không có cấu trúc bề mặt sắc nét mà ở dạng hạt phân tán / mờ đục. Tính phương sai toán tử Laplace trên crop grayscale:
+   - **Chroma Filter:** Mean saturation in HSV space $S \le 0.20$ (real smoke is gray, gray-white, or soot-black; exclude vivid objects such as curtains, moving clothing, and advertising banners).
+   - **Low Edge Density (Laplacian Variance):** Smoke has no sharp surface structure; it is diffuse and opaque. Compute the Laplacian variance on the grayscale crop:
      $$\text{Var}(\nabla^2 I_{\text{crop}}) < 120$$
-     Các vật thể có biên sắc nét (rèm cửa dập dờn, tấm bạt lay động, người mặc áo trắng, chăn màn bay) có $\text{Var}(\nabla^2 I) \ge 300\text{–}1000$ và bị loại bỏ ngay lập tức.
-   - **Diffuse Boundary Gradient:** Biên độ chuyển tiếp biên diễn ra mờ nhòe (diffuse), loại trừ các luồng ánh sáng projector, bóng phản chiếu trên tường hoặc hơi nước áp lực cao có viền biên sắc gọn.
-   - **Compute Cost:** $\approx 0.08\text{ ms}$ trên crop xám kích thước $80 \times 80$.
+     Sharp-edged objects (fluttering curtains, moving tarps, people in white shirts, and flying bedding) have $\text{Var}(\nabla^2 I) \ge 300\text{–}1000$ and are rejected immediately.
+   - **Diffuse Boundary Gradient:** The transition at the boundary is blurred/diffuse, excluding projector beams, wall reflections, and high-pressure steam with crisp edges.
+   - **Compute Cost:** $\approx 0.08\text{ ms}$ on an $80 \times 80$ grayscale crop.
 2. **Temporal Persistence Gate:**
-   - Xuất hiện trong ít nhất $5$ trên $10$ frame liên tiếp ($0.5\text{–}1.0\text{s}$) với $\text{IoU} \ge 0.35$.
+   - Appears in at least $5$ of $10$ consecutive frames ($0.5\text{–}1.0\text{s}$) with $\text{IoU} \ge 0.35$.
 3. **Monotonic Smoke Growth Gate:**
    - Smoke plumes naturally expand due to convection.
    - Measure bounding box area over a rolling 20–40 frame window ($2.0\text{–}4.0\text{s}$ at 10 FPS):
@@ -318,7 +318,7 @@ High-angle CCTV cameras frequently transition to Black & White / IR illumination
 1. **Fire Detection Suppression / High-Bar Gate:**
    - In IR mode, chromatic information is destroyed ($S \approx 0$).
    - Incandescent lamps, vehicle exhausts, and heating appliances emit intense IR light that appears as blown-out white blobs, triggering massive false fire detections.
-   - **Policy:** In IR mode, standalone `fire` detection is **disabled or strictly gated on co-occurrence with a verified growing `smoke` plume**. *(Quy tắc IR này cố ý override tính độc lập 2-path ở §4.2 — vì xác minh fire dựa trên chroma (HSV/hue) bất khả thi khi không có màu.)*
+   - **Policy:** In IR mode, standalone `fire` detection is **disabled or strictly gated on co-occurrence with a verified growing `smoke` plume**. *(This IR rule intentionally overrides the independent two-path design in §4.2 because fire verification based on chroma (HSV/hue) is impossible without color.)*
 2. **Relaxed Pose Thresholds for IR Grain:**
    - IR video exhibits pronounced sensor shot noise.
    - Relax `KP_CONF` in `fall_kinematics.py` from $0.30$ to $0.20$ for shoulders and hips to avoid dropping valid keypoints.
@@ -416,4 +416,4 @@ The roadmap is strictly ordered by **implementation cost vs. production impact**
 ### Explicitly Excluded / Deprecated
 - **Flicker-FFT (8–12 Hz):** Permanently removed due to Nyquist sampling violation at 10 FPS.
 - **Secondary Head-Detection Model:** Replaced by existing COCO pose cranial keypoints 0–4 to preserve CPU compute headroom.
-- **Face ID (InsightFace/ArcFace) làm sensor nhận diện đáng tin cậy cho một chokepoint cụ thể trên luồng high-angle:** Không khuyến nghị — domain gap về pitch + độ phân giải khiến coverage thấp và không đảm bảo. Recognition VẪN chạy trên luồng high-angle (không hề bị tắt), chỉ là per-face gating chỉ bắt được các khoảnh khắc góc tốt cơ hội, không phải mọi lượt xuất hiện; xem §2.5.
+- **Face ID (InsightFace/ArcFace) as a reliable recognition sensor for a specific chokepoint on a high-angle stream:** Not recommended; the pitch and resolution domain gap gives low, unreliable coverage. Recognition STILL runs on high-angle streams (it is not disabled); per-face gating simply captures opportunistic good-angle moments, not every appearance. See §2.5.

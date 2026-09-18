@@ -1,16 +1,16 @@
 # HubSight CCTV - Mobile & Desktop App API Specification (v1)
 
-Tài liệu đặc tả kỹ thuật toàn diện cho các nhà phát triển ứng dụng di động (Flutter, React Native, iOS Swift, Android Kotlin) và máy tính (Go, Electron, Tauri, C#/.NET) tích hợp với nền tảng **HubSight CCTV**.
+Comprehensive technical specification for mobile app developers (Flutter, React Native, iOS Swift, Android Kotlin) and desktop developers (Go, Electron, Tauri, C#/.NET) integrating with the **HubSight CCTV** platform.
 
 ---
 
-## 1. Tổng quan Kiến trúc & Nguyên tắc Thiết kế
+## 1. Architecture overview and design principles
 
-Tất cả các API dành riêng cho ứng dụng di động và máy tính được gom nhóm dưới tiền tố:
+All APIs dedicated to mobile and desktop applications use the prefix:
 ```
 /api/app/v1/*
 ```
-Mọi lưu lượng mạng từ ứng dụng bên ngoài **bắt buộc** phải đi qua **API Gateway Entrypoint** (mặc định cổng `:8088` hoặc tên miền chuẩn `https://cctv.quoctran.space`).
+All network traffic from external applications **must** pass through the **API Gateway Entrypoint** (default port `:8088` or the standard domain `https://cctv.quoctran.space`).
 
 ```mermaid
 graph TD
@@ -22,72 +22,72 @@ graph TD
     RMQ --> Push[Push Service - FCM]
 ```
 
-### 1.1. Yêu cầu Bắt buộc về API Key (`X-API-Key`)
-Mọi request đến `/api/app/v1/*` **bắt buộc** phải kèm header xác thực Client:
-- **`X-API-Key`**: Mã bí mật client (được cấu hình và giải mã tự động từ container `.hscfg`).
-- *(Tương thích ngược)*: Có thể sử dụng `X-HubSight-App-Key`, `X-Client-ID` hoặc query param `?api_key=...`.
-- Nếu thiếu key: Hệ thống trả về `HTTP 401 Unauthorized` (`APP_KEY_REQUIRED`).
-- Nếu key không tồn tại hoặc bị vô hiệu hóa trong bảng `api_clients`: Hệ thống trả về `HTTP 403 Forbidden` (`INVALID_APP_KEY`).
+### 1.1. Required API key (`X-API-Key`)
+Every request to `/api/app/v1/*` **must** include the Client authentication header:
+- **`X-API-Key`**: Client secret (automatically configured and decrypted from the `.hscfg` container).
+- *(Backward compatibility)*: `X-HubSight-App-Key`, `X-Client-ID`, or the `?api_key=...` query parameter may be used.
+- Without a key, the system returns `HTTP 401 Unauthorized` (`APP_KEY_REQUIRED`).
+- If the key does not exist or is disabled in `api_clients`, the system returns `HTTP 403 Forbidden` (`INVALID_APP_KEY`).
 
-### 1.2. Admin Kill-Switch (HTTP 503 Service Unavailable)
-Quản trị viên có toàn quyền kích hoạt công tắc khẩn cấp (Kill-Switch) từ giao diện Web UI (`AppConfigs.tsx` hoặc `PUT /api/settings`):
-- Khi tắt (`app_api_enabled = false`), toàn bộ API app ngay lập tức phản hồi:
+### 1.2. Admin kill switch (HTTP 503 Service Unavailable)
+An administrator can activate the emergency kill switch from the Web UI (`AppConfigs.tsx` or `PUT /api/settings`):
+- When disabled (`app_api_enabled = false`), every app API immediately responds with:
   - **HTTP Status**: `503 Service Unavailable`
-  - **Header**: `Retry-After: 300` (đề nghị client thử lại sau 5 phút)
-  - **Payload Thân thiện**:
+  - **Header**: `Retry-After: 300` (the client should retry after five minutes)
+  - **Friendly payload**:
     ```json
     {
       "status": "error",
       "code": "APP_API_DISABLED",
       "maintenance": true,
-      "message": "Dịch vụ kết nối ứng dụng di động & máy tính hiện đang tạm dừng để bảo trì hệ thống. Vui lòng liên hệ Quản trị viên hoặc sử dụng giao diện web.",
+      "message": "Mobile and desktop app connectivity is temporarily paused for system maintenance. Contact an administrator or use the web interface.",
       "message_en": "HubSight mobile & desktop app access is temporarily disabled by administrator. Please access via the web portal."
     }
     ```
 
 ---
 
-## 2. Bảng Tổng hợp Endpoint
+## 2. Endpoint summary
 
-| Nhóm chức năng | Phương thức & Tuyến đường | Yêu cầu Bearer Token | Mô tả tóm tắt |
+| Feature group | Method & route | Bearer token required | Summary |
 | :--- | :--- | :---: | :--- |
-| **Hệ thống** | `GET /api/app/v1/system/status` | Không | Kiểm tra readiness, version v1 và feature flags |
-| **Xác thực** | `POST /api/app/v1/auth/login` | Không | Đăng nhập Username/Password, hỗ trợ cấp session hoặc 2FA challenge |
-| | `POST /api/app/v1/auth/2fa/verify` | Không | Xác thực mã TOTP 6 số hoặc Recovery Code dự phòng |
-| | `POST /api/app/v1/auth/refresh` | Không | Cấp mới access token từ refresh token |
-| | `POST /api/app/v1/auth/change-password`| Có | Đổi mật khẩu định kỳ hoặc mật khẩu lần đầu (`must_change_password`) |
-| | `POST /api/app/v1/auth/logout` | Có | Đăng xuất phiên làm việc hiện tại |
-| **Profile** | `GET /api/app/v1/profile` | Có | Xem thông tin người dùng, vai trò & danh sách quyền chi tiết |
-| | `PATCH /api/app/v1/profile` | Có | Cập nhật tên, múi giờ, ngôn ngữ (vi/en), theme, tùy chọn push |
-| | `GET /api/app/v1/profile/sessions` | Có | Liệt kê tất cả các phiên đăng nhập từ các thiết bị khác |
-| | `DELETE /api/app/v1/profile/sessions/:id`| Có | Đăng xuất/thu hồi phiên đăng nhập từ xa |
-| **Camera Live**| `GET /api/app/v1/cameras` | Có | Liệt kê danh sách camera kèm trạng thái hoạt động, `thumbnail_url` & `stream_name` |
-| | `GET /api/app/v1/cameras/:id` | Có | Chi tiết cấu hình, `thumbnail_url` & thông số 1 camera |
-| | `GET /api/app/v1/cameras/:id/thumbnail`| Có | **[Trực quan App]** Lấy ảnh frame trực tiếp (JPEG 640p 15FPS) làm thumbnail |
-| | `POST /api/app/v1/cameras/:id/live/webrtc` | Có | Trao đổi SDP Offer/Answer WebRTC xem trực tiếp |
-| | `POST /api/app/v1/cameras/:id/live/heartbeat`| Có | Giữ phiên xem stream trực tiếp (chu kỳ 30s) |
-| | `POST /api/app/v1/cameras/:id/live/release` | Có | Đóng phiên xem stream giải phóng tài nguyên go2rtc |
-| **Multi-View** | `POST /api/app/v1/cameras/live/batch-webrtc` | Có | **[Độc quyền App]** Đàm phán SDP song song xem nhiều camera cùng lúc |
-| | `POST /api/app/v1/cameras/live/batch-heartbeat`| Có | **[Tối ưu pin/mạng]** Gửi 1 request heartbeat cho tất cả camera đang xem |
-| | `POST /api/app/v1/cameras/live/batch-release` | Có | Giải phóng đồng loạt tất cả các luồng khi thoát màn hình multi-view |
-| **Archive** | `GET /api/app/v1/cameras/:id/archive/calendar` | Có | Lấy danh sách các ngày có video lưu trữ (dạng `YYYY-MM-DD`) |
-| | `GET /api/app/v1/cameras/:id/archive/timeline` | Có | Lấy danh sách các đoạn video (segments) kèm cờ AI Event |
-| | `GET /api/app/v1/archive/:recording_id/play` | Có | Lấy URL phát video MP4 (hỗ trợ HTTP Range request và 302 Redirect) |
-| | `GET /api/app/v1/archive/:recording_id/thumbnail`| Có | Lấy ảnh đại diện (thumbnail) của đoạn video |
-| **Thông báo** | `POST /api/app/v1/notifications/push-token` | Có | Đăng ký FCM Device Token để nhận thông báo đẩy Firebase |
-| | `DELETE /api/app/v1/notifications/push-token`| Có | Hủy đăng ký FCM Device Token (khi đăng xuất tài khoản) |
-| | `GET /api/app/v1/notifications/unread-count` | Có | Lấy số lượng thông báo chưa đọc siêu nhẹ (dùng cập nhật App Badge) |
-| | `GET /api/app/v1/notifications` | Có | Lấy danh sách thông báo phân trang, lọc theo danh mục |
-| | `PATCH /api/app/v1/notifications/:id/read` | Có | Đánh dấu đã đọc 1 thông báo |
-| | `POST /api/app/v1/notifications/read-all` | Có | Đánh dấu tất cả thông báo là đã đọc |
-| | `DELETE /api/app/v1/notifications/batch?ids=:id1,:id2` | Có | Xóa nhiều thông báo trong một request |
-| | `DELETE /api/app/v1/notifications/:id` | Có | Xóa 1 thông báo |
+| **System** | `GET /api/app/v1/system/status` | No | Check readiness, v1 version, and feature flags |
+| **Authentication** | `POST /api/app/v1/auth/login` | No | Username/password login with session or 2FA challenge |
+| | `POST /api/app/v1/auth/2fa/verify` | No | Verify a six-digit TOTP or recovery code |
+| | `POST /api/app/v1/auth/refresh` | No | Issue a new access token from a refresh token |
+| | `POST /api/app/v1/auth/change-password`| Yes | Change a periodic or first-login password (`must_change_password`) |
+| | `POST /api/app/v1/auth/logout` | Yes | Log out the current session |
+| **Profile** | `GET /api/app/v1/profile` | Yes | View user information, role, and detailed permissions |
+| | `PATCH /api/app/v1/profile` | Yes | Update name, timezone, language (vi/en), theme, and push preferences |
+| | `GET /api/app/v1/profile/sessions` | Yes | List all login sessions from other devices |
+| | `DELETE /api/app/v1/profile/sessions/:id`| Yes | Remotely log out/revoke a login session |
+| **Live cameras**| `GET /api/app/v1/cameras` | Yes | List cameras with status, `thumbnail_url`, and `stream_name` |
+| | `GET /api/app/v1/cameras/:id` | Yes | Camera configuration, `thumbnail_url`, and parameters |
+| | `GET /api/app/v1/cameras/:id/thumbnail`| Yes | **[App visual]** Get a live frame (640p 15FPS JPEG) as a thumbnail |
+| | `POST /api/app/v1/cameras/:id/live/webrtc` | Yes | Exchange WebRTC SDP offer/answer for live viewing |
+| | `POST /api/app/v1/cameras/:id/live/heartbeat`| Yes | Keep the live-stream session alive (30-second interval) |
+| | `POST /api/app/v1/cameras/:id/live/release` | Yes | Close the live-stream session and release go2rtc resources |
+| **Multi-view** | `POST /api/app/v1/cameras/live/batch-webrtc` | Yes | **[App-specific]** Negotiate SDP for multiple cameras in parallel |
+| | `POST /api/app/v1/cameras/live/batch-heartbeat`| Yes | **[Battery/network optimized]** Send one heartbeat for all viewed cameras |
+| | `POST /api/app/v1/cameras/live/batch-release` | Yes | Release all streams when leaving the multi-view screen |
+| **Archive** | `GET /api/app/v1/cameras/:id/archive/calendar` | Yes | List days with archived video (`YYYY-MM-DD`) |
+| | `GET /api/app/v1/cameras/:id/archive/timeline` | Yes | List video segments with AI event flags |
+| | `GET /api/app/v1/archive/:recording_id/play` | Yes | Get an MP4 playback URL (HTTP Range and 302 Redirect supported) |
+| | `GET /api/app/v1/archive/:recording_id/thumbnail`| Yes | Get the video-segment thumbnail |
+| **Notifications** | `POST /api/app/v1/notifications/push-token` | Yes | Register an FCM device token for Firebase push notifications |
+| | `DELETE /api/app/v1/notifications/push-token`| Yes | Unregister the FCM device token on account logout |
+| | `GET /api/app/v1/notifications/unread-count` | Yes | Get a lightweight unread count for the app badge |
+| | `GET /api/app/v1/notifications` | Yes | Get paginated, category-filtered notifications |
+| | `PATCH /api/app/v1/notifications/:id/read` | Yes | Mark one notification as read |
+| | `POST /api/app/v1/notifications/read-all` | Yes | Mark all notifications as read |
+| | `DELETE /api/app/v1/notifications/batch?ids=:id1,:id2` | Yes | Delete multiple notifications in one request |
+| | `DELETE /api/app/v1/notifications/:id` | Yes | Delete one notification |
 
 ---
 
-## 3. Chi tiết API & Data Contracts
+## 3. API details and data contracts
 
-### 3.1. Trạng thái Hệ thống & Readiness
+### 3.1. System status and readiness
 #### `GET /api/app/v1/system/status`
 Headers:
 ```http
@@ -112,7 +112,7 @@ Response `200 OK`:
 
 ---
 
-### 3.2. Xác thực Đăng nhập & 2FA
+### 3.2. Login authentication and 2FA
 #### `POST /api/app/v1/auth/login`
 Headers: `X-API-Key`
 Request Body:
@@ -136,9 +136,9 @@ Request Body:
 }
 ```
 
-`device_info.latitude`, `device_info.longitude` và `device_info.accuracy` là tùy chọn. Mobile app chỉ gửi các trường này sau khi người dùng cấp quyền Location; không được chặn login nếu người dùng từ chối quyền. Nếu không có tọa độ GPS, backend sẽ tự động dùng IP của request để lưu vị trí tương đối (độ chính xác thấp hơn).
+`device_info.latitude`, `device_info.longitude`, and `device_info.accuracy` are optional. The mobile app sends these fields only after the user grants Location permission; login must not be blocked if the user denies permission. Without GPS coordinates, the backend automatically uses the request IP to store an approximate location (with lower accuracy).
 
-Response Trường hợp 1: Đăng nhập thành công trực tiếp (`200 OK`):
+Response case 1: Direct successful login (`200 OK`):
 ```json
 {
   "status": "ok",
@@ -148,7 +148,7 @@ Response Trường hợp 1: Đăng nhập thành công trực tiếp (`200 OK`):
   "user": {
     "id": "usr_9918231",
     "username": "admin",
-    "full_name": "Quản trị viên",
+    "full_name": "Administrator",
     "role": "admin",
     "locale": "vi",
     "timezone": "Asia/Ho_Chi_Minh",
@@ -157,7 +157,7 @@ Response Trường hợp 1: Đăng nhập thành công trực tiếp (`200 OK`):
 }
 ```
 
-Response Trường hợp 2: Yêu cầu xác thực hai bước 2FA (`200 OK` kèm `requires_2fa: true`):
+Response case 2: Two-factor authentication required (`200 OK` with `requires_2fa: true`):
 ```json
 {
   "status": "ok",
@@ -185,7 +185,7 @@ Request Body:
 
 ---
 
-### 3.3. Danh sách Camera & Ảnh Thu nhỏ (Thumbnails)
+### 3.3. Camera list and thumbnails
 
 #### `GET /api/app/v1/cameras`
 Headers: `X-API-Key: hs_mob_client_default`, `Authorization: Bearer <token>`
@@ -197,7 +197,7 @@ Response `200 OK`:
   "cameras": [
     {
       "id": "cam_front_door",
-      "name": "Cổng chính",
+      "name": "Front Door",
       "host": "rtsp://192.168.1.100:554/live",
       "is_active": true,
       "is_stopped": false,
@@ -223,26 +223,26 @@ Response `200 OK`:
 }
 ```
 
-#### `GET /api/app/v1/cameras/:id/thumbnail` (hoặc `/snapshot`)
-Lấy ảnh chụp frame JPEG mới nhất trích xuất trực tiếp từ luồng thường trực **640p 15FPS** của camera trong media router.
+#### `GET /api/app/v1/cameras/:id/thumbnail` (or `/snapshot`)
+Get the latest JPEG frame extracted directly from the camera's persistent **640p 15FPS** stream in the media router.
 
 - **Headers**:
   ```http
   X-API-Key: hs_mob_client_default
   Authorization: Bearer <token>
   ```
-- **Hỗ trợ Query String (dành cho Image Widget trên App)**:
-  Nếu widget hiển thị ảnh của ứng dụng (Flutter / React Native) không hỗ trợ gắn header tùy biến, ứng dụng có thể truyền trực tiếp:
+- **Query-string support (for app image widgets)**:
+  If an app image widget (Flutter/React Native) cannot attach custom headers, the application may pass them directly:
   ```http
   GET /api/app/v1/cameras/:id/thumbnail?api_key=hs_mob_client_default&token=<user_token>
   ```
 - **Response**: `200 OK`
   - `Content-Type: image/jpeg`
   - `Cache-Control: no-cache, no-store, must-revalidate`
-  - Dữ liệu nhị phân ảnh JPEG (chuẩn 640p).
-  - Nếu camera đang Dừng (`is_stopped=true`), trả về `503 Service Unavailable`.
+  - Binary JPEG image data (640p standard).
+  - If the camera is stopped (`is_stopped=true`), return `503 Service Unavailable`.
 
-##### Ví dụ Tích hợp trên Mobile App:
+##### Mobile app integration example:
 **Flutter:**
 ```dart
 Image.network(
@@ -267,8 +267,8 @@ Image.network(
 
 ### 3.4. Live Streaming & Multi-View Song song
 
-#### `POST /api/app/v1/cameras/:id/live/webrtc` (Đơn luồng)
-Headers: `X-API-Key`, `Authorization: Bearer <token>`, `Content-Type: text/plain` (hoặc JSON)
+#### `POST /api/app/v1/cameras/:id/live/webrtc` (single stream)
+Headers: `X-API-Key`, `Authorization: Bearer <token>`, `Content-Type: text/plain` (or JSON)
 Request Body:
 ```
 v=0
@@ -276,10 +276,10 @@ o=- 0 0 IN IP4 127.0.0.1
 s=HubSight WebRTC Session
 ...
 ```
-Response `200 OK`: Trả về chuỗi `SDP Answer` sẵn sàng nạp vào `setRemoteDescription` của WebRTC PeerConnection.
+`200 OK` response: Return an `SDP Answer` string ready for `setRemoteDescription` on the WebRTC PeerConnection.
 
 #### `POST /api/app/v1/cameras/live/batch-webrtc` (Multi-View Song song)
-Được tối ưu riêng cho ứng dụng di động khi mở giao diện lưới 4/9/16 camera. Client gửi danh sách camera ID và SDP Offer tương ứng; Server thực hiện đàm phán gRPC song song và trả về toàn bộ kết quả trong 1 lượt mạng duy nhất:
+Optimized for mobile apps displaying a 4/9/16-camera grid. The client sends camera IDs and corresponding SDP offers; the server negotiates them in parallel over gRPC and returns all results in one network round trip:
 Request Body:
 ```json
 {
@@ -312,7 +312,7 @@ Response `200 OK`:
 ```
 
 #### `POST /api/app/v1/cameras/live/batch-heartbeat`
-Giữ kết nối cho danh sách camera đang hiển thị trên màn hình:
+Keep the sessions alive for cameras currently displayed:
 ```json
 {
   "camera_ids": ["cam_front_door", "cam_backyard"]
@@ -322,12 +322,12 @@ Response: `{"status": "ok"}`
 
 ---
 
-### 3.5. Điều khiển PTZ & Quản lý Presets (ONVIF Profile S)
+### 3.5. PTZ control and preset management (ONVIF Profile S)
 
-Dành cho các camera có `onvif_ptz_supported: true` (hoặc `onvif_enabled: true`).
+For cameras with `onvif_ptz_supported: true` (or `onvif_enabled: true`).
 
 #### `POST /api/app/v1/cameras/:id/ptz`
-Gửi lệnh quay quét, zoom, hoặc dừng di chuyển tới camera qua giao thức ONVIF Profile S.
+Send pan, zoom, or stop commands to the camera through ONVIF Profile S.
 
 - **Headers**:
   ```http
@@ -346,11 +346,11 @@ Gửi lệnh quay quét, zoom, hoặc dừng di chuyển tới camera qua giao t
   }
   ```
   - `action`:
-    - `"continuous"` hoặc `"move"`: Quay quét liên tục theo vector tốc độ (`pan`, `tilt`, `zoom` từ `-1.0` đến `+1.0`). Camera sẽ tiếp tục di chuyển cho đến khi gửi lệnh `stop` hoặc hết `timeout`.
-    - `"stop"`: Dừng ngay lập tức mọi chuyển động quay quét và zoom.
-    - `"relative"`: Dịch chuyển một bước tương đối.
-    - `"zoom_in"`: Phóng to hình ảnh (`zoom: 0.5`).
-    - `"zoom_out"`: Thu nhỏ hình ảnh (`zoom: -0.5`).
+    - `"continuous"` or `"move"`: Continuously pan/tilt/zoom according to the velocity vector (`pan`, `tilt`, `zoom` from `-1.0` to `+1.0`). The camera continues until `stop` is sent or `timeout` expires.
+    - `"stop"`: Immediately stop all pan/tilt and zoom movement.
+    - `"relative"`: Move by one relative step.
+    - `"zoom_in"`: Zoom in (`zoom: 0.5`).
+    - `"zoom_out"`: Zoom out (`zoom: -0.5`).
 - **Response `200 OK`**:
   ```json
   {
@@ -359,7 +359,7 @@ Gửi lệnh quay quét, zoom, hoặc dừng di chuyển tới camera qua giao t
   ```
 
 #### `GET /api/app/v1/cameras/:id/presets`
-Lấy danh sách các điểm giám sát định sẵn (Preset positions) lưu trên phần cứng camera.
+Get the preset positions stored on the camera hardware.
 
 - **Headers**: `X-API-Key: hs_mob_client_default`, `Authorization: Bearer <token>`
 - **Response `200 OK`**:
@@ -367,25 +367,25 @@ Lấy danh sách các điểm giám sát định sẵn (Preset positions) lưu t
   {
     "status": "ok",
     "presets": [
-      { "token": "1", "name": "Cổng chính" },
-      { "token": "2", "name": "Bãi đỗ xe" }
+      { "token": "1", "name": "Front Door" },
+      { "token": "2", "name": "Parking Lot" }
     ]
   }
   ```
 
 #### `POST /api/app/v1/cameras/:id/presets`
-Thực hiện thao tác với điểm giám sát (Preset).
+Perform an operation on a preset position.
 
 - **Request Body**:
-  - Di chuyển tới Preset:
+  - Go to a preset:
     ```json
     { "action": "goto", "preset_token": "1" }
     ```
-  - Lưu vị trí hiện tại thành Preset mới:
+  - Save the current position as a new preset:
     ```json
-    { "action": "save", "preset_name": "Góc sân sau" }
+    { "action": "save", "preset_name": "Back Yard" }
     ```
-  - Xóa Preset:
+  - Delete a preset:
     ```json
     { "action": "delete", "preset_token": "1" }
     ```
@@ -394,12 +394,12 @@ Thực hiện thao tác với điểm giám sát (Preset).
   {
     "status": "ok",
     "preset_token": "1",
-    "name": "Góc sân sau"
+    "name": "Back Yard"
   }
   ```
 
 #### `POST /api/app/v1/onvif/probe`
-Dò tìm tự động thông số thiết bị ONVIF Profile S (dành cho màn hình cài đặt/thêm thiết bị trên ứng dụng di động).
+Automatically discover ONVIF Profile S device parameters for the mobile app setup/add-device screen.
 
 - **Request Body**:
   ```json
@@ -440,7 +440,7 @@ Dò tìm tự động thông số thiết bị ONVIF Profile S (dành cho màn h
 
 ---
 
-### 3.6. Video Lưu trữ & NVR Playback
+### 3.6. Archived video and NVR playback
 
 #### `GET /api/app/v1/cameras/:id/archive/calendar?month=2026-09`
 Response `200 OK`:
@@ -479,11 +479,11 @@ Response `200 OK`:
   "expires_in_seconds": 7200
 }
 ```
-*(Nếu client kèm header `Accept: video/mp4` hoặc query `?redirect=true`, server tự động phản hồi `302 Found` chuyển hướng trực tiếp tới URL video).*
+*(If the client includes `Accept: video/mp4` or `?redirect=true`, the server automatically returns `302 Found` redirecting directly to the video URL.)*
 
 ---
 
-### 3.5. Đăng ký & Quản lý Thông báo Đẩy (FCM Push)
+### 3.5. Push notification registration and management (FCM Push)
 
 #### `POST /api/app/v1/notifications/push-token`
 Request Body:
@@ -503,7 +503,7 @@ Response `200 OK`:
 ```
 
 #### `GET /api/app/v1/notifications/unread-count`
-Response siêu nhẹ để hiển thị số badge trên icon ứng dụng:
+Lightweight response for displaying a badge count on the app icon:
 ```json
 {
   "unread_count": 4
@@ -512,7 +512,7 @@ Response siêu nhẹ để hiển thị số badge trên icon ứng dụng:
 
 #### `DELETE /api/app/v1/notifications/batch?ids=:id1,:id2`
 
-Tham số query `ids` là danh sách ID thông báo, phân tách bằng dấu phẩy. ID rỗng và ID trùng lặp được bỏ qua.
+The `ids` query parameter is a comma-separated list of notification IDs. Empty and duplicate IDs are ignored.
 
 Response `200 OK`:
 ```json
@@ -522,11 +522,11 @@ Response `200 OK`:
 }
 ```
 
-Request không có ID hợp lệ trả về `400 INVALID_INPUT`; nếu không tìm thấy bất kỳ thông báo nào thì trả về `404 NOTIFICATION_NOT_FOUND`.
+If the request has no valid IDs, return `400 INVALID_INPUT`; if no notifications are found, return `404 NOTIFICATION_NOT_FOUND`.
 
 ---
 
-## 4. Hướng dẫn Tích hợp Mẫu (Flutter / Dart)
+## 4. Integration example (Flutter/Dart)
 
 ```dart
 import 'dart:convert';
@@ -545,7 +545,7 @@ class HubSightApiClient {
     if (bearerToken != null) 'Authorization': 'Bearer $bearerToken',
   };
 
-  // 1. Kiểm tra trạng thái hệ thống và Kill-Switch
+  // 1. Check system status and the kill switch
   Future<bool> checkSystemReadiness() async {
     final res = await http.get(
       Uri.parse('$baseUrl/api/app/v1/system/status'),
@@ -554,12 +554,12 @@ class HubSightApiClient {
 
     if (res.statusCode == 503) {
       final body = jsonDecode(res.body);
-      throw Exception(body['message'] ?? 'Hệ thống đang bảo trì');
+      throw Exception(body['message'] ?? 'System is under maintenance');
     }
     return res.statusCode == 200;
   }
 
-  // 2. Đăng nhập
+  // 2. Log in
   Future<Map<String, dynamic>> login(String username, String password) async {
     final res = await http.post(
       Uri.parse('$baseUrl/api/app/v1/auth/login'),
@@ -579,7 +579,7 @@ class HubSightApiClient {
     return data;
   }
 
-  // 3. Đăng ký FCM Token khi mở app
+  // 3. Register the FCM token when the app starts
   Future<void> registerFcmToken(String fcmToken) async {
     await http.post(
       Uri.parse('$baseUrl/api/app/v1/notifications/push-token'),
