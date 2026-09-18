@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"cctv/shared/pkg/adminapi"
 	"cctv/shared/pkg/auth"
 	"cctv/shared/pkg/config"
 	"cctv/shared/pkg/database"
@@ -136,6 +137,11 @@ func main() {
 		authGroup.GET("/clients/verify", auth.VerifyClientHandler)
 		authGroup.POST("/clients/verify", auth.VerifyClientHandler)
 	}
+
+	// Dedicated Admin API authentication namespace. The gateway rewrites
+	// /api/admin/v1/auth/* to this internal /admin/v1/auth/* path.
+	adminAuthGroup := r.Group("/admin/v1/auth")
+	adminapi.RegisterAuthRoutes(adminAuthGroup)
 
 	// Protected Auth Endpoints (require active session)
 	protected := r.Group("/auth")

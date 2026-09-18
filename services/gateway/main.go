@@ -309,6 +309,15 @@ func main() {
 			return
 		}
 
+		// Dispatch only the Admin authentication namespace to auth-service.
+		// Other Admin API resources remain isolated in core-service.
+		if strings.HasPrefix(path, "/api/admin/v1/auth/") || path == "/api/admin/v1/auth" {
+			c.Request.URL.Path = strings.TrimPrefix(path, "/api")
+			c.Request.Host = authTarget.Host
+			authProxy.ServeHTTP(c.Writer, c.Request)
+			return
+		}
+
 		// Dispatch all other /api/... requests to Core CCTV Service
 		c.Request.Host = coreTarget.Host
 		coreProxy.ServeHTTP(c.Writer, c.Request)
@@ -387,7 +396,6 @@ func main() {
 		c.Writer.Header().Set("Expires", "0")
 		c.File(index)
 	})
-
 
 	log.Printf("API Gateway listening on :%s (Auth: %s, Core: %s, Relay: %s, WebRTC: %s)",
 		port, authServiceURL, coreServiceURL, relayServiceURL, webrtcServiceURL)

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"cctv/shared/pkg/adminapi"
 	cctvapi "cctv/shared/pkg/api"
 	"cctv/shared/pkg/appapi"
 	"cctv/shared/pkg/auth"
@@ -59,6 +60,10 @@ func New() *gin.Engine {
 
 		// Dedicated Mobile & Desktop App routes (/api/app/v1/*)
 		appapi.RegisterAppRoutes(api)
+
+		// Dedicated Admin API v1 routes (/api/admin/v1/*). These handlers and
+		// middleware have an independent contract from the legacy API groups.
+		adminapi.RegisterCoreRoutes(api.Group("/admin/v1"))
 
 		// Protected domain routes (Validated via auth-service)
 		protected := api.Group("/")

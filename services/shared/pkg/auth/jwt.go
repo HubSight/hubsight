@@ -20,6 +20,7 @@ type JWTClaims struct {
 	Username  string `json:"username"`
 	Role      string `json:"role"`
 	SessionID string `json:"session_id"`
+	ClientID  string `json:"client_id,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -33,6 +34,20 @@ func getJWTSecret() []byte {
 
 // GenerateJWT creates a signed HMAC-SHA256 JWT access token.
 func GenerateJWT(u *models.User, sessionID string, ttl time.Duration) (string, error) {
+	return generateJWT(u, sessionID, ttl, jwt.ClaimStrings{"hubsight-client", "hubsight-app"}, "")
+}
+
+// GenerateAdminJWT creates an access token for the dedicated Admin API.
+// Admin tokens carry a distinct audience and client binding so they cannot be
+// replayed through the legacy Web/App API authentication paths.
+func GenerateAdminJWT(u *models.User, sessionID string, ttl time.Duration, clientID string) (string, error) {
+	if clientID == "" {
+		return "", errors.New("admin JWT requires a client ID")
+	}
+	return generateJWT(u, sessionID, ttl, jwt.ClaimStrings{models.AudienceAdminAPI}, clientID)
+}
+
+func generateJWT(u *models.User, sessionID string, ttl time.Duration, audience jwt.ClaimStrings, clientID string) (string, error) {
 	if u == nil {
 		return "", errors.New("cannot generate JWT for nil user")
 	}
@@ -45,10 +60,11 @@ func GenerateJWT(u *models.User, sessionID string, ttl time.Duration) (string, e
 		Username:  u.Username,
 		Role:      string(u.Role),
 		SessionID: sessionID,
+		ClientID:  clientID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "hubsight-auth-service",
 			Subject:   u.ID,
-			Audience:  jwt.ClaimStrings{"hubsight-client", "hubsight-app"},
+			Audience:  audience,
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),

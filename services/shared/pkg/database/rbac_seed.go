@@ -2,6 +2,8 @@ package database
 
 import (
 	"log"
+	"os"
+	"strings"
 
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/nanoid"
@@ -177,6 +179,7 @@ func SeedDefaultApiClients(db *gorm.DB) error {
 			APIKey:       "hs_web_client_core",
 			Name:         "HubSight Web Portal",
 			Platform:     models.PlatformWebSPA,
+			Audience:     "web_api",
 			ClientType:   models.ClientTypePublic,
 			IsActive:     true,
 			IsSystem:     true,
@@ -187,11 +190,24 @@ func SeedDefaultApiClients(db *gorm.DB) error {
 			APIKey:       "hs_mob_client_default",
 			Name:         "HubSight Mobile App",
 			Platform:     models.PlatformMobile,
+			Audience:     "app_api",
 			ClientType:   models.ClientTypePublic,
 			IsActive:     true,
 			IsSystem:     true,
 			RateLimitRPS: 0,
 		},
+	}
+	if adminKey := strings.TrimSpace(os.Getenv("HUBSIGHT_ADMIN_API_KEY")); adminKey != "" {
+		defaultClients = append(defaultClients, models.ApiClient{
+			ClientID:   "hs_admin_desktop_default",
+			APIKey:     adminKey,
+			Name:       "HubSight Admin Desktop",
+			Platform:   models.PlatformAdminDesktop,
+			Audience:   models.AudienceAdminAPI,
+			ClientType: models.ClientTypeConfidential,
+			IsActive:   true,
+			IsSystem:   true,
+		})
 	}
 
 	for _, dc := range defaultClients {
@@ -213,6 +229,12 @@ func SeedDefaultApiClients(db *gorm.DB) error {
 			}
 			if existing.Platform != dc.Platform {
 				updates["platform"] = dc.Platform
+			}
+			if existing.Audience != dc.Audience {
+				updates["audience"] = dc.Audience
+			}
+			if dc.APIKey != "" && existing.APIKey != dc.APIKey && dc.ClientID == "hs_admin_desktop_default" {
+				updates["api_key"] = dc.APIKey
 			}
 			if len(updates) > 0 {
 				_ = db.Model(&existing).Updates(updates).Error

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"cctv/shared/pkg/adminapi"
 	"cctv/shared/pkg/appapi"
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
@@ -15,10 +16,11 @@ import (
 )
 
 type SettingsRequest struct {
-	NvrStatus      *bool `json:"nvr_status"`
-	StorageQuotaGb *int  `json:"storage_quota_gb"`
-	RetentionDays  *int  `json:"retention_days"`
-	AppApiEnabled  *bool `json:"app_api_enabled"`
+	NvrStatus       *bool `json:"nvr_status"`
+	StorageQuotaGb  *int  `json:"storage_quota_gb"`
+	RetentionDays   *int  `json:"retention_days"`
+	AppApiEnabled   *bool `json:"app_api_enabled"`
+	AdminApiEnabled *bool `json:"admin_api_enabled"`
 }
 
 func getOrCreateSettings(ctx context.Context) (*models.Setting, error) {
@@ -32,10 +34,11 @@ func getOrCreateSettings(ctx context.Context) (*models.Setting, error) {
 	}
 
 	s = models.Setting{
-		NvrStatus:      true,
-		StorageQuotaGB: 50,
-		RetentionDays:  4,
-		AppApiEnabled:  true,
+		NvrStatus:       true,
+		StorageQuotaGB:  50,
+		RetentionDays:   4,
+		AppApiEnabled:   true,
+		AdminApiEnabled: true,
 	}
 	if err := database.DB.WithContext(ctx).Create(&s).Error; err != nil {
 		return nil, err
@@ -85,6 +88,9 @@ func UpdateSettings(c *gin.Context) {
 	if req.AppApiEnabled != nil {
 		updates["app_api_enabled"] = *req.AppApiEnabled
 	}
+	if req.AdminApiEnabled != nil {
+		updates["admin_api_enabled"] = *req.AdminApiEnabled
+	}
 
 	if len(updates) > 0 {
 		if err := database.DB.WithContext(ctx).Model(&models.Setting{}).Where("id = ?", current.ID).Updates(updates).Error; err != nil {
@@ -93,6 +99,9 @@ func UpdateSettings(c *gin.Context) {
 		}
 		if req.AppApiEnabled != nil {
 			appapi.SetKillSwitchState(*req.AppApiEnabled)
+		}
+		if req.AdminApiEnabled != nil {
+			adminapi.SetKillSwitchState(*req.AdminApiEnabled)
 		}
 	}
 

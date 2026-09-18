@@ -568,6 +568,36 @@ func Logout(ctx context.Context, token string) error {
 	return RevokeSession(ctx, sess.ID, "user_logout")
 }
 
+// ReplaceSessionToken atomically binds a newly issued access token to an
+// existing session. It is used by dedicated token issuers, such as the Admin
+// API, when the shared login flow has already created the session record but
+// the final JWT needs a distinct audience/client binding.
+func ReplaceSessionToken(ctx context.Context, sessionID, token, clientID string) error {
+	if sessionID == "" || token == "" {
+		return errors.New("session ID and token are required")
+	}
+
+	updates := map[string]any{
+		"token_hash":   hashToken(token),
+		"last_seen_at": time.Now(),
+	}
+	if clientID != "" {
+		updates["client_id"] = clientID
+	}
+
+	result := database.DB.WithContext(ctx).
+		Model(&models.Session{}).
+		Where("id = ? AND revoked_at IS NULL AND expires_at > ?", sessionID, time.Now()).
+		Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return errors.New("active session not found")
+	}
+	return nil
+}
+
 func CreateInitialUser(ctx context.Context, username, password string) error {
 	var count int64
 	if err := database.DB.WithContext(ctx).Model(&models.User{}).Where("username = ?", username).Count(&count).Error; err != nil {

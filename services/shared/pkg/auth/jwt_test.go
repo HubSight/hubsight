@@ -68,3 +68,26 @@ func TestJWTExpiredOrInvalid(t *testing.T) {
 		t.Fatalf("expected error for corrupted JWT token")
 	}
 }
+
+func TestAdminJWTUsesDedicatedAudienceAndClientBinding(t *testing.T) {
+	user := &models.User{
+		ID:       "usr_admin_test_123456",
+		Username: "admin",
+		Role:     models.RoleAdmin,
+	}
+
+	token, err := GenerateAdminJWT(user, "sess_admin_test", 15*time.Minute, "admin-client")
+	if err != nil {
+		t.Fatalf("GenerateAdminJWT failed: %v", err)
+	}
+	claims, err := ParseAndValidateJWT(token)
+	if err != nil {
+		t.Fatalf("ParseAndValidateJWT failed: %v", err)
+	}
+	if claims.ClientID != "admin-client" {
+		t.Fatalf("expected admin client binding, got %q", claims.ClientID)
+	}
+	if len(claims.Audience) != 1 || claims.Audience[0] != models.AudienceAdminAPI {
+		t.Fatalf("expected audience %q, got %v", models.AudienceAdminAPI, claims.Audience)
+	}
+}

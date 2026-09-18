@@ -14,6 +14,9 @@ const (
 	PlatformFlutterMobile = "mobile"
 	PlatformWebSPA        = "web_spa"
 	PlatformThirdParty    = "third_party"
+	PlatformAdminDesktop  = "admin_desktop"
+
+	AudienceAdminAPI = "admin_api"
 )
 
 // ClientType constants for ApiClient
@@ -30,6 +33,7 @@ type ApiClient struct {
 	APIKey       string     `gorm:"column:api_key;type:varchar(128);uniqueIndex:api_clients_api_key_key;not null" json:"api_key"`
 	Name         string     `gorm:"column:name;type:varchar(128);not null" json:"name"`
 	Platform     string     `gorm:"column:platform;type:varchar(32);not null;default:'web_spa'" json:"platform"`
+	Audience     string     `gorm:"column:audience;type:varchar(32);not null;default:''" json:"audience,omitempty"`
 	ClientType   string     `gorm:"column:client_type;type:varchar(32);not null;default:'public'" json:"client_type"`
 	IsActive     bool       `gorm:"column:is_active;not null;default:true" json:"is_active"`
 	IsSystem     bool       `gorm:"column:is_system;not null;default:false" json:"is_system"`
