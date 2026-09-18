@@ -101,10 +101,17 @@ Authentication rules:
 - Bootstrap endpoints accept `X-API-Key` and do not require a JWT.
 - Every protected REST request requires both `Authorization: Bearer <JWT>` and `X-API-Key`.
 - The WebSocket handshake requires the same two headers.
-- The key must belong to an active client with the `admin_desktop` audience/platform.
-- The JWT must contain `aud=admin_desktop`, and its `client_id` must match the API key.
+- The key must belong to an active client with platform `admin_desktop` and audience `admin_api`.
+- The JWT must contain `aud=admin_api`, and its `client_id` must match the API key.
 - Tokens and keys must never appear in URLs, logs, image-provider IDs, or playback query strings.
 - The server may keep a token ledger for refresh rotation, revocation, audit, and security alerts; this is not an HTTP session used by the client.
+
+Authorization rules:
+
+- Admin login is allowed only for an active user with the `admin` role or the explicit `admin_api:access` permission.
+- The default `operator` and `viewer` roles do not receive `admin_api:access`.
+- The same predicate is re-evaluated during 2FA completion, refresh, and every protected request, so a user who is later demoted or revoked cannot continue using an existing Admin token.
+- API-key possession alone does not grant access to protected Admin resources; it only identifies the Admin desktop client during bootstrap.
 
 The complete endpoint list, permissions, and request purposes are maintained in [`ADMIN_API_V1_ENDPOINT_CATALOG.md`](ADMIN_API_V1_ENDPOINT_CATALOG.md).
 
@@ -317,7 +324,9 @@ The Admin endpoint is `GET /api/admin/v1/cameras/{camera_id}/thumbnail`. The pro
 
 ### 8.3. `.hscfg` and secure storage
 
-The SDK may load encrypted configuration packages using the existing `.hscfg` specification: Argon2id, AES-256-GCM with the defined AAD, and Ed25519 signature verification. Implement this in a separately testable crypto module and keep the PIN, decrypted secrets, refresh token, and API key out of QML properties and diagnostic logs.
+The SDK loads the dedicated Admin `.hscfg` v2 profile: `HSCFG\x02`, `profile: admin_api`, API namespace `/api/admin/v1`, realtime namespace `/relay/admin/v1`, and `bearer_jwt_plus_api_key` authentication. It uses Argon2id, AES-256-GCM with the defined AAD, and Ed25519 signature verification. Admin packages contain no FCM configuration and must be rejected by legacy App/Mobile decoders.
+
+Implement this in a separately testable crypto module and keep the PIN, decrypted secrets, refresh token, and API key out of QML properties and diagnostic logs. The Admin package may include only `metadata.yml`, `urls.yml`, `key.yml`, and an optional `ca_cert.pem`.
 
 Use OS-backed secure storage for refresh tokens and API keys:
 
@@ -359,6 +368,7 @@ After reconnect, the SDK loads a REST snapshot and then requests best-effort rep
 
 ## 10. Security, reliability, and lifecycle requirements
 
+- Enforce the dedicated `admin_api:access` permission at login, 2FA completion, refresh, and protected-request validation; never rely on the `admin` role check only at the UI layer.
 - Enforce JWT audience, client binding, permission, expiry, and token-revocation checks at the Admin middleware boundary.
 - Redact API keys, refresh tokens, passwords, service-account credentials, and signed URLs from logs and crash reports.
 - Apply rate limits, expiry, rotation, revocation, and last-used auditing to Admin client keys.
@@ -430,7 +440,7 @@ Initial acceptance targets should be agreed after a representative hardware base
 
 - Admin SDK requests never require or send cookies, sessions, query tokens, or query API keys.
 - Protected REST and realtime requests require both the JWT and `X-API-Key`.
-- Non-Admin JWTs and keys outside the `admin_desktop` audience are rejected.
+- Non-Admin JWTs and keys outside the `admin_api` audience are rejected; the client platform remains `admin_desktop`.
 - The Admin kill switch is independent of the Mobile App API and returns the documented maintenance contract.
 - Maintenance, network failure, token refresh, token revocation, logout, and reconnect do not leave orphan media or leases.
 - No Admin endpoint aliases an existing endpoint; shared code exists below the transport/handler contract boundary.

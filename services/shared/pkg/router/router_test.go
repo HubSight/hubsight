@@ -21,6 +21,8 @@ func TestNewRegistersNotificationBatchDeleteRoutes(t *testing.T) {
 		"GET /api/admin/v1/system/status",
 		"GET /api/admin/v1/system/capabilities",
 		"GET /api/admin/v1/cameras",
+		"POST /api/admin/v1/app-configs",
+		"POST /api/admin/v1/app-configs/:config_id/download-url",
 	} {
 		if _, exists := registered[want]; !exists {
 			t.Errorf("route %q is not registered", want)

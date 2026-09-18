@@ -22,8 +22,10 @@ The Admin API accepts only a Bearer JWT and an API key header. It does not accep
 
 ### 1.2. General conventions
 
-- The API key must belong to an active client with the `admin_desktop` audience/platform.
-- The JWT must contain `aud=admin_desktop`; the JWT `client_id` must match the API key.
+- The API key must belong to an active client with platform `admin_desktop` and audience `admin_api`.
+- The JWT must contain `aud=admin_api`; the JWT `client_id` must match the API key.
+- Admin login is allowed only for an active `admin` user or a user with the explicit `admin_api:access` permission; default `viewer` and `operator` roles are denied.
+- The same authorization predicate is checked at 2FA completion, refresh, and every protected request so demotion or revocation takes effect immediately.
 - All timestamps are RFC 3339; every primary ID is a 21-character nanoid.
 - List endpoints use `cursor`, `limit`, `sort`, `order`, and filters documented in OpenAPI.
 - Every mutation accepts the `Idempotency-Key` header.
@@ -245,7 +247,7 @@ Retry-After: 300
 | GET | `/app-configs` | J+K | `app_configs:manage` | List config metadata, expiry, status, and target platform |
 | POST | `/app-configs` | J+K | `app_configs:manage` | Generate an encrypted/signed `.hscfg` |
 | GET | `/app-configs/{config_id}` | J+K | `app_configs:manage` | Config metadata details |
-| POST | `/app-configs/{config_id}:download-url` | J+K | `app_configs:manage` | Short-lived download instruction/URL with download audit |
+| POST | `/app-configs/{config_id}/download-url` | J+K | `app_configs:manage` | Short-lived download instruction/URL with download audit |
 | GET | `/app-configs/{config_id}/qr` | J+K | `app_configs:manage` | QR enrollment payload/image metadata |
 | POST | `/app-configs/{config_id}:revoke` | J+K | `app_configs:manage` | Disable enrollment/config before expiry |
 | DELETE | `/app-configs/{config_id}` | J+K | `app_configs:manage` | Delete a config file; exact config name/object key confirmation |

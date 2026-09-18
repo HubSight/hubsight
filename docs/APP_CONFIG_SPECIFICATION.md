@@ -62,6 +62,32 @@ If an attacker changes the header or file version, AES-GCM decryption immediatel
 | **Payload Encryption** | AES-256-GCM | - Key: 256-bit (from Argon2id)<br>- Nonce: 12 bytes<br>- Tag: 16 bytes (128-bit MAC)<br>- AAD: `HSCFG\x01` |
 | **Digital Signature** | Ed25519 | - Ed25519 key pair (32-byte public key, 64-byte private key) generated for each configuration-generation session.<br>- The private key signs the raw ZIP archive payload before encryption.<br>- The public key and signature are embedded in `metadata.yml`. |
 
+### 2.4. Dedicated Admin API/SDK configuration variant
+
+Admin desktop clients use an isolated `.hscfg` variant and must not consume a mobile/app configuration package.
+
+| Property | Legacy App profile | Admin API/SDK profile |
+| :--- | :--- | :--- |
+| Container magic | `HSCFG\x01` | `HSCFG\x02` |
+| Format version | `1.0` | `2.0` |
+| Metadata profile | `app` | `admin_api` |
+| API namespace | `/api/*` or `/api/app/v1/*` | `/api/admin/v1/*` |
+| Realtime namespace | `/relay` | `/relay/admin/v1` |
+| Authentication | App client contract | Bearer JWT + `X-API-Key` |
+| Client platform/audience | Mobile/Web/Desktop App | `admin_desktop` / `admin_api` |
+| FCM files | Optional | Forbidden and never packaged |
+
+The Admin package uses the same Argon2id, AES-256-GCM, AAD, and Ed25519 integrity model, but its binary header is different so legacy mobile/app decoders reject it before decryption. Its ZIP payload may contain only:
+
+```text
+metadata.yml
+urls.yml
+key.yml
+ca_cert.pem                 # Optional
+```
+
+`metadata.yml` must include `profile: admin_api`, `version: "2.0"`, `api_namespace: /api/admin/v1`, `realtime_namespace: /relay/admin/v1`, and `fcm_enabled: false`. `key.yml` must identify the `admin_desktop` platform, the `admin_api` audience, and `bearer_jwt_plus_api_key` authentication mode. It must not contain `google-services.json` or `GoogleService-Info.plist`.
+
 ---
 
 ## 3. Decrypted payload contents (ZIP archive)
@@ -163,6 +189,19 @@ sequenceDiagram
 | `GET` | `/api/app-configs/:id/qr` | Generate a QR code with a 24-hour presigned download URL | `app_configs:manage` |
 | `DELETE` | `/api/app-configs/:id` | Delete the configuration and stored file | `app_configs:manage` |
 | `GET` | `/api/google-service-accounts/:id/preflight-apps` | Check Android/iOS status in Firebase | `google_service_accounts:manage` |
+
+### 4.3. Admin API/SDK configuration endpoints
+
+Admin packages are generated through a separate namespace and are restricted by the Admin API authentication and RBAC middleware. These endpoints never accept or fetch FCM configuration:
+
+| Method | Endpoint | Description | RBAC permission |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/admin/v1/app-configs` | List Admin API/SDK `.hscfg` v2 profiles | `app_configs:manage` |
+| `POST` | `/api/admin/v1/app-configs` | Generate an Admin-only `.hscfg` v2 profile | `app_configs:manage` |
+| `GET` | `/api/admin/v1/app-configs/:config_id` | Get Admin profile metadata | `app_configs:manage` |
+| `POST` | `/api/admin/v1/app-configs/:config_id/download-url` | Create a short-lived download URL | `app_configs:manage` |
+| `GET` | `/api/admin/v1/app-configs/:config_id/qr` | Generate an Admin profile QR payload | `app_configs:manage` |
+| `DELETE` | `/api/admin/v1/app-configs/:config_id` | Delete an Admin profile with exact-name confirmation | `app_configs:manage` |
 
 ---
 

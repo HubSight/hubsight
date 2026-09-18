@@ -15,8 +15,11 @@ import (
 )
 
 var (
-	// MagicBytes defines the 6-byte header of HubSight Configuration container (v1).
+	// MagicBytes defines the legacy App/Mobile .hscfg container header (v1).
 	MagicBytes = []byte("HSCFG\x01")
+	// AdminMagicBytes defines the isolated Admin API/SDK .hscfg container
+	// header. Legacy mobile/app decoders must reject this version.
+	AdminMagicBytes = []byte("HSCFG\x02")
 
 	// Argon2id parameters (Memory: 64MB, Time: 4 iterations, Threads: 2, KeyLen: 32 bytes).
 	argonTime    uint32 = 4
@@ -36,8 +39,20 @@ func DeriveKey(pin string, salt []byte) []byte {
 
 // EncryptContainer encrypts plaintext data (ZIP archive) into a secure .hscfg container.
 func EncryptContainer(plaintext []byte, pin string) ([]byte, error) {
+	return encryptContainer(plaintext, pin, MagicBytes)
+}
+
+// EncryptAdminContainer creates the Admin API/SDK-only container variant.
+func EncryptAdminContainer(plaintext []byte, pin string) ([]byte, error) {
+	return encryptContainer(plaintext, pin, AdminMagicBytes)
+}
+
+func encryptContainer(plaintext []byte, pin string, magic []byte) ([]byte, error) {
 	if len(pin) < 6 {
 		return nil, errors.New("mã PIN phải có ít nhất 6 ký tự")
+	}
+	if len(magic) == 0 {
+		return nil, errors.New("container magic header is required")
 	}
 
 	// 1. Generate 32-byte cryptographic salt
@@ -66,12 +81,12 @@ func EncryptContainer(plaintext []byte, pin string) ([]byte, error) {
 		return nil, fmt.Errorf("lỗi khởi tạo GCM: %w", err)
 	}
 
-	// 5. Encrypt with MagicBytes as Additional Authenticated Data (AAD)
-	ciphertext := gcm.Seal(nil, nonce, plaintext, MagicBytes)
+	// 5. Encrypt with the variant magic header as Additional Authenticated Data.
+	ciphertext := gcm.Seal(nil, nonce, plaintext, magic)
 
 	// 6. Assemble container: [Magic: 6B] + [Salt: 32B] + [Nonce: 12B] + [Ciphertext + Tag]
-	out := make([]byte, 0, len(MagicBytes)+len(salt)+len(nonce)+len(ciphertext))
-	out = append(out, MagicBytes...)
+	out := make([]byte, 0, len(magic)+len(salt)+len(nonce)+len(ciphertext))
+	out = append(out, magic...)
 	out = append(out, salt...)
 	out = append(out, nonce...)
 	out = append(out, ciphertext...)
@@ -81,18 +96,27 @@ func EncryptContainer(plaintext []byte, pin string) ([]byte, error) {
 
 // DecryptContainer decrypts a .hscfg container and returns the decrypted payload (ZIP archive).
 func DecryptContainer(data []byte, pin string) ([]byte, error) {
-	minLen := len(MagicBytes) + 32 + 12 + 16
+	return decryptContainer(data, pin, MagicBytes)
+}
+
+// DecryptAdminContainer accepts only the isolated Admin API/SDK variant.
+func DecryptAdminContainer(data []byte, pin string) ([]byte, error) {
+	return decryptContainer(data, pin, AdminMagicBytes)
+}
+
+func decryptContainer(data []byte, pin string, magic []byte) ([]byte, error) {
+	minLen := len(magic) + 32 + 12 + 16
 	if len(data) < minLen {
 		return nil, ErrFileTooShort
 	}
 
 	// 1. Verify Magic header
-	if string(data[:len(MagicBytes)]) != string(MagicBytes) {
+	if string(data[:len(magic)]) != string(magic) {
 		return nil, ErrInvalidMagic
 	}
 
 	// 2. Extract components
-	offset := len(MagicBytes)
+	offset := len(magic)
 	salt := data[offset : offset+32]
 	offset += 32
 	nonce := data[offset : offset+12]
@@ -113,8 +137,8 @@ func DecryptContainer(data []byte, pin string) ([]byte, error) {
 		return nil, fmt.Errorf("lỗi khởi tạo GCM: %w", err)
 	}
 
-	// 5. Open ciphertext with MagicBytes as AAD
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, MagicBytes)
+	// 5. Open ciphertext with the variant magic header as AAD
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, magic)
 	if err != nil {
 		return nil, ErrDecryptionFail
 	}

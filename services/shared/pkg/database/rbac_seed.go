@@ -14,6 +14,10 @@ import (
 
 // SystemPermissions lists all standard capabilities defined by the HubSight platform.
 var SystemPermissions = []models.Permission{
+	// Dedicated Admin API/SDK access. This is intentionally not included in
+	// viewer/operator defaults; it must be explicitly granted to trusted roles.
+	{Code: "admin_api:access", Name: "Admin API Access", Description: "Access the dedicated HubSight Admin API and SDK", Module: "admin"},
+
 	// Cameras
 	{Code: "cameras:view", Name: "Xem Camera & Live", Description: "Xem danh sách camera và theo dõi luồng trực tiếp WebRTC", Module: "cameras"},
 	{Code: "cameras:manage", Name: "Quản lý Camera", Description: "Thêm, sửa, xóa, quét mạng RTSP và điều khiển luồng camera", Module: "cameras"},

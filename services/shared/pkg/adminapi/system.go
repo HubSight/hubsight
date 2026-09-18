@@ -249,4 +249,10 @@ func RegisterCoreRoutes(rg *gin.RouterGroup) {
 	protected.PATCH("/system/settings", RequirePermission("system:settings"), AdminPatchSettingsHandler)
 	protected.GET("/cameras", RequirePermission("cameras:view"), AdminListCamerasHandler)
 	protected.GET("/cameras/:camera_id", RequirePermission("cameras:view"), AdminGetCameraHandler)
+	protected.GET("/app-configs", RequirePermission("app_configs:manage"), AdminListAppConfigsHandler)
+	protected.POST("/app-configs", RequirePermission("app_configs:manage"), AdminGenerateAppConfigHandler)
+	protected.GET("/app-configs/:config_id", RequirePermission("app_configs:manage"), AdminGetAppConfigHandler)
+	protected.POST("/app-configs/:config_id/download-url", RequirePermission("app_configs:manage"), AdminCreateDownloadURLHandler)
+	protected.GET("/app-configs/:config_id/qr", RequirePermission("app_configs:manage"), AdminAppConfigQRHandler)
+	protected.DELETE("/app-configs/:config_id", RequirePermission("app_configs:manage"), AdminDeleteAppConfigHandler)
 }

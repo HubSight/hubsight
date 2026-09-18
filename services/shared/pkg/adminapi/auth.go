@@ -59,6 +59,11 @@ func issueAdminToken(c *gin.Context, session *models.Session, client *models.Api
 	if session == nil || session.User == nil || client == nil {
 		return "", errors.New("incomplete admin session")
 	}
+	auth.LoadUserPermissions(c.Request.Context(), session.User)
+	if !auth.HasAdminAPIAccess(session.User) {
+		_ = auth.RevokeSession(c.Request.Context(), session.ID, "admin_access_revoked")
+		return "", auth.ErrAdminAccess
+	}
 	ttl := time.Until(session.ExpiresAt)
 	if ttl <= 0 {
 		return "", errors.New("admin session expired")
@@ -85,6 +90,15 @@ func AdminLoginHandler(c *gin.Context) {
 		abortError(c, http.StatusForbidden, response.ErrInvalidAdminKey, nil)
 		return
 	}
+	allowed, err := auth.UserCanAccessAdminAPI(c.Request.Context(), req.Username)
+	if err != nil {
+		abortError(c, http.StatusInternalServerError, response.ErrInternalError, nil)
+		return
+	}
+	if !allowed {
+		abortError(c, http.StatusForbidden, response.ErrAdminAccessRequired, nil)
+		return
+	}
 
 	deviceInfo := adminDeviceInfo(c, req.DeviceInfo, req.DeviceName, req.Platform, req.DeviceID)
 	session, loginToken, refreshToken, err := auth.LoginWithDevice(c.Request.Context(), req.Username, req.Password, true, &deviceInfo, client.ClientID)
@@ -103,6 +117,10 @@ func AdminLoginHandler(c *gin.Context) {
 
 	token, err := issueAdminToken(c, session, client)
 	if err != nil {
+		if errors.Is(err, auth.ErrAdminAccess) {
+			abortError(c, http.StatusForbidden, response.ErrAdminAccessRequired, nil)
+			return
+		}
 		abortError(c, http.StatusInternalServerError, response.ErrInternalError, nil)
 		return
 	}
@@ -141,6 +159,10 @@ func AdminVerify2FAHandler(c *gin.Context) {
 	}
 	token, err := issueAdminToken(c, session, client)
 	if err != nil {
+		if errors.Is(err, auth.ErrAdminAccess) {
+			abortError(c, http.StatusForbidden, response.ErrAdminAccessRequired, nil)
+			return
+		}
 		abortError(c, http.StatusInternalServerError, response.ErrInternalError, nil)
 		return
 	}
@@ -175,6 +197,12 @@ func AdminRefreshHandler(c *gin.Context) {
 			_ = auth.RevokeSession(c.Request.Context(), session.ID, "admin_client_mismatch")
 		}
 		abortError(c, http.StatusUnauthorized, response.ErrInvalidRefreshToken, nil)
+		return
+	}
+	auth.LoadUserPermissions(c.Request.Context(), session.User)
+	if !auth.HasAdminAPIAccess(session.User) {
+		_ = auth.RevokeSession(c.Request.Context(), session.ID, "admin_access_revoked")
+		abortError(c, http.StatusForbidden, response.ErrAdminAccessRequired, nil)
 		return
 	}
 	token, err := issueAdminToken(c, session, client)

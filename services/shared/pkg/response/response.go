@@ -35,6 +35,7 @@ const (
 	ErrAdminKeyRequired     = "ADMIN_API_KEY_REQUIRED"
 	ErrInvalidAdminKey      = "INVALID_ADMIN_API_KEY"
 	ErrInvalidAdminJWT      = "INVALID_ADMIN_JWT"
+	ErrAdminAccessRequired  = "ADMIN_ACCESS_REQUIRED"
 	ErrSessionNotFound      = "SESSION_NOT_FOUND"
 	ErrCannotRevokeCurrent  = "CANNOT_REVOKE_CURRENT_SESSION"
 	ErrInvalidRefreshToken  = "INVALID_REFRESH_TOKEN"

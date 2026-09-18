@@ -129,3 +129,75 @@ func TestPackAndUnpackFull(t *testing.T) {
 		t.Fatal("Ed25519 digital signature verification failed!")
 	}
 }
+
+func TestAdminPackUsesDedicatedVersionAndExcludesFCM(t *testing.T) {
+	_, priv, err := GenerateSigningKeyPair()
+	if err != nil {
+		t.Fatalf("GenerateSigningKeyPair failed: %v", err)
+	}
+
+	opts := PackOptions{
+		ConfigID:          "cfg_admin_test",
+		ConfigName:        "Admin Desktop",
+		CreatedByUsername: "admin",
+		PIN:               "123456",
+		GatewayURL:        "https://cctv.example.com",
+		APIBaseURL:        "https://cctv.example.com/api/admin/v1",
+		RelayWSURL:        "wss://cctv.example.com/relay/admin/v1",
+		ClientID:          "hs_admin_test",
+		ClientName:        "Admin SDK",
+		APIKey:            "admin-secret",
+		CACertBytes:       []byte("certificate"),
+		SigningPrivateKey: priv,
+	}
+
+	adminBytes, _, err := PackAdminAndEncrypt(opts)
+	if err != nil {
+		t.Fatalf("PackAdminAndEncrypt failed: %v", err)
+	}
+	if !bytes.Equal(adminBytes[:len(AdminMagicBytes)], AdminMagicBytes) {
+		t.Fatalf("expected Admin magic header %v", AdminMagicBytes)
+	}
+	if _, err := DecryptAndUnpack(adminBytes, opts.PIN); err == nil {
+		t.Fatal("legacy app decoder must reject Admin configuration")
+	}
+
+	unpacked, err := DecryptAndUnpackAdmin(adminBytes, opts.PIN)
+	if err != nil {
+		t.Fatalf("DecryptAndUnpackAdmin failed: %v", err)
+	}
+	if unpacked.FormatVersion != AdminFormatVersion || unpacked.Profile != AdminAPIProfile {
+		t.Fatalf("unexpected Admin metadata: version=%q profile=%q", unpacked.FormatVersion, unpacked.Profile)
+	}
+	if len(unpacked.GoogleServicesJSON) != 0 || len(unpacked.GoogleServiceInfoPlist) != 0 {
+		t.Fatal("Admin configuration must not contain FCM files")
+	}
+
+	wrongVersion, _, err := packAndEncrypt(opts, AdminMagicBytes, AppFormatVersion, AdminAPIProfile, false)
+	if err != nil {
+		t.Fatalf("packAndEncrypt wrong-version fixture failed: %v", err)
+	}
+	if _, err := DecryptAndUnpackAdmin(wrongVersion, opts.PIN); err == nil {
+		t.Fatal("Admin decoder must reject an Admin container with the wrong format version")
+	}
+
+	withFCMOpts := opts
+	withFCMOpts.AndroidConfigBytes = []byte(`{"project_id":"must-not-be-in-admin-config"}`)
+	withFCM, _, err := packAndEncrypt(withFCMOpts, AdminMagicBytes, AdminFormatVersion, AdminAPIProfile, true)
+	if err != nil {
+		t.Fatalf("packAndEncrypt FCM fixture failed: %v", err)
+	}
+	if _, err := DecryptAndUnpackAdmin(withFCM, opts.PIN); err == nil {
+		t.Fatal("Admin decoder must reject an Admin container containing FCM files")
+	}
+}
+
+func TestAdminPackRejectsFCMInput(t *testing.T) {
+	_, _, err := PackAdminAndEncrypt(PackOptions{
+		PIN:                "123456",
+		AndroidConfigBytes: []byte(`{"project_id":"must-not-be-in-admin-config"}`),
+	})
+	if err == nil {
+		t.Fatal("expected Admin packer to reject FCM input")
+	}
+}

@@ -204,6 +204,11 @@ func AdminJWTMiddleware() gin.HandlerFunc {
 			abortError(c, http.StatusUnauthorized, response.ErrUnauthorized, nil)
 			return
 		}
+		auth.LoadUserPermissions(c.Request.Context(), user)
+		if !auth.HasAdminAPIAccess(user) {
+			abortError(c, http.StatusForbidden, response.ErrAdminAccessRequired, nil)
+			return
+		}
 
 		c.Set("user", user)
 		c.Set("session_id", session.ID)

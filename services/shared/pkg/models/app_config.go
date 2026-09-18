@@ -7,6 +7,8 @@ type AppConfig struct {
 	ID                     string    `gorm:"primaryKey;type:varchar(32)" json:"id"`
 	Name                   string    `gorm:"type:varchar(100);not null" json:"name"`
 	Description            string    `gorm:"type:text" json:"description"`
+	FormatVersion          string    `gorm:"type:varchar(16);not null;default:'1.0'" json:"format_version"`
+	Profile                string    `gorm:"type:varchar(32);not null;default:'app'" json:"profile"`
 	ObjectKey              string    `gorm:"type:varchar(255);not null" json:"object_key"`
 	FileSize               int64     `gorm:"not null;default:0" json:"file_size"`
 	SHA256Checksum         string    `gorm:"type:varchar(64);not null" json:"sha256_checksum"`
