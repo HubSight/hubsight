@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"cctv/shared/pkg/auth"
+	"cctv/shared/pkg/fingerprint"
 	"cctv/shared/pkg/models"
 	"cctv/shared/pkg/response"
 
@@ -14,17 +15,25 @@ import (
 )
 
 type AppLoginRequest struct {
-	Username   string `json:"username" binding:"required"`
-	Password   string `json:"password" binding:"required"`
-	DeviceName string `json:"device_name"`
-	Platform   string `json:"platform"`
-	DeviceID   string `json:"device_id"`
+	Username   string                        `json:"username" binding:"required"`
+	Password   string                        `json:"password" binding:"required"`
+	DeviceName string                        `json:"device_name"`
+	Platform   string                        `json:"platform"`
+	DeviceID   string                        `json:"device_id"`
+	DeviceInfo *fingerprint.ClientDeviceInfo `json:"device_info,omitempty"`
+	Latitude   *float64                      `json:"latitude,omitempty"`
+	Longitude  *float64                      `json:"longitude,omitempty"`
+	Accuracy   *float64                      `json:"accuracy,omitempty"`
 }
 
 type AppVerify2FARequest struct {
-	PreAuthToken string `json:"pre_auth_token" binding:"required"`
-	Code         string `json:"code"`
-	RecoveryCode string `json:"recovery_code"`
+	PreAuthToken string                        `json:"pre_auth_token" binding:"required"`
+	Code         string                        `json:"code"`
+	RecoveryCode string                        `json:"recovery_code"`
+	DeviceInfo   *fingerprint.ClientDeviceInfo `json:"device_info,omitempty"`
+	Latitude     *float64                      `json:"latitude,omitempty"`
+	Longitude    *float64                      `json:"longitude,omitempty"`
+	Accuracy     *float64                      `json:"accuracy,omitempty"`
 }
 
 type AppRefreshTokenRequest struct {
@@ -34,6 +43,63 @@ type AppRefreshTokenRequest struct {
 type AppChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" binding:"required"`
 	NewPassword     string `json:"new_password" binding:"required"`
+}
+
+// buildAppDeviceInfo keeps the legacy app login fields working while allowing
+// newer clients to send the shared device_info contract. Coordinates are
+// optional: when absent, DetectWithClientInfo resolves an approximate location
+// from the request IP address.
+func buildAppDeviceInfo(
+	deviceInfo *fingerprint.ClientDeviceInfo,
+	deviceName, platform, deviceID string,
+	latitude, longitude, accuracy *float64,
+) *fingerprint.ClientDeviceInfo {
+	info := &fingerprint.ClientDeviceInfo{}
+	if deviceInfo != nil {
+		copy := *deviceInfo
+		info = &copy
+	}
+
+	if info.Fingerprint == "" {
+		info.Fingerprint = strings.TrimSpace(deviceID)
+	}
+	if info.DeviceLabel == "" {
+		info.DeviceLabel = strings.TrimSpace(deviceName)
+	}
+	if info.Platform == "" {
+		info.Platform = strings.TrimSpace(platform)
+	}
+	if info.ClientType == "" {
+		info.ClientType = appClientType(info.Platform)
+	}
+	if info.Latitude == nil {
+		info.Latitude = latitude
+	}
+	if info.Longitude == nil {
+		info.Longitude = longitude
+	}
+	if info.Accuracy == nil {
+		info.Accuracy = accuracy
+	}
+
+	return info
+}
+
+func appClientType(platform string) string {
+	switch strings.ToLower(strings.TrimSpace(platform)) {
+	case "ios", "ipados", "iphone", "ipad", "mobile_ios":
+		return "mobile_ios"
+	case "android", "mobile_android":
+		return "mobile_android"
+	case "windows", "desktop_windows":
+		return "desktop_windows"
+	case "mac", "macos", "darwin", "desktop_mac":
+		return "desktop_mac"
+	case "linux", "desktop_linux":
+		return "desktop_linux"
+	default:
+		return ""
+	}
 }
 
 // AppLoginHandler handles standard username/password login for mobile and desktop apps.
@@ -51,7 +117,16 @@ func AppLoginHandler(c *gin.Context) {
 		}
 	}
 
-	session, token, refreshToken, err := auth.Login(c.Request.Context(), req.Username, req.Password, true, clientID)
+	deviceInfo := fingerprint.DetectWithClientInfo(c.Request, buildAppDeviceInfo(
+		req.DeviceInfo,
+		req.DeviceName,
+		req.Platform,
+		req.DeviceID,
+		req.Latitude,
+		req.Longitude,
+		req.Accuracy,
+	))
+	session, token, refreshToken, err := auth.LoginWithDevice(c.Request.Context(), req.Username, req.Password, true, &deviceInfo, clientID)
 	if err != nil {
 		if errors.Is(err, auth.ErrTwoFactorRequired) {
 			c.JSON(http.StatusOK, gin.H{
@@ -89,7 +164,16 @@ func AppVerify2FAHandler(c *gin.Context) {
 		return
 	}
 
-	session, token, refreshToken, err := auth.Verify2FALogin(c.Request.Context(), req.PreAuthToken, req.Code, req.RecoveryCode, true)
+	deviceInfo := fingerprint.DetectWithClientInfo(c.Request, buildAppDeviceInfo(
+		req.DeviceInfo,
+		"",
+		"",
+		"",
+		req.Latitude,
+		req.Longitude,
+		req.Accuracy,
+	))
+	session, token, refreshToken, err := auth.Verify2FALogin(c.Request.Context(), req.PreAuthToken, req.Code, req.RecoveryCode, true, &deviceInfo)
 	if err != nil {
 		response.Error(c, http.StatusUnauthorized, response.ErrTwoFactorInvalid)
 		return

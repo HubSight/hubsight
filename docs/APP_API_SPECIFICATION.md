@@ -122,9 +122,21 @@ Request Body:
   "password": "SecurePassword123!",
   "device_name": "iPhone 15 Pro",
   "platform": "mobile_ios",
-  "device_id": "device_uuid_abcd_1234"
+  "device_id": "device_uuid_abcd_1234",
+  "device_info": {
+    "client_type": "mobile_ios",
+    "platform": "iOS",
+    "os_version": "17.5.1",
+    "model": "iPhone 15 Pro",
+    "app_version": "1.2.0",
+    "latitude": 10.7769,
+    "longitude": 106.7009,
+    "accuracy": 25
+  }
 }
 ```
+
+`device_info.latitude`, `device_info.longitude` và `device_info.accuracy` là tùy chọn. Mobile app chỉ gửi các trường này sau khi người dùng cấp quyền Location; không được chặn login nếu người dùng từ chối quyền. Nếu không có tọa độ GPS, backend sẽ tự động dùng IP của request để lưu vị trí tương đối (độ chính xác thấp hơn).
 
 Response Trường hợp 1: Đăng nhập thành công trực tiếp (`200 OK`):
 ```json
@@ -160,8 +172,14 @@ Request Body:
 ```json
 {
   "pre_auth_token": "pre_auth_tok_81726354",
-  "totp_code": "582910",
-  "recovery_code": ""
+  "code": "582910",
+  "recovery_code": "",
+  "device_info": {
+    "client_type": "mobile_ios",
+    "latitude": 10.7769,
+    "longitude": 106.7009,
+    "accuracy": 25
+  }
 }
 ```
 

@@ -1731,6 +1731,95 @@
           "client_id": {
             "type": "string",
             "example": "hs_web_default"
+          },
+          "is_pwa": {
+            "type": "boolean",
+            "example": true
+          },
+          "device_name": {
+            "type": "string",
+            "description": "Tên thiết bị legacy của App API. Khuyến nghị dùng device_info.device_label."
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform legacy của App API."
+          },
+          "device_id": {
+            "type": "string",
+            "description": "Device ID legacy của App API."
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "accuracy": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sai số vị trí legacy tính bằng mét."
+          },
+          "device_info": {
+            "$ref": "#/components/schemas/ClientDeviceInfo"
+          }
+        }
+      },
+      "ClientDeviceInfo": {
+        "type": "object",
+        "description": "Thông tin thiết bị và vị trí tùy chọn được gửi khi đăng nhập.",
+        "properties": {
+          "fingerprint": {
+            "type": "string"
+          },
+          "device_label": {
+            "type": "string"
+          },
+          "client_type": {
+            "type": "string",
+            "enum": [
+              "web",
+              "mobile_ios",
+              "mobile_android",
+              "desktop_windows",
+              "desktop_mac",
+              "desktop_linux",
+              "desktop_app",
+              "third_party"
+            ]
+          },
+          "platform": {
+            "type": "string"
+          },
+          "os_version": {
+            "type": "string"
+          },
+          "app_version": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "accuracy": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sai số vị trí tính bằng mét."
           }
         }
       },

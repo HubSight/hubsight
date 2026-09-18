@@ -78,6 +78,36 @@ func TestDetectWithClientInfo_WebClient(t *testing.T) {
 	}
 }
 
+func TestDetectWithClientInfo_ExplicitGeolocation(t *testing.T) {
+	req := httptest.NewRequest("POST", "/auth/login", nil)
+	req.Header.Set("X-Forwarded-For", "192.168.1.50")
+
+	latitude := 10.7769
+	longitude := 106.7009
+	accuracy := 25.0
+	info := DetectWithClientInfo(req, &ClientDeviceInfo{
+		ClientType: "mobile_android",
+		Latitude:   &latitude,
+		Longitude:  &longitude,
+		Accuracy:   &accuracy,
+		GeoCity:    "Ho Chi Minh City",
+		GeoCountry: "Vietnam",
+	})
+
+	if info.GeoLatitude == nil || *info.GeoLatitude != latitude {
+		t.Fatalf("Expected latitude %.4f, got %v", latitude, info.GeoLatitude)
+	}
+	if info.GeoLongitude == nil || *info.GeoLongitude != longitude {
+		t.Fatalf("Expected longitude %.4f, got %v", longitude, info.GeoLongitude)
+	}
+	if info.GeoAccuracy == nil || *info.GeoAccuracy != accuracy {
+		t.Fatalf("Expected accuracy %.1f, got %v", accuracy, info.GeoAccuracy)
+	}
+	if info.GeoCity != "Ho Chi Minh City" || info.GeoCountry != "Vietnam" {
+		t.Fatalf("Expected client-provided place, got %q, %q", info.GeoCity, info.GeoCountry)
+	}
+}
+
 func TestDetectWithClientInfo_HeadersFallback(t *testing.T) {
 	req := httptest.NewRequest("POST", "/auth/login", nil)
 	req.Header.Set("X-Device-Fingerprint", "hdr_fp_xyz")

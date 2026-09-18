@@ -116,6 +116,11 @@ Khi Core SDK gọi API login thành công:
 | `screen_resolution` | string | Độ phân giải màn hình | `1179x2556`, `1920x1080` |
 | `language` | string | Ngôn ngữ hệ thống / client | `vi-VN`, `en-US` |
 | `timezone` | string | Múi giờ hệ thống IANA | `Asia/Ho_Chi_Minh` |
+| `latitude` | number | Vĩ độ từ GPS/native location, chỉ gửi sau khi người dùng cấp quyền | `10.7769` |
+| `longitude` | number | Kinh độ từ GPS/native location, chỉ gửi sau khi người dùng cấp quyền | `106.7009` |
+| `accuracy` | number | Sai số GPS tính bằng mét | `25` |
+
+Nếu client không gửi tọa độ hoặc người dùng từ chối quyền Location, backend sẽ tự động truy vấn geolocation theo IP request để lưu vị trí tương đối. Đây là fallback best-effort và không được dùng để ngăn đăng nhập.
 
 #### 4.4.2. HTTP Headers hỗ trợ đồng thời (Dual Headers)
 

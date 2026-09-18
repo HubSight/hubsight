@@ -515,10 +515,15 @@ X-Client-Type: mobile_ios
     "app_version": "1.2.0",
     "screen_resolution": "1179x2556",
     "language": "vi-VN",
-    "timezone": "Asia/Ho_Chi_Minh"
+    "timezone": "Asia/Ho_Chi_Minh",
+    "latitude": 10.7769,
+    "longitude": 106.7009,
+    "accuracy": 25
   }
 }
 ```
+
+Tọa độ là tùy chọn và chỉ gửi khi người dùng đã cấp quyền Location. Nếu quyền bị từ chối hoặc thiết bị không cung cấp được GPS, backend sẽ fallback sang geolocation theo IP để lưu vị trí tương đối; login vẫn phải tiếp tục bình thường.
 
 Xem đặc tả chi tiết các trường dữ liệu và mẫu code Flutter tại [`docs/SECURITY_FOR_LOGIN.md`](./SECURITY_FOR_LOGIN.md#44-đặc-tả-gửi-thông-tin-thiết-bị-đăng-nhập-client-device-metadata-contract).
 
