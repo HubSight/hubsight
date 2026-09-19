@@ -417,6 +417,7 @@ func VerifyClientHandler(c *gin.Context) {
 		"client_id": client.ClientID,
 		"name":      client.Name,
 		"platform":  client.Platform,
+		"audience":  client.Audience,
 		"is_system": client.IsSystem,
 	})
 }

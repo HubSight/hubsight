@@ -63,7 +63,22 @@ func New() *gin.Engine {
 
 		// Dedicated Admin API v1 routes (/api/admin/v1/*). These handlers and
 		// middleware have an independent contract from the legacy API groups.
-		adminapi.RegisterCoreRoutes(api.Group("/admin/v1"))
+		adminRoot := api.Group("/admin/v1")
+		adminapi.RegisterCoreRoutes(adminRoot)
+		adminProtected := adminapi.AdminProtectedGroup(adminRoot)
+		// Governance endpoints use the catalog's /admin/v1 root (rather than
+		// the bootstrap /admin/v1/auth namespace) so the Qt SDK has one stable
+		// resource tree. The same shared handlers are also available under the
+		// auth-service namespace for bootstrap/service-local callers.
+		adminapi.RegisterAuthGovernanceRoutes(adminProtected)
+		adminGSA := adminProtected.Group("/google-service-accounts")
+		adminGSA.Use(adminapi.RequirePermission("service_accounts:manage"))
+		adminGSA.GET("", cctvapi.ListGoogleServiceAccounts)
+		adminGSA.GET("/:id", cctvapi.GetGoogleServiceAccount)
+		adminProtected.POST("/google-service-accounts\\:import", adminapi.RequirePermission("service_accounts:manage"), cctvapi.ImportGoogleServiceAccount)
+		adminProtected.POST("/google-service-accounts/:id_action", adminapi.RequirePermission("service_accounts:manage"), adminGoogleServiceAccountActionHandler)
+		adminGSA.GET("/:id/firebase-preflight", cctvapi.PreflightFirebaseApps)
+		adminGSA.DELETE("/:id", cctvapi.DeleteGoogleServiceAccountAdmin)
 
 		// Protected domain routes (Validated via auth-service)
 		protected := api.Group("/")
@@ -212,4 +227,21 @@ func New() *gin.Engine {
 	}
 
 	return r
+}
+
+func adminGoogleServiceAccountActionHandler(c *gin.Context) {
+	id, action, ok := strings.Cut(c.Param("id_action"), ":")
+	if !ok || id == "" {
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "code": "NOT_FOUND", "error": "NOT_FOUND"})
+		return
+	}
+	c.Params = append(c.Params, gin.Param{Key: "id", Value: id})
+	switch action {
+	case "activate":
+		cctvapi.ActivateGoogleServiceAccount(c)
+	case "test":
+		cctvapi.TestGoogleServiceAccount(c)
+	default:
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "code": "NOT_FOUND", "error": "NOT_FOUND"})
+	}
 }

@@ -1,17 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RelayGateway, EmitEventDto, BroadcastEventDto } from './relay.gateway';
+import { AdminRelayHub } from './admin-relay.hub';
 
 @Injectable()
 export class RelayService {
   private readonly logger = new Logger(RelayService.name);
 
-  constructor(private readonly relayGateway: RelayGateway) { }
+  constructor(
+    private readonly relayGateway: RelayGateway,
+    private readonly adminRelayHub: AdminRelayHub,
+  ) { }
 
   emitEvent(dto: EmitEventDto) {
     const payload = {
       ...dto.data,
       _timestamp: new Date().toISOString(),
     };
+
+    this.adminRelayHub.broadcast(dto.event, dto.data);
 
     if (dto.room) {
       this.relayGateway.server.to(dto.room).emit(dto.event, payload);
@@ -45,6 +51,7 @@ export class RelayService {
       ...dto.data,
       _timestamp: new Date().toISOString(),
     };
+    this.adminRelayHub.broadcast(dto.event, dto.data);
     this.relayGateway.server.emit(dto.event, payload);
     this.logger.log(`Broadcasted event "${dto.event}" to all clients`);
     return { status: 'broadcasted', event: dto.event };
@@ -58,6 +65,7 @@ export class RelayService {
       message: 'Tài khoản của bạn đã bị khóa bởi quản trị viên.',
       _timestamp: new Date().toISOString(),
     };
+    this.adminRelayHub.broadcast('auth.force_logout', payload);
 
     // 1. Emit force logout event to user's personal room
     this.relayGateway.server.to(room).emit('auth:force_logout', payload);

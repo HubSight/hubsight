@@ -54,3 +54,23 @@ func TestRequireAdminAPIKeyRejectsQueryCredentials(t *testing.T) {
 		t.Fatalf("expected query credentials to be rejected with 401, got %d", resp.Code)
 	}
 }
+
+func TestRegisterAuthRoutesSupportsActionDelimitedPaths(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	RegisterAuthRoutes(r.Group("/admin/v1/auth"))
+
+	routes := map[string]bool{}
+	for _, route := range r.Routes() {
+		routes[route.Method+" "+route.Path] = true
+	}
+	for _, route := range []string{
+		http.MethodPost + " /admin/v1/auth/users/:user_id",
+		http.MethodPost + " /admin/v1/auth/clients/:client_id",
+		http.MethodPost + " /admin/v1/auth/profile/sessions\\:revoke-others",
+	} {
+		if !routes[route] {
+			t.Fatalf("expected Admin route %q, registered routes: %#v", route, routes)
+		}
+	}
+}

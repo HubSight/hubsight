@@ -9,6 +9,7 @@ import (
 
 	"cctv/shared/pkg/database"
 	"cctv/shared/pkg/models"
+	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -125,6 +126,11 @@ func AdminPatchSettingsHandler(c *gin.Context) {
 		}
 		if req.AdminAPIEnabled != nil {
 			SetKillSwitchState(*req.AdminAPIEnabled)
+			topic := "admin_api.disabled"
+			if *req.AdminAPIEnabled {
+				topic = "admin_api.enabled"
+			}
+			_ = mq.PublishEvent(topic, gin.H{"enabled": *req.AdminAPIEnabled})
 		}
 	}
 
@@ -254,5 +260,11 @@ func RegisterCoreRoutes(rg *gin.RouterGroup) {
 	protected.GET("/app-configs/:config_id", RequirePermission("app_configs:manage"), AdminGetAppConfigHandler)
 	protected.POST("/app-configs/:config_id/download-url", RequirePermission("app_configs:manage"), AdminCreateDownloadURLHandler)
 	protected.GET("/app-configs/:config_id/qr", RequirePermission("app_configs:manage"), AdminAppConfigQRHandler)
+	protected.POST("/app-configs/:config_id", RequirePermission("app_configs:manage"), AdminRevokeAppConfigHandler)
 	protected.DELETE("/app-configs/:config_id", RequirePermission("app_configs:manage"), AdminDeleteAppConfigHandler)
+
+	// The remainder of the Admin API is registered separately from the legacy
+	// /api routes. Domain packages may be reused behind these routes, but the
+	// public route tree and Admin middleware remain isolated.
+	RegisterCatalogCoreRoutes(rg)
 }

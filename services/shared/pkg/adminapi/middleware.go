@@ -146,6 +146,40 @@ func RequireAdminAPIKey() gin.HandlerFunc {
 	}
 }
 
+// AdminPublicGroup creates a new Admin API route group with the common request
+// ID, maintenance switch, and API-key boundary. It is exported so the core
+// router can mount domain handlers from packages that must not import this
+// package (for example the legacy Google/Firebase storage handlers).
+func AdminPublicGroup(rg *gin.RouterGroup) *gin.RouterGroup {
+	group := rg.Group("")
+	group.Use(RequestIDMiddleware(), AdminKillSwitchMiddleware(), RequireAdminAPIKey())
+	return group
+}
+
+// AdminProtectedGroup creates a fully protected Admin API group. Every route
+// mounted through it requires the dedicated Admin JWT in addition to the API
+// key and the RBAC predicate.
+func AdminProtectedGroup(rg *gin.RouterGroup) *gin.RouterGroup {
+	group := AdminPublicGroup(rg)
+	group.Use(AdminJWTMiddleware())
+	return group
+}
+
+// RequireAuthenticated is useful for catalog endpoints whose authorization is
+// intentionally "any authenticated Admin API principal". AdminJWTMiddleware
+// has already established the admin audience and access boundary at that
+// point, so these endpoints must not require a literal RBAC permission named
+// "*" (that would incorrectly reject delegated admin users).
+func RequireAuthenticated() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if userValue, exists := c.Get("user"); !exists || userValue == nil {
+			abortError(c, http.StatusUnauthorized, response.ErrUnauthorized, nil)
+			return
+		}
+		c.Next()
+	}
+}
+
 func adminClient(c *gin.Context) (*models.ApiClient, bool) {
 	value, exists := c.Get("api_client")
 	if !exists {

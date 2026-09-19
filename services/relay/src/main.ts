@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
+import { AdminRelayHub } from './relay/admin-relay.hub';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -14,6 +15,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
+  app.get(AdminRelayHub).attach(app.getHttpServer());
   logger.log(`Socket.IO Relay Service listening on http://localhost:${port}`);
 
   const rmqUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672/';

@@ -110,11 +110,12 @@ func main() {
 			"status":  "ok",
 			"service": "api-gateway",
 			"routes": gin.H{
-				"rest":   "/api/*",
-				"auth":   "/api/auth/*",
-				"relay":  "/relay/*",
-				"webrtc": "/webrtc/*",
-				"docs":   "/docs",
+				"rest":        "/api/*",
+				"auth":        "/api/auth/*",
+				"relay":       "/relay/*",
+				"admin_relay": "/relay/admin/v1",
+				"webrtc":      "/webrtc/*",
+				"docs":        "/docs",
 			},
 		})
 	})
@@ -233,7 +234,53 @@ func main() {
 			})
 			return
 		}
+		var clientResp struct {
+			Valid    bool   `json:"valid"`
+			Platform string `json:"platform"`
+			Audience string `json:"audience"`
+		}
+		if err := json.NewDecoder(keyResp.Body).Decode(&clientResp); err != nil || !clientResp.Valid {
+			keyResp.Body.Close()
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"status": "error", "code": "INVALID_CLIENT_KEY", "error": "INVALID_CLIENT_KEY",
+			})
+			return
+		}
 		keyResp.Body.Close()
+
+		// Admin WebRTC sessions use the same isolated JWT/API-key contract as
+		// Admin REST and the standard Admin relay. Never let an admin client
+		// fall through to the legacy cookie/query-token validation path.
+		if clientResp.Platform == "admin_desktop" || clientResp.Audience == "admin_api" {
+			if c.GetHeader("X-API-Key") == "" || !strings.HasPrefix(c.GetHeader("Authorization"), "Bearer ") {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"status": "error", "code": "ADMIN_AUTH_REQUIRED", "error": "ADMIN_AUTH_REQUIRED",
+				})
+				return
+			}
+			adminReq, _ := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, authServiceURL+"/admin/v1/auth/relay/validate", nil)
+			adminReq.Header.Set("Authorization", c.GetHeader("Authorization"))
+			adminReq.Header.Set("X-API-Key", c.GetHeader("X-API-Key"))
+			adminResp, adminErr := gatewayHttpClient.Do(adminReq)
+			if adminErr != nil || adminResp == nil || adminResp.StatusCode != http.StatusOK {
+				if adminResp != nil {
+					adminResp.Body.Close()
+				}
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"status": "error", "code": "INVALID_ADMIN_JWT", "error": "INVALID_ADMIN_JWT",
+				})
+				return
+			}
+			adminResp.Body.Close()
+			c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/webrtc")
+			if c.Request.URL.Path == "" {
+				c.Request.URL.Path = "/"
+			}
+			c.Request.URL.RawPath = ""
+			c.Request.Host = webrtcTarget.Host
+			webrtcProxy.ServeHTTP(c.Writer, c.Request)
+			return
+		}
 
 		// 2. Verify User Authentication Token
 		token := ""

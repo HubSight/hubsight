@@ -234,6 +234,16 @@ func handleValidateToken(c *gin.Context) {
 		c.JSON(http.StatusOK, ValidateTokenResponse{Valid: false})
 		return
 	}
+	// Admin JWTs are intentionally not valid legacy API sessions. They must
+	// stay inside the dedicated Admin API audience/client-binding boundary.
+	if claims, err := auth.ParseAndValidateJWT(req.Token); err == nil && claims != nil {
+		for _, audience := range claims.Audience {
+			if audience == models.AudienceAdminAPI {
+				c.JSON(http.StatusOK, ValidateTokenResponse{Valid: false})
+				return
+			}
+		}
+	}
 
 	sess, u, err := auth.GetSessionAndUser(c.Request.Context(), req.Token)
 	if err != nil || u == nil || sess == nil {

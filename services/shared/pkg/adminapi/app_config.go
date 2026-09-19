@@ -241,6 +241,10 @@ func AdminCreateDownloadURLHandler(c *gin.Context) {
 		abortError(c, http.StatusInternalServerError, response.ErrStorageUnavailable, nil)
 		return
 	}
+	if config.Revoked {
+		abortError(c, http.StatusGone, "CONFIG_REVOKED", nil)
+		return
+	}
 	url, err := storage.PresignedGetObjectURL(c.Request.Context(), config.ObjectKey, 15*time.Minute)
 	if err != nil {
 		abortError(c, http.StatusInternalServerError, response.ErrStorageError, nil)
@@ -258,6 +262,10 @@ func AdminAppConfigQRHandler(c *gin.Context) {
 	}
 	if err != nil || storage.S3Client == nil {
 		abortError(c, http.StatusInternalServerError, response.ErrStorageUnavailable, nil)
+		return
+	}
+	if config.Revoked {
+		abortError(c, http.StatusGone, "CONFIG_REVOKED", nil)
 		return
 	}
 	url, err := storage.PresignedGetObjectURL(c.Request.Context(), config.ObjectKey, 24*time.Hour)
@@ -294,6 +302,43 @@ func AdminAppConfigQRHandler(c *gin.Context) {
 		"fcm_enabled":    false,
 		"request_id":     c.GetString("request_id"),
 	})
+}
+
+// AdminRevokeAppConfigHandler disables an Admin .hscfg before expiry while
+// retaining its audit metadata. The stored package is not deleted so the
+// action remains reviewable and can be correlated with issued configs.
+func AdminRevokeAppConfigHandler(c *gin.Context) {
+	id, action := splitAction(c.Param("config_id"))
+	if action != "revoke" || id == "" {
+		abortError(c, http.StatusNotFound, response.ErrConfigNotFound, nil)
+		return
+	}
+	c.Params = append(c.Params, gin.Param{Key: "config_id", Value: id})
+	config, err := adminConfigFromStore(c, id)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		abortError(c, http.StatusNotFound, response.ErrConfigNotFound, nil)
+		return
+	}
+	if err != nil {
+		abortError(c, http.StatusInternalServerError, response.ErrInternalError, nil)
+		return
+	}
+	var req adminDeleteConfirmation
+	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Confirmation.Value) != config.Name {
+		abortError(c, http.StatusBadRequest, response.ErrInvalidInput, gin.H{"confirmation_required": config.Name})
+		return
+	}
+	if !config.Revoked {
+		now := time.Now().UTC()
+		if err := database.DB.WithContext(c.Request.Context()).Model(config).Updates(map[string]any{
+			"revoked":    true,
+			"revoked_at": now,
+		}).Error; err != nil {
+			abortError(c, http.StatusInternalServerError, response.ErrDatabaseError, nil)
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "config_id": config.ID, "revoked": true, "request_id": c.GetString("request_id")})
 }
 
 func AdminDeleteAppConfigHandler(c *gin.Context) {

@@ -381,6 +381,32 @@ func TestGoogleServiceAccount(c *gin.Context) {
 	})
 }
 
+// DeleteGoogleServiceAccountAdmin handles the isolated Admin API delete
+// contract. It requires the account name or project ID instead of allowing a
+// one-click destructive request.
+func DeleteGoogleServiceAccountAdmin(c *gin.Context) {
+	id := c.Param("id")
+	var account models.GoogleServiceAccount
+	if err := database.DB.WithContext(c.Request.Context()).First(&account, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Error(c, http.StatusNotFound, response.ErrServiceAccountNotFound)
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, response.ErrDatabaseError)
+		return
+	}
+	var req struct {
+		Confirmation struct {
+			Value string `json:"value"`
+		} `json:"confirmation"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || (req.Confirmation.Value != account.Name && req.Confirmation.Value != account.ProjectID && req.Confirmation.Value != account.ID) {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "code": "CONFIRMATION_REQUIRED", "error": "CONFIRMATION_REQUIRED", "confirmation_required": account.Name})
+		return
+	}
+	DeleteGoogleServiceAccount(c)
+}
+
 // DeleteGoogleServiceAccount handles DELETE /api/google-service-accounts/:id
 func DeleteGoogleServiceAccount(c *gin.Context) {
 	id := c.Param("id")

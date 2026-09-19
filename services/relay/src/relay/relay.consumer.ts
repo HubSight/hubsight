@@ -117,4 +117,20 @@ export class RelayConsumer {
   handleUserBlocked(@Payload() data: { user_id: string; username?: string; reason?: string }) {
     return this.relayService.handleUserBlocked(data.user_id);
   }
+
+  @EventPattern('admin_api.enabled')
+  handleAdminAPIEnabled(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'admin_api.enabled',
+      data,
+    });
+  }
+
+  @EventPattern('admin_api.disabled')
+  handleAdminAPIDisabled(@Payload() data: any) {
+    return this.relayService.broadcastEvent({
+      event: 'admin_api.disabled',
+      data,
+    });
+  }
 }
