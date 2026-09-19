@@ -75,6 +75,8 @@ func Connect(dbURL string) error {
 			&models.GoogleServiceAccount{},
 			&models.AppConfig{},
 			&models.KnownDevice{},
+			&models.AdminAuditEvent{},
+			&models.LiveQoEReport{},
 		); err != nil {
 			return fmt.Errorf("failed running gorm automigrate: %w", err)
 		}

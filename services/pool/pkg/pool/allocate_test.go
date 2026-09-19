@@ -34,3 +34,19 @@ func TestPickReusableLiveConnEmptyPool(t *testing.T) {
 		t.Fatalf("empty live pool should spawn new, got %s", got.StreamName)
 	}
 }
+
+func TestPickReusableLiveConnHonorsProfile(t *testing.T) {
+	p := &CameraPool{
+		LivePool: map[string]*StreamConnection{
+			"matrix": {StreamName: "matrix", ActiveUsers: 4, MaxUsers: LiveMaxClientsPerConn, Profile: LiveProfileMatrix64},
+			"focus":  {StreamName: "focus", ActiveUsers: 1, MaxUsers: LiveMaxClientsPerConn, Profile: LiveProfileFocus},
+		},
+	}
+	got := pickReusableLiveConn(p, LiveProfileFocus)
+	if got == nil || got.StreamName != "focus" {
+		t.Fatalf("expected focus profile lease, got %#v", got)
+	}
+	if got := pickReusableLiveConn(p, LiveProfileMatrix16); got != nil {
+		t.Fatalf("expected no matrix_16 lease, got %s", got.StreamName)
+	}
+}

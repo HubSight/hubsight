@@ -3,6 +3,8 @@ package pool
 import (
 	"sync"
 	"time"
+
+	sharedlive "cctv/shared/pkg/live"
 )
 
 type StreamPurpose string
@@ -15,7 +17,24 @@ const (
 	// LiveMaxClientsPerConn is how many UI clients share one live RTSP pull.
 	// A new #2+ stream is opened only when every existing live conn is full.
 	LiveMaxClientsPerConn = 5
+
+	LiveProfileThumbnail = sharedlive.LiveProfileThumbnail
+	LiveProfileMatrix64  = sharedlive.LiveProfileMatrix64
+	LiveProfileMatrix16  = sharedlive.LiveProfileMatrix16
+	LiveProfileFocus     = sharedlive.LiveProfileFocus
+	DefaultLiveProfile   = sharedlive.DefaultLiveProfile
 )
+
+// NormalizeLiveProfile keeps the profile vocabulary shared by the Admin API
+// and pool-service. Empty profile values use the matrix default so legacy App
+// API callers continue to behave exactly as before.
+func NormalizeLiveProfile(value string) (string, error) {
+	return sharedlive.NormalizeLiveProfile(value)
+}
+
+func IsLiveProfile(value string) bool {
+	return sharedlive.IsLiveProfile(value)
+}
 
 // StreamConnection represents an active RTSP/Media stream in the pool
 type StreamConnection struct {
@@ -30,7 +49,8 @@ type StreamConnection struct {
 	MaxUsers    int           `json:"max_users"`    // 5 for live, 1 for CV/NVR/Thumb
 	CreatedAt   time.Time     `json:"created_at"`
 	LastUsedAt  time.Time     `json:"last_used_at"`
-	Status      string        `json:"status"` // "active" | "idle" | "error"
+	Status      string        `json:"status"`  // "active" | "idle" | "error"
+	Profile     string        `json:"profile"` // Admin live lease profile
 }
 
 // CameraPool holds the pool state and connections for a single camera
@@ -55,6 +75,17 @@ type AcquireResult struct {
 	IsNewStream bool   `json:"is_new_stream"`
 	ActiveUsers int    `json:"active_users"`
 	ConnIndex   int    `json:"conn_index"`
+	Profile     string `json:"profile"`
+}
+
+// ProfileChangeResult describes an in-place profile update or a lease
+// migration when the old connection is shared by other viewers.
+type ProfileChangeResult struct {
+	StreamName         string `json:"stream_name"`
+	PreviousStreamName string `json:"previous_stream_name,omitempty"`
+	Profile            string `json:"profile"`
+	ActiveUsers        int    `json:"active_users"`
+	Migrated           bool   `json:"migrated"`
 }
 
 // PoolStatusSummary is a serializable snapshot of the entire pool state

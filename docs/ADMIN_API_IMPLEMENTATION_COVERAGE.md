@@ -22,9 +22,9 @@ source is added.
 |---|---:|---|
 | Bootstrap authentication | 6 | Implemented; Admin JWT only, no cookie |
 | Profile, sessions, 2FA, passkeys | 17 | Implemented; destructive passkey deletion requires confirmation |
-| Dashboard/system/settings | 8 | Implemented except durable audit-event querying |
+| Dashboard/system/settings | 8 | Implemented; audit events are durable and cursor-queryable |
 | Cameras/discovery/PTZ/recognition logs | 20 | Implemented through isolated Admin routes; camera delete and log cleanup require exact confirmation |
-| Live/WebRTC matrix | 9 | Implemented except profile switching and QoE persistence |
+| Live/WebRTC matrix | 9 | Implemented; profile lease migration and bounded QoE persistence are active |
 | Archive/playback | 6 | Implemented with short-lived signed URLs |
 | Members/faces/uploads | 13 | Implemented; member/avatar/face deletion confirmation enforced |
 | Notifications/push subscriptions | 11 | Implemented |
@@ -39,17 +39,19 @@ The catalog contains 135 HTTP entries. The prose in the implementation prompt
 calls this “136 catalog entries” because it counts the realtime contract as an
 additional catalog item.
 
-## Deliberate follow-up items
+## Remaining follow-up
 
-The following routes are registered and protected, but currently return an
-explicit `501 Not Implemented` contract instead of claiming a false success:
+The live matrix routes are now operational. Audit mutation requests are stored
+in `admin_audit_events`; the audit query supports actor/client/action/target,
+status and RFC3339 time filters with opaque cursor pagination. The QoE endpoint
+accepts at most 64 reports and 256 KiB per request, stores metrics in
+`live_qoe_reports`, and prunes records using `ADMIN_LIVE_QOE_RETENTION_DAYS`
+(default 7, capped at 30).
 
-- `GET /system/audit-events` — requires a durable audit-event model/store and
-  retention/query policy.
-- `POST /live/sessions:change-profile` — requires pool lease profile migration
-  without tearing down unrelated matrix tiles.
-- `POST /live/sessions:qoe` — requires a bounded telemetry ingestion path and
-  retention policy.
+Profile switching is lease-aware: a private stream changes profile in place;
+when a stream is shared, the pool allocates a new lease for the requesting tile
+and leaves the existing stream for other viewers. The returned
+`previous_stream_name` tells the SDK which lease was migrated.
 
 `/operations/{operation_id}` and `POST /operations/{operation_id}:cancel` are
 currently backed by the camera-discovery job service. Other asynchronous
@@ -94,3 +96,8 @@ Admin `.hscfg` revocation adds `revoked` and `revoked_at` to `app_configs`.
 The repository's existing GORM `AutoMigrate` path applies this change at
 service startup. Download and QR generation reject revoked Admin packages with
 `CONFIG_REVOKED`.
+
+The same migration path creates `admin_audit_events` and `live_qoe_reports`.
+No Ent schema change is required for these GORM-owned tables. Deployments
+should allow the first service holding the existing PostgreSQL advisory lock to
+finish `AutoMigrate` before serving Admin traffic.

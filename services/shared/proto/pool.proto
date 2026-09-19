@@ -7,12 +7,14 @@ message SignalWebRTCRequest {
   string camera_id = 1;
   string sdp_offer = 2;
   string content_type = 3;
+  string profile = 4;
 }
 
 message SignalWebRTCResponse {
   string sdp_answer = 1;
   string pool_stream_name = 2;
   string pool_conn_index = 3;
+  string profile = 4;
 }
 
 message ReleaseStreamRequest {
@@ -33,6 +35,21 @@ message HeartbeatStreamResponse {
   bool success = 1;
 }
 
+message ChangeStreamProfileRequest {
+  string camera_id = 1;
+  string stream_name = 2;
+  string profile = 3;
+}
+
+message ChangeStreamProfileResponse {
+  bool success = 1;
+  string stream_name = 2;
+  string previous_stream_name = 3;
+  string profile = 4;
+  int32 active_users = 5;
+  bool migrated = 6;
+}
+
 message GetStatusSummaryRequest {}
 
 message PoolSummary {
@@ -49,5 +66,6 @@ service PoolService {
   rpc SignalWebRTC(SignalWebRTCRequest) returns (SignalWebRTCResponse);
   rpc ReleaseStream(ReleaseStreamRequest) returns (ReleaseStreamResponse);
   rpc HeartbeatStream(HeartbeatStreamRequest) returns (HeartbeatStreamResponse);
+  rpc ChangeStreamProfile(ChangeStreamProfileRequest) returns (ChangeStreamProfileResponse);
   rpc GetStatusSummary(GetStatusSummaryRequest) returns (GetStatusSummaryResponse);
 }

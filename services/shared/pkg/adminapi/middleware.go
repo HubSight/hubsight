@@ -161,7 +161,7 @@ func AdminPublicGroup(rg *gin.RouterGroup) *gin.RouterGroup {
 // key and the RBAC predicate.
 func AdminProtectedGroup(rg *gin.RouterGroup) *gin.RouterGroup {
 	group := AdminPublicGroup(rg)
-	group.Use(AdminJWTMiddleware())
+	group.Use(AdminJWTMiddleware(), AdminAuditMiddleware())
 	return group
 }
 

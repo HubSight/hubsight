@@ -20,6 +20,7 @@ import (
 	"cctv/shared/pkg/mq"
 	"cctv/shared/pkg/notification"
 	"cctv/shared/pkg/nvr"
+	"cctv/shared/pkg/pb"
 	"cctv/shared/pkg/pool"
 	"cctv/shared/pkg/recognitionlog"
 	"cctv/shared/pkg/recording"
@@ -67,9 +68,9 @@ func RegisterCatalogCoreRoutes(rg *gin.RouterGroup) {
 	protected.POST("/live/sessions\\:negotiate", RequirePermission("cameras:view"), AdminLiveNegotiateHandler)
 	protected.POST("/live/sessions\\:heartbeat", RequirePermission("cameras:view"), appapi.BatchLiveHeartbeatHandler)
 	protected.POST("/live/sessions\\:release", RequirePermission("cameras:view"), appapi.BatchLiveReleaseHandler)
-	protected.POST("/live/sessions\\:change-profile", RequirePermission("cameras:view"), AdminNotImplementedHandler("LIVE_PROFILE_SWITCH_NOT_IMPLEMENTED"))
+	protected.POST("/live/sessions\\:change-profile", RequirePermission("cameras:view"), AdminLiveChangeProfileHandler)
 	protected.GET("/live/sessions\\:stats", RequirePermission("cameras:view"), pool.PoolStatusHandler)
-	protected.POST("/live/sessions\\:qoe", RequirePermission("cameras:view"), AdminNotImplementedHandler("LIVE_QOE_INGEST_NOT_IMPLEMENTED"))
+	protected.POST("/live/sessions\\:qoe", RequirePermission("cameras:view"), AdminLiveQoEHandler)
 	protected.GET("/live/cameras/:camera_id/status", RequirePermission("cameras:view"), withParam("camera_id", "id", live.LiveStatusHandler))
 
 	// Archive and playback.
@@ -259,10 +260,6 @@ func AdminStorageCleanupHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted_count": deleted, "freed_bytes": freed, "request_id": c.GetString("request_id")})
 }
 
-func AdminAuditEventsHandler(c *gin.Context) {
-	adminError(c, http.StatusNotImplemented, "AUDIT_EVENT_STORE_NOT_IMPLEMENTED", nil)
-}
-
 func AdminLiveCapabilitiesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": gin.H{
 		"matrix_limit": 64, "profiles": []string{"thumbnail", "matrix_64", "matrix_16", "focus"},
@@ -311,6 +308,32 @@ func AdminLiveNegotiateHandler(c *gin.Context) {
 	}
 	c.Request.Body = io.NopCloser(bytes.NewReader(body))
 	appapi.BatchLiveWebRTCHandler(c)
+}
+
+// AdminLiveChangeProfileHandler migrates one live lease to a new profile. The
+// pool keeps the old shared connection alive for its other viewers and only
+// allocates a separate connection when the lease cannot be changed in place.
+func AdminLiveChangeProfileHandler(c *gin.Context) {
+	var req struct {
+		CameraID   string `json:"camera_id"`
+		StreamName string `json:"stream_name"`
+		Profile    string `json:"profile"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.CameraID) == "" || strings.TrimSpace(req.StreamName) == "" || !live.IsLiveProfile(req.Profile) {
+		adminError(c, http.StatusBadRequest, response.ErrInvalidInput, gin.H{"profiles": []string{live.LiveProfileThumbnail, live.LiveProfileMatrix64, live.LiveProfileMatrix16, live.LiveProfileFocus}})
+		return
+	}
+	result, err := pool.GetGrpcClient().ChangeStreamProfile(c.Request.Context(), &pb.ChangeStreamProfileRequest{
+		CameraId: req.CameraID, StreamName: req.StreamName, Profile: req.Profile,
+	})
+	if err != nil {
+		adminError(c, http.StatusConflict, "LIVE_PROFILE_CHANGE_FAILED", gin.H{"reason": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": gin.H{
+		"camera_id": req.CameraID, "stream_name": result.StreamName, "previous_stream_name": result.PreviousStreamName,
+		"profile": result.Profile, "active_users": result.ActiveUsers, "migrated": result.Migrated,
+	}, "request_id": c.GetString("request_id")})
 }
 
 func AdminGetRecordingHandler(c *gin.Context) {
@@ -563,12 +586,6 @@ func AdminDeletePushSubscriptionHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "deleted": result.RowsAffected, "request_id": c.GetString("request_id")})
-}
-
-func AdminNotImplementedHandler(code string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		adminError(c, http.StatusNotImplemented, code, gin.H{"request_id": c.GetString("request_id")})
-	}
 }
 
 func nameOrYes(name string) string {

@@ -213,7 +213,7 @@ func main() {
 			}
 
 			// 1. Acquire Live Stream from Pool (<= 5 clients/conn)
-			result, err := poolMgr.AcquireLiveStream(c.Request.Context(), camID)
+			result, err := poolMgr.AcquireLiveStream(c.Request.Context(), camID, c.Query("profile"))
 			if err != nil {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 				return
@@ -318,7 +318,7 @@ func (s *grpcPoolServer) SignalWebRTC(ctx context.Context, req *pb.SignalWebRTCR
 		return nil, fmt.Errorf("camera ID is required")
 	}
 
-	result, err := s.poolMgr.AcquireLiveStream(ctx, req.CameraId)
+	result, err := s.poolMgr.AcquireLiveStream(ctx, req.CameraId, req.Profile)
 	if err != nil {
 		return nil, err
 	}
@@ -339,6 +339,7 @@ func (s *grpcPoolServer) SignalWebRTC(ctx context.Context, req *pb.SignalWebRTCR
 		SdpAnswer:      string(answerSDP),
 		PoolStreamName: result.StreamName,
 		PoolConnIndex:  fmt.Sprintf("%d", result.ConnIndex),
+		Profile:        result.Profile,
 	}, nil
 }
 
@@ -354,6 +355,24 @@ func (s *grpcPoolServer) HeartbeatStream(ctx context.Context, req *pb.HeartbeatS
 		s.poolMgr.Heartbeat(req.CameraId, req.StreamName)
 	}
 	return &pb.HeartbeatStreamResponse{Success: true}, nil
+}
+
+func (s *grpcPoolServer) ChangeStreamProfile(ctx context.Context, req *pb.ChangeStreamProfileRequest) (*pb.ChangeStreamProfileResponse, error) {
+	if req.CameraId == "" || req.StreamName == "" || req.Profile == "" {
+		return nil, fmt.Errorf("camera ID, stream name, and profile are required")
+	}
+	result, err := s.poolMgr.ChangeLiveStreamProfile(ctx, req.CameraId, req.StreamName, req.Profile)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.ChangeStreamProfileResponse{
+		Success:            true,
+		StreamName:         result.StreamName,
+		PreviousStreamName: result.PreviousStreamName,
+		Profile:            result.Profile,
+		ActiveUsers:        int32(result.ActiveUsers),
+		Migrated:           result.Migrated,
+	}, nil
 }
 
 func (s *grpcPoolServer) GetStatusSummary(ctx context.Context, req *pb.GetStatusSummaryRequest) (*pb.GetStatusSummaryResponse, error) {

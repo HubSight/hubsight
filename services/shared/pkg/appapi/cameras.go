@@ -54,6 +54,7 @@ type BatchWebRTCItem struct {
 	CameraID string `json:"camera_id" binding:"required"`
 	SdpOffer string `json:"sdp_offer"`
 	Offer    string `json:"offer"`
+	Profile  string `json:"profile,omitempty"`
 }
 
 type BatchWebRTCRequest struct {
@@ -65,6 +66,7 @@ type BatchWebRTCResultItem struct {
 	SdpAnswer      string `json:"sdp_answer,omitempty"`
 	PoolStreamName string `json:"pool_stream_name,omitempty"`
 	PoolConnIndex  string `json:"pool_conn_index,omitempty"`
+	Profile        string `json:"profile,omitempty"`
 	Error          string `json:"error,omitempty"`
 }
 
@@ -178,6 +180,7 @@ func BatchLiveWebRTCHandler(c *gin.Context) {
 				CameraId:    target.CameraID,
 				SdpOffer:    offer,
 				ContentType: "application/sdp",
+				Profile:     target.Profile,
 			})
 
 			if err != nil {
@@ -186,6 +189,7 @@ func BatchLiveWebRTCHandler(c *gin.Context) {
 				resItem.SdpAnswer = resp.SdpAnswer
 				resItem.PoolStreamName = resp.PoolStreamName
 				resItem.PoolConnIndex = resp.PoolConnIndex
+				resItem.Profile = resp.Profile
 			}
 
 			results[idx] = resItem

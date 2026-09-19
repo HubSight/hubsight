@@ -291,10 +291,21 @@ func liveConnCap(conn *StreamConnection) int {
 
 // pickReusableLiveConn returns the fullest live conn that still has a free slot.
 // That keeps RTSP sockets on the camera at ceil(viewers / 5) instead of one per client.
-func pickReusableLiveConn(p *CameraPool) *StreamConnection {
+func pickReusableLiveConn(p *CameraPool, requestedProfile ...string) *StreamConnection {
+	profile := DefaultLiveProfile
+	if len(requestedProfile) > 0 && requestedProfile[0] != "" {
+		profile = requestedProfile[0]
+	}
 	var best *StreamConnection
 	for _, conn := range p.LivePool {
 		if conn.ActiveUsers >= liveConnCap(conn) {
+			continue
+		}
+		connectionProfile := conn.Profile
+		if connectionProfile == "" {
+			connectionProfile = DefaultLiveProfile
+		}
+		if connectionProfile != profile {
 			continue
 		}
 		if best == nil || conn.ActiveUsers > best.ActiveUsers {
@@ -307,7 +318,11 @@ func pickReusableLiveConn(p *CameraPool) *StreamConnection {
 // AcquireLiveStream assigns a viewer to a shared live RTSP pull (#2+).
 // Clients reuse an existing live connection until it has LiveMaxClientsPerConn
 // viewers; only then is a new ZLMediaKit/RTSP producer opened.
-func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*AcquireResult, error) {
+func (m *Manager) AcquireLiveStream(ctx context.Context, camID string, requestedProfile ...string) (*AcquireResult, error) {
+	profile, err := NormalizeLiveProfile(firstString(requestedProfile))
+	if err != nil {
+		return nil, err
+	}
 	m.poolsMu.RLock()
 	p, exists := m.pools[camID]
 	m.poolsMu.RUnlock()
@@ -323,7 +338,7 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		return nil, fmt.Errorf("camera %s is stopped", camID)
 	}
 
-	if candidate := pickReusableLiveConn(p); candidate != nil {
+	if candidate := pickReusableLiveConn(p, profile); candidate != nil {
 		candidate.ActiveUsers++
 		candidate.LastUsedAt = time.Now()
 		candidate.Status = "active"
@@ -335,6 +350,7 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 			IsNewStream: false,
 			ActiveUsers: candidate.ActiveUsers,
 			ConnIndex:   candidate.Index,
+			Profile:     profile,
 		}
 		m.scheduleNotify()
 		return res, nil
@@ -364,6 +380,7 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		CreatedAt:   time.Now(),
 		LastUsedAt:  time.Now(),
 		Status:      "active",
+		Profile:     profile,
 	}
 	p.LivePool[newStreamName] = newConn
 
@@ -376,6 +393,81 @@ func (m *Manager) AcquireLiveStream(ctx context.Context, camID string) (*Acquire
 		IsNewStream: true,
 		ActiveUsers: 1,
 		ConnIndex:   newIndex,
+		Profile:     profile,
+	}, nil
+}
+
+func firstString(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
+}
+
+// ChangeLiveStreamProfile updates one viewer lease. A private connection can
+// be updated in place; a shared connection is split so other viewers remain
+// on their existing profile and stream without interruption.
+func (m *Manager) ChangeLiveStreamProfile(ctx context.Context, camID, streamName, requestedProfile string) (*ProfileChangeResult, error) {
+	profile, err := NormalizeLiveProfile(requestedProfile)
+	if err != nil {
+		return nil, err
+	}
+	m.poolsMu.RLock()
+	p, exists := m.pools[camID]
+	m.poolsMu.RUnlock()
+	if !exists {
+		return nil, fmt.Errorf("camera %s not found in pool", camID)
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	conn, exists := p.LivePool[streamName]
+	if !exists || conn == nil {
+		return nil, fmt.Errorf("live stream %s not found", streamName)
+	}
+	currentProfile := conn.Profile
+	if currentProfile == "" {
+		currentProfile = DefaultLiveProfile
+	}
+	if currentProfile == profile {
+		return &ProfileChangeResult{StreamName: streamName, Profile: profile, ActiveUsers: conn.ActiveUsers}, nil
+	}
+	if conn.ActiveUsers <= 1 {
+		conn.Profile = profile
+		conn.LastUsedAt = time.Now()
+		return &ProfileChangeResult{StreamName: streamName, Profile: profile, ActiveUsers: conn.ActiveUsers}, nil
+	}
+
+	p.NextLiveIndex++
+	newIndex := p.NextLiveIndex
+	newStreamName := fmt.Sprintf("cam_%s_live_%d", camID, newIndex)
+	key, err := m.zlm.RegisterStream(ctx, newStreamName, p.Host, string(PurposeLive))
+	if err != nil {
+		p.NextLiveIndex--
+		return nil, fmt.Errorf("failed to migrate live profile: %w", err)
+	}
+	newConn := &StreamConnection{
+		ID:          fmt.Sprintf("conn_%s_live_%d", camID, newIndex),
+		CameraID:    camID,
+		Index:       newIndex,
+		Purpose:     PurposeLive,
+		StreamName:  newStreamName,
+		ProxyKey:    key,
+		SourceURL:   p.Host,
+		ActiveUsers: 1,
+		MaxUsers:    LiveMaxClientsPerConn,
+		CreatedAt:   time.Now(),
+		LastUsedAt:  time.Now(),
+		Status:      "active",
+		Profile:     profile,
+	}
+	conn.ActiveUsers--
+	conn.LastUsedAt = time.Now()
+	p.LivePool[newStreamName] = newConn
+	m.scheduleNotify()
+	return &ProfileChangeResult{
+		StreamName: newStreamName, PreviousStreamName: streamName, Profile: profile,
+		ActiveUsers: 1, Migrated: true,
 	}, nil
 }
 
